@@ -5,7 +5,7 @@ so, very fast!
 # How to use
 - compile
 ```
-$ gcc lit.c -o lit
+$ make (need clang)
 $ ./lit  
 <expression>
 ```
