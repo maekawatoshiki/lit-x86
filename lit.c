@@ -13,10 +13,27 @@
 unsigned char *jitcode;
 int jitCount = 0;
 
-struct Token {
+struct {
   char val[32];
 } token[0xFFF] = { 0 };
 int tkpos = 0, tksize;
+
+struct {
+	char name[32];
+} varNames[0x7F] = { 0 };
+int varCount = 0;
+
+int getNumOfVar(char *name)
+{
+	int i;
+	for(i = 0; i < varCount; i++)
+	{
+		if(strcmp(name, varNames[i].name) == 0)
+			return i + 1;
+	}
+	strcpy(varNames[varCount].name, name);
+	return 1 + varCount++;
+}
 
 void genCode(int val) { jitcode[jitCount++] = (val); }
 
@@ -30,10 +47,16 @@ int lex(char *code)
       for(; isdigit(code[i]); i++)
         strncat(token[tkpos].val, &(code[i]), 1);
       i--; tkpos++;
-    } else if(code[i] == ' ' || code[i] == '\t') {
+    } else if(isalpha(code[i]))
+    {
+      for(; isalpha(code[i]); i++)
+        strncat(token[tkpos].val, &(code[i]), 1);
+      i--; tkpos++;
+    } else if(code[i] == ' ' || code[i] == '\t' || code[i] == '\n') {
     } else {
       strncat(token[tkpos++].val, &(code[i]), 1);
     }
+		//printf("tk>%s\n", token[tkpos-1].val);
   }
   tksize = tkpos;
 }
@@ -46,12 +69,44 @@ int skip(char *s)
 
 int parser()
 {
+	int espBgn;
 	tkpos = jitCount = 0;
 	genCode(0x55);// push   %ebp
 	genCode(0x89); genCode(0xe5);// mov    %esp,%ebp
-	addSubExpr();
+	genCode(0x83); genCode(0xec); espBgn = jitCount; genCode(sizeof(int) * 16); // sub %esp 0x04
+	while(tkpos < tksize)
+	{
+		skip(";");
+		if(strcmp(token[tkpos+1].val, "=") == 0)
+		{
+			char varnm[32]="";
+			strcpy(varnm, token[tkpos++].val);
+			skip("=");
+			relExpr();
+			genCode(0x89); genCode(0x45);
+			genCode(256 - sizeof(int) * getNumOfVar(varnm)); // mov var %eax
+		} else relExpr();
+	}
+	genCode(0x83); genCode(0xc4); genCode(sizeof(int) * varCount); // add %esp 0x04
+	//genCode(0xeb); genCode(0xff-jitCount);
 	genCode(0x5d);// pop %ebp
 	genCode(0xc3);// ret
+	jitcode[espBgn] = sizeof(int) * varCount;
+}
+
+int relExpr()
+{
+	int lt=0, gt=0;
+	addSubExpr();
+	if((lt=skip("<")) || (gt=skip(">")))
+	{
+		genCode(0x50); // push %eax
+		addSubExpr();
+		genCode(0x89); genCode(0xc3);  // mov %ebx %eax
+		genCode(0x58); // pop %eax
+		genCode(0x39); genCode(0xd8); // cmp %eax, %ebx
+		//genCode()
+	}
 }
 
 int addSubExpr()
@@ -97,14 +152,18 @@ int primExpr()
       genCode(n << 8 >> 24);
       genCode(n << 0 >> 24); // mov %eax num
     tkpos++;
-  } else if(skip("(")) {
+  } else if(isalpha(token[tkpos].val[0])) {
+	    genCode(0x8b); genCode(0x45);
+			genCode(256 - sizeof(int) * getNumOfVar(token[tkpos].val)); // mov %eax variable
+	    tkpos++;
+	} else if(skip("(")) {
     addSubExpr();
     skip(")");
   }
 }
 int run()
 {
-	return ((int (*)(int))jitcode)(0);
+	return ((int (*)(void**))jitcode)(0);
 }
 
 int main()
@@ -116,14 +175,14 @@ int main()
 #else
 	psize = sysconf(_SC_PAGE_SIZE);
 	if((posix_memalign((void **)&jitcode, psize, psize)))
-		err(1, "posix_memalign");
+		perror("posix_memalign");
 	if(mprotect((void*)jitcode, psize, PROT_READ | PROT_WRITE | PROT_EXEC))
-		err(1, "mprotect");
+		perror("mprotect");
 #endif
 
 	memset(jitcode, 0, psize);
 
-	char input[0xFFF];
+	char input[0xFFF] = { 0 };
 	fgets(input, 0xFFF, stdin);
 
 	lex(input);

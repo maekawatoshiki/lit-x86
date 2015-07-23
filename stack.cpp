@@ -1,8 +1,9 @@
-#include <stdio.h>
-#include <stdlib.h>
+#include <cstdio>
+#include <cstdlib>
 #include <string>
-#include <vector> 
+#include <vector>
 #include <stack>
+#include <cstring>
 
 //文字列の複製
 void strcpy(char*a,char*b){
@@ -119,7 +120,7 @@ void Analyzer(std::vector<std::string>*data,std::vector<std::string>*out,int*i){
 	for(;*i<data->size();(*i)++){
 		if((*data)[*i]=="+" || (*data)[*i]=="-" || (*data)[*i]=="*" || (*data)[*i]=="/"){
 			while(stack.empty()==false && //false : スタックに値がある
-				!(Priority((*data)[*i].c_str())>Priority(stack.top()))){ 
+				!(Priority((*data)[*i].c_str())>Priority(stack.top()))){
 					const char*str=stack.top();//最後尾の値の取得
 					stack.pop();//最後尾の値の削除
 					out->push_back(str);
@@ -198,12 +199,12 @@ int main(){
 		scanf("%s",str);
 		trim(str);
 		token(str,&data);
-		
+
 		std::vector<std::string> data2;
 		tokenAna(&data,&data2);
 
 		{printf("トークン切り出し結果 : ");for(int a=0;a<data2.size();a++) printf("%s ",data2[a].c_str());}
-		
+
 		int c=0;
 		Analyzer(&data2,&out,&c);
 
