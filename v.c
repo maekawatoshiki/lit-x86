@@ -1,14 +1,14 @@
 #include <stdio.h>
 
-int v(void **f)
+float f()
 {
-  int n = 65;
-  putchar(n);
-  return n;
+  //float n = 2.3, k = 43.425;
+  return 1.32*32.3;
 }
-
+//80484e0
 int main()
 {
-  void *f[1]={(void*)putchar};
-  v(f);
+  float n = 43.425;
+  printf("%x\n", *(int*)&n);
+  f();
 }

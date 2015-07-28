@@ -89,7 +89,7 @@ int parser()
 	}
 	genCode(0x83); genCode(0xc4); genCode(sizeof(int) * varCount); // add %esp 0x04
 	//genCode(0xeb); genCode(0xff-jitCount);
-	genCode(0x5d);// pop %ebp
+	genCode(0xc9);// pop %ebp
 	genCode(0xc3);// ret
 	jitcode[espBgn] = sizeof(int) * varCount;
 }
