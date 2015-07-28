@@ -74,6 +74,11 @@ int skip(char *s)
   else return 0;
 }
 
+/*** prime ***
+p = 3; do k = 2; isp = 1; do if p % k == 0; isp = 0; end; k = k + 1; while k * k < (p + 1); print isp; p = p + 1; while p < 40;
+i = 0; do k = 0; do k=k+1; if k==0 end; while k<10; i=i+1; while i<10
+*/
+
 int eval()
 {
 	while(tkpos < tksize)
@@ -86,12 +91,16 @@ int eval()
 			relExpr();
 			genCode(0x89); genCode(0x45);
 			genCode(256 - sizeof(int) * getNumOfVar(varnm)); // mov var %eax
+		} else if(skip("print")) {
+			relExpr();
+			genCode(0x89); genCode(0x04); genCode(0x24);
+			genCode(0xff); genCode(0x16);
 		} else if(skip("if")) {
 			int type = relExpr(), ifBgn;
 			genCode(type); genCode(0x02);// jne jb je ja  label
 			genCode(0xeb); ifBgn = jitCount; genCode(0);//todo
 			if(eval()) {
-				jitcode[ifBgn] = jitCount - ifBgn-1;
+				jitcode[ifBgn] = jitCount - ifBgn - 1;
 			}
 		} else if(skip("do")) {
 			int loopBgn = jitCount;
@@ -100,7 +109,7 @@ int eval()
 				/* jne jb ja ... label */
 				genCode(type); genCode(256 - (jitCount - loopBgn)-1);// jne label
 			}
-		} else if(skip("while") || skip("end")) { return 1; }
+		} else if(skip("end") || skip("while")) return 1;
 		else { relExpr(); }
 	}
 
@@ -113,6 +122,7 @@ int parser()
 	tkpos = jitCount = 0;
 	genCode(0x55);// push   %ebp
 	genCode(0x89); genCode(0xe5);// mov    %esp,%ebp
+	genCode(0x8b); genCode(0x75); genCode(0x0c);
 	genCode(0x83); genCode(0xec); espBgn = jitCount; genCode(sizeof(int) * 16); // sub %esp 0x04
 
 	eval();
@@ -125,7 +135,7 @@ int parser()
 
 int relExpr()
 {
-	int lt=0, gt=0, diff;
+	int lt=0, gt=0, diff=0;
 	addSubExpr();
 	if((lt=skip("<")) || (gt=skip(">")) || (diff=skip("!=")) || skip("=="))
 	{
@@ -195,9 +205,13 @@ int primExpr()
     skip(")");
   }
 }
+
+void putNumber(int n) { printf("%d\n", n); }
+
 int run()
 {
-	return ((int (*)(void**))jitcode)(0);
+	void *funcTable[2] = {(void *)putNumber, (void *)getchar};
+	return ((int (*)(int *, void**))jitcode)(0, funcTable);
 }
 
 int main()
@@ -222,6 +236,6 @@ int main()
 	lex(input);
 	parser();
 	clock_t bgn = clock();
-	printf("%d\n", run());
+	run();
 	printf("time: %lfsec\n", (double)(clock() - bgn) / CLOCKS_PER_SEC);
 }
