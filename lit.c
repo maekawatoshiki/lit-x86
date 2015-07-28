@@ -74,6 +74,8 @@ int parser()
 	genCode(0x55);// push   %ebp
 	genCode(0x89); genCode(0xe5);// mov    %esp,%ebp
 	genCode(0x83); genCode(0xec); espBgn = jitCount; genCode(sizeof(int) * 16); // sub %esp 0x04
+	genCode(0x8b); genCode(0x5d); genCode(0x08);
+	genCode(0x8b); genCode(0x75); genCode(0x0c);
 	while(tkpos < tksize)
 	{
 		skip(";");
@@ -89,7 +91,7 @@ int parser()
 	}
 	genCode(0x83); genCode(0xc4); genCode(sizeof(int) * varCount); // add %esp 0x04
 	//genCode(0xeb); genCode(0xff-jitCount);
-	genCode(0xc9);// pop %ebp
+	genCode(0x5d);// pop %ebp
 	genCode(0xc3);// ret
 	jitcode[espBgn] = sizeof(int) * varCount;
 }
