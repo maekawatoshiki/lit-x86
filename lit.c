@@ -56,7 +56,7 @@ int lex(char *code)
     } else {
       strncat(token[tkpos++].val, &(code[i]), 1);
     }
-		//printf("tk>%s\n", token[tkpos-1].val);
+		printf("tk>%s\n", token[tkpos-1].val);
   }
   tksize = tkpos;
 }
@@ -67,6 +67,38 @@ int skip(char *s)
   else return 0;
 }
 
+int eval()
+{
+	while(tkpos < tksize)
+	{
+		skip(";");
+		if(strcmp(token[tkpos+1].val, "=") == 0) {
+			char varnm[32]="";
+			strcpy(varnm, token[tkpos++].val);
+			skip("=");
+			relExpr();
+			genCode(0x89); genCode(0x45);
+			genCode(256 - sizeof(int) * getNumOfVar(varnm)); // mov var %eax
+		} else if(skip("loop")) {
+			int n = atoi(token[tkpos++].val) - 1;
+			printf("n:%d\n", n);
+			genCode(0xb9); // mov ecx, num
+			genCode(n << 24 >> 24);
+			genCode(n << 16 >> 24);
+			genCode(n << 8 >> 24);
+			genCode(n << 0 >> 24);
+			int loopBgn = jitCount;
+			skip("{");
+			if(eval()) {
+				genCode(0xe2); genCode(256 - (jitCount-loopBgn)-1);
+			}
+		} else if(skip("}")) { return 1; }
+		else { relExpr(); }
+	}
+
+	return 0;
+}
+
 int parser()
 {
 	int espBgn;
@@ -74,21 +106,10 @@ int parser()
 	genCode(0x55);// push   %ebp
 	genCode(0x89); genCode(0xe5);// mov    %esp,%ebp
 	genCode(0x83); genCode(0xec); espBgn = jitCount; genCode(sizeof(int) * 16); // sub %esp 0x04
-	while(tkpos < tksize)
-	{
-		skip(";");
-		if(strcmp(token[tkpos+1].val, "=") == 0)
-		{
-			char varnm[32]="";
-			strcpy(varnm, token[tkpos++].val);
-			skip("=");
-			relExpr();
-			genCode(0x89); genCode(0x45);
-			genCode(256 - sizeof(int) * getNumOfVar(varnm)); // mov var %eax
-		} else relExpr();
-	}
+
+	eval();
+
 	genCode(0x83); genCode(0xc4); genCode(sizeof(int) * varCount); // add %esp 0x04
-	//genCode(0xeb); genCode(0xff-jitCount);
 	genCode(0x5d);// pop %ebp
 	genCode(0xc3);// ret
 	jitcode[espBgn] = sizeof(int) * varCount;
