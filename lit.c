@@ -10,6 +10,11 @@
 	#include <sys/mman.h>
 #endif
 
+#define JA 0x77
+#define JB 0x72
+#define JE 0x74
+#define JNE 0x75
+
 unsigned char *jitcode;
 int jitCount = 0;
 
@@ -54,7 +59,9 @@ int lex(char *code)
       i--; tkpos++;
     } else if(code[i] == ' ' || code[i] == '\t' || code[i] == '\n') {
     } else {
-      strncat(token[tkpos++].val, &(code[i]), 1);
+      strncat(token[tkpos].val, &(code[i]), 1);
+			if(code[i+1] == '=')  strncat(token[tkpos].val, &(code[++i]), 1);
+			tkpos++;
     }
 		printf("tk>%s\n", token[tkpos-1].val);
   }
@@ -79,20 +86,21 @@ int eval()
 			relExpr();
 			genCode(0x89); genCode(0x45);
 			genCode(256 - sizeof(int) * getNumOfVar(varnm)); // mov var %eax
-		} else if(skip("loop")) {
-			int n = atoi(token[tkpos++].val) - 1;
-			printf("n:%d\n", n);
-			genCode(0xb9); // mov ecx, num
-			genCode(n << 24 >> 24);
-			genCode(n << 16 >> 24);
-			genCode(n << 8 >> 24);
-			genCode(n << 0 >> 24);
-			int loopBgn = jitCount;
-			skip("{");
+		} else if(skip("if")) {
+			int type = relExpr(), ifBgn;
+			genCode(type); genCode(0x02);// jne jb je ja  label
+			genCode(0xeb); ifBgn = jitCount; genCode(0);//todo
 			if(eval()) {
-				genCode(0xe2); genCode(256 - (jitCount-loopBgn)-1);
+				jitcode[ifBgn] = jitCount - ifBgn-1;
 			}
-		} else if(skip("}")) { return 1; }
+		} else if(skip("do")) {
+			int loopBgn = jitCount;
+			if(eval()) {
+				int type = relExpr();
+				/* jne jb ja ... label */
+				genCode(type); genCode(256 - (jitCount - loopBgn)-1);// jne label
+			}
+		} else if(skip("while") || skip("end")) { return 1; }
 		else { relExpr(); }
 	}
 
@@ -117,16 +125,16 @@ int parser()
 
 int relExpr()
 {
-	int lt=0, gt=0;
+	int lt=0, gt=0, diff;
 	addSubExpr();
-	if((lt=skip("<")) || (gt=skip(">")))
+	if((lt=skip("<")) || (gt=skip(">")) || (diff=skip("!=")) || skip("=="))
 	{
 		genCode(0x50); // push %eax
 		addSubExpr();
 		genCode(0x89); genCode(0xc3);  // mov %ebx %eax
 		genCode(0x58); // pop %eax
 		genCode(0x39); genCode(0xd8); // cmp %eax, %ebx
-		//genCode()
+		return lt ? JB : gt ? JA : diff ? JNE : JE;
 	}
 }
 
@@ -146,20 +154,25 @@ int addSubExpr()
 }
 int mulDivExpr()
 {
-  int mul;
+  int mul, div;
   primExpr();
-  while((mul = skip("*")) || skip("/"))
+  while((mul = skip("*")) || (div=skip("/")) || skip("%"))
   {
     genCode(0x50); // push %eax
     primExpr();
     genCode(0x89); genCode(0xc3);  // mov %ebx %eax
     genCode(0x58); // pop %eax f7f3
     if(mul) { genCode(0x0f); genCode(0xaf); genCode(0xc3); }// mul %eax %ebx
-    else {
+    else if(div) {
       genCode(0xba); // mov %edx 0
       genCode(0); genCode(0); genCode(0); genCode(0);
       genCode(0xf7); genCode(0xf3); // div %ebx
-    }
+    } else { //mod
+			genCode(0xba); // mov %edx 0
+      genCode(0); genCode(0); genCode(0); genCode(0);
+		  genCode(0xf7); genCode(0xf3); // div %ebx
+      genCode(0x89); genCode(0xd0); // mov eax, edx
+		}
   }
 }
 int primExpr()
