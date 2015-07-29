@@ -75,8 +75,8 @@ int skip(char *s)
 }
 
 /*** prime ***
-p = 3; do k = 2; isp = 1; do if p % k == 0; isp = 0; end; k = k + 1; while k * k < (p + 1); print isp; p = p + 1; while p < 40;
-i = 0; do k = 0; do k=k+1; if k==0 end; while k<10; i=i+1; while i<10
+p = 3; while p<20 k = 2; isp = 1; while k*k<(p+1); if p % k == 0  end; k = k + 1; end print isp; p = p + 1; end
+i = 0; do k = 0; do k=k+1; if k==0 end; while k<10; i=i+1; while i<10;
 */
 
 int eval()
@@ -85,31 +85,32 @@ int eval()
 	{
 		skip(";");
 		if(strcmp(token[tkpos+1].val, "=") == 0) {
-			char varnm[32]="";
-			strcpy(varnm, token[tkpos++].val);
+			int  n = getNumOfVar(token[tkpos++].val);
 			skip("=");
 			relExpr();
 			genCode(0x89); genCode(0x45);
-			genCode(256 - sizeof(int) * getNumOfVar(varnm)); // mov var %eax
+			genCode(256 - sizeof(int) * n); // mov var %eax
 		} else if(skip("print")) {
 			relExpr();
 			genCode(0x89); genCode(0x04); genCode(0x24);
 			genCode(0xff); genCode(0x16);
+		} else if(skip("while")) {
+			int loopBgn = jitCount, end;
+			int type = relExpr();
+			genCode(type); genCode(0x02);
+			genCode(0xeb); end = jitCount; genCode(0);// jmp while end
+			if(eval()) {
+				genCode(0xeb); genCode(256 - (jitCount - loopBgn) - 1);// jmp loopBgn
+				jitcode[end] = jitCount - end - 1;
+			}
 		} else if(skip("if")) {
 			int type = relExpr(), ifBgn;
-			genCode(type); genCode(0x02);// jne jb je ja  label
-			genCode(0xeb); ifBgn = jitCount; genCode(0);//todo
+			genCode(type); genCode(0x02);// jne jb je ja label
+			genCode(0xeb); ifBgn = jitCount; genCode(0);
 			if(eval()) {
 				jitcode[ifBgn] = jitCount - ifBgn - 1;
 			}
-		} else if(skip("do")) {
-			int loopBgn = jitCount;
-			if(eval()) {
-				int type = relExpr();
-				/* jne jb ja ... label */
-				genCode(type); genCode(256 - (jitCount - loopBgn)-1);// jne label
-			}
-		} else if(skip("end") || skip("while")) return 1;
+		} else if(skip("end")) return 1;
 		else { relExpr(); }
 	}
 
@@ -123,11 +124,11 @@ int parser()
 	genCode(0x55);// push   %ebp
 	genCode(0x89); genCode(0xe5);// mov    %esp,%ebp
 	genCode(0x8b); genCode(0x75); genCode(0x0c);
-	genCode(0x83); genCode(0xec); espBgn = jitCount; genCode(sizeof(int) * 16); // sub %esp 0x04
+	genCode(0x83); genCode(0xec); espBgn = jitCount; genCode(sizeof(int)); // sub %esp nn
 
 	eval();
 
-	genCode(0x83); genCode(0xc4); genCode(sizeof(int) * varCount); // add %esp 0x04
+	genCode(0x83); genCode(0xc4); genCode(sizeof(int) * varCount); // add %esp nn
 	genCode(0x5d);// pop %ebp
 	genCode(0xc3);// ret
 	jitcode[espBgn] = sizeof(int) * varCount;
@@ -210,6 +211,7 @@ void putNumber(int n) { printf("%d\n", n); }
 
 int run()
 {
+	puts("start of running");
 	void *funcTable[2] = {(void *)putNumber, (void *)getchar};
 	return ((int (*)(int *, void**))jitcode)(0, funcTable);
 }

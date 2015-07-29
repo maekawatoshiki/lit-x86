@@ -1,8 +1,13 @@
 #include <stdio.h>
 
-void putNumber(int n) { printf("%d\n", n); }
+int iff()
+{
+  int i = 0;
+  if(i == 0) return 0;
+  return 1;
+}
 
 int main()
 {
-  putNumber(10);
+  iff();
 }
