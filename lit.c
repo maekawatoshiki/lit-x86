@@ -75,12 +75,17 @@ int skip(char *s)
 }
 
 /*** prime ***
-p = 3; while p<10 k = 2; isp = 1; while k*k<(p+1); if p % k == 0 isp = 0 end k = k + 1; end print isp; p = p + 1; end
-i = 0; while i < 10; k = 0; while k < 10; j = 0; while j < 10; j = j + 1 end k = k + 1 end i = i + 1 end
-i=0; while i<10; i=i+1; if i % 2 == 0 print 100; end; print i  end;
+p = 2; while p<100000000 k = 2; isp = 1; while k*k<(p+1); if p % k == 0 isp = 0 break end  k = k + 1; end if isp == 1 print p end p = p + 1; end
+i = 0; while i < 10; k = 0; while k < 10; j = 0; while j < 10; print j j = j + 1 end k = k + 1 end i = i + 1 end
+i=0; while i<10 j=0 while j<10 print j j=j+1 end print i i=i+1; end
+i = 0; sum = 0; while i < 100000001; sum = sum + i;  i = i + 1 end print sum
+n-6
+i = 0; while i < 100 if i % 2 == 0; end print i i = i + 1 end
 */
 
-int eval()
+int breaks[0xFF]={0};int breaksCount=0;
+
+int eval(int n)
 {
 	while(tkpos < tksize)
 	{
@@ -100,7 +105,7 @@ int eval()
 			int type = relExpr();
 			genCode(type); genCode(0x05);
 			genCode(0xe9); end = jitCount; genCode(0); genCode(0); genCode(0); genCode(0);// jmp while end
-			if(eval()) {
+			if(eval(0)) {
 				unsigned int n = 0xFFFFFFFF - jitCount + loopBgn - 4;
 				genCode(0xe9);
 				genCode(n << 24 >> 24);
@@ -112,19 +117,30 @@ int eval()
 				jitcode[end+1] = (n << 16 >> 24);
 				jitcode[end+2] = (n << 8 >> 24);
 				jitcode[end+3] = (n << 0 >> 24);
+				for(--breaksCount; breaksCount >= 0; breaksCount--) {
+					n = jitCount - breaks[breaksCount] - 4;
+					jitcode[breaks[breaksCount]] = (n << 24 >> 24);
+					jitcode[breaks[breaksCount]+1] = (n << 16 >> 24);
+					jitcode[breaks[breaksCount]+2] = (n << 8 >> 24);
+					jitcode[breaks[breaksCount]+3] = (n << 0 >> 24);
+				} breaksCount = 0;
 			}
 		} else if(skip("if")) {
-			int end;
+			int loopBgn = jitCount, end;
 			int type = relExpr();
 			genCode(type); genCode(0x05);
-			genCode(0xe9);  genCode(0);genCode(0);genCode(0);genCode(0);// jmp while end
-			if(eval()) {
-				unsigned int n = jitCount - end-2;
+			genCode(0xe9); end = jitCount; genCode(0); genCode(0); genCode(0); genCode(0);// jmp while end
+			if(eval(0)) {
+				unsigned int n = jitCount - end - 4;
 				jitcode[end]   = (n << 24 >> 24);
 				jitcode[end+1] = (n << 16 >> 24);
 				jitcode[end+2] = (n << 8 >> 24);
 				jitcode[end+3] = (n << 0 >> 24);
 			}
+		} else if(skip("break")) {
+			genCode(0xe9);
+			breaks[breaksCount]=jitCount; genCode(0); genCode(0); genCode(0); genCode(0);
+			breaksCount++;
 		} else if(skip("end")) return 1;
 		else { relExpr(); }
 	}
@@ -141,7 +157,7 @@ int parser()
 	genCode(0x8b); genCode(0x75); genCode(0x0c);
 	genCode(0x83); genCode(0xec); espBgn = jitCount; genCode(sizeof(int)); // sub %esp nn
 
-	eval();
+	eval(0);
 
 	genCode(0x83); genCode(0xc4); genCode(sizeof(int) * varCount); // add %esp nn
 	genCode(0x5d);// pop %ebp
