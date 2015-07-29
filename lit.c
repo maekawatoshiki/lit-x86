@@ -14,8 +14,10 @@
 #define JB 0x72
 #define JE 0x74
 #define JNE 0x75
+#define JBE 0
+#define JAE 0
 
-unsigned char *jitcode;
+unsigned char *jitCode;
 int jitCount = 0;
 
 struct {
@@ -40,7 +42,7 @@ int getNumOfVar(char *name)
 	return 1 + varCount++;
 }
 
-void genCode(unsigned char val) { jitcode[jitCount++] = (val); }
+void genCode(unsigned char val) { jitCode[jitCount++] = (val); }
 
 int lex(char *code)
 {
@@ -75,12 +77,14 @@ int skip(char *s)
 }
 
 /*** prime ***
-p = 2; while p<100000000 k = 2; isp = 1; while k*k<(p+1); if p % k == 0 isp = 0 break end  k = k + 1; end if isp == 1 print p end p = p + 1; end
+p = 2; while p<1000000 k = 2; isp = 1; while k*k<(p+1); if p % k == 0 isp = 0 break end  k = k + 1; end if isp == 1 print p end p = p + 1; end
 i = 0; while i < 10; k = 0; while k < 10; j = 0; while j < 10; print j j = j + 1 end k = k + 1 end i = i + 1 end
 i=0; while i<10 j=0 while j<10 print j j=j+1 end print i i=i+1; end
 i = 0; sum = 0; while i < 100000001; sum = sum + i;  i = i + 1 end print sum
 n-6
-i = 0; while i < 100 if i % 2 == 0; end print i i = i + 1 end
+i = 0; while i < 100 if i % 2 == 0; print 100 end print i i = i + 1 end
+n = 1482432730 while n != 1 if i % 2 == 0 n = n / 2 end if i % 2 != 0 n = n * 3 + 1 end print n end 
+
 */
 
 int breaks[0xFF]={0};int breaksCount=0;
@@ -113,16 +117,16 @@ int eval(int n)
 				genCode(n << 8 >> 24);
 				genCode(n << 0 >> 24);
 				n = jitCount - end - 4;
-				jitcode[end]   = (n << 24 >> 24);
-				jitcode[end+1] = (n << 16 >> 24);
-				jitcode[end+2] = (n << 8 >> 24);
-				jitcode[end+3] = (n << 0 >> 24);
+				jitCode[end]   = (n << 24 >> 24);
+				jitCode[end+1] = (n << 16 >> 24);
+				jitCode[end+2] = (n << 8 >> 24);
+				jitCode[end+3] = (n << 0 >> 24);
 				for(--breaksCount; breaksCount >= 0; breaksCount--) {
 					n = jitCount - breaks[breaksCount] - 4;
-					jitcode[breaks[breaksCount]] = (n << 24 >> 24);
-					jitcode[breaks[breaksCount]+1] = (n << 16 >> 24);
-					jitcode[breaks[breaksCount]+2] = (n << 8 >> 24);
-					jitcode[breaks[breaksCount]+3] = (n << 0 >> 24);
+					jitCode[breaks[breaksCount]] = (n << 24 >> 24);
+					jitCode[breaks[breaksCount]+1] = (n << 16 >> 24);
+					jitCode[breaks[breaksCount]+2] = (n << 8 >> 24);
+					jitCode[breaks[breaksCount]+3] = (n << 0 >> 24);
 				} breaksCount = 0;
 			}
 		} else if(skip("if")) {
@@ -132,10 +136,10 @@ int eval(int n)
 			genCode(0xe9); end = jitCount; genCode(0); genCode(0); genCode(0); genCode(0);// jmp while end
 			if(eval(0)) {
 				unsigned int n = jitCount - end - 4;
-				jitcode[end]   = (n << 24 >> 24);
-				jitcode[end+1] = (n << 16 >> 24);
-				jitcode[end+2] = (n << 8 >> 24);
-				jitcode[end+3] = (n << 0 >> 24);
+				jitCode[end]   = (n << 24 >> 24);
+				jitCode[end+1] = (n << 16 >> 24);
+				jitCode[end+2] = (n << 8 >> 24);
+				jitCode[end+3] = (n << 0 >> 24);
 			}
 		} else if(skip("break")) {
 			genCode(0xe9);
@@ -162,21 +166,21 @@ int parser()
 	genCode(0x83); genCode(0xc4); genCode(sizeof(int) * varCount); // add %esp nn
 	genCode(0x5d);// pop %ebp
 	genCode(0xc3);// ret
-	jitcode[espBgn] = sizeof(int) * varCount;
+	jitCode[espBgn] = sizeof(int) * varCount;
 }
 
 int relExpr()
 {
-	int lt=0, gt=0, diff=0;
+	int lt=0, gt=0, diff=0, eql=0, fle=0;
 	addSubExpr();
-	if((lt=skip("<")) || (gt=skip(">")) || (diff=skip("!=")) || skip("=="))
+	if((lt=skip("<")) || (gt=skip(">")) || (diff=skip("!=")) || (eql=skip("==")) || (fle=skip("<=")) || skip(">="))
 	{
 		genCode(0x50); // push %eax
 		addSubExpr();
 		genCode(0x89); genCode(0xc3);  // mov %ebx %eax
 		genCode(0x58); // pop %eax
 		genCode(0x39); genCode(0xd8); // cmp %eax, %ebx
-		return lt ? JB : gt ? JA : diff ? JNE : JE;
+		return lt ? JB : gt ? JA : diff ? JNE : eql ? JE : fle ? JBE : JAE;
 	}
 }
 
@@ -242,9 +246,15 @@ void putNumber(int n) { printf("%d\n", n); }
 
 int run()
 {
-	printf("size: %d : start of running\n", jitCount);
+	printf("size: %dbyte, %.2lf%% : ", jitCount, ((double)jitCount/4098)*100.0);
+	if(jitCount > 4098) {
+		puts("bytecode too big"); return 0;
+	} else {
+		puts("start of execting");
+	}
+	getchar();
 	void *funcTable[2] = {(void *)putNumber, (void *)getchar};
-	return ((int (*)(int *, void**))jitcode)(0, funcTable);
+	return ((int (*)(int *, void**))jitCode)(0, funcTable);
 }
 
 int main()
@@ -255,13 +265,13 @@ int main()
 	#include <windows.h>
 #else
 	psize = sysconf(_SC_PAGE_SIZE);
-	if((posix_memalign((void **)&jitcode, psize, psize)))
+	if((posix_memalign((void **)&jitCode, psize, psize)))
 		perror("posix_memalign");
-	if(mprotect((void*)jitcode, psize, PROT_READ | PROT_WRITE | PROT_EXEC))
+	if(mprotect((void*)jitCode, psize, PROT_READ | PROT_WRITE | PROT_EXEC))
 		perror("mprotect");
 #endif
 
-	memset(jitcode, 0, psize);
+	memset(jitCode, 0, psize);
 
 	char input[0xFFF] = { 0 };
 	fgets(input, 0xFFF, stdin);
