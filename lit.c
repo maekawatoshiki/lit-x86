@@ -14,8 +14,8 @@
 #define JB 0x72
 #define JE 0x74
 #define JNE 0x75
-#define JBE 0
-#define JAE 0
+#define JBE 0x76
+#define JAE 0x73
 
 unsigned char *jitCode;
 int jitCount = 0;
@@ -77,19 +77,20 @@ int skip(char *s)
 }
 
 /*** prime ***
-p = 2; while p<1000000 k = 2; isp = 1; while k*k<(p+1); if p % k == 0 isp = 0 break end  k = k + 1; end if isp == 1 print p end p = p + 1; end
+p = 2; while p<100 k = 2; isp = 1; while k*k <= p; if p % k == 0 isp = 0 break end  k = k + 1; end if isp == 1 print p end p = p + 1; end
+***
 i = 0; while i < 10; k = 0; while k < 10; j = 0; while j < 10; print j j = j + 1 end k = k + 1 end i = i + 1 end
 i=0; while i<10 j=0 while j<10 print j j=j+1 end print i i=i+1; end
 i = 0; sum = 0; while i < 100000001; sum = sum + i;  i = i + 1 end print sum
 n-6
 i = 0; while i < 100 if i % 2 == 0; print 100 end print i i = i + 1 end
-n = 1482432730 while n != 1 if i % 2 == 0 n = n / 2 end if i % 2 != 0 n = n * 3 + 1 end print n end 
+n = 1482432730 while n != 1 if i % 2 == 0 n = n / 2 end if i % 2 != 0 n = n * 3 + 1 end print n end
 
 */
 
 int breaks[0xFF]={0};int breaksCount=0;
 
-int eval(int n)
+int eval()
 {
 	while(tkpos < tksize)
 	{
@@ -109,7 +110,7 @@ int eval(int n)
 			int type = relExpr();
 			genCode(type); genCode(0x05);
 			genCode(0xe9); end = jitCount; genCode(0); genCode(0); genCode(0); genCode(0);// jmp while end
-			if(eval(0)) {
+			if(eval()) {
 				unsigned int n = 0xFFFFFFFF - jitCount + loopBgn - 4;
 				genCode(0xe9);
 				genCode(n << 24 >> 24);
@@ -134,7 +135,7 @@ int eval(int n)
 			int type = relExpr();
 			genCode(type); genCode(0x05);
 			genCode(0xe9); end = jitCount; genCode(0); genCode(0); genCode(0); genCode(0);// jmp while end
-			if(eval(0)) {
+			if(eval()) {
 				unsigned int n = jitCount - end - 4;
 				jitCode[end]   = (n << 24 >> 24);
 				jitCode[end+1] = (n << 16 >> 24);
@@ -145,8 +146,9 @@ int eval(int n)
 			genCode(0xe9);
 			breaks[breaksCount]=jitCount; genCode(0); genCode(0); genCode(0); genCode(0);
 			breaksCount++;
-		} else if(skip("end")) return 1;
-		else { relExpr(); }
+		} else if(skip("end")) {
+			return 1;
+		} else { relExpr(); }
 	}
 
 	return 0;
@@ -161,7 +163,7 @@ int parser()
 	genCode(0x8b); genCode(0x75); genCode(0x0c);
 	genCode(0x83); genCode(0xec); espBgn = jitCount; genCode(sizeof(int)); // sub %esp nn
 
-	eval(0);
+	eval();
 
 	genCode(0x83); genCode(0xc4); genCode(sizeof(int) * varCount); // add %esp nn
 	genCode(0x5d);// pop %ebp
@@ -173,7 +175,8 @@ int relExpr()
 {
 	int lt=0, gt=0, diff=0, eql=0, fle=0;
 	addSubExpr();
-	if((lt=skip("<")) || (gt=skip(">")) || (diff=skip("!=")) || (eql=skip("==")) || (fle=skip("<=")) || skip(">="))
+	if((lt=skip("<")) || (gt=skip(">")) || (diff=skip("!=")) ||
+			(eql=skip("==")) || (fle=skip("<=")) || skip(">="))
 	{
 		genCode(0x50); // push %eax
 		addSubExpr();
@@ -246,13 +249,8 @@ void putNumber(int n) { printf("%d\n", n); }
 
 int run()
 {
-	printf("size: %dbyte, %.2lf%% : ", jitCount, ((double)jitCount/4098)*100.0);
-	if(jitCount > 4098) {
-		puts("bytecode too big"); return 0;
-	} else {
-		puts("start of execting");
-	}
-	getchar();
+	printf("size: %dbyte, %.2lf%%\n", jitCount, ((double)jitCount/4098)*100.0);
+
 	void *funcTable[2] = {(void *)putNumber, (void *)getchar};
 	return ((int (*)(int *, void**))jitCode)(0, funcTable);
 }
@@ -273,8 +271,8 @@ int main()
 
 	memset(jitCode, 0, psize);
 
-	char input[0xFFF] = { 0 };
-	fgets(input, 0xFFF, stdin);
+	char input[0xFFFF] = "";
+	fgets(input, 0xFFFF, stdin);
 
 	lex(input);
 	parser();
