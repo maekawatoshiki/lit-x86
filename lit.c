@@ -75,9 +75,9 @@ int skip(char *s)
 }
 
 /*** prime ***
-p = 3; while p<20 k = 2; isp = 1; while k*k<(p+1); k = k + 1; end print isp; p = p + 1; end
+p = 3; while p<10 k = 2; isp = 1; while k*k<(p+1); if p % k == 0 isp = 0 end k = k + 1; end print isp; p = p + 1; end
 i = 0; while i < 10; k = 0; while k < 10; j = 0; while j < 10; j = j + 1 end k = k + 1 end i = i + 1 end
-i=0; while i<10; print i; end
+i=0; while i<10; i=i+1; if i % 2 == 0 print 100; end; print i  end;
 */
 
 int eval()
@@ -98,18 +98,17 @@ int eval()
 		} else if(skip("while")) {
 			int loopBgn = jitCount, end;
 			int type = relExpr();
-			genCode(type); genCode(0x02);
-			genCode(0xe9); end = jitCount; genCode(0);genCode(0);genCode(0);genCode(0);// jmp while end
+			genCode(type); genCode(0x05);
+			genCode(0xe9); end = jitCount; genCode(0); genCode(0); genCode(0); genCode(0);// jmp while end
 			if(eval()) {
-				unsigned int n = 0xFFFFFFFF - loopBgn + 4;
-				genCode(0xe9); //genCode(0xFFFFFFFF - (jitCount - loopBgn) - 1);// jmp loopBgn
+				unsigned int n = 0xFFFFFFFF - jitCount + loopBgn - 4;
+				genCode(0xe9);
 				genCode(n << 24 >> 24);
 				genCode(n << 16 >> 24);
 				genCode(n << 8 >> 24);
 				genCode(n << 0 >> 24);
-				printf("loop:%d\n", (jitCount - loopBgn));
-				n = jitCount;
-				jitcode[end]  =  (n << 24 >> 24);
+				n = jitCount - end - 4;
+				jitcode[end]   = (n << 24 >> 24);
 				jitcode[end+1] = (n << 16 >> 24);
 				jitcode[end+2] = (n << 8 >> 24);
 				jitcode[end+3] = (n << 0 >> 24);
@@ -117,10 +116,14 @@ int eval()
 		} else if(skip("if")) {
 			int end;
 			int type = relExpr();
-			genCode(type); genCode(0x02);
-			genCode(0xeb); end = jitCount; genCode(0);// jmp while end
+			genCode(type); genCode(0x05);
+			genCode(0xe9);  genCode(0);genCode(0);genCode(0);genCode(0);// jmp while end
 			if(eval()) {
-				jitcode[end] = jitCount - end - 1;
+				unsigned int n = jitCount - end-2;
+				jitcode[end]   = (n << 24 >> 24);
+				jitcode[end+1] = (n << 16 >> 24);
+				jitcode[end+2] = (n << 8 >> 24);
+				jitcode[end+3] = (n << 0 >> 24);
 			}
 		} else if(skip("end")) return 1;
 		else { relExpr(); }
@@ -223,7 +226,7 @@ void putNumber(int n) { printf("%d\n", n); }
 
 int run()
 {
-	puts("start of running");
+	printf("size: %d : start of running\n", jitCount);
 	void *funcTable[2] = {(void *)putNumber, (void *)getchar};
 	return ((int (*)(int *, void**))jitcode)(0, funcTable);
 }
