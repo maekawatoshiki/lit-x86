@@ -1,4 +1,4 @@
-CC = clang
+CC = gcc
 CFLAGS = -m32
 LDFLAGS = -m32
 

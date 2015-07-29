@@ -11,5 +11,156 @@ label:
   cmp eax, 0
   mov eax, edx
   jmp label
+  mov eax, [esp-4]
+  cmp eax, 0
+  mov eax, edx
+  jmp label
+  mov eax, [esp-4]
+  cmp eax, 0
+  mov eax, edx
+  jmp label
+  mov eax, [esp-4]
+  cmp eax, 0
+  mov eax, edx
+  jmp label
+  mov eax, [esp-4]
+  cmp eax, 0
+  mov eax, edx
+  jmp label
+  mov eax, [esp-4]
+  cmp eax, 0
+  mov eax, edx
+  jmp label
+  mov eax, [esp-4]
+  cmp eax, 0
+  mov eax, edx
+  jmp label
+  mov eax, [esp-4]
+  cmp eax, 0
+  mov eax, edx
+  jmp label
+  mov eax, [esp-4]
+  cmp eax, 0
+  mov eax, edx
+  jmp label
+  mov eax, [esp-4]
+  cmp eax, 0
+  mov eax, edx
+  jmp label
+
+  mov eax, [esp-4]
+  cmp eax, 0
+  mov eax, edx
+  jmp label
+  mov eax, [esp-4]
+  cmp eax, 0
+  mov eax, edx
+  jmp label
+  mov eax, [esp-4]
+  cmp eax, 0
+  mov eax, edx
+  jmp label
+  mov eax, [esp-4]
+  cmp eax, 0
+  mov eax, edx
+  jmp label
+  mov eax, [esp-4]
+  cmp eax, 0
+  mov eax, edx
+  jmp label
+  mov eax, [esp-4]
+  cmp eax, 0
+  mov eax, edx
+  jmp label
+  mov eax, [esp-4]
+  cmp eax, 0
+  mov eax, edx
+  jmp label
+  mov eax, [esp-4]
+  cmp eax, 0
+  mov eax, edx
+  jmp label
+  mov eax, [esp-4]
+  cmp eax, 0
+  mov eax, edx
+  jmp label
+  mov eax, [esp-4]
+  cmp eax, 0
+  mov eax, edx
+  jmp label
+  mov eax, [esp-4]
+  cmp eax, 0
+  mov eax, edx
+  jmp label
+  mov eax, [esp-4]
+  cmp eax, 0
+  mov eax, edx
+  jmp label
+  mov eax, [esp-4]
+  cmp eax, 0
+  mov eax, edx
+  jmp label
+  mov eax, [esp-4]
+  cmp eax, 0
+  mov eax, edx
+  jmp label
+  mov eax, [esp-4]
+  cmp eax, 0
+  mov eax, edx
+  jmp label
+  mov eax, [esp-4]
+  cmp eax, 0
+  mov eax, edx
+  jmp label
+  mov eax, [esp-4]
+  cmp eax, 0
+  mov eax, edx
+  jmp label
+  mov eax, [esp-4]
+  cmp eax, 0
+  mov eax, edx
+  jmp label
+  mov eax, [esp-4]
+  cmp eax, 0
+  mov eax, edx
+  jmp label
+  mov eax, [esp-4]
+  cmp eax, 0
+  mov eax, edx
+  jmp label
+  mov eax, [esp-4]
+  cmp eax, 0
+  mov eax, edx
+  jmp label
+
+  mov eax, [esp-4]
+  cmp eax, 0
+  mov eax, edx
+  jmp label
+  mov eax, [esp-4]
+  cmp eax, 0
+  mov eax, edx
+  jmp label
+  mov eax, [esp-4]
+  cmp eax, 0
+  mov eax, edx
+  jmp label
+  mov eax, [esp-4]
+  cmp eax, 0
+  mov eax, edx
+  jmp label
+
+  mov eax, [esp-4]
+  cmp eax, 0
+  mov eax, edx
+  jmp label
+  mov eax, [esp-4]
+  cmp eax, 0
+  mov eax, edx
+  jmp label
+  mov eax, [esp-4]
+  cmp eax, 0
+  mov eax, edx
+  jmp label
 l2:
   mov eax, 2

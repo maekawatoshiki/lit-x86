@@ -40,7 +40,7 @@ int getNumOfVar(char *name)
 	return 1 + varCount++;
 }
 
-void genCode(int val) { jitcode[jitCount++] = (val); }
+void genCode(unsigned char val) { jitcode[jitCount++] = (val); }
 
 int lex(char *code)
 {
@@ -75,8 +75,9 @@ int skip(char *s)
 }
 
 /*** prime ***
-p = 3; while p<20 k = 2; isp = 1; while k*k<(p+1); if p % k == 0  end; k = k + 1; end print isp; p = p + 1; end
-i = 0; do k = 0; do k=k+1; if k==0 end; while k<10; i=i+1; while i<10;
+p = 3; while p<20 k = 2; isp = 1; while k*k<(p+1); k = k + 1; end print isp; p = p + 1; end
+i = 0; while i < 10; k = 0; while k < 10; j = 0; while j < 10; j = j + 1 end k = k + 1 end i = i + 1 end
+i=0; while i<10; print i; end
 */
 
 int eval()
@@ -98,17 +99,28 @@ int eval()
 			int loopBgn = jitCount, end;
 			int type = relExpr();
 			genCode(type); genCode(0x02);
-			genCode(0xeb); end = jitCount; genCode(0);// jmp while end
+			genCode(0xe9); end = jitCount; genCode(0);genCode(0);genCode(0);genCode(0);// jmp while end
 			if(eval()) {
-				genCode(0xeb); genCode(256 - (jitCount - loopBgn) - 1);// jmp loopBgn
-				jitcode[end] = jitCount - end - 1;
+				unsigned int n = 0xFFFFFFFF - loopBgn + 4;
+				genCode(0xe9); //genCode(0xFFFFFFFF - (jitCount - loopBgn) - 1);// jmp loopBgn
+				genCode(n << 24 >> 24);
+				genCode(n << 16 >> 24);
+				genCode(n << 8 >> 24);
+				genCode(n << 0 >> 24);
+				printf("loop:%d\n", (jitCount - loopBgn));
+				n = jitCount;
+				jitcode[end]  =  (n << 24 >> 24);
+				jitcode[end+1] = (n << 16 >> 24);
+				jitcode[end+2] = (n << 8 >> 24);
+				jitcode[end+3] = (n << 0 >> 24);
 			}
 		} else if(skip("if")) {
-			int type = relExpr(), ifBgn;
-			genCode(type); genCode(0x02);// jne jb je ja label
-			genCode(0xeb); ifBgn = jitCount; genCode(0);
+			int end;
+			int type = relExpr();
+			genCode(type); genCode(0x02);
+			genCode(0xeb); end = jitCount; genCode(0);// jmp while end
 			if(eval()) {
-				jitcode[ifBgn] = jitCount - ifBgn - 1;
+				jitcode[end] = jitCount - end - 1;
 			}
 		} else if(skip("end")) return 1;
 		else { relExpr(); }
