@@ -1,5 +1,6 @@
 #include <stdio.h>
 #include <stdlib.h>
+#include <ctype.h>
 #include <malloc.h>
 #include <time.h>
 #if defined(WIN32) || defined(WINDOWS)
@@ -20,17 +21,44 @@
 unsigned char *jitCode;
 int jitCount = 0;
 
-struct {
-  char val[32];
-} token[0xFFF] = { 0 };
-int tkpos = 0, tksize;
+class Lit {
+public:
+  struct TOKEN {
+    char val[32];
+  } token[0xFFF];
+  int tkpos, tksize;
 
-struct {
-	char name[32];
-} varNames[0x7F] = { 0 };
-int varCount = 0;
+  struct VARIABENAMES {
+  	char name[32];
+  } varNames[0x7F];
+  int varCount;
 
-int getNumOfVar(char *name)
+  int breaks[0xFF]; int breaksCount;
+
+  Lit():breaksCount(0), tkpos(0), varCount(0) {
+    memset(varNames, 0, sizeof(VARIABENAMES)*0x7F);
+    memset(token, 0, sizeof(TOKEN)*0xFFF);
+    memset(breaks, 0, 0xFF);
+  };
+
+  int getNumOfVar(char *);
+  void genCode(unsigned char);
+  int lex(char *);
+  int skip(char *);
+  int eval();
+  int parser();
+  int relExpr();
+  int addSubExpr();
+  int mulDivExpr();
+  int primExpr();
+  int run();
+
+  void execute(char *SourceCode);
+};
+
+void putNumber(int);
+
+int Lit::getNumOfVar(char *name)
 {
 	int i;
 	for(i = 0; i < varCount; i++)
@@ -42,9 +70,9 @@ int getNumOfVar(char *name)
 	return 1 + varCount++;
 }
 
-void genCode(unsigned char val) { jitCode[jitCount++] = (val); }
+void Lit::genCode(unsigned char val) { jitCode[jitCount++] = val; }
 
-int lex(char *code)
+int  Lit::lex(char *code)
 {
   int i, codeSize = strlen(code);
   for(i = 0; i < codeSize; i++)
@@ -70,7 +98,7 @@ int lex(char *code)
   tksize = tkpos;
 }
 
-int skip(char *s)
+int  Lit::skip(char *s)
 {
   if(strcmp(s, token[tkpos].val) == 0) { tkpos++; return 1; }
   else return 0;
@@ -88,9 +116,7 @@ n = 1482432730 while n != 1 if i % 2 == 0 n = n / 2 end if i % 2 != 0 n = n * 3 
 
 */
 
-int breaks[0xFF]={0};int breaksCount=0;
-
-int eval()
+int  Lit::eval()
 {
 	while(tkpos < tksize)
 	{
@@ -154,7 +180,7 @@ int eval()
 	return 0;
 }
 
-int parser()
+int  Lit::parser()
 {
 	int espBgn;
 	tkpos = jitCount = 0;
@@ -170,8 +196,7 @@ int parser()
 	genCode(0xc3);// ret
 	jitCode[espBgn] = sizeof(int) * varCount;
 }
-
-int relExpr()
+int  Lit::relExpr()
 {
 	int lt=0, gt=0, diff=0, eql=0, fle=0;
 	addSubExpr();
@@ -187,7 +212,7 @@ int relExpr()
 	}
 }
 
-int addSubExpr()
+int  Lit::addSubExpr()
 {
 	int add;
 	mulDivExpr();
@@ -201,7 +226,7 @@ int addSubExpr()
 		else { genCode(0x29); genCode(0xd8); } // sub %eax %ebx
 	}
 }
-int mulDivExpr()
+int  Lit::mulDivExpr()
 {
   int mul, div;
   primExpr();
@@ -224,7 +249,7 @@ int mulDivExpr()
 		}
   }
 }
-int primExpr()
+int  Lit::primExpr()
 {
   if(isdigit(token[tkpos].val[0]))
   {
@@ -244,15 +269,21 @@ int primExpr()
     skip(")");
   }
 }
-
 void putNumber(int n) { printf("%d\n", n); }
 
-int run()
+int  Lit::run()
 {
 	printf("size: %dbyte, %.2lf%%\n", jitCount, ((double)jitCount/4098)*100.0);
 	getchar();
 	void *funcTable[2] = {(void *)putNumber, (void *)getchar};
 	return ((int (*)(int *, void**))jitCode)(0, funcTable);
+}
+
+void Lit::execute(char *SourceCode)
+{
+  lex(SourceCode);
+	parser();
+	run();
 }
 
 int main()
@@ -269,14 +300,13 @@ int main()
 		perror("mprotect");
 #endif
 
+  Lit lit;
 	memset(jitCode, 0, 0xFFF);
 
 	char input[0xFFFF] = "";
 	fgets(input, 0xFFFF, stdin);
 
-	lex(input);
-	parser();
 	clock_t bgn = clock();
-	run();
+	lit.execute(input);
 	printf("time: %lfsec\n", (double)(clock() - bgn) / CLOCKS_PER_SEC);
 }
