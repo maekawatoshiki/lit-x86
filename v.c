@@ -1,14 +1,10 @@
 #include <stdio.h>
 
-void putNumber(int n) { printf("%d\n", n); }
-
-int iff()
-{
-  void *funcTable[2] = {(void*)putNumber, (void*)getchar};
-  funcTable(10);
+int loop() {
+  putchar('A');
 }
 
 int main()
 {
-  iff();
+  loop();
 }

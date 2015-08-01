@@ -77,7 +77,7 @@ int skip(char *s)
 }
 
 /*** prime ***
-p = 2; while p<100 k = 2; isp = 1; while k*k <= p; if p % k == 0 isp = 0 break end  k = k + 1; end if isp == 1 print p end p = p + 1; end
+p = 2; while p<100000 k = 2; isp = 1; while k*k <= p; if p % k == 0 isp = 0 break end  k = k + 1; end if isp == 1 print p end p = p + 1; end
 ***
 i = 0; while i < 10; k = 0; while k < 10; j = 0; while j < 10; print j j = j + 1 end k = k + 1 end i = i + 1 end
 i=0; while i<10 j=0 while j<10 print j j=j+1 end print i i=i+1; end
@@ -85,12 +85,12 @@ i = 0; sum = 0; while i < 100000001; sum = sum + i;  i = i + 1 end print sum
 n-6
 i = 0; while i < 100 if i % 2 == 0; print 100 end print i i = i + 1 end
 n = 1482432730 while n != 1 if i % 2 == 0 n = n / 2 end if i % 2 != 0 n = n * 3 + 1 end print n end
-
+i = 1 sum = 0  while i < 5 print 22  i = i + 1 end
 */
 
 int breaks[0xFF]={0};int breaksCount=0;
 
-int eval()
+int eval(int pos, int isloop)
 {
 	while(tkpos < tksize)
 	{
@@ -103,14 +103,14 @@ int eval()
 			genCode(256 - sizeof(int) * n); // mov var %eax
 		} else if(skip("print")) {
 			relExpr();
-			genCode(0x89); genCode(0x04); genCode(0x24);
-			genCode(0xff); genCode(0x16);
+			genCode(0x89); genCode(0x04); genCode(0x24); // mov esp, eax
+			genCode(0xff); genCode(0x16);// call (esi)
 		} else if(skip("while")) {
 			int loopBgn = jitCount, end;
 			int type = relExpr();
 			genCode(type); genCode(0x05);
 			genCode(0xe9); end = jitCount; genCode(0); genCode(0); genCode(0); genCode(0);// jmp while end
-			if(eval()) {
+			if(eval(0, 1)) {
 				unsigned int n = 0xFFFFFFFF - jitCount + loopBgn - 4;
 				genCode(0xe9);
 				genCode(n << 24 >> 24);
@@ -135,18 +135,19 @@ int eval()
 			int type = relExpr();
 			genCode(type); genCode(0x05);
 			genCode(0xe9); end = jitCount; genCode(0); genCode(0); genCode(0); genCode(0);// jmp while end
-			if(eval()) {
-				unsigned int n = jitCount - end - 4;
-				jitCode[end]   = (n << 24 >> 24);
-				jitCode[end+1] = (n << 16 >> 24);
-				jitCode[end+2] = (n << 8 >> 24);
-				jitCode[end+3] = (n << 0 >> 24);
-			}
+			eval(end, 0);
 		} else if(skip("break")) {
 			genCode(0xe9);
 			breaks[breaksCount]=jitCount; genCode(0); genCode(0); genCode(0); genCode(0);
 			breaksCount++;
 		} else if(skip("end")) {
+			if(isloop == 0) {
+				unsigned int n = jitCount - pos - 4;
+				jitCode[pos]   = (n << 24 >> 24);
+				jitCode[pos+1] = (n << 16 >> 24);
+				jitCode[pos+2] = (n << 8 >> 24);
+				jitCode[pos+3] = (n << 0 >> 24);
+			}
 			return 1;
 		} else { relExpr(); }
 	}
@@ -163,12 +164,12 @@ int parser()
 	genCode(0x8b); genCode(0x75); genCode(0x0c);
 	genCode(0x83); genCode(0xec); espBgn = jitCount; genCode(sizeof(int)); // sub %esp nn
 
-	eval();
+	eval(0, 0);
 
-	genCode(0x83); genCode(0xc4); genCode(sizeof(int) * varCount); // add %esp nn
+	genCode(0x83); genCode(0xc4); genCode(sizeof(int) * varCount+0x18); // add %esp nn
 	genCode(0x5d);// pop %ebp
 	genCode(0xc3);// ret
-	jitCode[espBgn] = sizeof(int) * varCount;
+	jitCode[espBgn] = sizeof(int) * varCount+0x18;
 }
 
 int relExpr()
@@ -236,6 +237,7 @@ int primExpr()
       genCode(n << 0 >> 24); // mov %eax num
     tkpos++;
   } else if(isalpha(token[tkpos].val[0])) {
+		puts(token[tkpos].val);
 	    genCode(0x8b); genCode(0x45);
 			genCode(256 - sizeof(int) * getNumOfVar(token[tkpos].val)); // mov %eax variable
 	    tkpos++;
@@ -251,7 +253,7 @@ int run()
 {
 	printf("size: %dbyte, %.2lf%%\n", jitCount, ((double)jitCount/4098)*100.0);
 
-	void *funcTable[2] = {(void *)putNumber, (void *)getchar};
+	void *funcTable[] = {(void *)putNumber};
 	return ((int (*)(int *, void**))jitCode)(0, funcTable);
 }
 
