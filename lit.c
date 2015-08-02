@@ -89,7 +89,7 @@ int skip(char *s)
 }
 
 /*** prime ***
-p = 2; while p < 100000 k = 2; isp = 1; while k*k <= p; if p % k == 0 isp = 0 break end  k = k + 1; end if isp == 1 print p end p = p + 1; end
+p = 2; while p < 1000000 k = 2; isp = 1; while k*k <= p; if p % k == 0 isp = 0 break end  k = k + 1; end if isp == 1 print p end p = p + 1; end
 ***
 i = 0; while i < 10; k = 0; while k < 10; j = 0; while j < 10; print j j = j + 1 end k = k + 1 end i = i + 1 end
 i=0; while i<10 j=0 while j<10 print j j=j+1 end print i i=i+1; end
