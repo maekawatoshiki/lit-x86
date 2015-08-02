@@ -43,6 +43,18 @@ int getNumOfVar(char *name)
 }
 
 void genCode(unsigned char val) { jitCode[jitCount++] = (val); }
+void genCodeInt32(unsigned int val) {
+	genCode(val << 24 >> 24);
+	genCode(val << 16 >> 24);
+	genCode(val << 8 >> 24);
+	genCode(val << 0 >> 24);
+}
+void genCodeInt32Insert(unsigned int val, int pos) {
+	jitCode[pos] = (val << 24 >> 24);
+	jitCode[pos+1] = (val << 16 >> 24);
+	jitCode[pos+2] = (val << 8 >> 24);
+	jitCode[pos+3] = (val << 0 >> 24);
+}
 
 int lex(char *code)
 {
@@ -77,7 +89,7 @@ int skip(char *s)
 }
 
 /*** prime ***
-p = 2; while p<100000 k = 2; isp = 1; while k*k <= p; if p % k == 0 isp = 0 break end  k = k + 1; end if isp == 1 print p end p = p + 1; end
+p = 2; while p < 100000 k = 2; isp = 1; while k*k <= p; if p % k == 0 isp = 0 break end  k = k + 1; end if isp == 1 print p end p = p + 1; end
 ***
 i = 0; while i < 10; k = 0; while k < 10; j = 0; while j < 10; print j j = j + 1 end k = k + 1 end i = i + 1 end
 i=0; while i<10 j=0 while j<10 print j j=j+1 end print i i=i+1; end
@@ -109,44 +121,45 @@ int eval(int pos, int isloop)
 			int loopBgn = jitCount, end;
 			int type = relExpr();
 			genCode(type); genCode(0x05);
-			genCode(0xe9); end = jitCount; genCode(0); genCode(0); genCode(0); genCode(0);// jmp while end
+			genCode(0xe9); end = jitCount; genCodeInt32(0);// jmp while end
 			if(eval(0, 1)) {
 				unsigned int n = 0xFFFFFFFF - jitCount + loopBgn - 4;
 				genCode(0xe9);
-				genCode(n << 24 >> 24);
-				genCode(n << 16 >> 24);
-				genCode(n << 8 >> 24);
-				genCode(n << 0 >> 24);
-				n = jitCount - end - 4;
-				jitCode[end]   = (n << 24 >> 24);
-				jitCode[end+1] = (n << 16 >> 24);
-				jitCode[end+2] = (n << 8 >> 24);
-				jitCode[end+3] = (n << 0 >> 24);
+				genCodeInt32(n);
+				genCodeInt32Insert(jitCount - end - 4, end);
 				for(--breaksCount; breaksCount >= 0; breaksCount--) {
-					n = jitCount - breaks[breaksCount] - 4;
-					jitCode[breaks[breaksCount]] = (n << 24 >> 24);
-					jitCode[breaks[breaksCount]+1] = (n << 16 >> 24);
-					jitCode[breaks[breaksCount]+2] = (n << 8 >> 24);
-					jitCode[breaks[breaksCount]+3] = (n << 0 >> 24);
+					genCodeInt32Insert(jitCount - breaks[breaksCount] - 4, breaks[breaksCount]);
 				} breaksCount = 0;
 			}
 		} else if(skip("if")) {
 			int loopBgn = jitCount, end;
 			int type = relExpr();
 			genCode(type); genCode(0x05);
-			genCode(0xe9); end = jitCount; genCode(0); genCode(0); genCode(0); genCode(0);// jmp while end
+			genCode(0xe9); end = jitCount; genCodeInt32(0);// jmp while end
 			eval(end, 0);
+		} else if(skip("else")) {
+			int end;
+			genCode(0xe9); end = jitCount; genCodeInt32(0);// jmp while end
+			genCodeInt32Insert(jitCount - pos - 4, pos);
+			eval(end, 0);
+			return 1;
+		} else if(skip("elsif")) {
+			int endif, end;
+			genCode(0xe9); endif = jitCount; genCodeInt32(0);// jmp while end
+			genCodeInt32Insert(jitCount - pos - 4, pos);
+			int type = relExpr();
+			genCode(type); genCode(0x05);
+			genCode(0xe9); end = jitCount; genCodeInt32(0);// jmp while end
+			eval(end, 0);
+			genCodeInt32Insert(jitCount - endif - 4, endif);
+			return 1;
 		} else if(skip("break")) {
 			genCode(0xe9);
-			breaks[breaksCount]=jitCount; genCode(0); genCode(0); genCode(0); genCode(0);
+			breaks[breaksCount] = jitCount; genCodeInt32(0);
 			breaksCount++;
 		} else if(skip("end")) {
 			if(isloop == 0) {
-				unsigned int n = jitCount - pos - 4;
-				jitCode[pos]   = (n << 24 >> 24);
-				jitCode[pos+1] = (n << 16 >> 24);
-				jitCode[pos+2] = (n << 8 >> 24);
-				jitCode[pos+3] = (n << 0 >> 24);
+					genCodeInt32Insert(jitCount - pos - 4, pos);
 			}
 			return 1;
 		} else { relExpr(); }
@@ -166,10 +179,10 @@ int parser()
 
 	eval(0, 0);
 
-	genCode(0x83); genCode(0xc4); genCode(sizeof(int) * varCount+0x18); // add %esp nn
+	genCode(0x83); genCode(0xc4); genCode(sizeof(int) * varCount + 0x18); // add %esp nn
 	genCode(0x5d);// pop %ebp
 	genCode(0xc3);// ret
-	jitCode[espBgn] = sizeof(int) * varCount+0x18;
+	jitCode[espBgn] = sizeof(int) * varCount + 0x18;
 }
 
 int relExpr()
@@ -212,14 +225,13 @@ int mulDivExpr()
     primExpr();
     genCode(0x89); genCode(0xc3);  // mov %ebx %eax
     genCode(0x58); // pop %eax f7f3
-    if(mul) { genCode(0x0f); genCode(0xaf); genCode(0xc3); }// mul %eax %ebx
-    else if(div) {
-      genCode(0xba); // mov %edx 0
-      genCode(0); genCode(0); genCode(0); genCode(0);
+    if(mul) {
+			genCode(0x0f); genCode(0xaf); genCode(0xc3); // mul %eax %ebx
+    } else if(div) {
+      genCode(0xba); genCodeInt32(0); //mov edx 0
       genCode(0xf7); genCode(0xf3); // div %ebx
     } else { //mod
-			genCode(0xba); // mov %edx 0
-      genCode(0); genCode(0); genCode(0); genCode(0);
+		  genCode(0xba); genCodeInt32(0); //mov edx 0
 		  genCode(0xf7); genCode(0xf3); // div %ebx
       genCode(0x89); genCode(0xd0); // mov eax, edx
 		}
@@ -230,17 +242,13 @@ int primExpr()
   if(isdigit(token[tkpos].val[0]))
   {
     int n = atoi(token[tkpos].val);
-      genCode(0xb8); // mov %eax
-      genCode(n << 24 >> 24);
-      genCode(n << 16 >> 24);
-      genCode(n << 8 >> 24);
-      genCode(n << 0 >> 24); // mov %eax num
+      genCode(0xb8);
+			genCodeInt32(n); // mov %eax num
     tkpos++;
   } else if(isalpha(token[tkpos].val[0])) {
-		puts(token[tkpos].val);
-	    genCode(0x8b); genCode(0x45);
-			genCode(256 - sizeof(int) * getNumOfVar(token[tkpos].val)); // mov %eax variable
-	    tkpos++;
+	  genCode(0x8b); genCode(0x45);
+		genCode(256 - sizeof(int) * getNumOfVar(token[tkpos].val)); // mov %eax variable
+	  tkpos++;
 	} else if(skip("(")) {
     addSubExpr();
     skip(")");
