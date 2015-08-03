@@ -6,11 +6,13 @@ so, very fast!
 - syntax
 ```ruby
 # output the number
+# string is not support now.
 print 12345
 print 488569363
 
 # calculate & variable
-# Corresponding only the integer arithmetic
+# declaration is not required
+# support only integer
 i = 10
 i = i + 43
 i = i % 5

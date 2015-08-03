@@ -30,8 +30,7 @@ struct {
 } varNames[0x7F] = { 0 };
 int varCount = 0;
 
-int getNumOfVar(char *name)
-{
+int getNumOfVar(char *name) {
 	int i;
 	for(i = 0; i < varCount; i++)
 	{
@@ -56,18 +55,20 @@ void genCodeInt32Insert(unsigned int val, int pos) {
 	jitCode[pos+3] = (val << 0 >> 24);
 }
 
+void init() {
+	tkpos = jitCount = 0;
+	memset(jitCode, 0, 0xFFF);
+}
+
 int lex(char *code)
 {
   int i, codeSize = strlen(code);
-  for(i = 0; i < codeSize; i++)
-  {
-    if(isdigit(code[i]))
-    {
+  for(i = 0; i < codeSize; i++) {
+    if(isdigit(code[i])) {
       for(; isdigit(code[i]); i++)
-        strncat(token[tkpos].val, &(code[i]), 1);
+				strncat(token[tkpos].val, &(code[i]), 1);
       i--; tkpos++;
-    } else if(isalpha(code[i]))
-    {
+    } else if(isalpha(code[i])) {
       for(; isalpha(code[i]); i++)
         strncat(token[tkpos].val, &(code[i]), 1);
       i--; tkpos++;
@@ -82,8 +83,7 @@ int lex(char *code)
   tksize = tkpos;
 }
 
-int skip(char *s)
-{
+int skip(char *s) {
   if(strcmp(s, token[tkpos].val) == 0) { tkpos++; return 1; }
   else return 0;
 }
@@ -249,6 +249,12 @@ int primExpr()
 	  genCode(0x8b); genCode(0x45);
 		genCode(256 - sizeof(int) * getNumOfVar(token[tkpos].val)); // mov %eax variable
 	  tkpos++;
+		if(skip("[")) {
+			// TODO: ...
+			relExpr();
+			genCode(0x89); genCode(0xc2); // mov edx, eax
+			skip("]");
+		}
 	} else if(skip("(")) {
     addSubExpr();
     skip(")");
@@ -256,17 +262,11 @@ int primExpr()
 }
 
 void putNumber(int n) { printf("%d\n", n); }
+void *funcTable[] = {(void *)putNumber};
 
 int run()
 {
 	printf("size: %dbyte, %.2lf%%\n", jitCount, ((double)jitCount/4098)*100.0);
-<<<<<<< HEAD
-
-	void *funcTable[] = {(void *)putNumber};
-=======
-	getchar();
-	void *funcTable[2] = {(void *)putNumber, (void *)getchar};
->>>>>>> 1a766ce204817d2ad786f3abefb588cf6a91410c
 	return ((int (*)(int *, void**))jitCode)(0, funcTable);
 }
 
@@ -284,14 +284,45 @@ int main()
 		perror("mprotect");
 #endif
 
-	memset(jitCode, 0, 0xFFF);
-
 	char input[0xFFFF] = "";
-	fgets(input, 0xFFFF, stdin);
+	char line[0xFF] = "";
 
+	init();
+	while(strcmp(line, "run\n") != 0) {
+		strcat(input, line);
+		memset(line, 0, 0xFF);
+		fgets(line, 0xFF, stdin);
+	}
 	lex(input);
 	parser();
 	clock_t bgn = clock();
 	run();
 	printf("time: %lfsec\n", (double)(clock() - bgn) / CLOCKS_PER_SEC);
+
 }
+
+/*
+i = 1
+isprime = 1
+while i < 10000
+	isprime = 1
+	if i < 2
+		isprime = 0
+	elsif i == 2
+		isprime = 1
+	elsif i % 2 == 0
+		isprime = 0
+	end
+	k = 3
+	while k * k  <= i
+		if i % k == 0
+			isprime = 0
+		end
+		k = k + 2
+	end
+	if isprime == 1
+		print i
+	end
+	i = i + 1
+end
+*/
