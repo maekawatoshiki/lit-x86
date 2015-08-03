@@ -267,6 +267,8 @@ void *funcTable[] = {(void *)putNumber};
 int run()
 {
 	printf("size: %dbyte, %.2lf%%\n", jitCount, ((double)jitCount/4098)*100.0);
+
+	void *funcTable[] = {(void *)putNumber};
 	return ((int (*)(int *, void**))jitCode)(0, funcTable);
 }
 
