@@ -57,6 +57,7 @@ void genCodeInt32Insert(unsigned int val, int pos) {
 void init() {
 	tkpos = jitCount = 0;
 	memset(jitCode, 0, 0xFFF);
+	memset(token, 0, sizeof(token));
 }
 
 int lex(char *code)
@@ -77,14 +78,15 @@ int lex(char *code)
 			if(code[i+1] == '=')  strncat(token[tkpos].val, &(code[++i]), 1);
 			tkpos++;
     }
-		printf("tk>%s\n", token[tkpos-1].val);
   }
   tksize = tkpos;
 }
 
 int skip(char *s) {
-  if(strcmp(s, token[tkpos].val) == 0) { tkpos++; return 1; }
-  else return 0;
+  if(strcmp(s, token[tkpos].val) == 0) { 
+  	tkpos++; 
+  	return 1; 
+  } else return 0;
 }
 
 /*** prime ***
@@ -99,7 +101,7 @@ n = 1482432730 while n != 1 if i % 2 == 0 n = n / 2 end if i % 2 != 0 n = n * 3 
 i = 1 sum = 0  while i < 5 print 22  i = i + 1 end
 */
 
-int breaks[0xFF]={0};int breaksCount=0;
+int breaks[0xFF] = {0}; int breaksCount = 0;
 
 int eval(int pos, int isloop)
 {
@@ -260,7 +262,7 @@ int primExpr()
   }
 }
 
-void putNumber(int n) { printf("%d\n", n); }
+int putNumber(int n) { printf("%d\n", n); }
 void *funcTable[] = {(void *)putNumber};
 
 int run()
@@ -306,24 +308,23 @@ int main()
 : prime
 
 i = 2
-isprime = 1
-while i < 10000
+while i < 1000000
 	isprime = 1
 	if i == 2
-		isprime = 1
-	elsif i % 2 == 0
-		isprime = 0
-	end
-	k = 3
-	while k * k <= i
-		if i % k == 0
-			isprime = 0
-			break
-		end
-		k = k + 2
-	end
-	if isprime == 1
 		print i
+	elsif i % 2 == 0
+	else 
+		k = 3
+		while k * k <= i
+			if i % k == 0
+				isprime = 0
+				break
+			end
+			k = k + 2
+		end
+		if isprime == 1
+			print i
+		end
 	end
 	i = i + 1
 end
