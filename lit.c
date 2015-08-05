@@ -1,6 +1,5 @@
 #include <stdio.h>
 #include <stdlib.h>
-#include <malloc.h>
 #include <time.h>
 #if defined(WIN32) || defined(WINDOWS)
 	#include <windows.h>
@@ -304,21 +303,22 @@ int main()
 }
 
 /*
-i = 1
+: prime
+
+i = 2
 isprime = 1
 while i < 10000
 	isprime = 1
-	if i < 2
-		isprime = 0
-	elsif i == 2
+	if i == 2
 		isprime = 1
 	elsif i % 2 == 0
 		isprime = 0
 	end
 	k = 3
-	while k * k  <= i
+	while k * k <= i
 		if i % k == 0
 			isprime = 0
+			break
 		end
 		k = k + 2
 	end
