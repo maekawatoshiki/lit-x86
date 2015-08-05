@@ -1,6 +1,6 @@
 i = 2
 isprime = 1
-while i < 100000
+while i < 1000
 	k = 2
 	isprime = 1
 	while k * k <= i

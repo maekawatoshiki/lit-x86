@@ -83,9 +83,9 @@ int lex(char *code)
 }
 
 int skip(char *s) {
-  if(strcmp(s, token[tkpos].val) == 0) { 
-  	tkpos++; 
-  	return 1; 
+  if(strcmp(s, token[tkpos].val) == 0) {
+  	tkpos++;
+  	return 1;
   } else return 0;
 }
 
@@ -273,8 +273,7 @@ int run()
 	return ((int (*)(int *, void**))jitCode)(0, funcTable);
 }
 
-int main()
-{
+int main(int argc, char **argv) {
 	long psize;
 
 #if defined(WIN32) || defined(WINDOWS)
@@ -287,21 +286,34 @@ int main()
 		perror("mprotect");
 #endif
 
-	char input[0xFFFF] = "";
-	char line[0xFF] = "";
-
 	init();
-	while(strcmp(line, "run\n") != 0) {
-		strcat(input, line);
-		memset(line, 0, 0xFF);
-		fgets(line, 0xFF, stdin);
+
+	if(argc < 2) {
+		char input[0xFFFF] = "";
+		char line[0xFF] = "";
+
+		while(strcmp(line, "run\n") != 0) {
+			strcat(input, line);
+			memset(line, 0, 0xFF);
+			fgets(line, 0xFF, stdin);
+		}
+		lex(input);
+	} else {
+		FILE *codefp = fopen(argv[1], "rb");
+		char *source; int sourceSize = 0;
+
+		fseek(codefp, 0, SEEK_END);
+		sourceSize = ftell(codefp);
+		fseek(codefp, 0, SEEK_SET);
+		source = calloc(sizeof(char), sourceSize + 1);
+		fread(source, sizeof(char), sourceSize, codefp);
+		lex(source);
 	}
-	lex(input);
+
 	parser();
 	clock_t bgn = clock();
 	run();
 	printf("time: %lfsec\n", (double)(clock() - bgn) / CLOCKS_PER_SEC);
-
 }
 
 /*
@@ -313,7 +325,7 @@ while i < 1000000
 	if i == 2
 		print i
 	elsif i % 2 == 0
-	else 
+	else
 		k = 3
 		while k * k <= i
 			if i % k == 0
