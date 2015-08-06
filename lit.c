@@ -69,7 +69,7 @@ int lex(char *code)
 				strncat(token[tkpos].val, &(code[i]), 1);
       i--; tkpos++;
     } else if(isalpha(code[i])) {
-      for(; isalpha(code[i]); i++)
+      for(; isalpha(code[i]) || isdigit(code[i]); i++)
         strncat(token[tkpos].val, &(code[i]), 1);
       i--; tkpos++;
     } else if(code[i] == ' ' || code[i] == '\t' || code[i] == '\n') {
@@ -78,6 +78,7 @@ int lex(char *code)
 			if(code[i+1] == '=')  strncat(token[tkpos].val, &(code[++i]), 1);
 			tkpos++;
     }
+		printf("tk> %s\n", token[tkpos-1].val);
   }
   tksize = tkpos;
 }
@@ -89,24 +90,10 @@ int skip(char *s) {
   } else return 0;
 }
 
-/*** prime ***
-p = 2; while p < 1000000 k = 2; isp = 1; while k*k <= p; if p % k == 0 isp = 0 break end  k = k + 1; end if isp == 1 print p end p = p + 1; end
-***
-i = 0; while i < 10; k = 0; while k < 10; j = 0; while j < 10; print j j = j + 1 end k = k + 1 end i = i + 1 end
-i=0; while i<10 j=0 while j<10 print j j=j+1 end print i i=i+1; end
-i = 0; sum = 0; while i < 100000001; sum = sum + i;  i = i + 1 end print sum
-n-6
-i = 0; while i < 100 if i % 2 == 0; print 100 end print i i = i + 1 end
-n = 1482432730 while n != 1 if i % 2 == 0 n = n / 2 end if i % 2 != 0 n = n * 3 + 1 end print n end
-i = 1 sum = 0  while i < 5 print 22  i = i + 1 end
-*/
-
 int breaks[0xFF] = {0}; int breaksCount = 0;
 
-int eval(int pos, int isloop)
-{
-	while(tkpos < tksize)
-	{
+int eval(int pos, int isloop) {
+	while(tkpos < tksize) {
 		skip(";");
 		if(strcmp(token[tkpos+1].val, "=") == 0) {
 			int  n = getNumOfVar(token[tkpos++].val);
@@ -116,8 +103,9 @@ int eval(int pos, int isloop)
 			genCode(256 - sizeof(int) * n); // mov var %eax
 		} else if(skip("print")) {
 			relExpr();
-			genCode(0x89); genCode(0x04); genCode(0x24); // mov esp, eax
+			genCode(0x50); // push eax
 			genCode(0xff); genCode(0x16);// call (esi)
+			genCode(0x58); // pop eax
 		} else if(skip("while")) {
 			int loopBgn = jitCount, end;
 			int type = relExpr();
@@ -169,8 +157,7 @@ int eval(int pos, int isloop)
 	return 0;
 }
 
-int parser()
-{
+int parser() {
 	int espBgn;
 	tkpos = jitCount = 0;
 	genCode(0x55);// push   %ebp
@@ -186,13 +173,11 @@ int parser()
 	jitCode[espBgn] = sizeof(int) * varCount + 0x18;
 }
 
-int relExpr()
-{
+int relExpr() {
 	int lt=0, gt=0, diff=0, eql=0, fle=0;
 	addSubExpr();
 	if((lt=skip("<")) || (gt=skip(">")) || (diff=skip("!=")) ||
-			(eql=skip("==")) || (fle=skip("<=")) || skip(">="))
-	{
+			(eql=skip("==")) || (fle=skip("<=")) || skip(">=")) {
 		genCode(0x50); // push %eax
 		addSubExpr();
 		genCode(0x89); genCode(0xc3);  // mov %ebx %eax
@@ -201,13 +186,10 @@ int relExpr()
 		return lt ? JB : gt ? JA : diff ? JNE : eql ? JE : fle ? JBE : JAE;
 	}
 }
-
-int addSubExpr()
-{
+int addSubExpr() {
 	int add;
 	mulDivExpr();
-	while((add = skip("+")) || skip("-"))
-	{
+	while((add = skip("+")) || skip("-")) {
 		genCode(0x50); // push %eax
 		mulDivExpr();
 		genCode(0x89); genCode(0xc3);  // mov %ebx %eax
@@ -216,12 +198,10 @@ int addSubExpr()
 		else { genCode(0x29); genCode(0xd8); } // sub %eax %ebx
 	}
 }
-int mulDivExpr()
-{
+int mulDivExpr() {
   int mul, div;
   primExpr();
-  while((mul = skip("*")) || (div=skip("/")) || skip("%"))
-  {
+  while((mul = skip("*")) || (div=skip("/")) || skip("%")) {
     genCode(0x50); // push %eax
     primExpr();
     genCode(0x89); genCode(0xc3);  // mov %ebx %eax
@@ -240,18 +220,17 @@ int mulDivExpr()
 }
 int primExpr()
 {
-  if(isdigit(token[tkpos].val[0]))
+  if(isdigit(token[tkpos].val[0])) // number?
   {
     int n = atoi(token[tkpos].val);
       genCode(0xb8);
 			genCodeInt32(n); // mov %eax num
     tkpos++;
-  } else if(isalpha(token[tkpos].val[0])) {
+  } else if(isalpha(token[tkpos].val[0])) { // variable?
 	  genCode(0x8b); genCode(0x45);
 		genCode(256 - sizeof(int) * getNumOfVar(token[tkpos].val)); // mov %eax variable
 	  tkpos++;
 		if(skip("[")) {
-			// TODO: ...
 			relExpr();
 			genCode(0x89); genCode(0xc2); // mov edx, eax
 			skip("]");
@@ -262,14 +241,13 @@ int primExpr()
   }
 }
 
-int putNumber(int n) { printf("%d\n", n); }
-void *funcTable[] = {(void *)putNumber};
+static int putNumber(int n) { printf("%d\n", n); }
+static void *funcTable[] = {(void *)putNumber};
 
 int run()
 {
-	printf("size: %dbyte, %.2lf%%\n", jitCount, ((double)jitCount/4098)*100.0);
+	printf("size: %dbyte, %.2lf%%\n", jitCount, ((double)jitCount/4096)*100.0);
 
-	void *funcTable[] = {(void *)putNumber};
 	return ((int (*)(int *, void**))jitCode)(0, funcTable);
 }
 
@@ -314,6 +292,7 @@ int main(int argc, char **argv) {
 	clock_t bgn = clock();
 	run();
 	printf("time: %lfsec\n", (double)(clock() - bgn) / CLOCKS_PER_SEC);
+	free(jitCode);
 }
 
 /*

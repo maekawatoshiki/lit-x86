@@ -7,5 +7,8 @@ _start:
   mov eax, 10
   push esp
   pop esp
-  mov edx, eax
-  mov eax, [ebp - %eax]
+
+  mov edx, esp
+  sub edx, eax
+  mov eax, edx
+  mov eax, [eax]
