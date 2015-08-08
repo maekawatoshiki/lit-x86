@@ -1,7 +1,7 @@
 CC = clang
-CFLAGS = -m32 -O0
+CFLAGS = -m32
 
 lit: lit.c
 
-clean: 
+clean:
 	rm lit *.o

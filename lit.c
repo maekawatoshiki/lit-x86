@@ -16,13 +16,13 @@
 #define JBE 0x76
 #define JAE 0x73
 
-unsigned char *jitCode;
+static unsigned char *jitCode;
 int jitCount = 0;
 
 struct {
   char val[32];
-} token[0xFFF] = { 0 };
-int tkpos = 0, tksize;
+} token[0xFFF] = { 0 }, formula[0xFFF] = { 0 };
+int tkpos = 0, tksize, formpos = 0;
 
 struct {
 	char name[32];
@@ -160,6 +160,8 @@ int eval(int pos, int isloop) {
 int parser() {
 	int espBgn;
 	tkpos = jitCount = 0;
+	memset(jitCode, 0, 0xFFF);
+
 	genCode(0x55);// push   %ebp
 	genCode(0x89); genCode(0xe5);// mov    %esp,%ebp
 	genCode(0x8b); genCode(0x75); genCode(0x0c);
@@ -173,6 +175,29 @@ int parser() {
 	jitCode[espBgn] = sizeof(int) * varCount + 0x18;
 }
 
+int mem[0xFF]={0}, sp=0;
+int cal_push(int n) { mem[sp++] = n; return n; }
+int cal_pop() { return mem[--sp]; }
+
+int calculate() {
+	int i;
+	relExpr();
+	for(i = 0; i < formpos; i++) {
+		int op = formula[i].val[0];
+		char *opc = formula[i].val;
+		if(isdigit(op)) {
+			cal_push(atoi(opc));
+		} else if(isalpha(op)) {
+
+		} else if(op=='+' || op=='-' || op=='*' || op=='/' || op=='%') {
+
+		} else if(strcmp(opc,"<") || strcmp(opc,">") || strcmp(opc,"<=") || strcmp(opc,">=") ||
+			strcmp(opc,"==") || strcmp(opc,"!=")) {
+
+		}
+	}
+
+}
 int relExpr() {
 	int lt=0, gt=0, diff=0, eql=0, fle=0;
 	addSubExpr();
@@ -246,8 +271,7 @@ static void *funcTable[] = {(void *)putNumber};
 
 int run()
 {
-	printf("size: %dbyte, %.2lf%%\n", jitCount, ((double)jitCount/4096)*100.0);
-
+	printf("size: %dbyte, %.2lf%%\n", jitCount, ((double)jitCount/0xFFF)*100.0);
 	return ((int (*)(int *, void**))jitCode)(0, funcTable);
 }
 
@@ -263,6 +287,7 @@ int main(int argc, char **argv) {
 	if(mprotect((void*)jitCode, psize, PROT_READ | PROT_WRITE | PROT_EXEC))
 		perror("mprotect");
 #endif
+
 
 	init();
 
@@ -289,7 +314,7 @@ int main(int argc, char **argv) {
 	}
 
 	parser();
-	clock_t bgn = clock();
+	int bgn = clock();
 	run();
 	printf("time: %lfsec\n", (double)(clock() - bgn) / CLOCKS_PER_SEC);
 	free(jitCode);
