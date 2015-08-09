@@ -6,9 +6,10 @@ so, very fast!
 - syntax
 ```ruby
 # output the number
-# string is not support now.
+# string is surport!
+puts "Hello world!!\n"
 print 12345
-print 488569363
+puts "number = ", 488569363, "\n"
 
 # calculate & variable
 # declaration is not required

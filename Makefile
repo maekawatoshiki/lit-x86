@@ -1,5 +1,5 @@
 CC = clang
-CFLAGS = -m32
+CFLAGS = -Wall -m32
 
 lit: lit.c
 

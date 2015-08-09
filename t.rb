@@ -1,7 +1,7 @@
 i = 2
-while i < 1000000
+while i < 100000
 	if i == 2
-		puts i
+		puts i.to_s + " is prime"
 	elsif i % 2 != 0
 		k = 3
 		isprime = 1
@@ -12,7 +12,7 @@ while i < 1000000
 			end
 			k += 2
 		end
-		puts i if isprime == 1
+		puts i.to_s + " is prime" if isprime == 1
 	end
 	i += 1
 end
