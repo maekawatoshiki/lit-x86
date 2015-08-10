@@ -1,18 +1,13 @@
 section .text
-            global _start       ;リンカのための宣言
+  global _start
 
-_start:                         ;リンカに開始ポイントを伝える
-        mov     edx,len         ;メッセージの長さ
-        mov     ecx,msg         ;メッセージ
-        mov eax, 0
-        mov     ebx,1           ;標準出力を指定
-        mov     eax,4           ;システムコール番号 (sys_write)
-        int     0x80            ;システムコール
-
-        mov     eax,1           ;システムコール番号 (sys_exit)
-        int     0x80            ;システムコール
-  call [esi+4]
-        section .data
-
-        msg     db      'Hello, world!',0xa       ;メッセージ文字列
-        len     equ     $ - msg                  ;文字列の長さ
+_start:
+  mov [ebp - 4380 + (ecx * 4)], eax
+	mov eax, [ebp - 300 + (edx * 4)]
+  mov [ebp - 300 + (ecx * 4)], eax
+  mov ecx, eax
+  mov edx, eax
+  sub esp, 10000
+  add esp, 10000
+  mov [esp-300], eax
+  mov eax, [esp-300]

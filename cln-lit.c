@@ -52,7 +52,7 @@ static int getNumOfVar(char *name, int arraySize) {
 		}
 	}
 	strcpy(varNames[varCounter].name, name);
-	int sz = 1 + (varSize += arraySize + 1);
+	int sz = 1 + (varSize += arraySize+1);
 	varNames[varCounter++].size = sz;
 	return sz;
 }
@@ -123,7 +123,7 @@ static int mulDivExpr() {
     genCode(0x50); // push %eax
     primExpr();
     genCode(0x89); genCode(0xc3);  // mov %ebx %eax
-    genCode(0x58); // pop %eax f7f3
+    genCode(0x58); // pop %eax
     if(mul) {
 			genCode(0x0f); genCode(0xaf); genCode(0xc3); // mul %eax %ebx
     } else if(div) {
@@ -150,12 +150,13 @@ static int primExpr()
 		if(skip("[")) {
 			relExpr();
 			genCode(0x89); genCode(0xc2); // mov edx, eax
-			genCode(0x8b); genCode(0x44); genCode(0x95); genCode(256 - sizeof(int) * varn);
-			//mov eax, [ebp - 8 + (edx * 8)]
+			genCode(0x8b); genCode(0x84); genCode(0x95);
+			genCodeInt32(0xFFFFFFFF - sizeof(int) * varn);
+			//mov eax, [ebp - n + (edx * 4)]
 			skip("]");
 		} else {
-			genCode(0x8b); genCode(0x45);
-			genCode(256 - sizeof(int) * varn); // mov %eax variable
+			genCode(0x8b); genCode(0x84); genCode(0x24);
+			genCodeInt32(0xFFFFFFFF - sizeof(int) * varn); // mov %eax variable
 			printf("size: OK: %d\n", jitCount);
 		}
 	} else if(skip("(")) {
@@ -222,13 +223,14 @@ static int eval(int pos, int isloop) {
 				skip("]");
 				skip("=");
 				relExpr();
-				genCode(0x89); genCode(0x44); genCode(0x8d); genCode(256 - sizeof(int) * n);
-				//mov [ebp - n + (ecx * n)], eax
+				genCode(0x89); genCode(0x84); genCode(0x8d);
+				genCodeInt32(0xFFFFFFFF - sizeof(int) * n);
+				//mov [ebp - n + (ecx * 4)], eax
 			} else {
 				skip("=");
 				relExpr();
-				genCode(0x89); genCode(0x45);
-				genCode(256 - sizeof(int) * n); // mov var %eax
+				genCode(0x89); genCode(0x84); genCode(0x24);
+				genCodeInt32(0xFFFFFFFF - sizeof(int) * n); // mov var %eax
 				printf("%d\n", tkpos);
 			}
 		} else if(skip("!")) {
@@ -345,7 +347,7 @@ static int parser() {
 
 	eval(0, 0);
 
-	genCode(0x81); genCode(0xc4); genCodeInt32(sizeof(int) * varSize + 0x18);  // add %esp nn
+	genCode(0x81); genCode(0xc4); genCodeInt32(sizeof(int) * varSize + 0x18); // add %esp nn
 	genCode(0x5d);// pop %ebp
 	genCode(0xc3);// ret
 	for(stringsPos--; stringsCount; stringsPos--) {
@@ -357,18 +359,41 @@ static int parser() {
 		} genCode(0); // '\0'
 		printf("%d\n", stringsPos);
 	}
-	printf("memsz: %d\n", varSize);
 	genCodeInt32Insert(sizeof(int) * varSize + 0x18, espBgn);
+}
+
+static int mem[0xFF] = { 0 }, sp = 0;
+static int cal_push(int n) { mem[sp++] = n; return n; }
+static int cal_pop() { return mem[--sp]; }
+
+static int calculate() {
+	int i;
+	relExpr();
+	for(i = 0; i < formpos; i++) {
+		int op = formula[i].val[0];
+		char *opc = formula[i].val;
+		if(isdigit(op)) {
+			cal_push(atoi(opc));
+		} else if(isalpha(op)) {
+
+		} else if(op=='+' || op=='-' || op=='*' || op=='/' || op=='%') {
+
+		} else if(strcmp(opc,"<") || strcmp(opc,">") || strcmp(opc,"<=") || strcmp(opc,">=") ||
+			strcmp(opc,"==") || strcmp(opc,"!=")) {
+
+		}
+	}
+
 }
 
 static int putNumber(int n) { return printf("%d", n); }
 static int putString(int n) { return printf("%s", &(jitCode[n])); }
-static void *funcTable[] = { (void *) putNumber, (void*) putString };
 
-int run() {
-	int mem[0xFFFF] = { 0 };
+static int run() {
+	static void *funcTable[] = { (void *) putNumber, (void*) putString };
+
 	printf("size: %dbyte, %.2lf%%\n", jitCount, ((double)jitCount / 0xFFF) * 100.0);
-	return ((int (*)(int *, void**))jitCode)(mem, funcTable);
+	return ((int (*)(int *, void**))jitCode)(0, funcTable);
 }
 
 int main(int argc, char **argv) {

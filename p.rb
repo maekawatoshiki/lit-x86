@@ -1,5 +1,5 @@
 i = 2
-while i < 100000
+while i < 10000
 	if i == 2
 		puts i, " is prime\n"
 	elsif i % 2 != 0
