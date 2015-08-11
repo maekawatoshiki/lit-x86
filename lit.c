@@ -1,5 +1,18 @@
+#include <assert.h>
+#include <ctype.h>
+#include <errno.h>
+#include <float.h>
+#include <iso646.h>
+#include <limits.h>
+#include <locale.h>
+#include <math.h>
+#include <setjmp.h>
+#include <signal.h>
+#include <stdarg.h>
+#include <stddef.h>
 #include <stdio.h>
 #include <stdlib.h>
+#include <string.h>
 #include <time.h>
 #if defined(WIN32) || defined(WINDOWS)
 	#include <windows.h>
@@ -89,8 +102,11 @@ static int skip(char *s) {
   } else return 0;
 }
 
-static int error(char *errs) {
-	printf("error: %d: %s\n", token[tkpos].nline, errs);
+static int error(char *errs, ...) {
+	va_list args;
+	va_start(args, errs);
+	vprintf(errs, args); puts("");
+	va_end(args);
 	exit(0);
 }
 
@@ -158,22 +174,22 @@ static int primExpr()
 		if(skip("[")) {
 			relExpr();
 			genCode(0x89); genCode(0xc2); // mov edx, eax
-			genCode(0x8b); genCode(0x44); genCode(0x95); 
+			genCode(0x8b); genCode(0x44); genCode(0x95);
 			genCode(256 - sizeof(int) * varn); //mov eax, [ebp - 8 + (edx * 8)]
-			if(!skip("]")) error("invalid expression");
+			if(!skip("]")) error("error: %d: invalid expression", token[tkpos].nline);
 		} else {
 			genCode(0x8b); genCode(0x45);
 			genCode(256 - sizeof(int) * varn); // mov %eax variable
 			printf("size: OK: %d\n", jitCount);
 		}
 	} else if(skip("]")) {
-    error("invalid expression");
+	   error("error: %d: invalid expression", token[tkpos].nline);
   } else if(skip("(")) {
     relExpr();
     skip(")");
   } else if(!skip(";")) {
   	printf("prim>%s\n", token[tkpos].val);
-  	error("invalid expression");
+		error("error: %d: invalid expression", token[tkpos].nline);
   }
 
 	return 0;
@@ -201,8 +217,8 @@ static int lex(char *code)
 			token[tkpos++].nline = line;
 			for(i++; code[i] != '"' && code[i] != '\0'; i++)
 				strncat(token[tkpos].val, &(code[i]), 1);
-			if(code[i] == '\0') error("expected expression '\"'");
 			token[tkpos].nline = line;
+			if(code[i] == '\0') error("error: %d: expected expression '\"'", token[tkpos].nline);
 			tkpos++;
 		} else { // symbol?
       if(code[i] == '\n') {
@@ -225,7 +241,8 @@ int isassign() {
 	else if(strcmp(token[tkpos+1].val, "[") == 0) {
 		int i = tkpos + 1;
 		while(strcmp(token[i].val, "]")) {
-			if(strcmp(token[i].val, ";") == 0) error("invalid expression");
+			if(strcmp(token[i].val, ";") == 0)
+				error("error: %d: invalid expression", token[tkpos].nline);
 			i++;
 		}
 		printf(">%s\n", token[i].val); i++;
@@ -244,7 +261,8 @@ static int eval(int pos, int isloop) {
 			if(skip("[")) {
 				relExpr();
 				genCode(0x89); genCode(0xc1); // mov ecx, eax
-				if(!skip("]") || !skip("=")) error("array assignment");
+				if(!skip("]") || !skip("="))
+					 error("error: %d: invalid assignment", token[tkpos].nline);
 				relExpr();
 				genCode(0x89); genCode(0x44); genCode(0x8d); genCode(256 - sizeof(int) * n); //mov [ebp - n + (ecx * n)], eax
 			} else {
@@ -277,6 +295,7 @@ static int eval(int pos, int isloop) {
 				}
 				genCode(0x58); // pop eax
 			} while(skip(","));
+			genCode(0xff); genCode(0x56); genCode(0x08);// call *0x04(esi) putString
 		} else if(skip("while")) { blocksCount++;
 			int loopBgn = jitCount, end;
 			int type = relExpr();
@@ -297,7 +316,7 @@ static int eval(int pos, int isloop) {
 			genCode(type); genCode(0x05);
 			genCode(0xe9); end = jitCount; genCodeInt32(0);// jmp while end
 			eval(end, 0);
-		} else if(skip("else")) { 
+		} else if(skip("else")) {
 			int end;
 			genCode(0xe9); end = jitCount; genCodeInt32(0);// jmp while end
 			genCodeInt32Insert(jitCount - pos - 4, pos);
@@ -318,15 +337,16 @@ static int eval(int pos, int isloop) {
 			breaks[breaksCount] = jitCount; genCodeInt32(0);
 			breaksCount++;
 		} else if(skip("end")) { blocksCount--;
-			if(isloop == 0) { 
+			if(isloop == 0) {
 				genCodeInt32Insert(jitCount - pos - 4, pos);
 			}
 			return 1;
 		} else if(!skip(";")) {
-			error("invalid expression");
+			error("error: %d: invalid expression", token[tkpos].nline);
 		}
 	}
-	if(blocksCount != 0) error("blocks error");
+	if(blocksCount != 0)
+		error("error: expected 'end' before %d line", token[tkpos].nline);
 	return 0;
 }
 
@@ -380,11 +400,18 @@ static int parser() {
 	}
 	printf("memsz: %d\n", varSize);
 	genCodeInt32Insert(sizeof(int) * varSize + 0x18, espBgn);
+
+	/*{
+		FILE *out = fopen("asm.s", "wb");
+			fwrite(jitCode, 1, jitCount, out);
+		fclose(out);
+	}*/
 }
 
 static int putNumber(int n) { return printf("%d", n); }
 static int putString(int n) { return printf("%s", &(jitCode[n])); }
-void *funcTable[] = { (void *) putNumber, (void*) putString };
+static int putLN(int n) { return puts(""); }
+void *funcTable[] = { (void *) putNumber, (void*) putString, (void*) putLN };
 
 int run() {
 	int mem[0xFFFF] = { 0 };
@@ -422,6 +449,7 @@ int main(int argc, char **argv) {
 		FILE *codefp = fopen(argv[1], "rb");
 		int sourceSize = 0;
 
+		if(!codefp) { perror("file not found"); exit(0); }
 		fseek(codefp, 0, SEEK_END);
 		sourceSize = ftell(codefp);
 		fseek(codefp, 0, SEEK_SET);

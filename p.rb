@@ -1,9 +1,8 @@
 # The prime number search program by MAEKAWA TOSHIKI.
 
 i = 2
-while i < 1000000
-	if i == 2
-		puts i, " is prime\n"
+while i < 1000
+	if i == 2 puts i, " is prime"
 	elsif i % 2 != 0
 		k = 3
 		isprime = 1
@@ -15,9 +14,8 @@ while i < 1000000
 			k = k + 2
 		end
 		if isprime == 1
-			puts i, " is prime\n"
+			puts i, " is prime"
 		end
+	end
 	i = i + 1
 end
-
-
