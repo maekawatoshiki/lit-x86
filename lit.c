@@ -21,6 +21,7 @@ int jitCount = 0;
 
 struct Token {
   char val[32];
+  int nline;
 };
 struct Token token[0xFFF] = { 0 }, formula[0xFFF] = { 0 };
 int tkpos = 0, tksize, formpos = 0;
@@ -33,7 +34,9 @@ int varSize = 0, varCounter = 0;
 
 int breaks[0xFF] = {0}; int breaksCount = 0;
 
-struct Token strings[0xFF] = { 0 };
+struct {
+	char val[0xFF];
+} strings[0xFF] = { 0 };
 int *stringsPos, stringsCount = 0;
 
 static int getString() {
@@ -84,6 +87,11 @@ static int skip(char *s) {
   	tkpos++;
   	return 1;
   } else return 0;
+}
+
+static int error(char *errs) {
+	printf("error: %d: %s\n", token[tkpos].nline, errs);
+	exit(0);
 }
 
 static int addSubExpr();
@@ -150,17 +158,22 @@ static int primExpr()
 		if(skip("[")) {
 			relExpr();
 			genCode(0x89); genCode(0xc2); // mov edx, eax
-			genCode(0x8b); genCode(0x44); genCode(0x95); genCode(256 - sizeof(int) * varn);
-			//mov eax, [ebp - 8 + (edx * 8)]
-			skip("]");
+			genCode(0x8b); genCode(0x44); genCode(0x95); 
+			genCode(256 - sizeof(int) * varn); //mov eax, [ebp - 8 + (edx * 8)]
+			if(!skip("]")) error("invalid expression");
 		} else {
 			genCode(0x8b); genCode(0x45);
 			genCode(256 - sizeof(int) * varn); // mov %eax variable
 			printf("size: OK: %d\n", jitCount);
 		}
-	} else if(skip("(")) {
-    addSubExpr();
+	} else if(skip("]")) {
+    error("invalid expression");
+  } else if(skip("(")) {
+    relExpr();
     skip(")");
+  } else if(!skip(";")) {
+  	printf("prim>%s\n", token[tkpos].val);
+  	error("invalid expression");
   }
 
 	return 0;
@@ -168,31 +181,39 @@ static int primExpr()
 
 static int lex(char *code)
 {
-  int i, codeSize = strlen(code);
+  int i, codeSize = strlen(code), line = 1;
   for(i = 0; i < codeSize; i++) {
     if(isdigit(code[i])) { // number?
       for(; isdigit(code[i]); i++)
 				strncat(token[tkpos].val, &(code[i]), 1);
+			token[tkpos].nline = line;
       i--; tkpos++;
     } else if(isalpha(code[i])) { // ident?
       for(; isalpha(code[i]) || isdigit(code[i]); i++)
         strncat(token[tkpos].val, &(code[i]), 1);
+      token[tkpos].nline = line;
       i--; tkpos++;
     } else if(code[i] == ' ' || code[i] == '\t') { // space char?
     } else if(code[i] == '#') { // comment?
-			for(i++; code[i] != '\n'; i++);
+			for(i++; code[i] != '\n'; i++); line++;
 		} else if(code[i] == '"') { // string?
-			strcpy(token[tkpos++].val, "\"");
-			for(i++; code[i] != '"'; i++)
+			strcpy(token[tkpos].val, "\"");
+			token[tkpos++].nline = line;
+			for(i++; code[i] != '"' && code[i] != '\0'; i++)
 				strncat(token[tkpos].val, &(code[i]), 1);
+			if(code[i] == '\0') error("expected expression '\"'");
+			token[tkpos].nline = line;
 			tkpos++;
 		} else { // symbol?
-      if(code[i] == '\n') strcpy(token[tkpos].val, ";");
-			else strncat(token[tkpos].val, &(code[i]), 1);
+      if(code[i] == '\n') {
+      	strcpy(token[tkpos].val, ";"); line++;
+      } else strncat(token[tkpos].val, &(code[i]), 1);
 			if(code[i+1] == '=')  strncat(token[tkpos].val, &(code[++i]), 1);
+			token[tkpos].nline = line;
 			tkpos++;
     }
   }
+  token[tkpos].nline = line;
 	for(i = 0; i < tkpos; i++) {
 		printf("tk> %s\n", token[i].val);
 	}
@@ -203,27 +224,29 @@ int isassign() {
 	if(strcmp(token[tkpos+1].val, "=") == 0) return 1;
 	else if(strcmp(token[tkpos+1].val, "[") == 0) {
 		int i = tkpos + 1;
-		while(strcmp(token[i].val, "]")) i++;
+		while(strcmp(token[i].val, "]")) {
+			if(strcmp(token[i].val, ";") == 0) error("invalid expression");
+			i++;
+		}
 		printf(">%s\n", token[i].val); i++;
 		if(strcmp(token[i].val, "=") == 0) return 1;
 	}
 	return 0;
 }
 
+int blocksCount = 0;
+
 static int eval(int pos, int isloop) {
 	while(tkpos < tksize) {
-		printf("skip>%d\n", skip(";"));
 		if(isassign()) {
 			int n = getNumOfVar(token[tkpos++].val, 0);
 			printf("ar>> %s\n", token[tkpos].val);
 			if(skip("[")) {
 				relExpr();
 				genCode(0x89); genCode(0xc1); // mov ecx, eax
-				skip("]");
-				skip("=");
+				if(!skip("]") || !skip("=")) error("array assignment");
 				relExpr();
-				genCode(0x89); genCode(0x44); genCode(0x8d); genCode(256 - sizeof(int) * n);
-				//mov [ebp - n + (ecx * n)], eax
+				genCode(0x89); genCode(0x44); genCode(0x8d); genCode(256 - sizeof(int) * n); //mov [ebp - n + (ecx * n)], eax
 			} else {
 				skip("=");
 				relExpr();
@@ -235,11 +258,6 @@ static int eval(int pos, int isloop) {
 			char *varname = token[tkpos++].val; skip("[");
 			int asize = atoi(token[tkpos++].val); skip("]");
 			getNumOfVar(varname, asize); // add array variable
-		} else if(skip("print")) {
-		 	relExpr();
-			genCode(0x50); // push eax
-			genCode(0xff); genCode(0x16);// call (esi)
-			genCode(0x58); // pop eax
 		} else if(skip("puts")) {
 			do {
 				int isstring = 0;
@@ -259,7 +277,7 @@ static int eval(int pos, int isloop) {
 				}
 				genCode(0x58); // pop eax
 			} while(skip(","));
-		} else if(skip("while")) {
+		} else if(skip("while")) { blocksCount++;
 			int loopBgn = jitCount, end;
 			int type = relExpr();
 			genCode(type); genCode(0x05);
@@ -273,13 +291,13 @@ static int eval(int pos, int isloop) {
 					genCodeInt32Insert(jitCount - breaks[breaksCount] - 4, breaks[breaksCount]);
 				} breaksCount = 0;
 			}
-		} else if(skip("if")) {
+		} else if(skip("if")) { blocksCount++;
 			int loopBgn = jitCount, end;
 			int type = relExpr();
 			genCode(type); genCode(0x05);
 			genCode(0xe9); end = jitCount; genCodeInt32(0);// jmp while end
 			eval(end, 0);
-		} else if(skip("else")) {
+		} else if(skip("else")) { 
 			int end;
 			genCode(0xe9); end = jitCount; genCodeInt32(0);// jmp while end
 			genCodeInt32Insert(jitCount - pos - 4, pos);
@@ -299,13 +317,16 @@ static int eval(int pos, int isloop) {
 			genCode(0xe9);
 			breaks[breaksCount] = jitCount; genCodeInt32(0);
 			breaksCount++;
-		} else if(skip("end")) {
-			if(isloop == 0) {
+		} else if(skip("end")) { blocksCount--;
+			if(isloop == 0) { 
 				genCodeInt32Insert(jitCount - pos - 4, pos);
 			}
 			return 1;
-		} else { relExpr(); }
+		} else if(!skip(";")) {
+			error("invalid expression");
+		}
 	}
+	if(blocksCount != 0) error("blocks error");
 	return 0;
 }
 
@@ -363,10 +384,11 @@ static int parser() {
 
 static int putNumber(int n) { return printf("%d", n); }
 static int putString(int n) { return printf("%s", &(jitCode[n])); }
-static void *funcTable[] = { (void *) putNumber, (void*) putString };
+void *funcTable[] = { (void *) putNumber, (void*) putString };
 
 int run() {
 	int mem[0xFFFF] = { 0 };
+
 	printf("size: %dbyte, %.2lf%%\n", jitCount, ((double)jitCount / 0xFFF) * 100.0);
 	return ((int (*)(int *, void**))jitCode)(mem, funcTable);
 }

@@ -1,5 +1,5 @@
-! prime[10000]
-MAX = 10000
+! prime[20000]
+MAX = 20000
 
 i = 0
 while i < MAX

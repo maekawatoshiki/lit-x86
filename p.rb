@@ -1,5 +1,7 @@
+# The prime number search program by MAEKAWA TOSHIKI.
+
 i = 2
-while i < 10000
+while i < 1000000
 	if i == 2
 		puts i, " is prime\n"
 	elsif i % 2 != 0
@@ -15,6 +17,7 @@ while i < 10000
 		if isprime == 1
 			puts i, " is prime\n"
 		end
-	end
 	i = i + 1
 end
+
+
