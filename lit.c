@@ -185,7 +185,8 @@ static int primExpr()
 	} else if(skip("]")) {
 	   error("error: %d: invalid expression", token[tkpos].nline);
   } else if(skip("(")) {
-    relExpr();
+    if(isassign()) assignment();
+    else relExpr();
     skip(")");
   } else if(!skip(";")) {
   	printf("prim>%s\n", token[tkpos].val);
