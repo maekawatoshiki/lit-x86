@@ -1,5 +1,5 @@
-! prime[10000]
-MAX = 10000
+! prime[1000]
+MAX = 1000
 
 i = 0
 while i < MAX
@@ -23,7 +23,7 @@ end
 i = 2
 while i < MAX
 	if prime[i] == 1
-		puts i, " is prime\n"
+		puts i, " is prime"
 	end
 	i = i + 1
 end

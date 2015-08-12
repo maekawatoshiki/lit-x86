@@ -1,7 +1,7 @@
-# The prime number search program by MAEKAWA TOSHIKI.
+# the prime number search program by maekawa toshiki.
 
 i = 2
-while i < 1000
+while i < 10000
 	if i == 2 puts i, " is prime"
 	elsif i % 2 != 0
 		k = 3

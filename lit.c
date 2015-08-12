@@ -251,30 +251,33 @@ int isassign() {
 	return 0;
 }
 
+int assignment() {
+	int n = getNumOfVar(token[tkpos++].val, 0);
+	if(skip("[")) {
+		relExpr();
+		genCode(0x89); genCode(0xc1); // mov ecx, eax
+		if(!skip("]") || !skip("="))
+			 error("error: %d: invalid assignment", token[tkpos].nline);
+		relExpr();
+		genCode(0x89); genCode(0x44); genCode(0x8d); genCode(256 - sizeof(int) * n); //mov [ebp - n + (ecx * n)], eax
+	} else {
+		skip("=");
+		relExpr();
+		genCode(0x89); genCode(0x45);
+		genCode(256 - sizeof(int) * n); // mov var %eax
+		printf("%d\n", tkpos);
+	}
+}
+
 int blocksCount = 0;
 
 static int eval(int pos, int isloop) {
 	while(tkpos < tksize) {
 		if(isassign()) {
-			int n = getNumOfVar(token[tkpos++].val, 0);
-			printf("ar>> %s\n", token[tkpos].val);
-			if(skip("[")) {
-				relExpr();
-				genCode(0x89); genCode(0xc1); // mov ecx, eax
-				if(!skip("]") || !skip("="))
-					 error("error: %d: invalid assignment", token[tkpos].nline);
-				relExpr();
-				genCode(0x89); genCode(0x44); genCode(0x8d); genCode(256 - sizeof(int) * n); //mov [ebp - n + (ecx * n)], eax
-			} else {
-				skip("=");
-				relExpr();
-				genCode(0x89); genCode(0x45);
-				genCode(256 - sizeof(int) * n); // mov var %eax
-				printf("%d\n", tkpos);
-			}
+			assignment();
 		} else if(skip("!")) {
-			char *varname = token[tkpos++].val; skip("[");
-			int asize = atoi(token[tkpos++].val); skip("]");
+			char *varname = token[tkpos++].val; if(!skip("["));
+			int asize = atoi(token[tkpos++].val); if(!skip("]"));
 			getNumOfVar(varname, asize); // add array variable
 		} else if(skip("puts")) {
 			do {
@@ -295,7 +298,8 @@ static int eval(int pos, int isloop) {
 				}
 				genCode(0x58); // pop eax
 			} while(skip(","));
-			genCode(0xff); genCode(0x56); genCode(0x08);// call *0x04(esi) putString
+			// for new line
+			genCode(0xff); genCode(0x56); genCode(0x08);// call *0x08(esi) putLN
 		} else if(skip("while")) { blocksCount++;
 			int loopBgn = jitCount, end;
 			int type = relExpr();
@@ -410,7 +414,7 @@ static int parser() {
 
 static int putNumber(int n) { return printf("%d", n); }
 static int putString(int n) { return printf("%s", &(jitCode[n])); }
-static int putLN(int n) { return puts(""); }
+static int putLN() { return printf("\n"); }
 void *funcTable[] = { (void *) putNumber, (void*) putString, (void*) putLN };
 
 int run() {
