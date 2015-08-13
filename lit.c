@@ -47,10 +47,30 @@ int varSize = 0, varCounter = 0;
 
 int breaks[0xFF] = {0}; int breaksCount = 0;
 
+int blocksCount = 0; // for while ~ end and if ~ end error check
+
 struct {
 	char val[0xFF];
 } strings[0xFF] = { 0 };
 int *stringsPos, stringsCount = 0;
+
+static int addSubExpr();
+static int mulDivExpr();
+static int relExpr();
+static int primExpr();
+static int isassign();
+static int assignment();
+static int getString();
+static int getNumOfVar(char *, int);
+static void genCode(unsigned char);
+static void genCodeInt32(unsigned int);
+static void genCodeInt32Insert(unsigned int, int);
+static void init();
+static int skip(char *);
+static int error(char *, ...);
+static int lex(char *);
+static int eval(int, int);
+static int parser();
 
 static int getString() {
 	strcpy(strings[stringsCount].val, token[tkpos++].val);
@@ -62,10 +82,8 @@ static int getNumOfVar(char *name, int arraySize) {
 	int i;
 	for(i = 0; i < varCounter; i++)
 	{
-		if(strcmp(name, varNames[i].name) == 0) {
-			printf("sz: %d\n", varNames[i].size);
+		if(strcmp(name, varNames[i].name) == 0)
 			return varNames[i].size;
-		}
 	}
 	strcpy(varNames[varCounter].name, name);
 	int sz = 1 + (varSize += arraySize + 1);
@@ -109,11 +127,6 @@ static int error(char *errs, ...) {
 	va_end(args);
 	exit(0);
 }
-
-static int addSubExpr();
-static int mulDivExpr();
-static int relExpr();
-static int primExpr();
 
 static int relExpr() {
 	int lt=0, gt=0, diff=0, eql=0, fle=0;
@@ -237,7 +250,7 @@ static int lex(char *code)
   tksize = tkpos;
 }
 
-int isassign() {
+static int isassign() {
 	if(strcmp(token[tkpos+1].val, "=") == 0) return 1;
 	else if(strcmp(token[tkpos+1].val, "[") == 0) {
 		int i = tkpos + 1;
@@ -252,7 +265,7 @@ int isassign() {
 	return 0;
 }
 
-int assignment() {
+static int assignment() {
 	int n = getNumOfVar(token[tkpos++].val, 0);
 	if(skip("[")) {
 		relExpr();
@@ -269,8 +282,6 @@ int assignment() {
 		printf("%d\n", tkpos);
 	}
 }
-
-int blocksCount = 0;
 
 static int eval(int pos, int isloop) {
 	while(tkpos < tksize) {
