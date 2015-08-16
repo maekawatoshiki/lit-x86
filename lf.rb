@@ -1,9 +1,9 @@
 def f
-	puts "hello"
+	puts "entry f()"
 return 0
 
 def main
-	puts "in main"
+	puts "entry main( )"
 	f()
 	puts "end"
 return 0

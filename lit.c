@@ -94,7 +94,7 @@ static int getNumOfVar(char *name, int arraySize) {
 struct Function {
 	int address;
 	char name[0xFF];
-};	
+};
 struct Function functions[0xFF] = { 0 };
 int funcCount = 0;
 
@@ -213,7 +213,6 @@ static int primExpr()
 		} else if(skip("(")) {
 			int address = getFunction(name, 0);
 			printf("addr: %d\n", address);
-			genCode(0x50); // push %eax
 			genCode(0xe8); genCodeInt32(0xFFFFFFFF - (jitCount - address)); // call func
 			skip(")");
 		} else {
@@ -345,15 +344,15 @@ static int eval(int pos, int isloop) {
 			int espBgn, address;
 			char *funcName = token[tkpos++].val;
 			getFunction(funcName, jitCount); // append function
-			genCode(0x55);// push   %ebp
-			genCode(0x89); genCode(0xe5);// mov    %esp,%ebp
-			genCode(0x81); genCode(0xec); espBgn = jitCount; genCodeInt32(0); // sub %esp nn
-			genCode(0x8b); genCode(0x75); genCode(0x0c); // mov 0xc(%ebp), esi
-				eval(0, 0);
-			genCode(0x81); genCode(0xc4); genCodeInt32(sizeof(int) * varSize + 0x18); // add %esp nn
-			genCode(0xc9);// leave 
-			genCode(0xc3);// ret
-			genCodeInt32Insert(sizeof(int) * varSize + 0x18, espBgn);
+				genCode(0x55);// push   %ebp
+				genCode(0x89); genCode(0xe5);// mov    %esp,%ebp
+				genCode(0x81); genCode(0xec); espBgn = jitCount; genCodeInt32(0); // sub %esp nn
+				genCode(0x8b); genCode(0x75); genCode(0x0c); // mov 0xc(%ebp), esi
+					eval(0, 0);
+				genCode(0x81); genCode(0xc4); genCodeInt32(sizeof(int) * varSize + 4*5); // add %esp nn
+				genCode(0xc9);// leave
+				genCode(0xc3);// ret
+				genCodeInt32Insert(sizeof(int) * varSize + 4*5, espBgn);
 		} else if(skip("return")) {
 			relExpr();
 			return 1;
@@ -476,6 +475,8 @@ int run() {
 	int mem[0xFFFF] = { 0 };
 
 	printf("size: %dbyte, %.2lf%%\n", jitCount, ((double)jitCount / 0xFFF) * 100.0);
+
+	printf("return: %d\n", ((int (*)(int *, void**))&jitCode[getFunction("f", 0)])(mem, funcTable));
 	return ((int (*)(int *, void**))jitCode)(mem, funcTable);
 }
 

@@ -1,8 +1,8 @@
 int f() {
-	return 200;
+	return 0;
 }
 
 int main() {
 	f();
-	return 100;
+	return 0;
 }
