@@ -1,8 +1,8 @@
-int f() {
-	return 0;
+int f(int i) {
+	return i * 3;
 }
 
 int main() {
-	f();
+	f(100);
 	return 0;
 }
