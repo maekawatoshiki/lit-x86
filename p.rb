@@ -1,4 +1,4 @@
-# the prime number search program by maekawa toshiki.
+# The prime number search program by maekawa toshiki.
 
 def main
 	i = 2

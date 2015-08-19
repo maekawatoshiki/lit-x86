@@ -377,7 +377,7 @@ static int eval(int pos, int isloop) {
 				genCode(0xc3);// ret
 				genCodeInt32Insert(sizeof(int) * varSize[nowFunc], espBgn);
 				for(i = 0; i < argsc; i++) {
-					jitCode[(argpos + 6) * (i+1)] = 256 - 4 * (i + 1) + (varSize[nowFunc] * 4 - 4);
+					jitCode[(argpos + 6) * (i + 1)] = 256 - 4 * (i + 1) + (varSize[nowFunc] * 4 - 4);
 				}
 			}
 			printf("%s() has %d byte\n", funcName, varSize[nowFunc] << 2);
