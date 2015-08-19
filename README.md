@@ -34,6 +34,16 @@ while i < 100
   end
   i = i + 1
 end
+
+# create function
+def sum(n)
+  i = 1
+  sm = 0
+  while i <= n
+    sm = sm + i
+    i = i + 1
+  end
+return sm # don't use "return" 2 times in 1 function.
 ```
 
 - compile
