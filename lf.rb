@@ -1,16 +1,31 @@
+def gcd(x, y)
+	while x != y
+		if x > y x = x - y
+		else y = y - x end
+	end
+return x
 
-def f(i)
+def lcm(x, y)
+return ((y / gcd(x, y)) * x)
+
+def fibo(n)
+	a = 0
+	b = 1
+	i = 0
 	ret = 0
-	while 0 <= i
-		ret = i + ret
-		i = i - 1
+	while i < n
+		ret = a + b
+		a = b
+		b = ret
+		i = i + 1
 	end
 return ret
 
 def main
-	i = 2
-	while i < 10
-		puts f(10)
+	puts "lcm = ", lcm(20, 3)
+	i = 1
+	while i < 30
+		puts "fibo", i, " = ", fibo(i)
 		i = i + 1
 	end
 return 0

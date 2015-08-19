@@ -2,7 +2,6 @@
 #include <ctype.h>
 #include <errno.h>
 #include <float.h>
-#include <iso646.h>
 #include <limits.h>
 #include <locale.h>
 #include <math.h>
@@ -215,12 +214,15 @@ static int primExpr()
 		} else if(skip("(")) {
 			int address = getFunction(name, 0);
 			printf("addr: %d\n", address);
-			do {
-				relExpr();
-				genCode(0x50);
-			} while(skip(","));
+			if(isalpha(token[tkpos].val[0]) ||
+				isdigit(token[tkpos].val[0])) { // has arg?
+				do {
+					relExpr();
+					genCode(0x50);
+				} while(skip(","));
+			}
 			genCode(0xe8); genCodeInt32(0xFFFFFFFF - (jitCount - address) - 3); // call func
-			skip(")");
+			if(!skip(")")) error("error: %d: expected expression ')'", token[tkpos].nline);
 		} else {
 			genCode(0x8b); genCode(0x45);
 			genCode(256 - sizeof(int) * varn); // mov %eax variable
@@ -367,17 +369,18 @@ static int eval(int pos, int isloop) {
 				genCode(0x55);// push   %ebp
 				genCode(0x89); genCode(0xe5);// mov    %esp,%ebp
 				genCode(0x81); genCode(0xec); espBgn = jitCount; genCodeInt32(0x00); // sub %esp nn
-				int argpos = jitCount, i; for(i = 0; i < argsc; i++) {
+				int argpos[128], i; for(i = 0; i < argsc; i++) {
 					genCode(0x8b); genCode(0x45); genCode(0x08 + i * 4);
-					genCode(0x89); genCode(0x44); genCode(0x24); genCode(256 - 4 + 4);
+					genCode(0x89); genCode(0x44); genCode(0x24);
+					argpos[i] = jitCount; genCode(256 - 4 + 4);
 				}
 					eval(0, 0);
-				genCode(0x81); genCode(0xc4); genCodeInt32(sizeof(int) * varSize[nowFunc]); // add %esp nn
+				genCode(0x81); genCode(0xc4); genCodeInt32(sizeof(int) * (varSize[nowFunc] + 6)); // add %esp nn
 				genCode(0xc9);// leave
 				genCode(0xc3);// ret
-				genCodeInt32Insert(sizeof(int) * varSize[nowFunc], espBgn);
+				genCodeInt32Insert(sizeof(int) * (varSize[nowFunc] + 6), espBgn);
 				for(i = 0; i < argsc; i++) {
-					jitCode[(argpos + 6) * (i + 1)] = 256 - 4 * (i + 1) + (varSize[nowFunc] * 4 - 4);
+					jitCode[argpos[i]] = 256 - 4 * (i + 1) + ((varSize[nowFunc]+6) * 4 - 4);
 				}
 			}
 			printf("%s() has %d byte\n", funcName, varSize[nowFunc] << 2);
@@ -467,16 +470,11 @@ static int parser() {
 	memset(jitCode, 0, 0xFFF);
 	stringsPos = calloc(0xFF, sizeof(int));
 	int main_address;
-	genCode(0x55);// push   %ebp
-	genCode(0x89); genCode(0xe5);// mov    %esp,%ebp
-		genCode(0xe9); main_address = jitCount; genCodeInt32(0);
-	genCode(0xc9);// leave
-	genCode(0xc3);// ret
-
+	genCode(0xe9); main_address = jitCount; genCodeInt32(0);
 	eval(0, 0);
 
 	int addr = getFunction("main", 0);
-	printf(">%u\n", addr);
+	printf("main() addr> %u\n", addr);
 	genCodeInt32Insert(addr - 5, main_address);
 
 	for(stringsPos--; stringsCount; stringsPos--) {
@@ -505,7 +503,7 @@ void *funcTable[] = { (void *) putNumber, (void*) putString, (void*) putLN };
 int run() {
 	int mem[0xFFFF] = { 0 };
 
-	printf("size: %dbyte, %.2lf%%\n", jitCount, ((double)jitCount / 0xFFF) * 100.0);
+	printf("size: %dbyte, %.2lf%%\n", jitCount, ((double)jitCount / 0xFFFF) * 100.0);
 	return ((int (*)(int *, void**))jitCode)(mem, funcTable);
 }
 
@@ -513,9 +511,10 @@ int main(int argc, char **argv) {
 	long psize;
 
 #if defined(WIN32) || defined(WINDOWS)
-	jitCode = (unsigned char*) malloc(0xFFF);
+	jitCode = (unsigned char*) malloc(0xFFFF);
 #else
-	psize = sysconf(_SC_PAGE_SIZE);
+	psize = 0xFFFF + 1;
+	printf("page_size = %d\n", psize);
 	if((posix_memalign((void **)&jitCode, psize, psize)))
 		perror("posix_memalign");
 	if(mprotect((void*)jitCode, psize, PROT_READ | PROT_WRITE | PROT_EXEC))
@@ -554,29 +553,3 @@ int main(int argc, char **argv) {
 	printf("time: %lfsec\n", (double)(end - bgn) / CLOCKS_PER_SEC);
 	free(jitCode);
 }
-
-/*
-: prime
-
-i = 2
-while i < 1000000
-	isprime = 1
-	if i == 2
-		print i
-	elsif i % 2 == 0
-	else
-		k = 3
-		while k * k <= i
-			if i % k == 0
-				isprime = 0
-				break
-			end
-			k = k + 2
-		end
-		if isprime == 1
-			print i
-		end
-	end
-	i = i + 1
-end
-*/
