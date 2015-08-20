@@ -5,20 +5,11 @@ def gcd(x, y)
 	end
 return x
 
-def lcm(x, y)
-return ((y / gcd(x, y)) * x)
+def lcm(x, y) return ((y / gcd(x, y)) * x)
 
 def fibo(n)
-	a = 0
-	b = 1
-	i = 0
-	ret = 0
-	while i < n
-		ret = a + b
-		a = b
-		b = ret
-		i = i + 1
-	end
+	if n < 2 ret = n
+	else ret = fibo(n - 1) + fibo(n - 2) end
 return ret
 
 def main

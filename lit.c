@@ -180,7 +180,7 @@ static int mulDivExpr() {
     genCode(0x50); // push %eax
     primExpr();
     genCode(0x89); genCode(0xc3);  // mov %ebx %eax
-    genCode(0x58); // pop %eax f7f3
+    genCode(0x58); // pop %eax 
     if(mul) {
 			genCode(0x0f); genCode(0xaf); genCode(0xc3); // mul %eax %ebx
     } else if(div) {
@@ -215,13 +215,14 @@ static int primExpr()
 			int address = getFunction(name, 0);
 			printf("addr: %d\n", address);
 			if(isalpha(token[tkpos].val[0]) ||
-				isdigit(token[tkpos].val[0])) { // has arg?
+				isdigit(token[tkpos].val[0]) || token[tkpos].val[0] == '(') { // has arg?
 				do {
 					relExpr();
-					genCode(0x50);
+					genCode(0x50); // push eax
 				} while(skip(","));
 			}
 			genCode(0xe8); genCodeInt32(0xFFFFFFFF - (jitCount - address) - 3); // call func
+			genCode(0x59);
 			if(!skip(")")) error("error: %d: expected expression ')'", token[tkpos].nline);
 		} else {
 			genCode(0x8b); genCode(0x45);
@@ -361,10 +362,10 @@ static int eval(int pos, int isloop) {
 				genCode(0x81); genCode(0xec); espBgn = jitCount; genCodeInt32(0); // sub %esp nn
 				genCode(0x8b); genCode(0x75); genCode(0x0c); // mov 0xc(%ebp), esi
 					eval(0, 0);
-				genCode(0x81); genCode(0xc4); genCodeInt32(sizeof(int) * varSize[nowFunc] + 0x18); // add %esp nn
+				genCode(0x81); genCode(0xc4); genCodeInt32(sizeof(int) * (varSize[nowFunc] + 6)); // add %esp nn
 				genCode(0xc9);// leave
 				genCode(0xc3);// ret
-				genCodeInt32Insert(sizeof(int) * varSize[nowFunc] + 0x18, espBgn);
+				genCodeInt32Insert(sizeof(int) * (varSize[nowFunc] + 6), espBgn);
 			} else {
 				genCode(0x55);// push   %ebp
 				genCode(0x89); genCode(0xe5);// mov    %esp,%ebp
@@ -372,15 +373,15 @@ static int eval(int pos, int isloop) {
 				int argpos[128], i; for(i = 0; i < argsc; i++) {
 					genCode(0x8b); genCode(0x45); genCode(0x08 + i * 4);
 					genCode(0x89); genCode(0x44); genCode(0x24);
-					argpos[i] = jitCount; genCode(256 - 4 + 4);
+					argpos[i] = jitCount; genCode(0x00);
 				}
-					eval(0, 0);
+				eval(0, 0);
 				genCode(0x81); genCode(0xc4); genCodeInt32(sizeof(int) * (varSize[nowFunc] + 6)); // add %esp nn
 				genCode(0xc9);// leave
 				genCode(0xc3);// ret
 				genCodeInt32Insert(sizeof(int) * (varSize[nowFunc] + 6), espBgn);
 				for(i = 0; i < argsc; i++) {
-					jitCode[argpos[i]] = 256 - 4 * (i + 1) + ((varSize[nowFunc]+6) * 4 - 4);
+					jitCode[argpos[i]] = 256 - 4 * (i + 1) + ((varSize[nowFunc] + 6) * 4 - 4);
 				}
 			}
 			printf("%s() has %d byte\n", funcName, varSize[nowFunc] << 2);
@@ -501,7 +502,7 @@ static void putLN() { printf("\n"); }
 void *funcTable[] = { (void *) putNumber, (void*) putString, (void*) putLN };
 
 int run() {
-	int mem[0xFFFF] = { 0 };
+	int mem[0xFFF] = { 0 };
 
 	printf("size: %dbyte, %.2lf%%\n", jitCount, ((double)jitCount / 0xFFFF) * 100.0);
 	return ((int (*)(int *, void**))jitCode)(mem, funcTable);
