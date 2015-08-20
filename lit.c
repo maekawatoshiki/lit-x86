@@ -28,6 +28,11 @@
 #define JBE 0x7e
 #define JAE 0x7d
 
+enum {
+	EAX = 0, ECX, EDX, EBX,
+	ESP, EBP, ESI, EDI
+};
+
 static unsigned char *jitCode;
 int jitCount = 0;
 
@@ -72,6 +77,7 @@ static int error(char *, ...);
 static int lex(char *);
 static int eval(int, int);
 static int parser();
+static int genas(char *, ...);
 
 static int getString() {
 	strcpy(strings[stringsCount].val, token[tkpos++].val);
@@ -127,6 +133,101 @@ static void genCodeInt32Insert(unsigned int val, int pos) {
 	jitCode[pos+3] = (val << 0 >> 24);
 }
 
+static int getRegType(char *reg) {
+	if(strcmp("eax", reg) == 0) return EAX;
+	if(strcmp("ebx", reg) == 0) return EBX;
+	if(strcmp("ecx", reg) == 0) return ECX;
+	if(strcmp("edx", reg) == 0) return EDX;
+	if(strcmp("esp", reg) == 0) return ESP;
+	if(strcmp("edi", reg) == 0) return EDI;
+	if(strcmp("ebp", reg) == 0) return EBP;
+	if(strcmp("esi", reg) == 0) return ESI;
+	return -1;
+}
+
+static int mk_modrm(char *r32, char *rm32) {
+	int tmp = getRegType(r32) * 8;
+
+	if(isalpha(rm32[0])) { // register?
+		tmp += 0xc0;
+		tmp += getRegType(rm32);
+	} else if(isdigit(rm32[0])) { // integer?
+		
+	} else { }
+
+	return tmp;
+}
+
+static int genas(char *s, ...) {
+	char *src = calloc(sizeof(char), strlen(s) + 0xff);
+	va_list args;
+	char nem[4][16] = { 0 };
+	int i, n = 0, sz;
+	va_start(args, s);
+	vsprintf(src, s, args);
+	sz = strlen(src) + 1;
+
+	printf("src> %s\n", src);
+
+	for(; *src; src++) {
+		if(isalpha(*src) || isdigit(*src)) {
+			for(; *src != ' ' && *src != 0; src++) 
+				strncat(nem[n], src, 1);
+			src--; n++;
+		}
+	}// 0 3
+	for(i = n = 0; i < 4; i++) 
+		printf("as> %s<\n", nem[i]);
+
+	if(strcmp(nem[0], "mov") == 0) { // mov?
+		if(isalpha(*nem[2])) { // register?
+			genCode(0x89); 
+			genCode(0xc0 + getRegType(nem[2]) * 8 + getRegType(nem[1]));
+		} else if(isdigit(*nem[2])) { // integer?
+			genCode(0xb8 + getRegType(nem[1])); 
+			genCodeInt32(atoi(nem[2]));
+		} else {
+		}
+	} else if(strcmp(nem[0], "add") == 0) { // add
+		if(isalpha(*nem[2])) { // register?
+			genCode(0x03);
+			genCode(mk_modrm(nem[1], nem[2]));
+		} else if(isdigit(*nem[2])) { // integer?
+			genCode(0x81); 
+			genCode(0xc0 + getRegType(nem[1]));
+			genCodeInt32(atoi(nem[2]));
+		} else {
+		}
+	} else if(strcmp(nem[0], "sub") == 0) { // sub
+		if(isalpha(*nem[2])) { // register?
+			genCode(0x2b);
+			genCode(mk_modrm(nem[1], nem[2]));
+		} 
+	} else if(strcmp(nem[0], "mul") == 0) { // mul
+		if(isalpha(*nem[1])) { // register?
+			genCode(0xf7);
+			genCode(0xe0 + getRegType(nem[1]));
+		} 
+	} else if(strcmp(nem[0], "div") == 0) { // mul
+		if(isalpha(*nem[1])) { // register?
+			genCode(0xf7);
+			genCode(0xf0 + getRegType(nem[1]));
+		} 
+	} else if(strcmp(nem[0], "push") == 0) { // mul
+		if(isalpha(*nem[1])) { // register?
+			genCode(0x50 + getRegType(nem[1]));
+		} 
+	} else if(strcmp(nem[0], "pop") == 0) { // mul
+		if(isalpha(*nem[1])) { // register?
+			genCode(0x58 + getRegType(nem[1]));
+		} 
+	}
+
+	va_end(args);
+
+	return 0;
+}
+
 static void init() {
 	tkpos = jitCount = 0;
 	memset(jitCode, 0, 0xFFF);
@@ -153,10 +254,10 @@ static int relExpr() {
 	addSubExpr();
 	if((lt=skip("<")) || (gt=skip(">")) || (diff=skip("!=")) ||
 			(eql=skip("==")) || (fle=skip("<=")) || skip(">=")) {
-		genCode(0x50); // push %eax
+		genas("push eax");
 		addSubExpr();
-		genCode(0x89); genCode(0xc3);  // mov %ebx %eax
-		genCode(0x58); // pop %eax
+		genas("mov ebx eax");  // mov %ebx %eax
+		genas("pop eax");
 		genCode(0x39); genCode(0xd8); // cmp %eax, %ebx
 		return lt ? JB : gt ? JA : diff ? JNE : eql ? JE : fle ? JBE : JAE;
 	}
@@ -165,41 +266,38 @@ static int addSubExpr() {
 	int add;
 	mulDivExpr();
 	while((add = skip("+")) || skip("-")) {
-		genCode(0x50); // push %eax
+		genas("push eax");
 		mulDivExpr();
-		genCode(0x89); genCode(0xc3);  // mov %ebx %eax
-		genCode(0x58); // pop %eax
-		if(add) { genCode(0x01); genCode(0xd8); }// add %eax %ebx
-		else { genCode(0x29); genCode(0xd8); } // sub %eax %ebx
+		genas("mov ebx eax");  // mov %ebx %eax
+		genas("pop eax");
+		if(add) { genas("add eax ebx"); }// add %eax %ebx
+		else { genas("sub eax ebx"); } // sub %eax %ebx
 	}
 }
 static int mulDivExpr() {
   int mul, div;
   primExpr();
   while((mul = skip("*")) || (div=skip("/")) || skip("%")) {
-    genCode(0x50); // push %eax
+		genas("push eax");
     primExpr();
-    genCode(0x89); genCode(0xc3);  // mov %ebx %eax
-    genCode(0x58); // pop %eax 
+    genas("mov ebx eax"); // mov %ebx %eax
+    genas("pop eax");
     if(mul) {
-			genCode(0x0f); genCode(0xaf); genCode(0xc3); // mul %eax %ebx
-    } else if(div) {
-      genCode(0xba); genCodeInt32(0); //mov edx 0
-      genCode(0xf7); genCode(0xf3); // div %ebx
+			genas("mul ebx");
+    } else if(div) {	
+			genas("mov edx 0");
+			genas("div ebx");
     } else { //mod
-		  genCode(0xba); genCodeInt32(0); //mov edx 0
-		  genCode(0xf7); genCode(0xf3); // div %ebx
-      genCode(0x89); genCode(0xd0); // mov eax, edx
+			genas("mov edx 0");
+			genas("div ebx");
+			genas("mov eax edx");
 		}
   }
 }
 static int primExpr()
 {
   if(isdigit(token[tkpos].val[0])) { // number?
-    int n = atoi(token[tkpos].val);
-      genCode(0xb8);
-			genCodeInt32(n); // mov %eax num
-    tkpos++;
+    genas("mov eax %s", token[tkpos++].val);
   } else if(isalpha(token[tkpos].val[0])) { // variable?
 		int varn = getNumOfVar(token[tkpos].val, 0);
 		char *name = token[tkpos].val;
@@ -207,7 +305,7 @@ static int primExpr()
 	  tkpos++;
 		if(skip("[")) {
 			relExpr();
-			genCode(0x89); genCode(0xc2); // mov edx, eax
+			genas("mov edx eax"); // mov edx, eax
 			genCode(0x8b); genCode(0x44); genCode(0x95);
 			genCode(256 - sizeof(int) * varn); //mov eax, [ebp - 8 + (edx * 8)]
 			if(!skip("]")) error("error: %d: expected expression ']'", token[tkpos].nline);
@@ -218,11 +316,11 @@ static int primExpr()
 				isdigit(token[tkpos].val[0]) || token[tkpos].val[0] == '(') { // has arg?
 				do {
 					relExpr();
-					genCode(0x50); // push eax
+					genas("push eax");
 				} while(skip(","));
 			}
 			genCode(0xe8); genCodeInt32(0xFFFFFFFF - (jitCount - address) - 3); // call func
-			genCode(0x59);
+			genas("pop ecx");
 			if(!skip(")")) error("error: %d: expected expression ')'", token[tkpos].nline);
 		} else {
 			genCode(0x8b); genCode(0x45);
@@ -302,11 +400,12 @@ static int assignment() {
 	int n = getNumOfVar(token[tkpos++].val, 0);
 	if(skip("[")) {
 		relExpr();
-		genCode(0x89); genCode(0xc1); // mov ecx, eax
+		genas("mov ecx eax");// mov ecx, eax
 		if(!skip("]") || !skip("="))
 			 error("error: %d: invalid assignment", token[tkpos].nline);
 		relExpr();
-		genCode(0x89); genCode(0x44); genCode(0x8d); genCode(256 - sizeof(int) * n); //mov [ebp - n + (ecx * n)], eax
+		genCode(0x89); genCode(0x44); genCode(0x8d); genCode(256 - sizeof(int) * n); 
+		//mov [ebp - n + (ecx * n)], eax
 	} else {
 		skip("=");
 		relExpr();
@@ -335,13 +434,13 @@ static int eval(int pos, int isloop) {
 				} else {
 					relExpr();
 				}
-				genCode(0x50); // push eax
+				genas("push eax");
 				if(isstring) {
 					genCode(0xff); genCode(0x56); genCode(0x04);// call *0x04(esi) putString
 				} else {
 					genCode(0xff); genCode(0x16);// call (esi) putNumber
 				}
-				genCode(0x58); // pop eax
+				genas("pop eax");
 			} while(skip(","));
 			// for new line
 			if(isputs) {
@@ -357,8 +456,8 @@ static int eval(int pos, int isloop) {
 			}
 			getFunction(funcName, jitCount); // append function
 			if(strcmp("main", funcName) == 0) {
-				genCode(0x55);// push   %ebp
-				genCode(0x89); genCode(0xe5);// mov    %esp,%ebp
+				genas("push ebp");
+				genas("mov ebp esp");
 				genCode(0x81); genCode(0xec); espBgn = jitCount; genCodeInt32(0); // sub %esp nn
 				genCode(0x8b); genCode(0x75); genCode(0x0c); // mov 0xc(%ebp), esi
 					eval(0, 0);
@@ -367,16 +466,16 @@ static int eval(int pos, int isloop) {
 				genCode(0xc3);// ret
 				genCodeInt32Insert(sizeof(int) * (varSize[nowFunc] + 6), espBgn);
 			} else {
-				genCode(0x55);// push   %ebp
-				genCode(0x89); genCode(0xe5);// mov    %esp,%ebp
-				genCode(0x81); genCode(0xec); espBgn = jitCount; genCodeInt32(0x00); // sub %esp nn
+				genas("push ebp");
+				genas("mov ebp esp");
+				genCode(0x81); genCode(0xec); espBgn = jitCount; genCodeInt32(0x00); // sub esp nn
 				int argpos[128], i; for(i = 0; i < argsc; i++) {
 					genCode(0x8b); genCode(0x45); genCode(0x08 + i * 4);
 					genCode(0x89); genCode(0x44); genCode(0x24);
 					argpos[i] = jitCount; genCode(0x00);
 				}
 				eval(0, 0);
-				genCode(0x81); genCode(0xc4); genCodeInt32(sizeof(int) * (varSize[nowFunc] + 6)); // add %esp nn
+				genCode(0x81); genCode(0xc4); genCodeInt32(sizeof(int) * (varSize[nowFunc] + 6)); // add esp nn
 				genCode(0xc9);// leave
 				genCode(0xc3);// ret
 				genCodeInt32Insert(sizeof(int) * (varSize[nowFunc] + 6), espBgn);

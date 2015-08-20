@@ -18,7 +18,7 @@ return isprime
 
 def main
 	i = 2
-	while i < 10000000
+	while i < 100000
 		if prime(i) == 1 puts i, " is prime!" end
 		i = i + 1
 	end

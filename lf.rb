@@ -5,11 +5,42 @@ def gcd(x, y)
 	end
 return x
 
-def lcm(x, y) return ((y / gcd(x, y)) * x)
+def lcm(x, y) return ((y / gcd(y, x)) * x)
 
 def fibo(n)
-	if n < 2 ret = n
-	else ret = fibo(n - 1) + fibo(n - 2) end
+	a = 0
+	b = 1
+	i = 0
+	ret = 0
+	while i < n
+		ret = a + b
+		a = b b = ret
+		i = i + 1
+	end
+return ret
+
+def collatz(n)
+	output n, " "
+	if n % 2 == 0 
+		if n > 1 collatz(n / 2) end
+	else 
+		if n > 1 collatz(3 * n + 1) end
+	end
+return 0
+
+def fact_rec(n)
+	if n < 2
+		ret = 1
+	else 
+		ret = fact_rec(n - 1) * n 
+	end
+return ret
+
+def rand(n)
+	ret = n * 143 + 123
+	a = ret + ret * 217 / n
+	ret = (ret - n) * ret + n + a
+	ret = ret % 10000000
 return ret
 
 def main
@@ -19,4 +50,15 @@ def main
 		puts "fibo", i, " = ", fibo(i)
 		i = i + 1
 	end
+	i = 1
+	while i < 10
+		puts "fact", i, " = ", fact_rec(i)
+		i = i + 1
+	end
+	i = 1
+	while i < 2
+		puts "collatz", i, " = ", collatz(rand(i * 32 + 2))
+		i = i + 1
+	end
+	puts "50 - 23 = ", 50 - 23
 return 0
