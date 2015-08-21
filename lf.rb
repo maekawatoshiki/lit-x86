@@ -21,18 +21,18 @@ return ret
 
 def collatz(n)
 	output n, " "
-	if n % 2 == 0 
+	if n % 2 == 0
 		if n > 1 collatz(n / 2) end
-	else 
+	else
 		if n > 1 collatz(3 * n + 1) end
 	end
-return 0
+return 1
 
 def fact_rec(n)
 	if n < 2
 		ret = 1
-	else 
-		ret = fact_rec(n - 1) * n 
+	else
+		ret = fact_rec(n - 1) * n
 	end
 return ret
 
@@ -55,9 +55,9 @@ def main
 		puts "fact", i, " = ", fact_rec(i)
 		i = i + 1
 	end
-	i = 1
-	while i < 2
-		puts "collatz", i, " = ", collatz(rand(i * 32 + 2))
+	i = 2
+	while i <= 7
+		puts "collatz", i, " = ", collatz(i);
 		i = i + 1
 	end
 	puts "50 - 23 = ", 50 - 23

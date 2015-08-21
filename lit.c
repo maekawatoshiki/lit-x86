@@ -133,7 +133,7 @@ static void genCodeInt32Insert(unsigned int val, int pos) {
 	jitCode[pos+3] = (val << 0 >> 24);
 }
 
-static int getRegType(char *reg) {
+static int regBit(char *reg) {
 	if(strcmp("eax", reg) == 0) return EAX;
 	if(strcmp("ebx", reg) == 0) return EBX;
 	if(strcmp("ecx", reg) == 0) return ECX;
@@ -146,13 +146,12 @@ static int getRegType(char *reg) {
 }
 
 static int mk_modrm(char *r32, char *rm32) {
-	int tmp = getRegType(r32) * 8;
+	int tmp = regBit(r32) * 8;
 
 	if(isalpha(rm32[0])) { // register?
 		tmp += 0xc0;
-		tmp += getRegType(rm32);
+		tmp += regBit(rm32);
 	} else if(isdigit(rm32[0])) { // integer?
-		
 	} else { }
 
 	return tmp;
@@ -171,20 +170,20 @@ static int genas(char *s, ...) {
 
 	for(; *src; src++) {
 		if(isalpha(*src) || isdigit(*src)) {
-			for(; *src != ' ' && *src != 0; src++) 
+			for(; *src != ' ' && *src != 0; src++)
 				strncat(nem[n], src, 1);
 			src--; n++;
 		}
 	}// 0 3
-	for(i = n = 0; i < 4; i++) 
+	for(i = n = 0; i < 4; i++)
 		printf("as> %s<\n", nem[i]);
 
 	if(strcmp(nem[0], "mov") == 0) { // mov?
 		if(isalpha(*nem[2])) { // register?
-			genCode(0x89); 
-			genCode(0xc0 + getRegType(nem[2]) * 8 + getRegType(nem[1]));
+			genCode(0x89);
+			genCode(0xc0 + regBit(nem[2]) * 8 + regBit(nem[1]));
 		} else if(isdigit(*nem[2])) { // integer?
-			genCode(0xb8 + getRegType(nem[1])); 
+			genCode(0xb8 + regBit(nem[1]));
 			genCodeInt32(atoi(nem[2]));
 		} else {
 		}
@@ -193,8 +192,8 @@ static int genas(char *s, ...) {
 			genCode(0x03);
 			genCode(mk_modrm(nem[1], nem[2]));
 		} else if(isdigit(*nem[2])) { // integer?
-			genCode(0x81); 
-			genCode(0xc0 + getRegType(nem[1]));
+			genCode(0x81);
+			genCode(0xc0 + regBit(nem[1]));
 			genCodeInt32(atoi(nem[2]));
 		} else {
 		}
@@ -202,25 +201,25 @@ static int genas(char *s, ...) {
 		if(isalpha(*nem[2])) { // register?
 			genCode(0x2b);
 			genCode(mk_modrm(nem[1], nem[2]));
-		} 
+		}
 	} else if(strcmp(nem[0], "mul") == 0) { // mul
 		if(isalpha(*nem[1])) { // register?
 			genCode(0xf7);
-			genCode(0xe0 + getRegType(nem[1]));
-		} 
+			genCode(0xe0 + regBit(nem[1]));
+		}
 	} else if(strcmp(nem[0], "div") == 0) { // mul
 		if(isalpha(*nem[1])) { // register?
 			genCode(0xf7);
-			genCode(0xf0 + getRegType(nem[1]));
-		} 
+			genCode(0xf0 + regBit(nem[1]));
+		}
 	} else if(strcmp(nem[0], "push") == 0) { // mul
 		if(isalpha(*nem[1])) { // register?
-			genCode(0x50 + getRegType(nem[1]));
-		} 
+			genCode(0x50 + regBit(nem[1]));
+		}
 	} else if(strcmp(nem[0], "pop") == 0) { // mul
 		if(isalpha(*nem[1])) { // register?
-			genCode(0x58 + getRegType(nem[1]));
-		} 
+			genCode(0x58 + regBit(nem[1]));
+		}
 	}
 
 	va_end(args);
@@ -230,7 +229,7 @@ static int genas(char *s, ...) {
 
 static void init() {
 	tkpos = jitCount = 0;
-	memset(jitCode, 0, 0xFFF);
+	memset(jitCode, 0, 0xFFFF);
 	memset(token, 0, sizeof(token));
 }
 
@@ -247,6 +246,7 @@ static int error(char *errs, ...) {
 	vprintf(errs, args); puts("");
 	va_end(args);
 	exit(0);
+	return 0;
 }
 
 static int relExpr() {
@@ -284,7 +284,7 @@ static int mulDivExpr() {
     genas("pop eax");
     if(mul) {
 			genas("mul ebx");
-    } else if(div) {	
+    } else if(div) {
 			genas("mov edx 0");
 			genas("div ebx");
     } else { //mod
@@ -320,7 +320,7 @@ static int primExpr()
 				} while(skip(","));
 			}
 			genCode(0xe8); genCodeInt32(0xFFFFFFFF - (jitCount - address) - 3); // call func
-			genas("pop ecx");
+			genas("add esp 4"); // reposit the amount that was push
 			if(!skip(")")) error("error: %d: expected expression ')'", token[tkpos].nline);
 		} else {
 			genCode(0x8b); genCode(0x45);
@@ -404,7 +404,7 @@ static int assignment() {
 		if(!skip("]") || !skip("="))
 			 error("error: %d: invalid assignment", token[tkpos].nline);
 		relExpr();
-		genCode(0x89); genCode(0x44); genCode(0x8d); genCode(256 - sizeof(int) * n); 
+		genCode(0x89); genCode(0x44); genCode(0x8d); genCode(256 - sizeof(int) * n);
 		//mov [ebp - n + (ecx * n)], eax
 	} else {
 		skip("=");
@@ -586,7 +586,7 @@ static int parser() {
 		} genCode(0); // '\0'
 		printf("%d\n", stringsPos);
 	}
-	printf("memsz: %d\n", varSize);
+	printf("memsz: %d\n", varSize[nowFunc]);
 
 	/*{
 		FILE *out = fopen("asm.s", "wb");
