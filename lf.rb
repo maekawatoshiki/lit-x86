@@ -1,11 +1,14 @@
 def gcd(x, y)
 	while x != y
-		if x > y x = x - y
-		else y = y - x end
+		if x > y
+			x = x - y
+		else
+			y = y - x
+		end
 	end
 return x
 
-def lcm(x, y) return ((y / gcd(y, x)) * x)
+def lcm(x, y) return ((x / gcd(x, y)) * y)
 
 def fibo(n)
 	a = 0
@@ -14,7 +17,8 @@ def fibo(n)
 	ret = 0
 	while i < n
 		ret = a + b
-		a = b b = ret
+		a = b
+		b = ret
 		i = i + 1
 	end
 return ret
@@ -36,15 +40,14 @@ def fact_rec(n)
 	end
 return ret
 
-def rand(n)
-	ret = n * 143 + 123
-	a = ret + ret * 217 / n
-	ret = (ret - n) * ret + n + a
-	ret = ret % 10000000
-return ret
+
+def htest(x, y)
+	puts "x = ", x
+	puts "y = ", y
+return
 
 def main
-	puts "lcm = ", lcm(20, 3)
+	puts "lcm = ", lcm(13, 3)
 	i = 1
 	while i < 30
 		puts "fibo", i, " = ", fibo(i)
@@ -57,8 +60,12 @@ def main
 	end
 	i = 2
 	while i <= 7
-		puts "collatz", i, " = ", collatz(i);
+		puts "collatz", i, " = ", collatz(i)
 		i = i + 1
 	end
-	puts "50 - 23 = ", 50 - 23
+	i = 1
+	puts "i = i + 10 => ", (i = i + 10)
+	puts "i = ", i
+
+	htest(10, 20);
 return 0

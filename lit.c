@@ -1,83 +1,202 @@
-#include <assert.h>
-#include <ctype.h>
-#include <errno.h>
-#include <float.h>
-#include <limits.h>
-#include <locale.h>
-#include <math.h>
-#include <setjmp.h>
-#include <signal.h>
-#include <stdarg.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#if defined(WIN32) || defined(WINDOWS)
-	#include <windows.h>
-#else
-	#include <unistd.h>
-	#include <sys/types.h>
-	#include <sys/mman.h>
-#endif
+#include "lit.h"
 
-#define JA 0x7f
-#define JB 0x7c
-#define JE 0x74
-#define JNE 0x75
-#define JBE 0x7e
-#define JAE 0x7d
 
-enum {
-	EAX = 0, ECX, EDX, EBX,
-	ESP, EBP, ESI, EDI
-};
+static void init() {
+	tkpos = jitCount = 0;
+	memset(jitCode, 0, 0xFFFF);
+	memset(token, 0, sizeof(token));
+}
 
-static unsigned char *jitCode;
-int jitCount = 0;
+static int lex(char *code)
+{
+  int i, codeSize = strlen(code), line = 1;
+  for(i = 0; i < codeSize; i++) {
+    if(isdigit(code[i])) { // number?
+      for(; isdigit(code[i]); i++)
+				strncat(token[tkpos].val, &(code[i]), 1);
+			token[tkpos].nline = line;
+      i--; tkpos++;
+    } else if(isalpha(code[i])) { // ident?
+      for(; isalpha(code[i]) || isdigit(code[i]) || code[i] == '_'; i++)
+        strncat(token[tkpos].val, &(code[i]), 1);
+      token[tkpos].nline = line;
+      i--; tkpos++;
+    } else if(code[i] == ' ' || code[i] == '\t') { // space char?
+    } else if(code[i] == '#') { // comment?
+			for(i++; code[i] != '\n'; i++) { } line++;
+		} else if(code[i] == '"') { // string?
+			strcpy(token[tkpos].val, "\"");
+			token[tkpos++].nline = line;
+			for(i++; code[i] != '"' && code[i] != '\0'; i++)
+				strncat(token[tkpos].val, &(code[i]), 1);
+			token[tkpos].nline = line;
+			if(code[i] == '\0') error("error: %d: expected expression '\"'", token[tkpos].nline);
+			tkpos++;
+		} else { // symbol?
+      if(code[i] == '\n') {
+      	strcpy(token[tkpos].val, ";"); line++;
+      } else strncat(token[tkpos].val, &(code[i]), 1);
+			if(code[i+1] == '=')  strncat(token[tkpos].val, &(code[++i]), 1);
+			token[tkpos].nline = line;
+			tkpos++;
+    }
+  }
+  token[tkpos].nline = line;
+	for(i = 0; i < tkpos; i++) {
+		printf("tk> %s\n", token[i].val);
+	}
+  tksize = tkpos;
 
-struct Token {
-  char val[32];
-  int nline;
-};
-struct Token token[0xFFF] = { 0 }, formula[0xFFF] = { 0 };
-int tkpos = 0, tksize, formpos = 0;
+	return 0;
+}
 
-struct {
-	char name[32];
-	int size;
-} varNames[0xFF][0x7F] = { 0 };
-int varSize[0xFF] = { 0 }, varCounter = 0;
+static int eval(int pos, int isloop) {
+	int isputs = 0;
+	while(tkpos < tksize) {
+		if(isassign()) {
+			assignment();
+		} else if(skip("!")) {
+			char *varname = token[tkpos++].val;
+			if(!skip("["))
+				error("error: %d: invalid expression", token[tkpos].nline);
+			int asize = atoi(token[tkpos++].val);
+			if(!skip("]"))
+				error("error: %d: invalid expression", token[tkpos].nline);
+			getNumOfVar(varname, asize); // add array variable
+		} else if((isputs=skip("puts")) || skip("output")) {
+			do {
+				int isstring = 0;
+				if(skip("\"")) {
+					genCode(0xb8); getString();
+					genCodeInt32(0x00); // mov eax string_address
+					isstring = 1;
+				} else {
+					relExpr();
+				}
+				genas("push eax");
+				if(isstring) {
+					genCode(0xff); genCode(0x56); genCode(0x04);// call *0x04(esi) putString
+				} else {
+					genCode(0xff); genCode(0x16);// call (esi) putNumber
+				}
+				genas("pop eax");
+			} while(skip(","));
+			// for new line
+			if(isputs) {
+				genCode(0xff); genCode(0x56); genCode(0x08);// call *0x08(esi) putLN
+			}
+		} else if(skip("def")) {
+			int espBgn, argsc = 0;
+			char *funcName = token[tkpos++].val;
+			nowFunc++;
+			if(skip("(")) {
+				do { getNumOfVar(token[tkpos++].val, 0); argsc++; } while(skip(","));
+				skip(")");
+			}
+			getFunction(funcName, jitCount); // append function
+			if(strcmp("main", funcName) == 0) {
+				genas("push ebp");
+				genas("mov ebp esp");
+				genCode(0x81); genCode(0xec); espBgn = jitCount; genCodeInt32(0); // sub %esp nn
+				genCode(0x8b); genCode(0x75); genCode(0x0c); // mov 0xc(%ebp), esi
+					eval(0, 0);
+				genCode(0x81); genCode(0xc4); genCodeInt32(sizeof(int) * (varSize[nowFunc] + 6)); // add %esp nn
+				genCode(0xc9);// leave
+				genCode(0xc3);// ret
+				genCodeInt32Insert(sizeof(int) * (varSize[nowFunc] + 6), espBgn);
+			} else {
+				genas("push ebp");
+				genas("mov ebp esp");
+				genCode(0x81); genCode(0xec); espBgn = jitCount; genCodeInt32(0x00); // sub esp nn
+				int argpos[128], i; for(i = 0; i < argsc; i++) {
+					genCode(0x8b); genCode(0x45); genCode(0x08 + (argsc - i - 1) * 4);
+					genCode(0x89); genCode(0x44); genCode(0x24);
+					argpos[i] = jitCount; genCode(0x00);
+				}
+				eval(0, 0);
+				genCode(0x81); genCode(0xc4); genCodeInt32(sizeof(int) * (varSize[nowFunc] + 6)); // add esp nn
+				genCode(0xc9);// leave
+				genCode(0xc3);// ret
+				genCodeInt32Insert(sizeof(int) * (varSize[nowFunc] + 6), espBgn);
+				for(i = 0; i < argsc; i++) {
+					jitCode[argpos[i]] = 256 - 4 * (i + 1) + ((varSize[nowFunc] + 6) * 4 - 4);
+				}
+			}
+			printf("%s() has %d byte\n", funcName, varSize[nowFunc] << 2);
+		} else if(skip("return")) {
+			relExpr();
+			return 1;
+		} else if(skip("while")) { blocksCount++;
+			whileStmt();
+		} else if(skip("if")) { blocksCount++;
+			ifStmt();
+		} else if(skip("else")) {
+			int end;
+			genCode(0xe9); end = jitCount; genCodeInt32(0);// jmp while end
+			genCodeInt32Insert(jitCount - pos - 4, pos);
+			eval(end, 0);
+			return 1;
+		} else if(skip("elsif")) {
+			int endif, end;
+			genCode(0xe9); endif = jitCount; genCodeInt32(0);// jmp while end
+			genCodeInt32Insert(jitCount - pos - 4, pos);
+			int type = relExpr();
+			genCode(type); genCode(0x05);
+			genCode(0xe9); end = jitCount; genCodeInt32(0);// jmp while end
+			eval(end, 0);
+			genCodeInt32Insert(jitCount - endif - 4, endif);
+			return 1;
+		} else if(skip("break")) {
+			genCode(0xe9);
+			breaks[brkCount] = jitCount; genCodeInt32(0);
+			brkCount++;
+		} else if(skip("end")) { blocksCount--;
+			if(isloop == 0) {
+				genCodeInt32Insert(jitCount - pos - 4, pos);
+			}
+			return 1;
+		} else if(!skip(";")) {
+			//error("error: %d: invalid expression", token[tkpos].nline);
+			relExpr();
+		}
+	}
+	if(blocksCount != 0)
+		error("error: expected 'end' before %d line", token[tkpos].nline);
+	return 0;
+}
 
-int nowFunc = 0;
+static int parser() {
+	tkpos = jitCount = 0;
+	memset(jitCode, 0, 0xFFF);
+	stringsPos = calloc(0xFF, sizeof(int));
+	int main_address;
+	genCode(0xe9); main_address = jitCount; genCodeInt32(0);
+	eval(0, 0);
 
-int breaks[0xFF] = {0}; int breaksCount = 0;
+	int addr = getFunction("main", 0);
+	printf("main() addr> %u\n", addr);
+	genCodeInt32Insert(addr - 5, main_address);
 
-int blocksCount = 0; // for while ~ end and if ~ end error check
+	for(stringsPos--; stringsCount; stringsPos--) {
+		genCodeInt32Insert(jitCount, *stringsPos);
+		int i;
+		replaceEscape(strings[--stringsCount].val);
+		for(i = 0; strings[stringsCount].val[i]; i++) {
+			genCode(strings[stringsCount].val[i]);
+		} genCode(0); // '\0'
+		printf("%d\n", (int) stringsPos);
+	}
+	printf("memsz: %d\n", varSize[nowFunc]);
 
-struct {
-	char val[0xFF];
-} strings[0xFF] = { 0 };
-int *stringsPos, stringsCount = 0;
+	/*{
+		FILE *out = fopen("asm.s", "wb");
+			fwrite(jitCode, 1, jitCount, out);
+		fclose(out);
+	}*/
 
-static int addSubExpr();
-static int mulDivExpr();
-static int relExpr();
-static int primExpr();
-static int isassign();
-static int assignment();
-static int getString();
-static int getNumOfVar(char *, int);
-static void genCode(unsigned char);
-static void genCodeInt32(unsigned int);
-static void genCodeInt32Insert(unsigned int, int);
-static void init();
-static int skip(char *);
-static int error(char *, ...);
-static int lex(char *);
-static int eval(int, int);
-static int parser();
-static int genas(char *, ...);
+	return 0;
+}
+
 
 static int getString() {
 	strcpy(strings[stringsCount].val, token[tkpos++].val);
@@ -97,13 +216,6 @@ static int getNumOfVar(char *name, int arraySize) {
 	varNames[nowFunc][varCounter++].size = sz;
 	return sz;
 }
-
-struct Function {
-	int address;
-	char name[0xFF];
-};
-struct Function functions[0xFF] = { 0 };
-int funcCount = 0;
 
 static int getFunction(char *name, int address) {
 	int i;
@@ -227,11 +339,6 @@ static int genas(char *s, ...) {
 	return 0;
 }
 
-static void init() {
-	tkpos = jitCount = 0;
-	memset(jitCode, 0, 0xFFFF);
-	memset(token, 0, sizeof(token));
-}
 
 static int skip(char *s) {
   if(strcmp(s, token[tkpos].val) == 0) {
@@ -261,6 +368,8 @@ static int relExpr() {
 		genCode(0x39); genCode(0xd8); // cmp %eax, %ebx
 		return lt ? JB : gt ? JA : diff ? JNE : eql ? JE : fle ? JBE : JAE;
 	}
+
+	return 0;
 }
 static int addSubExpr() {
 	int add;
@@ -273,6 +382,7 @@ static int addSubExpr() {
 		if(add) { genas("add eax ebx"); }// add %eax %ebx
 		else { genas("sub eax ebx"); } // sub %eax %ebx
 	}
+	return 0;
 }
 static int mulDivExpr() {
   int mul, div;
@@ -293,6 +403,7 @@ static int mulDivExpr() {
 			genas("mov eax edx");
 		}
   }
+	return 0;
 }
 static int primExpr()
 {
@@ -300,15 +411,15 @@ static int primExpr()
     genas("mov eax %s", token[tkpos++].val);
   } else if(isalpha(token[tkpos].val[0])) { // variable?
 		int varn = getNumOfVar(token[tkpos].val, 0);
-		char *name = token[tkpos].val;
-		printf("ar> %s\n", token[tkpos].val);
-	  tkpos++;
+		char *name = token[tkpos].val; tkpos++;
+
 		if(skip("[")) {
 			relExpr();
 			genas("mov edx eax"); // mov edx, eax
 			genCode(0x8b); genCode(0x44); genCode(0x95);
 			genCode(256 - sizeof(int) * varn); //mov eax, [ebp - 8 + (edx * 8)]
-			if(!skip("]")) error("error: %d: expected expression ']'", token[tkpos].nline);
+			if(!skip("]"))
+				error("error: %d: expected expression ']'", token[tkpos].nline);
 		} else if(skip("(")) {
 			int address = getFunction(name, 0);
 			printf("addr: %d\n", address);
@@ -340,45 +451,29 @@ static int primExpr()
 	return 0;
 }
 
-static int lex(char *code)
-{
-  int i, codeSize = strlen(code), line = 1;
-  for(i = 0; i < codeSize; i++) {
-    if(isdigit(code[i])) { // number?
-      for(; isdigit(code[i]); i++)
-				strncat(token[tkpos].val, &(code[i]), 1);
-			token[tkpos].nline = line;
-      i--; tkpos++;
-    } else if(isalpha(code[i])) { // ident?
-      for(; isalpha(code[i]) || isdigit(code[i]) || code[i] == '_'; i++)
-        strncat(token[tkpos].val, &(code[i]), 1);
-      token[tkpos].nline = line;
-      i--; tkpos++;
-    } else if(code[i] == ' ' || code[i] == '\t') { // space char?
-    } else if(code[i] == '#') { // comment?
-			for(i++; code[i] != '\n'; i++); line++;
-		} else if(code[i] == '"') { // string?
-			strcpy(token[tkpos].val, "\"");
-			token[tkpos++].nline = line;
-			for(i++; code[i] != '"' && code[i] != '\0'; i++)
-				strncat(token[tkpos].val, &(code[i]), 1);
-			token[tkpos].nline = line;
-			if(code[i] == '\0') error("error: %d: expected expression '\"'", token[tkpos].nline);
-			tkpos++;
-		} else { // symbol?
-      if(code[i] == '\n') {
-      	strcpy(token[tkpos].val, ";"); line++;
-      } else strncat(token[tkpos].val, &(code[i]), 1);
-			if(code[i+1] == '=')  strncat(token[tkpos].val, &(code[++i]), 1);
-			token[tkpos].nline = line;
-			tkpos++;
-    }
-  }
-  token[tkpos].nline = line;
-	for(i = 0; i < tkpos; i++) {
-		printf("tk> %s\n", token[i].val);
+static int ifStmt() {
+	int end, type = relExpr(); // if conditions
+	genCode(type); genCode(0x05);
+	genCode(0xe9); end = jitCount; genCodeInt32(0);// jmp while's end:
+	return eval(end, 0);
+}
+
+static int whileStmt() {
+	int loopBgn = jitCount, end;
+	int type = relExpr();
+	genCode(type); genCode(0x05);
+	genCode(0xe9); end = jitCount; genCodeInt32(0);// jmp while end
+	if(eval(0, 1)) {
+		unsigned int n = 0xFFFFFFFF - jitCount + loopBgn - 4;
+		genCode(0xe9);
+		genCodeInt32(n);
+		genCodeInt32Insert(jitCount - end - 4, end);
+		for(--brkCount; brkCount >= 0; brkCount--) {
+			genCodeInt32Insert(jitCount - breaks[brkCount] - 4, breaks[brkCount]);
+		} brkCount = 0;
 	}
-  tksize = tkpos;
+
+	return 0;
 }
 
 static int isassign() {
@@ -405,145 +500,19 @@ static int assignment() {
 			 error("error: %d: invalid assignment", token[tkpos].nline);
 		relExpr();
 		genCode(0x89); genCode(0x44); genCode(0x8d); genCode(256 - sizeof(int) * n);
-		//mov [ebp - n + (ecx * n)], eax
+		// mov [ebp - n + (ecx * n)], eax
 	} else {
 		skip("=");
 		relExpr();
 		genCode(0x89); genCode(0x45);
-		genCode(256 - sizeof(int) * n); // mov var %eax
+		genCode(256 - sizeof(int) * n); // mov var eax
 		printf("%d\n", tkpos);
 	}
-}
 
-static int eval(int pos, int isloop) {
-	int isputs = 0;
-	while(tkpos < tksize) {
-		if(isassign()) {
-			assignment();
-		} else if(skip("!")) {
-			char *varname = token[tkpos++].val; if(!skip("["));
-			int asize = atoi(token[tkpos++].val); if(!skip("]"));
-			getNumOfVar(varname, asize); // add array variable
-		} else if((isputs=skip("puts")) || skip("output")) {
-			do {
-				int isstring = 0;
-				if(skip("\"")) {
-					genCode(0xb8); getString();
-					genCodeInt32(0x00); // mov eax string_address
-					isstring = 1;
-				} else {
-					relExpr();
-				}
-				genas("push eax");
-				if(isstring) {
-					genCode(0xff); genCode(0x56); genCode(0x04);// call *0x04(esi) putString
-				} else {
-					genCode(0xff); genCode(0x16);// call (esi) putNumber
-				}
-				genas("pop eax");
-			} while(skip(","));
-			// for new line
-			if(isputs) {
-				genCode(0xff); genCode(0x56); genCode(0x08);// call *0x08(esi) putLN
-			}
-		} else if(skip("def")) {
-			int espBgn, address, argsc = 0;
-			char *funcName = token[tkpos++].val;
-			nowFunc++;
-			if(skip("(")) {
-				do { getNumOfVar(token[tkpos++].val, 0); argsc++; } while(skip(","));
-				skip(")");
-			}
-			getFunction(funcName, jitCount); // append function
-			if(strcmp("main", funcName) == 0) {
-				genas("push ebp");
-				genas("mov ebp esp");
-				genCode(0x81); genCode(0xec); espBgn = jitCount; genCodeInt32(0); // sub %esp nn
-				genCode(0x8b); genCode(0x75); genCode(0x0c); // mov 0xc(%ebp), esi
-					eval(0, 0);
-				genCode(0x81); genCode(0xc4); genCodeInt32(sizeof(int) * (varSize[nowFunc] + 6)); // add %esp nn
-				genCode(0xc9);// leave
-				genCode(0xc3);// ret
-				genCodeInt32Insert(sizeof(int) * (varSize[nowFunc] + 6), espBgn);
-			} else {
-				genas("push ebp");
-				genas("mov ebp esp");
-				genCode(0x81); genCode(0xec); espBgn = jitCount; genCodeInt32(0x00); // sub esp nn
-				int argpos[128], i; for(i = 0; i < argsc; i++) {
-					genCode(0x8b); genCode(0x45); genCode(0x08 + i * 4);
-					genCode(0x89); genCode(0x44); genCode(0x24);
-					argpos[i] = jitCount; genCode(0x00);
-				}
-				eval(0, 0);
-				genCode(0x81); genCode(0xc4); genCodeInt32(sizeof(int) * (varSize[nowFunc] + 6)); // add esp nn
-				genCode(0xc9);// leave
-				genCode(0xc3);// ret
-				genCodeInt32Insert(sizeof(int) * (varSize[nowFunc] + 6), espBgn);
-				for(i = 0; i < argsc; i++) {
-					jitCode[argpos[i]] = 256 - 4 * (i + 1) + ((varSize[nowFunc] + 6) * 4 - 4);
-				}
-			}
-			printf("%s() has %d byte\n", funcName, varSize[nowFunc] << 2);
-		} else if(skip("return")) {
-			relExpr();
-			return 1;
-		} else if(skip("while")) { blocksCount++;
-			int loopBgn = jitCount, end;
-			int type = relExpr();
-			genCode(type); genCode(0x05);
-			genCode(0xe9); end = jitCount; genCodeInt32(0);// jmp while end
-			if(eval(0, 1)) {
-				unsigned int n = 0xFFFFFFFF - jitCount + loopBgn - 4;
-				genCode(0xe9);
-				genCodeInt32(n);
-				genCodeInt32Insert(jitCount - end - 4, end);
-				for(--breaksCount; breaksCount >= 0; breaksCount--) {
-					genCodeInt32Insert(jitCount - breaks[breaksCount] - 4, breaks[breaksCount]);
-				} breaksCount = 0;
-			}
-		} else if(skip("if")) { blocksCount++;
-			int loopBgn = jitCount, end;
-			int type = relExpr();
-			genCode(type); genCode(0x05);
-			genCode(0xe9); end = jitCount; genCodeInt32(0);// jmp while end
-			eval(end, 0);
-		} else if(skip("else")) {
-			int end;
-			genCode(0xe9); end = jitCount; genCodeInt32(0);// jmp while end
-			genCodeInt32Insert(jitCount - pos - 4, pos);
-			eval(end, 0);
-			return 1;
-		} else if(skip("elsif")) {
-			int endif, end;
-			genCode(0xe9); endif = jitCount; genCodeInt32(0);// jmp while end
-			genCodeInt32Insert(jitCount - pos - 4, pos);
-			int type = relExpr();
-			genCode(type); genCode(0x05);
-			genCode(0xe9); end = jitCount; genCodeInt32(0);// jmp while end
-			eval(end, 0);
-			genCodeInt32Insert(jitCount - endif - 4, endif);
-			return 1;
-		} else if(skip("break")) {
-			genCode(0xe9);
-			breaks[breaksCount] = jitCount; genCodeInt32(0);
-			breaksCount++;
-		} else if(skip("end")) { blocksCount--;
-			if(isloop == 0) {
-				genCodeInt32Insert(jitCount - pos - 4, pos);
-			}
-			return 1;
-		} else if(!skip(";")) {
-			//error("error: %d: invalid expression", token[tkpos].nline);
-			relExpr();
-		}
-	}
-	if(blocksCount != 0)
-		error("error: expected 'end' before %d line", token[tkpos].nline);
 	return 0;
 }
 
-static char *replaceEscape(char *str)
-{
+static char *replaceEscape(char *str) {
 	int i;
 	char *pos;
 	char escape[12][3] = {
@@ -565,36 +534,6 @@ static char *replaceEscape(char *str)
 	return str;
 }
 
-static int parser() {
-	tkpos = jitCount = 0;
-	memset(jitCode, 0, 0xFFF);
-	stringsPos = calloc(0xFF, sizeof(int));
-	int main_address;
-	genCode(0xe9); main_address = jitCount; genCodeInt32(0);
-	eval(0, 0);
-
-	int addr = getFunction("main", 0);
-	printf("main() addr> %u\n", addr);
-	genCodeInt32Insert(addr - 5, main_address);
-
-	for(stringsPos--; stringsCount; stringsPos--) {
-		genCodeInt32Insert(jitCount, *stringsPos);
-		int i;
-		replaceEscape(strings[--stringsCount].val);
-		for(i = 0; strings[stringsCount].val[i]; i++) {
-			genCode(strings[stringsCount].val[i]);
-		} genCode(0); // '\0'
-		printf("%d\n", stringsPos);
-	}
-	printf("memsz: %d\n", varSize[nowFunc]);
-
-	/*{
-		FILE *out = fopen("asm.s", "wb");
-			fwrite(jitCode, 1, jitCount, out);
-		fclose(out);
-	}*/
-}
-
 static void putNumber(int n) { printf("%d", n); }
 static void putString(int n) { printf("%s", &(jitCode[n])); }
 static void putLN() { printf("\n"); }
@@ -614,7 +553,7 @@ int main(int argc, char **argv) {
 	jitCode = (unsigned char*) malloc(0xFFFF);
 #else
 	psize = 0xFFFF + 1;
-	printf("page_size = %d\n", psize);
+	printf("page_size = %ld\n", psize);
 	if((posix_memalign((void **)&jitCode, psize, psize)))
 		perror("posix_memalign");
 	if(mprotect((void*)jitCode, psize, PROT_READ | PROT_WRITE | PROT_EXEC))
