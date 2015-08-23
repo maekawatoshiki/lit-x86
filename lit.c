@@ -126,6 +126,8 @@ static int eval(int pos, int isloop) {
 		} else if(skip("return")) {
 			relExpr();
 			return 1;
+		} else if(skip("for")) { blocksCount++;
+			assignment(); skip(","); whileStmt(); 
 		} else if(skip("while")) { blocksCount++;
 			whileStmt();
 		} else if(skip("if")) { blocksCount++;
