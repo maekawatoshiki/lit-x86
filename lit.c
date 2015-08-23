@@ -567,7 +567,7 @@ int main(int argc, char **argv) {
 		char line[0xFF] = "";
 
 		while(strcmp(line, "run\n") != 0) {
-			strcat(input, line);
+			printf(">> "); strcat(input, line);
 			memset(line, 0, 0xFF);
 			fgets(line, 0xFF, stdin);
 		}
