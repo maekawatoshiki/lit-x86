@@ -1,9 +1,10 @@
 # lit
-> lit is jit compile calculator.
+- lit is jit compile calculator.
 so, very fast!
 
 # How to use
 - syntax
+
 ```ruby
 # output the number
 # string is surport!

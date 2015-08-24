@@ -1,11 +1,19 @@
 def collatz(n)
-	puts n
-	if n > 1
-		if n % 2 == 0 collatz(n / 2)
-		else collatz(3*n+1); end
+	sum = 0
+	while n > 1
+		puts n
+		if n % 2 == 0
+			n = n / 2
+		else
+			n = 3 * n + 1
+		end
+		sum = sum + 1
 	end
-return
+	sum
+end
 
 def main
-	collatz(4095);
-return
+	puts collatz(8379)
+end
+
+main()

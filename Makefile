@@ -1,7 +1,7 @@
 CC = clang
-CFLAGS = -m32 
+CFLAGS = -m32 -O3
 
-lit: lit.c
+lit: asm.o lit.o
 
 clean:
 	$(RM) a.out lit *.o

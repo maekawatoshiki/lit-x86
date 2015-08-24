@@ -1,24 +1,19 @@
-#include <assert.h>
-#include <ctype.h>
-#include <errno.h>
-#include <float.h>
-#include <limits.h>
-#include <locale.h>
-#include <math.h>
-#include <setjmp.h>
-#include <signal.h>
-#include <stdarg.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#if defined(WIN32) || defined(WINDOWS)
-	#include <windows.h>
-#else
-	#include <unistd.h>
-	#include <sys/types.h>
-	#include <sys/mman.h>
-#endif
+#ifndef _LIT_ASM_
+#define _LIT_ASM_
 
-#define EAX 
+#include "lit.h"
+
+enum {
+	EAX = 0, ECX, EDX, EBX,
+	ESP, EBP, ESI, EDI
+};
+
+void genCode(unsigned char);
+void genCodeInt32(unsigned int);
+void genCodeInt32Insert(unsigned int, int);
+
+int regBit(char *reg);
+int mk_modrm(char *, char *);
+int genas(char *, ...);
+
+#endif

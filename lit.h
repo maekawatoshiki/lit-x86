@@ -1,3 +1,6 @@
+#ifndef _LIT_MAIN_HEAD_
+#define _LIT_MAIN_HEAD_
+
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
@@ -28,11 +31,6 @@
 #define JBE 0x7e
 #define JAE 0x7d
 
-enum {
-	EAX = 0, ECX, EDX, EBX,
-	ESP, EBP, ESI, EDI
-};
-
 static void init();
 static int lex(char *);
 static int eval(int, int);
@@ -53,47 +51,43 @@ static int getString();
 static int getFunction(char *, int);
 static int getNumOfVar(char *, int);
 
-static void genCode(unsigned char);
-static void genCodeInt32(unsigned int);
-static void genCodeInt32Insert(unsigned int, int);
-static int regBit(char *reg);
-static int mk_modrm(char *, char *);
-static int genas(char *, ...);
-
 static int skip(char *);
 static int error(char *, ...);
 static char *replaceEscape(char *);
 
-static unsigned char *jitCode;
-int jitCount = 0;
+unsigned char *jitCode;
+int jitCount;
 
 struct Token {
   char val[32];
   int nline;
 };
-struct Token token[0xFFF] = { 0 };
-int tkpos = 0, tksize = 0;
+struct Token token[0xFFF];
+int tkpos, tksize;
 
 struct {
 	char name[32];
 	int size;
-} varNames[0xFF][0x7F] = { 0 };
-int varSize[0xFF] = { 0 }, varCounter = 0;
+} varNames[0xFF][0x7F];
+int varSize[0xFF], varCounter;
 
-int nowFunc = 0; // number of function
+int nowFunc; // number of function
+int isFunction;
 
-int breaks[0xFF] = {0}; int brkCount = 0;
+int breaks[0xFF]; int brkCount;
 
-int blocksCount = 0; // for while ~ end and if ~ end error check
+int blocksCount; // for while ~ end and if ~ end error check
 
 struct Function {
 	int address;
 	char name[0xFF];
 };
-struct Function functions[0xFF] = { 0 };
-int funcCount = 0;
+struct Function functions[0xFF];
+int funcCount;
 
 struct {
 	char val[0xFF];
-} strings[0xFF] = { 0 };
-int *stringsPos, stringsCount = 0; // strings in program
+} strings[0xFF];
+int *stringsPos, stringsCount; // strings in program
+
+#endif

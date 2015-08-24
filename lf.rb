@@ -6,9 +6,12 @@ def gcd(x, y)
 			y = y - x
 		end
 	end
-return x
+	x
+end
 
-def lcm(x, y) return ((x / gcd(x, y)) * y)
+def lcm(x, y)
+	(x / gcd(x, y)) * y
+end
 
 def fibo(n)
 	a = 0
@@ -21,7 +24,8 @@ def fibo(n)
 		b = ret
 		i = i + 1
 	end
-return ret
+	ret
+end
 
 def collatz(n)
 	output n, " "
@@ -30,21 +34,21 @@ def collatz(n)
 	else
 		if n > 1 collatz(3 * n + 1) end
 	end
-return 1
+end
 
 def fact_rec(n)
 	if n < 2
-		ret = 1
+		1
 	else
-		ret = fact_rec(n - 1) * n
+		fact_rec(n - 1) * n
 	end
-return ret
+end
 
 
 def htest(x, y)
 	puts "x = ", x
 	puts "y = ", y
-return
+end
 
 def main
 	puts "lcm = ", lcm(13, 3)
@@ -68,4 +72,4 @@ def main
 	puts "i = ", i
 
 	htest(10, 20);
-return 0
+end
