@@ -3,4 +3,4 @@ def main
 		puts i
 		i = i + 1
 	end
-return 
+return 0 
