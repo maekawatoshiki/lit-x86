@@ -1,14 +1,10 @@
 CFLAGS = -m32 
 CC = clang $(CFLAGS)
 
-lit: asm.o lit.o 
-	$(CC) -o lit lit.o asm.o
-
-asm.o: asm.c asm.h
-	$(CC) -c asm.c
-
-lit.o: lit.c lit.h
+lit: asm.c lit.c
 	$(CC) -c lit.c
+	$(CC) -c asm.c
+	$(CC) -o lit lit.o asm.o
 
 clean:
 	$(RM) a.out lit *.o 

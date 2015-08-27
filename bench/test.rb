@@ -6,5 +6,5 @@ def fibo(n)
 	end
 end
 
-puts fibo(39)
+puts fibo(35)
 

@@ -6,7 +6,7 @@ int fibo(int n) {
 }
 
 int main() {
-	printf("%d\n", fibo(39));
+	printf("%d\n", fibo(35));
 
 	return 0;
 }

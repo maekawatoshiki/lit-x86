@@ -5,6 +5,6 @@ class fibo {
 	}
 
 	public static void main(String args[]) {
-		System.out.println(rec_fibo(39));
+		System.out.println(rec_fibo(35));
 	}
 }

@@ -142,7 +142,7 @@ static int eval(int pos, int isblock) {
 			int end;
 			genCode(0xe9); end = jitCount; genCodeInt32(0);// jmp while end
 			genCodeInt32Insert(jitCount - pos - 4, pos);
-			eval(end, 0);
+			eval(end, NON);
 			return 1;
 		} else if(skip("elsif")) {
 			int endif, end;
@@ -151,16 +151,16 @@ static int eval(int pos, int isblock) {
 			int type = relExpr();
 			genCode(type); genCode(0x05);
 			genCode(0xe9); end = jitCount; genCodeInt32(0);// jmp while end
-			eval(end, 0);
+			eval(end, NON);
 			genCodeInt32Insert(jitCount - endif - 4, endif);
 			return 1;
 		} else if(skip("break")) {
 			genCode(0xe9); // jmp
 			breaks[brkCount++] = jitCount; genCodeInt32(0);
 		} else if(skip("end")) { blocksCount--;
-			if(isblock == NON) {
+			if(isblock == 0) {
 				genCodeInt32Insert(jitCount - pos - 4, pos);
-			} else if(isblock == IN_FUNC) isFunction = IN_GLOBAL;
+			} else if(isblock == BLOCK_FUNC) isFunction = IN_GLOBAL;
 			return 1;
 		} else if(!skip(";")) {
 			relExpr();
