@@ -168,7 +168,7 @@ static int eval(int pos, int isloop) {
 static int parser() {
 	tkpos = jitCount = 0;
 	memset(jitCode, 0, 0xFFF);
-	stringsPos = calloc(0xFF, sizeof(int));
+	strPos = calloc(0xFF, sizeof(int));
 	int main_address;
 	genCode(0xe9); main_address = jitCount; genCodeInt32(0);
 	eval(0, 0);
@@ -177,14 +177,14 @@ static int parser() {
 	printf("main() addr> %u\n", addr);
 	genCodeInt32Insert(addr - 5, main_address);
 
-	for(stringsPos--; stringsCount; stringsPos--) {
-		genCodeInt32Insert(jitCount, *stringsPos);
+	for(strPos--; strCount; strPos--) {
+		genCodeInt32Insert(jitCount, *strPos);
 		int i;
-		replaceEscape(strings[--stringsCount].val);
-		for(i = 0; strings[stringsCount].val[i]; i++) {
-			genCode(strings[stringsCount].val[i]);
+		replaceEscape(strings[--strCount]);
+		for(i = 0; strings[strCount][i]; i++) {
+			genCode(strings[strCount][i]);
 		} genCode(0); // '\0'
-		printf("%d\n", (int) stringsPos);
+		printf("string addr> %d\n", (int) strPos);
 	}
 	printf("memsz: %d\n", varSize[nowFunc]);
 
@@ -199,9 +199,9 @@ static int parser() {
 
 
 static int getString() {
-	strcpy(strings[stringsCount].val, token[tkpos++].val);
-	*stringsPos++ = jitCount;
-	return stringsCount++;
+	strcpy(strings[strCount], token[tkpos++].val);
+	*strPos++ = jitCount;
+	return strCount++;
 }
 
 static int getNumOfVar(char *name, int arraySize) {

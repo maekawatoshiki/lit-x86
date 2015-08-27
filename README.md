@@ -1,18 +1,23 @@
-# lit
-- lit is jit compile calculator.
-so, very fast!
+# Lit
+- Lit is JIT Compile language.
+So very faster.
 
 # How to use
-- syntax
+
+- Easy to remember. Because syntax is like ruby.
+
+- Syntax
 
 ```ruby
-# output the number
-# string is surport!
-puts "Hello world!!\n"
-print 12345
-puts "number = ", 488569363, "\n"
+# Statement => write in the function.
 
-# calculate & variable
+# output the string and number
+# puts is output and \n
+# output is output only.
+puts "Hello world!!" # => Hello world!!\n
+puts "number = ", 65536 # => number = 65536\n
+output "not new line" # => not new line
+
 # declaration is not required
 # support only integer
 i = 10
@@ -37,6 +42,7 @@ while i < 100
 end
 
 # create function
+# return is not support...
 def sum(n)
   i = 1
   sm = 0
@@ -44,14 +50,30 @@ def sum(n)
     sm = sm + i
     i = i + 1
   end
-return sm # don't use "return" 2 times in 1 function.
+  sm
+end
+```
+
+- Fibonacci
+
+```ruby
+def fibo(n)
+  if n < 2
+    1
+  else
+    fibo(n - 1) + fibo(n - 2)
+  end
+end
+
+def main
+  puts fibo(39)
+end
 ```
 
 - compile
 ```
 $ make (need clang)
-$ ./lit  
-<expression>
+$ ./lit [sourcefile]
 ```
 
 # Version Info

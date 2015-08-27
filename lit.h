@@ -85,9 +85,7 @@ struct Function {
 struct Function functions[0xFF];
 int funcCount;
 
-struct {
-	char val[0xFF];
-} strings[0xFF];
-int *stringsPos, stringsCount; // strings in program
+char strings[0xFF][0xFF];
+int *strPos, strCount; // strings in program
 
 #endif
