@@ -88,4 +88,6 @@ int funcCount;
 char strings[0xFF][0xFF];
 int *strPos, strCount; // strings in program
 
+int isFunction;
+
 #endif

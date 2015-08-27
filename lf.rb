@@ -50,26 +50,24 @@ def htest(x, y)
 	puts "y = ", y
 end
 
-def main
-	puts "lcm = ", lcm(13, 3)
-	i = 1
-	while i < 30
-		puts "fibo", i, " = ", fibo(i)
-		i = i + 1
-	end
-	i = 1
-	while i < 10
-		puts "fact", i, " = ", fact_rec(i)
-		i = i + 1
-	end
-	i = 2
-	while i <= 7
-		puts "collatz", i, " = ", collatz(i)
-		i = i + 1
-	end
-	i = 1
-	puts "i = i + 10 => ", (i = i + 10)
-	puts "i = ", i
 
-	htest(10, 20);
+puts "lcm = ", lcm(13, 3)
+i = 1
+while i <= 40
+	puts "fibo", i, " = ", fibo(i)
+	i = i + 1
 end
+i = 1
+while i < 10
+	puts "fact", i, " = ", fact_rec(i)
+	i = i + 1
+end
+i = 2
+while i <= 7
+	puts "collatz", i, " = ", collatz(i)
+	i = i + 1
+end
+i = 1
+puts "i = i + 10 => ", (i = i + 10)
+puts "i = ", i
+htest(10, 20)

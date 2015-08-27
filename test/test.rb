@@ -6,8 +6,5 @@ def fibo(n)
 	end
 end
 
-def main
-	puts fibo(39)
-end
+puts fibo(39)
 
-main()
