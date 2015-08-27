@@ -31,6 +31,14 @@
 #define JBE 0x7e
 #define JAE 0x7d
 
+#define NON 0
+
+#define IN_FUNC 1
+#define IN_GLOBAL 0
+
+#define BLOCK_LOOP 1
+#define BLOCK_FUNC 2
+
 static void init();
 static int lex(char *);
 static int eval(int, int);

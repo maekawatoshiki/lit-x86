@@ -50,19 +50,18 @@ static int lex(char *code)
 	return 0;
 }
 
-static int eval(int pos, int isloop) {
+static int eval(int pos, int isblock) {
 	int isputs = 0;
 	while(tkpos < tksize) {
 		if(skip("def")) { blocksCount++;
 			int espBgn, argsc = 0;
 			char *funcName = token[tkpos++].val;
-			nowFunc++;
+			nowFunc++; isFunction = IN_FUNC;
 			if(skip("(")) {
 				do { getNumOfVar(token[tkpos++].val, 0); argsc++; } while(skip(","));
 				skip(")");
 			}
 			getFunction(funcName, jitCount); // append function
-			isFunction = 1;
 
 			genas("push ebp");
 			genas("mov ebp esp");
@@ -72,7 +71,7 @@ static int eval(int pos, int isloop) {
 				genCode(0x89); genCode(0x44); genCode(0x24);
 				argpos[i] = jitCount; genCode(0x00);
 			}
-				eval(0, 2);
+				eval(0, BLOCK_FUNC);
 			genas("add esp %d", sizeof(int) * (varSize[nowFunc] + 6)); // add esp nn
 			genCode(0xc9);// leave
 			genCode(0xc3);// ret
@@ -82,9 +81,9 @@ static int eval(int pos, int isloop) {
 			}
 			printf("isFunction = %d\n", isFunction);
 			printf("%s() has %d byte\n", funcName, varSize[nowFunc] << 2);
-		} else if(isFunction == 0 &&  strcmp("def", token[tkpos+1].val) != 0 && 
+		} else if(isFunction == IN_GLOBAL &&  strcmp("def", token[tkpos+1].val) != 0 && 
 				strcmp(";", token[tkpos+1].val) != 0) {	// main function entry
-			isFunction = 1;
+			isFunction = IN_FUNC;
 			nowFunc++;
 			int espBgn;
 			getFunction("main", jitCount); // append function
@@ -92,13 +91,13 @@ static int eval(int pos, int isloop) {
 			genas("mov ebp esp");
 			espBgn = jitCount + 2; genas("sub esp 0");
 			genCode(0x8b); genCode(0x75); genCode(0x0c); // mov 0xc(%ebp), esi
-				eval(0, 2); //error("parser error");
+				eval(0, NON);
 			printf("tkpos = %d, tksize = %d\n", tkpos, tksize);
 			genCode(0x81); genCode(0xc4); genCodeInt32(sizeof(int) * (varSize[nowFunc] + 6)); // add %esp nn
 			genCode(0xc9);// leave
 			genCode(0xc3);// ret
 			genCodeInt32Insert(sizeof(int) * (varSize[nowFunc] + 6), espBgn);
-			isFunction = 0;
+			isFunction = IN_GLOBAL;
 		} else if(isassign()) {
 			assignment();
 		} else if(skip("!")) {
@@ -130,8 +129,7 @@ static int eval(int pos, int isloop) {
 				genas("pop eax");
 			} while(skip(","));
 			// for new line
-			if(isputs) {
-				isputs = 0;
+			if(isputs) { isputs = 0;
 				genCode(0xff); genCode(0x56); genCode(0x08);// call *0x08(esi) putLN
 			}
 		} else if(skip("for")) { blocksCount++;
@@ -160,9 +158,9 @@ static int eval(int pos, int isloop) {
 			genCode(0xe9); // jmp
 			breaks[brkCount++] = jitCount; genCodeInt32(0);
 		} else if(skip("end")) { blocksCount--;
-			if(isloop == 0) {
+			if(isblock == NON) {
 				genCodeInt32Insert(jitCount - pos - 4, pos);
-			} else if(isloop == 2) isFunction = 0;
+			} else if(isblock == IN_FUNC) isFunction = IN_GLOBAL;
 			return 1;
 		} else if(!skip(";")) {
 			relExpr();
@@ -352,7 +350,7 @@ static int ifStmt() {
 	int end, type = relExpr(); // if conditions
 	genCode(type); genCode(0x05);
 	genCode(0xe9); end = jitCount; genCodeInt32(0);// jmp while's end:
-	return eval(end, 0);
+	return eval(end, NON);
 }
 
 static int whileStmt() {
@@ -360,7 +358,7 @@ static int whileStmt() {
 	int type = relExpr();
 	genCode(type); genCode(0x05);
 	genCode(0xe9); end = jitCount; genCodeInt32(0);// jmp while end
-	if(eval(0, 1)) {
+	if(eval(0, BLOCK_LOOP)) {
 		unsigned int n = 0xFFFFFFFF - jitCount + loopBgn - 4;
 		genCode(0xe9);
 		genCodeInt32(n);

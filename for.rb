@@ -9,12 +9,10 @@ def gcd(x, y)
 	x + 1 - 1
 end
 
-def main
-	for x = 1, x < 1000
-		for y = 1, y < 1000
-			puts "gcd(", x, ", ", y, ") = ", gcd(x, y)
-			y = y + 1
-		end
-		x = x + 1
+for x = 1, x < 1000
+	for y = 1, y < 1000
+		puts "gcd(", x, ", ", y, ") = ", gcd(x, y)
+		y = y + 1
 	end
+	x = x + 1
 end
