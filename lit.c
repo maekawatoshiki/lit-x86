@@ -54,34 +54,8 @@ static int eval(int pos, int isblock) {
 	int isputs = 0;
 	while(tkpos < tksize) {
 		if(skip("def")) { blocksCount++;
-			int espBgn, argsc = 0;
-			char *funcName = token[tkpos++].val;
-			nowFunc++; isFunction = IN_FUNC;
-			if(skip("(")) {
-				do { getNumOfVar(token[tkpos++].val, 0); argsc++; } while(skip(","));
-				skip(")");
-			}
-			getFunction(funcName, jitCount); // append function
-
-			genas("push ebp");
-			genas("mov ebp esp");
-			espBgn = jitCount + 2; genas("sub esp 0");
-			int argpos[128], i; for(i = 0; i < argsc; i++) {
-				genCode(0x8b); genCode(0x45); genCode(0x08 + (argsc - i - 1) * 4);
-				genCode(0x89); genCode(0x44); genCode(0x24);
-				argpos[i] = jitCount; genCode(0x00);
-			}
-				eval(0, BLOCK_FUNC);
-			genas("add esp %d", sizeof(int) * (varSize[nowFunc] + 6)); // add esp nn
-			genCode(0xc9);// leave
-			genCode(0xc3);// ret
-			genCodeInt32Insert(sizeof(int) * (varSize[nowFunc] + 6), espBgn);
-			for(i = 0; i < argsc; i++) {
-				jitCode[argpos[i]] = 256 - 4 * (i + 1) + ((varSize[nowFunc] + 6) * 4 - 4);
-			}
-			printf("isFunction = %d\n", isFunction);
-			printf("%s() has %d byte\n", funcName, varSize[nowFunc] << 2);
-		} else if(isFunction == IN_GLOBAL &&  strcmp("def", token[tkpos+1].val) != 0 && 
+			functionStmt();
+		} else if(isFunction == IN_GLOBAL &&  strcmp("def", token[tkpos+1].val) != 0 &&
 				strcmp(";", token[tkpos+1].val) != 0) {	// main function entry
 			isFunction = IN_FUNC;
 			nowFunc++;
@@ -369,6 +343,37 @@ static int whileStmt() {
 	}
 
 	return 0;
+}
+
+static int functionStmt() {
+	int espBgn, argsc = 0;
+	char *funcName = token[tkpos++].val;
+	nowFunc++; isFunction = IN_FUNC;
+	if(skip("(")) {
+		do { getNumOfVar(token[tkpos++].val, 0); argsc++; } while(skip(","));
+		skip(")");
+	}
+	getFunction(funcName, jitCount); // append function
+
+	genas("push ebp");
+	genas("mov ebp esp");
+	espBgn = jitCount + 2; genas("sub esp 0");
+	int argpos[128], i; for(i = 0; i < argsc; i++) {
+		genCode(0x8b); genCode(0x45); genCode(0x08 + (argsc - i - 1) * 4);
+		genCode(0x89); genCode(0x44); genCode(0x24);
+		argpos[i] = jitCount; genCode(0x00);
+	}
+	eval(0, BLOCK_FUNC);
+	genas("add esp %d", sizeof(int) * (varSize[nowFunc] + 6)); // add esp nn
+	genCode(0xc9);// leave
+	genCode(0xc3);// ret
+	genCodeInt32Insert(sizeof(int) * (varSize[nowFunc] + 6), espBgn);
+	for(i = 0; i < argsc; i++) {
+		jitCode[argpos[i]] = 256 - 4 * (i + 1) + ((varSize[nowFunc] + 6) * 4 - 4);
+	}
+	
+	printf("isFunction = %d\n", isFunction);
+	printf("%s() has %d byte\n", funcName, varSize[nowFunc] << 2);
 }
 
 static int isassign() {

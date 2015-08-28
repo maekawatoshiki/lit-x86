@@ -54,6 +54,7 @@ static int assignment();
 
 static int ifStmt();
 static int whileStmt();
+static int functionStmt();
 
 static int getString();
 static int getFunction(char *, int);
@@ -96,6 +97,6 @@ int funcCount;
 char strings[0xFF][0xFF];
 int *strPos, strCount; // strings in program
 
-int isFunction;
+int isFunction; // With in function?
 
 #endif
