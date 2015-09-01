@@ -61,10 +61,10 @@ static int eval(int pos, int isblock) {
 			nowFunc++;
 			int espBgn;
 			getFunction("main", jitCount); // append function
-			genas("push ebp");
+			genCode(0x56);
 			genas("mov ebp esp");
 			espBgn = jitCount + 2; genas("sub esp 0");
-			genCode(0x8b); genCode(0x75); genCode(0x0c); // mov 0xc(%ebp), esi
+			genCode(0x8b); genCode(0x75); genCode(0x0c); // mov esi, 0xc(%ebp)
 				eval(0, NON);
 			printf("tkpos = %d, tksize = %d\n", tkpos, tksize);
 			genCode(0x81); genCode(0xc4); genCodeInt32(sizeof(int) * (varSize[nowFunc] + 6)); // add %esp nn
@@ -354,7 +354,6 @@ static int functionStmt() {
 		skip(")");
 	}
 	getFunction(funcName, jitCount); // append function
-
 	genas("push ebp");
 	genas("mov ebp esp");
 	espBgn = jitCount + 2; genas("sub esp 0");
@@ -374,6 +373,8 @@ static int functionStmt() {
 	
 	printf("isFunction = %d\n", isFunction);
 	printf("%s() has %d byte\n", funcName, varSize[nowFunc] << 2);
+	
+	return 0;
 }
 
 static int isassign() {
