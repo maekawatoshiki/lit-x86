@@ -33,8 +33,9 @@ static int lex(char *code)
 			if(code[i] == '\0') error("error: %d: expected expression '\"'", token[tkpos].nline);
 			tkpos++;
 		} else { // symbol?
-      if(code[i] == '\n') {
-      	strcpy(token[tkpos].val, ";"); line++;
+			int iswindows = 0;
+      if(code[i] == '\n' || (iswindows=(code[i] == '\r' && code[i+1] == '\n'))) {
+      	strcpy(token[tkpos].val, ";"); if(iswindows) i++; line++;
       } else strncat(token[tkpos].val, &(code[i]), 1);
 			if(code[i+1] == '=')  strncat(token[tkpos].val, &(code[++i]), 1);
 			token[tkpos].nline = line;
@@ -370,7 +371,7 @@ static int functionStmt() {
 	for(i = 0; i < argsc; i++) {
 		jitCode[argpos[i]] = 256 - 4 * (i + 1) + ((varSize[nowFunc] + 6) * 4 - 4);
 	}
-	
+
 	printf("isFunction = %d\n", isFunction);
 	printf("%s() has %d byte\n", funcName, varSize[nowFunc] << 2);
 	
@@ -448,12 +449,11 @@ int run() {
 }
 
 int main(int argc, char **argv) {
-	long psize;
 
 #if defined(WIN32) || defined(WINDOWS)
-	jitCode = (unsigned char*) malloc(0xFFFF);
+	jitCode = (unsigned char*) calloc(sizeof(unsigned char), 0xFFFF);
 #else
-	psize = 0xFFFF + 1;
+	long psize = 0xFFFF + 1;
 	printf("page_size = %ld\n", psize);
 	if((posix_memalign((void **)&jitCode, psize, psize)))
 		perror("posix_memalign");

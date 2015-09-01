@@ -49,8 +49,6 @@ int genas(char *s, ...) {
 	vsprintf(src, s, args);
 	sz = strlen(src) + 1;
 
-	printf("src> %s\n", src);
-
 	for(; *src; src++) {
 		if(isalpha(*src) || isdigit(*src)) {
 			for(; *src != ' ' && *src != 0; src++)
@@ -58,8 +56,6 @@ int genas(char *s, ...) {
 			src--; n++;
 		}
 	}// 0 3
-	for(i = n = 0; i < 4; i++)
-		printf("as> %s<\n", nem[i]);
 
 	if(strcmp(nem[0], "mov") == 0) { // mov?
 		if(isalpha(*nem[2])) { // register?
