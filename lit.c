@@ -73,8 +73,7 @@ static int eval(int pos, int isblock) {
 			genCode(0xc3);// ret
 			genCodeInt32Insert(sizeof(int) * (varSize[nowFunc] + 6), espBgn);
 			isFunction = IN_GLOBAL;
-		} else if(isassign()) {
-			assignment();
+		} else if(isassign()) { assignment();
 		} else if(skip("!")) {
 			char *varname = token[tkpos++].val;
 			if(!skip("["))
@@ -83,8 +82,6 @@ static int eval(int pos, int isblock) {
 			if(!skip("]"))
 				error("error: %d: invalid expression", token[tkpos].nline);
 			getNumOfVar(varname, asize); // add array variable
-		} else if(skip("rand")) {
-			genCode(0xff); genCode(0x56); genCode(16);// call *0x04(esi) putString
 		} else if((isputs=skip("puts")) || skip("output")) {
 			do {
 				int isstring = 0;
@@ -374,7 +371,7 @@ static int functionStmt() {
 
 	printf("isFunction = %d\n", isFunction);
 	printf("%s() has %d byte\n", funcName, varSize[nowFunc] << 2);
-	
+
 	return 0;
 }
 
