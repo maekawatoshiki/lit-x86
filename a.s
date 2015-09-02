@@ -3,3 +3,4 @@ section .text
 
 _start:
   sub ebp, 1000
+	mov [esp+4], eax

@@ -1,10 +1,7 @@
 #include <stdio.h>
 
-int gcd(int x, int y) {
-	while(x != y) {
-		if(x > y) x -= y;
-		else y -= x;
-	}
+int gcd(int xx, int y) {
+	unsigned long long x = 0xfffffffffffffad3;
 	return x;
 }
 

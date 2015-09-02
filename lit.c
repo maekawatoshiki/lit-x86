@@ -290,15 +290,14 @@ static int primExpr()
 		} else if(skip("(")) {
 			int address = getFunction(name, 0);
 			printf("addr: %d\n", address);
-			if(isalpha(token[tkpos].val[0]) ||
-				isdigit(token[tkpos].val[0]) || token[tkpos].val[0] == '(') { // has arg?
+			if(isalpha(token[tkpos].val[0]) || isdigit(token[tkpos].val[0])) { // has arg?
+				int i = 2;
 				do {
 					relExpr();
 					genas("push eax");
 				} while(skip(","));
 			}
 			genCode(0xe8); genCodeInt32(0xFFFFFFFF - (jitCount - address) - 3); // call func
-			genas("add esp 4"); // reposit the amount that was push
 			if(!skip(")")) error("error: %d: expected expression ')'", token[tkpos].nline);
 		} else {
 			genCode(0x8b); genCode(0x45);
@@ -356,7 +355,7 @@ static int functionStmt() {
 	genas("mov ebp esp");
 	espBgn = jitCount + 2; genas("sub esp 0");
 	int argpos[128], i; for(i = 0; i < argsc; i++) {
-		genCode(0x8b); genCode(0x45); genCode(0x08 + (argsc - i - 1) * 4);
+		genCode(0x8b); genCode(0x45); genCode(0x08 + (argsc - i - 1) * sizeof(int));
 		genCode(0x89); genCode(0x44); genCode(0x24);
 		argpos[i] = jitCount; genCode(0x00);
 	}
@@ -365,8 +364,8 @@ static int functionStmt() {
 	genCode(0xc9);// leave
 	genCode(0xc3);// ret
 	genCodeInt32Insert(sizeof(int) * (varSize[nowFunc] + 6), espBgn);
-	for(i = 0; i < argsc; i++) {
-		jitCode[argpos[i]] = 256 - 4 * (i + 1) + ((varSize[nowFunc] + 6) * 4 - 4);
+	for(i = 1; i <= argsc; i++) {
+		jitCode[argpos[i-1]] = 256 - sizeof(int) * i + ((varSize[nowFunc] + 6) * 4 - 4);
 	}
 
 	printf("isFunction = %d\n", isFunction);
