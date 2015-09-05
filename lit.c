@@ -82,7 +82,7 @@ static int eval(int pos, int isblock) {
 			if(!skip("]")) 	error("error: %d: invalid expression", token[tkpos].nline);
 			int n = getNumOfVar(varname, 0); // add array variable
 			/* mov [esp], asize */
-			genCode(0xc7); genCode(0x04); genCode(0x24); genCodeInt32(asize);
+			genCode(0xc7); genCode(0x04); genCode(0x24); genCodeInt32(asize * sizeof(int));
 			genCode(0xff); genCode(0x56); genCode(12); // call malloc
 			genCode(0x89); genCode(0x45); genCode(256 - sizeof(int) * n); // mov [ebp-n], eax
 		} else if((isputs=skip("puts")) || skip("output")) {
