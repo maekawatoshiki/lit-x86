@@ -291,16 +291,17 @@ static int primExpr()
 			if(!skip("]"))
 				error("error: %d: expected expression ']'", token[tkpos].nline);
 		} else if(skip("(")) {
-			int address = getFunction(name, 0);
+			int address = getFunction(name, 0), args = 0;
 			printf("addr: %d\n", address);
 			if(isalpha(token[tkpos].val[0]) || isdigit(token[tkpos].val[0])) { // has arg?
-				int i = 2;
 				do {
 					relExpr();
 					genas("push eax");
+					args++;
 				} while(skip(","));
 			}
 			genCode(0xe8); genCodeInt32(0xFFFFFFFF - (jitCount - address) - 3); // call func
+			genas("add esp %d", args * sizeof(int));
 			if(!skip(")")) error("error: %d: expected expression ')'", token[tkpos].nline);
 		} else {
 			genCode(0x8b); genCode(0x45);
