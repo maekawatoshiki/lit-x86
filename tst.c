@@ -1,16 +1,14 @@
 #include <stdio.h>
+#include <stdlib.h>
 
-int gcd(int xx, int y) {
-	unsigned long long x = 0xfffffffffffffad3;
-	return x;
+int memory() { 
+	int *a;
+	a = malloc(sizeof(int) * 100);
+	a[300] = 0x11;
 }
 
 int main() {
-	for(int x = 1; x < 1000; x++) {
-		for(int y = 1; y < 1000; y++) {
-			printf("gcd(%d, %d) = %d\n", x, y, gcd(x, y));
-		}
-	}
+	memory();
 
 	return 0;
 }

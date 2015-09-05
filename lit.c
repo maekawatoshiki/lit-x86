@@ -73,15 +73,18 @@ static int eval(int pos, int isblock) {
 			genCode(0xc3);// ret
 			genCodeInt32Insert(sizeof(int) * (varSize[nowFunc] + 6), espBgn);
 			isFunction = IN_GLOBAL;
-		} else if(isassign()) { assignment();
+		} else if(isassign()) {
+			assignment();
 		} else if(skip("!")) {
 			char *varname = token[tkpos++].val;
-			if(!skip("["))
-				error("error: %d: invalid expression", token[tkpos].nline);
+			if(!skip("[")) error("error: %d: invalid expression", token[tkpos].nline);
 			int asize = atoi(token[tkpos++].val);
-			if(!skip("]"))
-				error("error: %d: invalid expression", token[tkpos].nline);
-			getNumOfVar(varname, asize); // add array variable
+			if(!skip("]")) 	error("error: %d: invalid expression", token[tkpos].nline);
+			int n = getNumOfVar(varname, 0); // add array variable
+			/* mov [esp], asize */
+			genCode(0xc7); genCode(0x04); genCode(0x24); genCodeInt32(asize);
+			genCode(0xff); genCode(0x56); genCode(12); // call malloc
+			genCode(0x89); genCode(0x45); genCode(256 - sizeof(int) * n); // mov [ebp-n], eax
 		} else if((isputs=skip("puts")) || skip("output")) {
 			do {
 				int isstring = 0;
@@ -282,9 +285,9 @@ static int primExpr()
 
 		if(skip("[")) {
 			relExpr();
-			genas("mov edx eax"); // mov edx, eax
-			genCode(0x8b); genCode(0x44); genCode(0x95);
-			genCode(256 - sizeof(int) * varn); //mov eax, [ebp - 8 + (edx * 8)]
+			genas("mov ecx eax");
+			genCode(0x8b); genCode(0x55); genCode(256 - sizeof(int) * varn); // mov edx, [ebp - varn]
+			genCode(0x8b); genCode(0x04); genCode(0x8a);// mov eax, [edx + ecx * 4]
 			if(!skip("]"))
 				error("error: %d: expected expression ']'", token[tkpos].nline);
 		} else if(skip("(")) {
@@ -365,7 +368,7 @@ static int functionStmt() {
 	genCode(0xc3);// ret
 	genCodeInt32Insert(sizeof(int) * (varSize[nowFunc] + 6), espBgn);
 	for(i = 1; i <= argsc; i++) {
-		jitCode[argpos[i-1]] = 256 - sizeof(int) * i + ((varSize[nowFunc] + 6) * 4 - 4);
+		jitCode[argpos[i - 1]] = 256 - sizeof(int) * i + ((varSize[nowFunc] + 6) * 4 - 4);
 	}
 
 	printf("isFunction = %d\n", isFunction);
@@ -393,12 +396,15 @@ static int assignment() {
 	int n = getNumOfVar(token[tkpos++].val, 0);
 	if(skip("[")) {
 		relExpr();
-		genas("mov ecx eax");// mov ecx, eax
+		genas("push eax");
 		if(!skip("]") || !skip("="))
 			 error("error: %d: invalid assignment", token[tkpos].nline);
-		relExpr();
-		genCode(0x89); genCode(0x44); genCode(0x8d); genCode(256 - sizeof(int) * n);
-		// mov [ebp - n + (ecx * n)], eax
+			relExpr();
+		genCode(0x8b); genCode(0x4d);
+		genCode(256 - sizeof(int) * n); // mov ecx [ebp-n]
+		genas("pop edx");
+		// mov [ecx+edx], eax
+		genCode(0x89); genCode(0x04); genCode(0x91);
 	} else {
 		skip("=");
 		relExpr();
@@ -435,13 +441,13 @@ static char *replaceEscape(char *str) {
 static void putNumber(int n) { printf("%d", n); }
 static void putString(int n) { printf("%s", &(jitCode[n])); }
 static void putLN() { printf("\n"); }
-void *funcTable[] = { (void *) putNumber, (void*) putString, (void*) putLN, (void*)rand };
+void *funcTable[] = { (void *) putNumber, (void*) putString, (void*) putLN, (void*)malloc };
 
 int run() {
-	int mem[0xFFF] = { 0 };
+	int mem[0xFFFF] = { 0 };
 
 	printf("size: %dbyte, %.2lf%%\n", jitCount, ((double)jitCount / 0xFFFF) * 100.0);
-	return ((int (*)(int *, void**))jitCode)(mem, funcTable);
+	return ((int (*)(int *, void**))jitCode)(0, funcTable);
 }
 
 int main(int argc, char **argv) {

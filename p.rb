@@ -20,10 +20,9 @@ end
 
 
 i = 2
-while i < 1000000
+while i < 20000
 	if prime(i) == 1
 		puts i, " is prime!"
 	end
 	i = i + 1
 end
-
