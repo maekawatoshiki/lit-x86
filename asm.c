@@ -88,18 +88,28 @@ int genas(char *s, ...) {
 	} else if(strcmp(nem[0], "mul") == 0) { // mul
 		if(isalpha(*nem[1])) { // register?
 			genCode(0xf7);
-			genCode(0xe0 + regBit(nem[1]));
+			genCode(0xe8 + regBit(nem[1]));
 		}
-	} else if(strcmp(nem[0], "div") == 0) { // mul
+	} else if(strcmp(nem[0], "div") == 0) { // div
 		if(isalpha(*nem[1])) { // register?
 			genCode(0xf7);
-			genCode(0xf0 + regBit(nem[1]));
+			genCode(0xf8 + regBit(nem[1]));
 		}
-	} else if(strcmp(nem[0], "push") == 0) { // mul
+	} else if(strcmp(nem[0], "push") == 0) {
 		if(isalpha(*nem[1])) { // register?
 			genCode(0x50 + regBit(nem[1]));
 		}
-	} else if(strcmp(nem[0], "pop") == 0) { // mul
+	} else if(strcmp(nem[0], "shl") == 0) {
+		if(isalpha(*nem[1])) { // register?
+			genCode(0xc1); genCode(0xe0 + regBit(nem[1]));
+			genCode(atoi(nem[2]));
+		}
+	} else if(strcmp(nem[0], "shr") == 0) {
+		if(isalpha(*nem[1])) { // register?
+			genCode(0xc1); genCode(0xe8 + regBit(nem[1]));
+			genCode(atoi(nem[2]));
+		}
+	} else if(strcmp(nem[0], "pop") == 0) { 
 		if(isalpha(*nem[1])) { // register?
 			genCode(0x58 + regBit(nem[1]));
 		}
