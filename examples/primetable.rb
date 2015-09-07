@@ -1,17 +1,13 @@
 def table(a, max)
-	for i = 0, i < max
+	for i = 0, i < max, i = i + 1
   	a[i] = 0
-  	i = i + 1
 	end
-	for i = 2, i * i < max
+	for i = 2, i * i < max, i = i + 1
 	  if a[i] == 0
-	    k = i * 2
-	    while k < max
+			for k = i * 2, k < max, k = k + i
 	      a[k] = 1
-	      k = k + i
 	    end
 	  end
-	  i = i + 1
 	end
 end
 
@@ -23,16 +19,15 @@ def isprime(a, n)
 	end
 end
 
-N = 10000000
+N = 100000
 Array a[N]
 
 table(a, N)
 
-for i = 2, i < N
+for i = 2, i < N, i = i + 1
   if isprime(a, i) == 1
     puts i
   end
-	i = i + 1
 end
 
 

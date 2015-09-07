@@ -12,8 +12,5 @@ def collatz(n)
 	sum
 end
 
-def main
-	puts collatz(8379)
-end
+puts collatz(8379)
 
-main()
