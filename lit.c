@@ -150,7 +150,7 @@ static int eval(int pos, int isblock) {
 static int parser() {
 	tkpos = jitCount = 0;
 	memset(jitCode, 0, 0xFFF);
-	strPos = calloc(0xFF, sizeof(int));
+	strAddr = calloc(0xFF, sizeof(int));
 	int main_address;
 	genCode(0xe9); main_address = jitCount; genCodeInt32(0);
 	eval(0, 0);
@@ -159,14 +159,14 @@ static int parser() {
 	printf("main() addr> %u\n", addr);
 	genCodeInt32Insert(addr - 5, main_address);
 
-	for(strPos--; strCount; strPos--) {
-		genCodeInt32Insert(jitCount, *strPos);
+	for(strAddr--; strCount; strAddr--) {
+		genCodeInt32Insert(jitCount, *strAddr);
 		int i;
 		replaceEscape(strings[--strCount]);
 		for(i = 0; strings[strCount][i]; i++) {
 			genCode(strings[strCount][i]);
 		} genCode(0); // '\0'
-		printf("string addr> %d\n", (int) strPos);
+		printf("string addr> %d\n", (int) strAddr);
 	}
 	printf("memsz: %d\n", varSize[nowFunc]);
 
@@ -182,7 +182,7 @@ static int parser() {
 
 static int getString() {
 	strcpy(strings[strCount], token[tkpos++].val);
-	*strPos++ = jitCount;
+	*strAddr++ = jitCount;
 	return strCount++;
 }
 

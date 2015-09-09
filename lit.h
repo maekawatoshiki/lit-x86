@@ -95,7 +95,7 @@ struct Function functions[0xFF];
 int funcCount;
 
 char strings[0xFF][0xFF];
-int *strPos, strCount; // strings in program
+int *strAddr, strCount; // strings in program
 
 int isFunction; // With in function?
 

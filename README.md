@@ -28,27 +28,24 @@ sum = i * (12 / 5)
 12 / 5 # => 2
 
 # loop & if
-i = 0
-sum = 0
-while i < 100
-  if i % 2 == 0
-    sum = sum + 2
+for i = 1, i < 100, i = i + 1
+  if i % 15 == 0
+    puts "fizzbuzz"
+  elsif i % 5 == 0
+    puts "buzz"
   elsif i % 3 == 0
-    sum = sum + 3
-  else
-    sum = sum + i
+  	puts "fizz"
+  else 
+  	puts i
   end
-  i = i + 1
 end
 
 # create function
 # return is not support...
 def sum(n)
-  i = 1
   sm = 0
-  while i <= n
+  for i = 1, i <= n, i = i + 1
     sm = sm + i
-    i = i + 1
   end
   sm
 end
