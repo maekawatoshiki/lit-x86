@@ -1,29 +1,33 @@
-def dfs(a, size, sum, k, i)
-	if i == size
-		if k == sum
-			1
-		else
-			0
-		end
+def max(a, b)
+	if a < b
+		b
 	else
-		if dfs(a, size, sum, k, i + 1) == 1
-			1
-		elsif dfs(a, size, sum, k + a[i], i + 1) == 1
-			1
-		else 
-			0
-		end
+		a
 	end
 end
 
-Array a[5]
-
-for i = 0, i < 5, i = i + 1
-	k = rand() % 20
-	for j = 0, j < 5, j = j + 1
-		a[j] = rand() % 8
-		output a[j], " "
-	end puts " sum = ", k
-	puts dfs(a, 5, k, 0, 0)
+def dfs(a, size, sum, k, i)
+	if i == size
+		sum
+	elsif sum + a[i] > k
+		dfs(a, size, sum, k, i + 1)
+	else
+		max(dfs(a, size, sum, k, i + 1), dfs(a, size, sum + a[i], k, i + 1))
+	end
 end
 
+N = 50
+Array a[N]
+
+for i = 0, i < N, i = i + 1
+	k = rand() % (N * 3)
+	for j = 0, j < N, j = j + 1
+		a[j] = rand() % N
+		output a[j], " "
+	end puts " sum = ", k
+	if dfs(a, N, 0, k, 0) == k
+		puts "true"
+	else
+		puts "false"
+	end
+end

@@ -35,7 +35,7 @@ for i = 1, i < 100, i = i + 1
     puts "buzz"
   elsif i % 3 == 0
   	puts "fizz"
-  else 
+  else
   	puts i
   end
 end
@@ -66,6 +66,7 @@ puts fibo(39)
 ```
 
 - compile
+
 ```
 $ make (need clang)
 $ ./lit [sourcefile]
