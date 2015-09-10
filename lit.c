@@ -283,7 +283,7 @@ static int primExpr() {
 		int varn = getNumOfVar(token[tkpos].val, 0);
 		char *name = token[tkpos].val; tkpos++;
 
-		if(skip("[")) { 
+		if(skip("[")) {
 			relExpr();
 			genas("mov ecx eax");
 			genCode(0x8b); genCode(0x55); genCode(256 - sizeof(int) * varn); // mov edx, [ebp - varn]
@@ -453,11 +453,22 @@ static char *replaceEscape(char *str) {
 	return str;
 }
 
-void putNumber(int n) { printf("%d", n); }
-void putString(int n) { printf("%s", &(jitCode[n])); }
-void putln() { printf("%c", 10); }
+
+void putNumber(int n) {
+	printf("%d", n);	fflush(stdout);
+}
+
+void putString(int n) {
+#if defined(WIN32) || defined(WINDOWS)
+	printf("%s", &(jitCode[n]));
+#else
+#include <sys/syscall.h>
+	syscall(SYS_write, STDOUT_FILENO, &(jitCode[n]), strlen(&(jitCode[n])));
+#endif
+}
+void putln() { printf("\n"); }
 volatile void *funcTable[] = { (void *) putNumber, (void*) putString, (void*) putln, (void*)malloc, (void*) rand };
- 
+
 static volatile int run() {
 	printf("size: %dbyte, %.2lf%%\n", jitCount, ((double)jitCount / 0xFFFF) * 100.0);
 	return ((int (*)(int *, volatile void**))jitCode)(0, funcTable);

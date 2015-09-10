@@ -19,14 +19,14 @@ def isprime(a, n)
 	end
 end
 
-N = 100000
+N = 1000000
 Array a[N]
 
 table(a, N)
 
 for i = 2, i < N, i = i + 1
   if isprime(a, i) == 1
-    puts i
+    puts i, " is prime"
   end
 end
 
