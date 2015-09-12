@@ -453,18 +453,11 @@ static char *replaceEscape(char *str) {
 	return str;
 }
 
-
 void putNumber(int n) {
-	printf("%d", n);	fflush(stdout);
+	printf("%d", n);
 }
-
 void putString(int n) {
-#if defined(WIN32) || defined(WINDOWS)
 	printf("%s", &(jitCode[n]));
-#else
-#include <sys/syscall.h>
-	syscall(SYS_write, STDOUT_FILENO, &(jitCode[n]), strlen(&(jitCode[n])));
-#endif
 }
 void putln() { printf("\n"); }
 volatile void *funcTable[] = { (void *) putNumber, (void*) putString, (void*) putln, (void*)malloc, (void*) rand };
