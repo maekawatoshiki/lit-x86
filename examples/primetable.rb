@@ -20,7 +20,7 @@ def isprime(a, n)
 end
 
 N = 1000000
-Array a[N]
+a = Array(N)
 
 table(a, N)
 

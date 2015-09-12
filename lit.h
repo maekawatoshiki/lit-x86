@@ -58,7 +58,7 @@ static int functionStmt();
 
 static int getString();
 static int getFunction(char *, int);
-static int getNumOfVar(char *, int);
+static int getNumOfVar(char *);
 
 static int skip(char *);
 static int error(char *, ...);

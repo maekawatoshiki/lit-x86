@@ -17,7 +17,7 @@ def dfs(a, size, sum, k, i)
 end
 
 N = 50
-Array a[N]
+a = Array(N)
 
 for i = 0, i < N, i = i + 1
 	k = rand() % (N * 3)

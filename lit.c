@@ -53,7 +53,7 @@ static int lex(char *code)
 }
 
 static int eval(int pos, int isblock) {
-	int isputs = 0;
+	int isputs = 0, isformat = 0;
 	while(tkpos < tksize) {
 		if(skip("def")) { blocksCount++;
 			functionStmt();
@@ -78,7 +78,7 @@ static int eval(int pos, int isblock) {
 			assignment();
 		} else if(skip("Array")) {
 			char *varname = token[tkpos++].val;
-			int n = getNumOfVar(varname, 0); // add array variable
+			int n = getNumOfVar(varname); // add array variable
 			if(!skip("[")) error("error: %d: invalid expression", token[tkpos].nline);
 			relExpr(); // array size
 			genas("shl eax 2");
@@ -97,7 +97,7 @@ static int eval(int pos, int isblock) {
 					relExpr();
 				}
 				genas("push eax");
-				if(isstring) {
+				if(isstring) {	
 					genCode(0xff); genCode(0x56); genCode(4);// call *0x04(esi) putString
 				} else {
 					genCode(0xff); genCode(0x16);// call (esi) putNumber
@@ -186,7 +186,7 @@ static int getString() {
 	return strCount++;
 }
 
-static int getNumOfVar(char *name, int arraySize) {
+static int getNumOfVar(char *name) {
 	int i;
 	for(i = 0; i < varCounter; i++)
 	{
@@ -194,7 +194,7 @@ static int getNumOfVar(char *name, int arraySize) {
 			return varNames[nowFunc][i].size;
 	}
 	strcpy(varNames[nowFunc][varCounter].name, name);
-	int sz = 1 + (varSize[nowFunc] += arraySize + 1);
+	int sz = 1 + (varSize[nowFunc] += 1);
 	varNames[nowFunc][varCounter++].size = sz;
 	return sz;
 }
@@ -280,7 +280,7 @@ static int primExpr() {
   if(isdigit(token[tkpos].val[0])) { // number?
     genas("mov eax %s", token[tkpos++].val);
   } else if(isalpha(token[tkpos].val[0])) { // variable?
-		int varn = getNumOfVar(token[tkpos].val, 0);
+		int varn = getNumOfVar(token[tkpos].val);
 		char *name = token[tkpos].val; tkpos++;
 
 		if(skip("[")) {
@@ -293,6 +293,12 @@ static int primExpr() {
 		} else if(skip("(")) {
 			if(strcmp(name, "rand") == 0) {
 				genCode(0xff); genCode(0x56); genCode(12 + 4); // rand
+			} else if(strcmp(name, "Array") == 0) {
+				relExpr(); // get array size
+				genas("shl eax 2");
+				genCode(0x89); genCode(0x04); genCode(0x24); // mov [esp], eax
+				genCode(0xff); genCode(0x56); genCode(12); // call malloc
+				genCode(0x89); genCode(0x45); genCode(256 - sizeof(int) * varn); // mov [ebp-n], eax
 			} else {
 				int address = getFunction(name, 0), args = 0;
 				printf("addr: %d\n", address);
@@ -366,13 +372,13 @@ static int functionStmt() {
 	char *funcName = token[tkpos++].val;
 	nowFunc++; isFunction = IN_FUNC;
 	if(skip("(")) {
-		do { getNumOfVar(token[tkpos++].val, 0); argsc++; } while(skip(","));
+		do { getNumOfVar(token[tkpos++].val); argsc++; } while(skip(","));
 		skip(")");
 	}
 	getFunction(funcName, jitCount); // append function
 	genas("push ebp");
 	genas("mov ebp esp");
-	espBgn = jitCount + 2; genas("sub esp 0");
+	espBgn = jitCount + 2; genas("sub esp 0"); // align
 	int argpos[128], i; for(i = 0; i < argsc; i++) {
 		genCode(0x8b); genCode(0x45); genCode(0x08 + (argsc - i - 1) * sizeof(int));
 		genCode(0x89); genCode(0x44); genCode(0x24);
@@ -384,10 +390,10 @@ static int functionStmt() {
 	genCode(0xc3);// ret
 	genCodeInt32Insert(sizeof(int) * (varSize[nowFunc] + 6), espBgn);
 	for(i = 1; i <= argsc; i++) {
-		jitCode[argpos[i - 1]] = 256 - sizeof(int) * i + ((varSize[nowFunc] + 6) * 4 - 4);
+		jitCode[argpos[i - 1]] = 256 - sizeof(int) * i + (((varSize[nowFunc] + 6) << 2) - 4);
 	}
 
-	printf("%s() has %d byte\n", funcName, varSize[nowFunc] << 2);
+	printf("%s() has %d functions or variables\n", funcName, varSize[nowFunc] << 2);
 
 	return 0;
 }
@@ -408,7 +414,7 @@ static int isassign() {
 }
 
 static int assignment() {
-	int n = getNumOfVar(token[tkpos++].val, 0);
+	int n = getNumOfVar(token[tkpos++].val);
 	if(skip("[")) {
 		relExpr();
 		genas("push eax");
@@ -460,7 +466,7 @@ void putString(int n) {
 	printf("%s", &(jitCode[n]));
 }
 void putln() { printf("\n"); }
-volatile void *funcTable[] = { (void *) putNumber, (void*) putString, (void*) putln, (void*)malloc, (void*) rand };
+volatile void *funcTable[] = { (void *) putNumber, (void*) putString, (void*) putln, (void*)malloc, (void*) rand, (void*) printf };
 
 static volatile int run() {
 	printf("size: %dbyte, %.2lf%%\n", jitCount, ((double)jitCount / 0xFFFF) * 100.0);

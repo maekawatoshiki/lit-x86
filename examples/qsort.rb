@@ -21,7 +21,7 @@ def qsort(a, left, right)
 end
 
 max = 20
-Array a[max]
+a = Array(max)
 for i = 0, i < max, i = i + 1
 	a[i] = rand() % 20
 end
