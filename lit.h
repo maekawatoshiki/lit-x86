@@ -58,7 +58,8 @@ static int functionStmt();
 
 static int getString();
 static int getFunction(char *, int);
-static int getNumOfVar(char *);
+static int getVariable(char *);
+static int appendVariable(char *);
 
 static int skip(char *);
 static int error(char *, ...);
@@ -67,16 +68,16 @@ static char *replaceEscape(char *);
 unsigned char *jitCode;
 int jitCount;
 
-struct Token {
+typedef struct {
   char val[32];
   int nline;
-};
-struct Token token[0xFFF];
+} Token;
+Token token[0xFFF];
 int tkpos, tksize;
 
 struct {
 	char name[32];
-	int size;
+	int id;
 } varNames[0xFF][0x7F];
 int varSize[0xFF], varCounter;
 
@@ -87,11 +88,12 @@ int breaks[0xFF]; int brkCount;
 
 int blocksCount; // for while ~ end and if ~ end error check
 
-struct Function {
+typedef struct {
 	int address;
 	char name[0xFF];
-};
-struct Function functions[0xFF];
+} Function;
+
+Function functions[0xFF];
 int funcCount;
 
 char strings[0xFF][0xFF];

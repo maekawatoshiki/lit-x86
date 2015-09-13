@@ -8,6 +8,57 @@ static void init() {
 	memset(token, 0, sizeof(token));
 }
 
+static int getString() {
+	strcpy(strings[strCount], token[tkpos++].val);
+	*strAddr++ = jitCount;
+	return strCount++;
+}
+
+static int getVariable(char *name) {
+	int i;
+	for(i = 0; i < varCounter; i++)
+	{
+		if(strcmp(name, varNames[nowFunc][i].name) == 0)
+			return varNames[nowFunc][i].id;
+	}
+	return -1;
+}
+static int appendVariable(char *name) {
+	int sz;
+	sz = 1 + ++varSize[nowFunc];
+	strcpy(varNames[nowFunc][varCounter].name, name);
+	varNames[nowFunc][varCounter++].id = sz;
+	return sz;
+}
+
+static int getFunction(char *name, int address) {
+	int i;
+	for(i = 0; i < funcCount; i++) {
+		if(strcmp(functions[i].name, name) == 0) {
+			return functions[i].address;
+		}
+	}
+	functions[funcCount].address = address;
+	strcpy(functions[funcCount].name, name);
+	return functions[funcCount++].address;
+}
+
+static int skip(char *s) {
+  if(strcmp(s, token[tkpos].val) == 0) {
+  	tkpos++;
+  	return 1;
+  } else return 0;
+}
+
+static int error(char *errs, ...) {
+	va_list args;
+	va_start(args, errs);
+	vprintf(errs, args); puts("");
+	va_end(args);
+	exit(0);
+	return 0;
+}
+
 static int lex(char *code)
 {
   int i, codeSize = strlen(code), line = 1;
@@ -38,7 +89,9 @@ static int lex(char *code)
       if(code[i] == '\n' || (iswindows=(code[i] == '\r' && code[i+1] == '\n'))) {
       	strcpy(token[tkpos].val, ";"); if(iswindows) i++; line++;
       } else strncat(token[tkpos].val, &(code[i]), 1);
-			if(code[i+1] == '=')  strncat(token[tkpos].val, &(code[++i]), 1);
+			if(code[i+1] == '=' || 
+				(code[i]=='+' && code[i+1]=='+') ||
+				(code[i]=='-' && code[i+1]=='-'))  strncat(token[tkpos].val, &(code[++i]), 1);
 			token[tkpos].nline = line;
 			tkpos++;
     }
@@ -76,16 +129,6 @@ static int eval(int pos, int isblock) {
 			isFunction = IN_GLOBAL;
 		} else if(isassign()) {
 			assignment();
-		} else if(skip("Array")) {
-			char *varname = token[tkpos++].val;
-			int n = getNumOfVar(varname); // add array variable
-			if(!skip("[")) error("error: %d: invalid expression", token[tkpos].nline);
-			relExpr(); // array size
-			genas("shl eax 2");
-			if(!skip("]")) 	error("error: %d: invalid expression", token[tkpos].nline);
-			genCode(0x89); genCode(0x04); genCode(0x24); // mov [esp], eax
-			genCode(0xff); genCode(0x56); genCode(12); // call malloc
-			genCode(0x89); genCode(0x45); genCode(256 - sizeof(int) * n); // mov [ebp-n], eax
 		} else if((isputs=skip("puts")) || skip("output")) {
 			do {
 				int isstring = 0;
@@ -170,62 +213,9 @@ static int parser() {
 	}
 	printf("memsz: %d\n", varSize[nowFunc]);
 
-	/*{
-		FILE *out = fopen("asm.s", "wb");
-			fwrite(jitCode, 1, jitCount, out);
-		fclose(out);
-	}*/
-
 	return 1;
 }
 
-
-static int getString() {
-	strcpy(strings[strCount], token[tkpos++].val);
-	*strAddr++ = jitCount;
-	return strCount++;
-}
-
-static int getNumOfVar(char *name) {
-	int i;
-	for(i = 0; i < varCounter; i++)
-	{
-		if(strcmp(name, varNames[nowFunc][i].name) == 0)
-			return varNames[nowFunc][i].size;
-	}
-	strcpy(varNames[nowFunc][varCounter].name, name);
-	int sz = 1 + (varSize[nowFunc] += 1);
-	varNames[nowFunc][varCounter++].size = sz;
-	return sz;
-}
-
-static int getFunction(char *name, int address) {
-	int i;
-	for(i = 0; i < funcCount; i++) {
-		if(strcmp(functions[i].name, name) == 0) {
-			return functions[i].address;
-		}
-	}
-	functions[funcCount].address = address;
-	strcpy(functions[funcCount].name, name);
-	return functions[funcCount++].address;
-}
-
-static int skip(char *s) {
-  if(strcmp(s, token[tkpos].val) == 0) {
-  	tkpos++;
-  	return 1;
-  } else return 0;
-}
-
-static int error(char *errs, ...) {
-	va_list args;
-	va_start(args, errs);
-	vprintf(errs, args); puts("");
-	va_end(args);
-	exit(0);
-	return 0;
-}
 
 static int relExpr() {
 	int lt=0, gt=0, diff=0, eql=0, fle=0;
@@ -277,20 +267,25 @@ static int mulDivExpr() {
 	return 0;
 }
 static int primExpr() {
+	int inc=0, dec=0;
   if(isdigit(token[tkpos].val[0])) { // number?
     genas("mov eax %s", token[tkpos++].val);
-  } else if(isalpha(token[tkpos].val[0])) { // variable?
-		int varn = getNumOfVar(token[tkpos].val);
+  } else if(isalpha(token[tkpos].val[0]) || 
+  		(inc=skip("++")) || (dec=skip("--"))) { // variable or inc or dec
 		char *name = token[tkpos].val; tkpos++;
+		int varn; 
 
-		if(skip("[")) {
+		if(skip("[")) { // Array?
+			if((varn = getVariable(name)) == -1) 
+				error("error: %d: '%s' was not decleared", name, token[tkpos].val);
+
 			relExpr();
 			genas("mov ecx eax");
 			genCode(0x8b); genCode(0x55); genCode(256 - sizeof(int) * varn); // mov edx, [ebp - varn]
 			genCode(0x8b); genCode(0x04); genCode(0x8a);// mov eax, [edx + ecx * 4]
 			if(!skip("]"))
 				error("error: %d: expected expression ']'", token[tkpos].nline);
-		} else if(skip("(")) {
+		} else if(skip("(")) { // Function?
 			if(strcmp(name, "rand") == 0) {
 				genCode(0xff); genCode(0x56); genCode(12 + 4); // rand
 			} else if(strcmp(name, "Array") == 0) {
@@ -298,8 +293,7 @@ static int primExpr() {
 				genas("shl eax 2");
 				genCode(0x89); genCode(0x04); genCode(0x24); // mov [esp], eax
 				genCode(0xff); genCode(0x56); genCode(12); // call malloc
-				genCode(0x89); genCode(0x45); genCode(256 - sizeof(int) * varn); // mov [ebp-n], eax
-			} else {
+			} else { // Variable?
 				int address = getFunction(name, 0), args = 0;
 				printf("addr: %d\n", address);
 				if(isalpha(token[tkpos].val[0]) || isdigit(token[tkpos].val[0])) { // has arg?
@@ -313,10 +307,12 @@ static int primExpr() {
 				genas("add esp %d", args * sizeof(int));
 			}
 			if(!skip(")")) error("error: %d: expected expression ')'", token[tkpos].nline);
+
 		} else {
+			if((varn = getVariable(name)) == -1) 
+				error("error: %d: '%s' was not decleared", name, token[tkpos].val);	
 			genCode(0x8b); genCode(0x45);
 			genCode(256 - sizeof(int) * varn); // mov %eax variable
-			printf("size: OK: %d\n", jitCount);
 		}
 	} else if(skip("]")) {
 	   error("error: %d: invalid expression", token[tkpos].nline);
@@ -372,7 +368,7 @@ static int functionStmt() {
 	char *funcName = token[tkpos++].val;
 	nowFunc++; isFunction = IN_FUNC;
 	if(skip("(")) {
-		do { getNumOfVar(token[tkpos++].val); argsc++; } while(skip(","));
+		do { appendVariable(token[tkpos++].val); argsc++; } while(skip(","));
 		skip(")");
 	}
 	getFunction(funcName, jitCount); // append function
@@ -414,7 +410,9 @@ static int isassign() {
 }
 
 static int assignment() {
-	int n = getNumOfVar(token[tkpos++].val);
+	int n = getVariable(token[tkpos].val);
+	if(n == -1) n = appendVariable(token[tkpos].val);
+	tkpos++;
 	if(skip("[")) {
 		relExpr();
 		genas("push eax");
@@ -510,6 +508,7 @@ int main(int argc, char **argv) {
 		char *source = calloc(sizeof(char), sourceSize + 2);
 		fread(source, sizeof(char), sourceSize, codefp);
 		lex(source);
+		fclose(codefp);
 	}
 
 	parser();

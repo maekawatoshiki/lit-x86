@@ -16,7 +16,7 @@ def dfs(a, size, sum, k, i)
 	end
 end
 
-N = 50
+N = 20
 a = Array(N)
 
 for i = 0, i < N, i = i + 1
