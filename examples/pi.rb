@@ -14,23 +14,26 @@ def format(n, long)
 end
 
 def pi
-  a = Array(52514)
+  N = 14*100
+  NM = N - 14 # PI LONG
+  a = Array(N)
   d = 0; e = 0; g = 0; h = 0
   f = 10000
-  for c = 52500, c > 0, c = c - 14
+  for c = NM, c > 0, c = c - 14
     d = d % f
     e = d
     for b = c - 1, b > 0, b = b - 1
       g = 2 * b - 1
-      if c != 52500 
-        d = d * b + f * a[b] 
-      else 
-        d = d * b + f * (f / 5) 
+      if c != NM
+        d = d * b + f * a[b]
+      else
+        d = d * b + f * (f / 5)
       end
       a[b] = d % g
       d = d / g
     end
-    format(e + d / f, 4)
+    format(e + d / f, 4);
+    puts ""
   end
 end
 
