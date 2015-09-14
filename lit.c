@@ -277,7 +277,7 @@ static int primExpr() {
 
 		if(skip("[")) { // Array?
 			if((varn = getVariable(name)) == -1) 
-				error("error: %d: '%s' was not decleared", name, token[tkpos].val);
+				error("error: %d: '%s' was not declared", token[tkpos].nline, name);
 
 			relExpr();
 			genas("mov ecx eax");
@@ -310,7 +310,7 @@ static int primExpr() {
 
 		} else {
 			if((varn = getVariable(name)) == -1) 
-				error("error: %d: '%s' was not decleared", name, token[tkpos].val);	
+				error("error: %d: '%s' was not declared", token[tkpos].nline, name);	
 			genCode(0x8b); genCode(0x45);
 			genCode(256 - sizeof(int) * varn); // mov %eax variable
 		}

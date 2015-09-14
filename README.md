@@ -72,5 +72,11 @@ $ make (need clang)
 $ ./lit [sourcefile]
 ```
 
+
 # Version Info
 - 2015/7/22 : First Commit
+
+
+
+- Copyright (C) 2015 maekawatoshiki All Rights Reserved.
+
