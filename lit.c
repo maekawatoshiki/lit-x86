@@ -2,6 +2,15 @@
 #include "asm.h"
 
 static void init() {
+	#if defined(WIN32) || defined(WINDOWS)
+		jitCode = (unsigned char*) calloc(sizeof(unsigned char), 0xFFFF);
+	#else
+		long psize = 0xFFFF + 1;
+		if((posix_memalign((void **)&jitCode, psize, psize)))
+			perror("posix_memalign");
+		if(mprotect((void*)jitCode, psize, PROT_READ | PROT_WRITE | PROT_EXEC))
+			perror("mprotect");
+	#endif
 	tkpos = jitCount = 0;
 	srand(time(0));
 	memset(jitCode, 0, 0xFFFF);
@@ -211,6 +220,8 @@ static int parser() {
 		} genCode(0); // '\0'
 		printf("string addr> %d\n", (int) strAddr);
 	}
+	int i;
+	for(i=0;i<jitCount;i++) printf("%02x", jitCode[i]);puts("");
 	printf("memsz: %d\n", varSize[nowFunc]);
 
 	return 1;
@@ -292,8 +303,8 @@ static int primExpr() {
 				relExpr(); // get array size
 				genas("shl eax 2");
 				genCode(0x89); genCode(0x04); genCode(0x24); // mov [esp], eax
-				genCode(0xff); genCode(0x56); genCode(12); // call malloc
-			} else { // Variable?
+				genCode(0xff); genCode(0x56); genCode(12 + 0); // call malloc
+			} else { // User Function?
 				int address = getFunction(name, 0), args = 0;
 				printf("addr: %d\n", address);
 				if(isalpha(token[tkpos].val[0]) || isdigit(token[tkpos].val[0])) { // has arg?
@@ -381,15 +392,15 @@ static int functionStmt() {
 		argpos[i] = jitCount; genCode(0x00);
 	}
 	eval(0, BLOCK_FUNC);
-	genas("add esp %d", sizeof(int) * (varSize[nowFunc] + 6)); // add esp nn
+	genas("add esp %lu", sizeof(int) * (varSize[nowFunc] + 6)); // add esp nn
 	genCode(0xc9);// leave
 	genCode(0xc3);// ret
 	genCodeInt32Insert(sizeof(int) * (varSize[nowFunc] + 6), espBgn);
 	for(i = 1; i <= argsc; i++) {
-		jitCode[argpos[i - 1]] = 256 - sizeof(int) * i + (((varSize[nowFunc] + 6) << 2) - 4);
+		jitCode[argpos[i - 1]] = 256 - sizeof(int) * i + (((varSize[nowFunc] + 6) * sizeof(int)) - 4);
 	}
 
-	printf("%s() has %d functions or variables\n", funcName, varSize[nowFunc] << 2);
+	printf("%s() has %lu functions or variables\n", funcName, varSize[nowFunc] * sizeof(int));
 
 	return 0;
 }
@@ -474,17 +485,6 @@ static volatile int run() {
 
 int main(int argc, char **argv) {
 
-#if defined(WIN32) || defined(WINDOWS)
-	jitCode = (unsigned char*) calloc(sizeof(unsigned char), 0xFFFF);
-#else
-	long psize = 0xFFFF + 1;
-	printf("page_size = %ld\n", psize);
-	if((posix_memalign((void **)&jitCode, psize, psize)))
-		perror("posix_memalign");
-	if(mprotect((void*)jitCode, psize, PROT_READ | PROT_WRITE | PROT_EXEC))
-		perror("mprotect");
-#endif
-
 	init();
 
 	if(argc < 2) {
@@ -514,7 +514,8 @@ int main(int argc, char **argv) {
 	parser();
 	volatile clock_t bgn = clock();
 	run();
-	clock_t end = clock();
+	volatile clock_t end = clock();
 	printf("time: %lfsec\n", (double)(end - bgn) / CLOCKS_PER_SEC);
+	
 	free(jitCode);
 }

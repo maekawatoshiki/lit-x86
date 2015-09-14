@@ -14,11 +14,11 @@ def format(n, long)
 end
 
 def pi
-  N = 14*100
+  N = 14*5000
   NM = N - 14 # PI LONG
   a = Array(N)
   d = 0; e = 0; g = 0; h = 0
-  f = 10000
+  f = 10000; cnt = 1
   for c = NM, c > 0, c = c - 14
     d = d % f
     e = d
@@ -32,8 +32,9 @@ def pi
       a[b] = d % g
       d = d / g
     end
-    format(e + d / f, 4);
-    puts ""
+    format(e + d / f, 4)
+
+    if cnt % 10 == 0 puts "" end; cnt = cnt + 1
   end
 end
 

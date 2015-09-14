@@ -1,4 +1,4 @@
-CFLAGS = -m32 -O0
+CFLAGS = -m32 -O0 -std=c99
 CC = clang $(CFLAGS)
 
 
