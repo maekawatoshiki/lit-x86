@@ -109,7 +109,7 @@ int genas(char *s, ...) {
 			genCode(0xc1); genCode(0xe8 + regBit(nem[1]));
 			genCode(atoi(nem[2]));
 		}
-	} else if(strcmp(nem[0], "pop") == 0) { 
+	} else if(strcmp(nem[0], "pop") == 0) {
 		if(isalpha(*nem[1])) { // register?
 			genCode(0x58 + regBit(nem[1]));
 		}

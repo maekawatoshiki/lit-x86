@@ -2,25 +2,31 @@
 #include "asm.h"
 
 static void init() {
-	#if defined(WIN32) || defined(WINDOWS)
-		ntvCode = (unsigned char*) calloc(sizeof(unsigned char), 0xFFFF);
-	#else
-		long psize = 0xFFFF + 1;
-		if((posix_memalign((void **)&ntvCode, psize, psize)))
-			perror("posix_memalign");
-		if(mprotect((void*)ntvCode, psize, PROT_READ | PROT_WRITE | PROT_EXEC))
-			perror("mprotect");
-	#endif
-	tkpos = ntvCount = 0;
-	tksize = 0xff;
+#if defined(WIN32) || defined(WINDOWS)
+	ntvCode = (unsigned char*) calloc(sizeof(unsigned char), 0xFFFF);
+#else
+	long memsize = 0xFFFF + 1;
+	if((posix_memalign((void **)&ntvCode, memsize, memsize)))
+		perror("posix_memalign");
+	if(mprotect((void*)ntvCode, memsize, PROT_READ | PROT_WRITE | PROT_EXEC))
+		perror("mprotect");
+#endif
+	tkpos = ntvCount = 0; tksize = 0xff;
 	srand(time(0));
-	token = calloc(sizeof(Token), tksize);
+	tok = calloc(sizeof(Token), 0xff);
+	breaks = calloc(sizeof(int), 1);
 	memset(ntvCode, 0, 0xFFFF);
-	memset(token, 0, sizeof(token));
+	memset(tok, 0, sizeof(Token));
+}
+
+static void dispose() {
+	free(ntvCode);
+	free(breaks);
+	free(tok);
 }
 
 static int getString() {
-	strcpy(strings[strCount], token[tkpos++].val);
+	strcpy(strings[strCount], tok[tkpos++].val);
 	*strAddr++ = ntvCount;
 	return strCount++;
 }
@@ -54,10 +60,18 @@ static int getFunction(char *name, int address) {
 	return functions[funcCount++].address;
 }
 
+static int appendBreak() {
+	genCode(0xe9); // jmp
+	breaks = realloc(breaks, brkCount + 1);
+	breaks[brkCount] = ntvCount;
+	genCodeInt32(0);
+
+	return brkCount++;
+}
+
 static int skip(char *s) {
-  if(strcmp(s, token[tkpos].val) == 0) {
-  	tkpos++;
-  	return 1;
+  if(strcmp(s, tok[tkpos].val) == 0) {
+  	tkpos++; return 1;
   } else return 0;
 }
 
@@ -75,49 +89,49 @@ static int lex(char *code) {
 	int iswindows = 0;
 
 	for(i = 0; i < codeSize; i++) {
- 		if(tksize <= i) 
-			token = realloc(token, (tksize += 0xff * sizeof(Token)));
+ 		if(tksize <= i - 1)
+			tok = realloc(tok, (tksize += 0xff * sizeof(Token)));
 		if(isdigit(code[i])) { // number?
       for(; isdigit(code[i]); i++)
-				strncat(token[tkpos].val, &(code[i]), 1);
-			token[tkpos].nline = line;
+				strncat(tok[tkpos].val, &(code[i]), 1);
+			tok[tkpos].nline = line;
       i--; tkpos++;
     } else if(isalpha(code[i])) { // ident?
       for(; isalpha(code[i]) || isdigit(code[i]) || code[i] == '_'; i++)
-        strncat(token[tkpos].val, &(code[i]), 1);
-      token[tkpos].nline = line;
+        strncat(tok[tkpos].val, &(code[i]), 1);
+      tok[tkpos].nline = line;
       i--; tkpos++;
     } else if(code[i] == ' ' || code[i] == '\t') { // space char?
     } else if(code[i] == '#') { // comment?
 			for(i++; code[i] != '\n'; i++) { } line++;
 		} else if(code[i] == '"') { // string?
-			strcpy(token[tkpos].val, "\"");
-			token[tkpos++].nline = line;
+			strcpy(tok[tkpos].val, "\"");
+			tok[tkpos++].nline = line;
 			for(i++; code[i] != '"' && code[i] != '\0'; i++)
-				strncat(token[tkpos].val, &(code[i]), 1);
-			token[tkpos].nline = line;
-			if(code[i] == '\0') error("error: %d: expected expression '\"'", token[tkpos].nline);
+				strncat(tok[tkpos].val, &(code[i]), 1);
+			tok[tkpos].nline = line;
+			if(code[i] == '\0') error("error: %d: expected expression '\"'", tok[tkpos].nline);
 			tkpos++;
-		} else if(code[i] == '\n' || 
+		} else if(code[i] == '\n' ||
 			(iswindows=(code[i] == '\r' && code[i+1] == '\n'))) {
-			i += iswindows; 
-			strcpy(token[tkpos].val, ";"); 
-			token[tkpos].nline = line++; tkpos++;
+			i += iswindows;
+			strcpy(tok[tkpos].val, ";");
+			tok[tkpos].nline = line++; tkpos++;
 		} else {
-			strncat(token[tkpos].val, &(code[i]), 1);
-			if(code[i+1] == '=' || 
+			strncat(tok[tkpos].val, &(code[i]), 1);
+			if(code[i+1] == '=' ||
 				(code[i]=='+' && code[i+1]=='+') ||
-				(code[i]=='-' && code[i+1]=='-'))  
-					strncat(token[tkpos].val, &(code[++i]), 1);
-			token[tkpos].nline = line;
+				(code[i]=='-' && code[i+1]=='-'))
+					strncat(tok[tkpos].val, &(code[++i]), 1);
+			tok[tkpos].nline = line;
 			tkpos++;
     }
   }
-  token[tkpos].nline = line;
+  tok[tkpos].nline = line;
 	for(i = 0; i < tkpos; i++) {
-		printf("tk: %d > %s\n", i, token[i].val);
+		printf("tk: %d > %s\n", i, tok[i].val);
 	}
-  tksize = tkpos;
+  tksize = tkpos - 1;
 
 	return 0;
 }
@@ -127,8 +141,8 @@ static int eval(int pos, int isblock) {
 	while(tkpos < tksize) {
 		if(skip("def")) { blocksCount++;
 			functionStmt();
-		} else if(isFunction == IN_GLOBAL &&  strcmp("def", token[tkpos+1].val) != 0 &&
-				strcmp(";", token[tkpos+1].val) != 0) {	// main function entry
+		} else if(isFunction == IN_GLOBAL &&  strcmp("def", tok[tkpos+1].val) != 0 &&
+				strcmp(";", tok[tkpos+1].val) != 0) {	// main function entry
 			isFunction = IN_FUNC;
 			nowFunc++;
 			int espBgn;
@@ -157,7 +171,7 @@ static int eval(int pos, int isblock) {
 					relExpr();
 				}
 				genas("push eax");
-				if(isstring) {	
+				if(isstring) {
 					genCode(0xff); genCode(0x56); genCode(4);// call *0x04(esi) putString
 				} else {
 					genCode(0xff); genCode(0x16);// call (esi) putNumber
@@ -169,7 +183,7 @@ static int eval(int pos, int isblock) {
 				genCode(0xff); genCode(0x56); genCode(8);// call *0x08(esi) putLN
 			}
 		} else if(skip("for")) { blocksCount++;
-			assignment(); skip(","); whileStmt();
+			assignment(); puts("eval:for"); skip(","); whileStmt();
 		} else if(skip("while")) { blocksCount++;
 			whileStmt();
 		} else if(skip("if")) { blocksCount++;
@@ -191,8 +205,7 @@ static int eval(int pos, int isblock) {
 			genCodeInt32Insert(ntvCount - endif - 4, endif);
 			return 1;
 		} else if(skip("break")) {
-			genCode(0xe9); // jmp
-			breaks[brkCount++] = ntvCount; genCodeInt32(0);
+			appendBreak();
 		} else if(skip("end")) { blocksCount--;
 			if(isblock == 0) {
 				genCodeInt32Insert(ntvCount - pos - 4, pos);
@@ -203,13 +216,12 @@ static int eval(int pos, int isblock) {
 		}
 	}
 	if(blocksCount != 0)
-		error("error: expected 'end' before %d line", token[tkpos].nline);
+		error("error: expected 'end' before %d line", tok[tkpos].nline);
 	return 0;
 }
 
 static int parser() {
 	tkpos = ntvCount = 0;
-	memset(ntvCode, 0, 0xFFF);
 	strAddr = calloc(0xFF, sizeof(int));
 	int main_address;
 	genCode(0xe9); main_address = ntvCount; genCodeInt32(0);
@@ -288,23 +300,23 @@ static int mulDivExpr() {
 static int primExpr() {
 	int inc=0, dec=0;
 
-  if(isdigit(token[tkpos].val[0])) { // number?
-    genas("mov eax %s", token[tkpos++].val);
-  } else if(isalpha(token[tkpos].val[0]) || 
+  if(isdigit(tok[tkpos].val[0])) { // number?
+    genas("mov eax %s", tok[tkpos++].val);
+  } else if(isalpha(tok[tkpos].val[0]) ||
   		(inc=skip("++")) || (dec=skip("--"))) { // variable or inc or dec
-		char *name = token[tkpos].val; tkpos++;
-		int varn; 
+		char *name = tok[tkpos].val; tkpos++;
+		int varn;
 
 		if(skip("[")) { // Array?
-			if((varn = getVariable(name)) == -1) 
-				error("error: %d: '%s' was not declared", token[tkpos].nline, name);
+			if((varn = getVariable(name)) == -1)
+				error("error: %d: '%s' was not declared", tok[tkpos].nline, name);
 
 			relExpr();
 			genas("mov ecx eax");
 			genCode(0x8b); genCode(0x55); genCode(256 - sizeof(int) * varn); // mov edx, [ebp - varn]
 			genCode(0x8b); genCode(0x04); genCode(0x8a);// mov eax, [edx + ecx * 4]
 			if(!skip("]"))
-				error("error: %d: expected expression ']'", token[tkpos].nline);
+				error("error: %d: expected expression ']'", tok[tkpos].nline);
 		} else if(skip("(")) { // Function?
 			if(strcmp(name, "rand") == 0) {
 				genCode(0xff); genCode(0x56); genCode(12 + 4); // rand
@@ -316,7 +328,7 @@ static int primExpr() {
 			} else { // User Function?
 				int address = getFunction(name, 0), args = 0;
 				printf("addr: %d\n", address);
-				if(isalpha(token[tkpos].val[0]) || isdigit(token[tkpos].val[0])) { // has arg?
+				if(isalpha(tok[tkpos].val[0]) || isdigit(tok[tkpos].val[0])) { // has arg?
 					do {
 						relExpr();
 						genas("push eax");
@@ -326,18 +338,24 @@ static int primExpr() {
 				genCode(0xe8); genCodeInt32(0xFFFFFFFF - (ntvCount - address) - 3); // call func
 				genas("add esp %d", args * sizeof(int));
 			}
-			if(!skip(")")) error("error: %d: expected expression ')'", token[tkpos].nline);
+			printf("%s\n", tok[tkpos-2].val);
+			printf("%s\n", tok[tkpos-1].val);
+			printf("%s\n", tok[tkpos].val);
+			printf("%s\n", tok[tkpos+1].val);
+			if(!skip(")")) error("func: error: %d: expected expression ')'", tok[tkpos].nline);
 		} else {
-			if((varn = getVariable(name)) == -1) 
-				error("error: %d: '%s' was not declared", token[tkpos].nline, name);	
+			if((varn = getVariable(name)) == -1)
+				error("error: %d: '%s' was not declared", tok[tkpos].nline, name);
 			genCode(0x8b); genCode(0x45);
 			genCode(256 - sizeof(int) * varn); // mov %eax variable
 		}
 	} else if(skip("]")) {
-	   error("error: %d: invalid expression", token[tkpos].nline);
+	   error("error: %d: invalid expression", tok[tkpos].nline);
   } else if(skip("(")) {
+		puts("(");
     if(isassign()) assignment(); else relExpr();
-		if(!skip(")")) error("error: %d: expected expression ')'", token[tkpos].nline);
+		printf(">>>%s\n", tok[tkpos].val);
+		if(!skip(")")) error("cond: error: %d: expected expression ')'", tok[tkpos].nline);
   }
 
 	return 0;
@@ -356,7 +374,7 @@ static int whileStmt() {
 	if(skip(",")) {
 		stepOn = 1;
 		stepBgn[0] = tkpos;
-		for(; token[tkpos].val[0] != ';'; tkpos++);
+		for(; tok[tkpos].val[0] != ';'; tkpos++);
 	}
 	genCode(type); genCode(0x05); // ifjmp 5
 	genCode(0xe9); end = ntvCount; genCodeInt32(0);// jmp while end
@@ -371,6 +389,7 @@ static int whileStmt() {
 		genCode(0xe9); // jmp n
 		genCodeInt32(n);
 		genCodeInt32Insert(ntvCount - end - 4, end);
+
 		for(--brkCount; brkCount >= 0; brkCount--) {
 			genCodeInt32Insert(ntvCount - breaks[brkCount] - 4, breaks[brkCount]);
 		} brkCount = 0;
@@ -381,10 +400,10 @@ static int whileStmt() {
 
 static int functionStmt() {
 	int espBgn, argsc = 0;
-	char *funcName = token[tkpos++].val;
+	char *funcName = tok[tkpos++].val;
 	nowFunc++; isFunction = IN_FUNC;
 	if(skip("(")) {
-		do { appendVariable(token[tkpos++].val); argsc++; } while(skip(","));
+		do { appendVariable(tok[tkpos++].val); argsc++; } while(skip(","));
 		skip(")");
 	}
 	getFunction(funcName, ntvCount); // append function
@@ -405,35 +424,35 @@ static int functionStmt() {
 		ntvCode[argpos[i - 1]] = 256 - sizeof(int) * i + (((varSize[nowFunc] + 6) * sizeof(int)) - 4);
 	}
 
-	printf("%s() has %lu functions or variables\n", funcName, varSize[nowFunc] * sizeof(int));
+	printf("%s() has %u functions or variables\n", funcName, varSize[nowFunc] * sizeof(int));
 
 	return 0;
 }
 
 static int isassign() {
-	if(strcmp(token[tkpos+1].val, "=") == 0) return 1;
-	else if(strcmp(token[tkpos+1].val, "[") == 0) {
+	if(strcmp(tok[tkpos+1].val, "=") == 0) return 1;
+	else if(strcmp(tok[tkpos+1].val, "[") == 0) {
 		int i = tkpos + 1;
-		while(strcmp(token[i].val, "]")) {
-			if(strcmp(token[i].val, ";") == 0)
-				error("error: %d: invalid expression", token[tkpos].nline);
+		while(strcmp(tok[i].val, "]")) {
+			if(strcmp(tok[i].val, ";") == 0)
+				error("error: %d: invalid expression", tok[tkpos].nline);
 			i++;
 		}
-		printf(">%s\n", token[i].val); i++;
-		if(strcmp(token[i].val, "=") == 0) return 1;
+		printf(">%s\n", tok[i].val); i++;
+		if(strcmp(tok[i].val, "=") == 0) return 1;
 	}
 	return 0;
 }
 
 static int assignment() {
-	int n = getVariable(token[tkpos].val);
-	if(n == -1) n = appendVariable(token[tkpos].val);
+	int n = getVariable(tok[tkpos].val);
+	if(n == -1) n = appendVariable(tok[tkpos].val);
 	tkpos++;
 	if(skip("[")) {
 		relExpr();
 		genas("push eax");
 		if(!skip("]") || !skip("="))
-			 error("error: %d: invalid assignment", token[tkpos].nline);
+			 error("error: %d: invalid assignment", tok[tkpos].nline);
 			relExpr();
 		genCode(0x8b); genCode(0x4d);
 		genCode(256 - sizeof(int) * n); // mov ecx [ebp-n]
@@ -445,7 +464,7 @@ static int assignment() {
 		relExpr();
 		genCode(0x89); genCode(0x45);
 		genCode(256 - sizeof(int) * n); // mov var eax
-		printf("%d\n", tkpos);
+		printf("assign=> %d\n", tkpos);
 	}
 
 	return 0;
@@ -480,13 +499,12 @@ void putString(int n) {
 	printf("%s", &(ntvCode[n]));
 }
 void putln() { printf("\n"); }
-volatile void *funcTable[] = { (void *) putNumber, (void*) putString, (void*) putln, (void*)malloc, (void*) rand, (void*) printf };
+void *funcTable[] = { (void *) putNumber, (void*) putString, (void*) putln, (void*)malloc, (void*) rand, (void*) printf };
 
-static volatile int run() {
+static int run() {
 	printf("size: %dbyte, %.2lf%%\n", ntvCount, ((double)ntvCount / 0xFFFF) * 100.0);
-	return ((int (*)(int *, volatile void**))ntvCode)(0, funcTable);
+	return ((int (*)(int *, void**))ntvCode)(0, funcTable);
 }
-
 
 int main(int argc, char **argv) {
 
@@ -496,6 +514,7 @@ int main(int argc, char **argv) {
 		char input[0xFFFF] = "";
 		char line[0xFF] = "";
 
+		puts("Lit 1.0.0 (C) 2015 maekawatoshiki");
 		while(strcmp(line, "run\n") != 0) {
 			printf(">> "); strcat(input, line);
 			memset(line, 0, 0xFF);
@@ -521,6 +540,6 @@ int main(int argc, char **argv) {
 	run();
 	volatile clock_t end = clock();
 	printf("time: %lfsec\n", (double)(end - bgn) / CLOCKS_PER_SEC);
-	
-	free(ntvCode);
+
+	dispose();
 }

@@ -40,6 +40,8 @@
 #define BLOCK_FUNC 2
 
 static void init();
+static void dispose();
+
 static int lex(char *);
 static int eval(int, int);
 static int parser();
@@ -60,6 +62,7 @@ static int getString();
 static int getFunction(char *, int);
 static int getVariable(char *);
 static int appendVariable(char *);
+static int appendBreak();
 
 static int skip(char *);
 static int error(char *, ...);
@@ -73,19 +76,21 @@ typedef struct {
   int nline;
 } Token;
 
-Token *token;
+Token *tok;
 int tkpos, tksize;
 
-struct {
+typedef struct {
 	char name[32];
 	int id;
-} varNames[0xFF][0x7F];
+} VarNameTable;
+
+VarNameTable varNames[0xFF][0xFF];
 int varSize[0xFF], varCounter;
 
 int nowFunc; // number of function
 int isFunction;
 
-int breaks[0xFF]; int brkCount;
+int *breaks; int brkCount;
 
 int blocksCount; // for while ~ end and if ~ end error check
 
