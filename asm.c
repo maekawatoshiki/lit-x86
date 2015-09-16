@@ -1,6 +1,6 @@
 #include "asm.h"
 
-void genCode(unsigned char val) { jitCode[jitCount++] = (val); }
+void genCode(unsigned char val) { ntvCode[ntvCount++] = (val); }
 void genCodeInt32(unsigned int val) {
 	// for little endian
 	genCode(val << 24 >> 24);
@@ -10,10 +10,10 @@ void genCodeInt32(unsigned int val) {
 }
 void genCodeInt32Insert(unsigned int val, int pos) {
 	// for little endian
-	jitCode[pos] = (val << 24 >> 24);
-	jitCode[pos+1] = (val << 16 >> 24);
-	jitCode[pos+2] = (val << 8 >> 24);
-	jitCode[pos+3] = (val << 0 >> 24);
+	ntvCode[pos] = (val << 24 >> 24);
+	ntvCode[pos+1] = (val << 16 >> 24);
+	ntvCode[pos+2] = (val << 8 >> 24);
+	ntvCode[pos+3] = (val << 0 >> 24);
 }
 
 int regBit(char *reg) {

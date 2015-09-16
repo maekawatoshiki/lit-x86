@@ -24,7 +24,8 @@ for i = 0, i < N, i = i + 1
 	for j = 0, j < N, j = j + 1
 		a[j] = rand() % N
 		output a[j], " "
-	end puts " sum = ", k
+	end 
+	puts " sum = ", k
 	if dfs(a, N, 0, k, 0) == k
 		puts "true"
 	else

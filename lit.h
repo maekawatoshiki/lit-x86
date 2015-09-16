@@ -65,14 +65,15 @@ static int skip(char *);
 static int error(char *, ...);
 static char *replaceEscape(char *);
 
-unsigned char *jitCode;
-int jitCount;
+unsigned char *ntvCode;
+int ntvCount;
 
 typedef struct {
   char val[32];
   int nline;
 } Token;
-Token token[0xFFF];
+
+Token *token;
 int tkpos, tksize;
 
 struct {
