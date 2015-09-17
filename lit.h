@@ -39,35 +39,6 @@
 #define BLOCK_LOOP 1
 #define BLOCK_FUNC 2
 
-static void init();
-static void dispose();
-
-static int lex(char *);
-static int eval(int, int);
-static int parser();
-
-static int addSubExpr();
-static int mulDivExpr();
-static int relExpr();
-static int primExpr();
-
-static int isassign();
-static int assignment();
-
-static int ifStmt();
-static int whileStmt();
-static int functionStmt();
-
-static int getString();
-static int getFunction(char *, int);
-static int getVariable(char *);
-static int appendVariable(char *);
-static int appendBreak();
-
-static int skip(char *);
-static int error(char *, ...);
-static char *replaceEscape(char *);
-
 unsigned char *ntvCode;
 int ntvCount;
 
@@ -81,11 +52,18 @@ int tkpos, tksize;
 
 typedef struct {
 	char name[32];
+	int type;
 	int id;
-} VarNameTable;
+} Variable;
 
-VarNameTable varNames[0xFF][0xFF];
+Variable varNames[0xFF][0xFF];
 int varSize[0xFF], varCounter;
+
+enum {
+	T_INT,
+	T_CHAR,
+	T_DOUBLE
+};
 
 int nowFunc; // number of function
 int isFunction;
@@ -106,5 +84,35 @@ char strings[0xFF][0xFF];
 int *strAddr, strCount; // strings in program
 
 int isFunction; // With in function?
+
+static void init();
+static void dispose();
+
+static int lex(char *);
+static int eval(int, int);
+static int parser();
+
+static int addSubExpr();
+static int mulDivExpr();
+static int relExpr();
+static int primExpr();
+
+static int isassign();
+static int assignment();
+static Variable *declareVariable();
+
+static int ifStmt();
+static int whileStmt();
+static int functionStmt();
+
+static int getString();
+static int getFunction(char *, int);
+static Variable *getVariable(char *);
+static Variable *appendVariable(char *, int);
+static int appendBreak();
+
+static int skip(char *);
+static int error(char *, ...);
+static char *replaceEscape(char *);
 
 #endif
