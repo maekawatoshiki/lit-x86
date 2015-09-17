@@ -4,7 +4,8 @@
 
 int main() {
 	int n = 2;
-	printf("%d", n == 1);
+	char *s = "hello";
+	if(s[n] != 0) ;
 
 	return 0;
 }
