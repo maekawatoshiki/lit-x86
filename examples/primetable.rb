@@ -1,8 +1,8 @@
 def table(a, max)
-	for i = 0, i < max, i = i + 1
+	for i = 0, i < max, i++
   	a[i] = 0
 	end
-	for i = 2, i * i < max, i = i + 1
+	for i = 2, i * i < max, i++
 	  if a[i] == 0
 			for k = i * 2, k < max, k = k + i
 	      a[k] = 1
@@ -24,7 +24,7 @@ a = Array(N)
 
 table(a, N)
 
-for i = 2, i < N, i = i + 1
+for i = 2, i < N, i++
   if isprime(a, i) == 1
     puts i, " is prime"
   end

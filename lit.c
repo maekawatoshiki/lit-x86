@@ -326,55 +326,55 @@ static int primExpr() {
 		genCode(0xb8); getString();
 		genCodeInt32(0x00); // mov eax string_address
   } else if(isalpha(tok[tkpos].val[0])) { // variable or inc or dec
-		char *name = tok[tkpos].val; tkpos++;
+		char *name = tok[tkpos].val;
 		Variable *v;
 
-		if(skip("[")) { // Array?
-			if((v = getVariable(name)) == NULL)
-				error("error: %d: '%s' was not declared", tok[tkpos].nline, name);
-			puts("IN");
-			relExpr();puts("OUT");
-			genas("mov ecx eax");
-			genCode(0x8b); genCode(0x55); genCode(256 - sizeof(int) * v->id); // mov edx, [ebp - v*4]
-			if(v->type == T_INT) {
-				genCode(0x8b); genCode(0x04); genCode(0x8a);// mov eax, [edx + ecx * 4]
-			} else {
-				genCode(0x0f); genCode(0xb6); genCode(0x04); genCode(0x0a);// movzx eax, [edx + ecx]
-			}
+		if(isassign()) {
+			puts("assignment");
+			assignment();
+		} else {
+			tkpos++;
+			if(skip("[")) { // Array?
+				if((v = getVariable(name)) == NULL)
+					error("error: %d: '%s' was not declared", tok[tkpos].nline, name);
+				relExpr();
+				genas("mov ecx eax");
+				genCode(0x8b); genCode(0x55); genCode(256 - sizeof(int) * v->id); // mov edx, [ebp - v*4]
+				if(v->type == T_INT) {
+					genCode(0x8b); genCode(0x04); genCode(0x8a);// mov eax, [edx + ecx * 4]
+				} else {
+					genCode(0x0f); genCode(0xb6); genCode(0x04); genCode(0x0a);// movzx eax, [edx + ecx]
+				}
 			if(!skip("]"))
 				error("error: %d: expected expression ']'", tok[tkpos].nline);
 		} else if(skip("(")) { // Function?
-			if(strcmp(name, "rand") == 0) {
-				genCode(0xff); genCode(0x56); genCode(12 + 4); // rand
-			} else if(strcmp(name, "Array") == 0) {
-				relExpr(); // get array size
-				genas("shl eax 2");
-				genCode(0x89); genCode(0x04); genCode(0x24); // mov [esp], eax
-				genCode(0xff); genCode(0x56); genCode(12 + 0); // call malloc
-			} else { // User Function?
-				int address = getFunction(name, 0), args = 0;
-				printf("addr: %d\n", address);
-				if(isalpha(tok[tkpos].val[0]) || isdigit(tok[tkpos].val[0])) { // has arg?
-					do {
-						relExpr();
-						genas("push eax");
-						args++;
-					} while(skip(","));
+				if(strcmp(name, "rand") == 0) {
+					genCode(0xff); genCode(0x56); genCode(12 + 4); // rand
+				} else if(strcmp(name, "Array") == 0) {
+					relExpr(); // get array size
+					genas("shl eax 2");
+					genCode(0x89); genCode(0x04); genCode(0x24); // mov [esp], eax
+					genCode(0xff); genCode(0x56); genCode(12 + 0); // call malloc
+				} else { // User Function?
+					int address = getFunction(name, 0), args = 0;
+					printf("addr: %d\n", address);
+					if(isalpha(tok[tkpos].val[0]) || isdigit(tok[tkpos].val[0])) { // has arg?
+						do {
+							relExpr();
+							genas("push eax");
+							args++;
+						} while(skip(","));
+					}
+					genCode(0xe8); genCodeInt32(0xFFFFFFFF - (ntvCount - address) - 3); // call func
+					genas("add esp %d", args * sizeof(int));
 				}
-				genCode(0xe8); genCodeInt32(0xFFFFFFFF - (ntvCount - address) - 3); // call func
-				genas("add esp %d", args * sizeof(int));
-			}
-			printf("%s\n", tok[tkpos-2].val);
-			printf("%s\n", tok[tkpos-1].val);
-			printf("%s<\n", tok[tkpos].val);
-			printf(">%s\n", tok[tkpos+1].val);
-			if(!skip(")")) error("func: error: %d: expected expression ')'", tok[tkpos].nline);
-			puts("OK");
-		} else {
-			if((v = getVariable(name)) == NULL)
+				if(!skip(")")) error("func: error: %d: expected expression ')'", tok[tkpos].nline);
+			} else {
+				if((v = getVariable(name)) == NULL)
 				error("var: error: %d: '%s' was not declared", tok[tkpos].nline, name);
-			genCode(0x8b); genCode(0x45);
-			genCode(256 - sizeof(int) * v->id); // mov %eax variable
+				genCode(0x8b); genCode(0x45);
+				genCode(256 - sizeof(int) * v->id); // mov %eax variable
+			}
 		}
 	} else if(skip("]")) {
 	   error("error: %d: invalid expression", tok[tkpos].nline);
@@ -456,7 +456,10 @@ static int functionStmt() {
 }
 
 static int isassign() {
+	puts("isassign()");
 	if(strcmp(tok[tkpos+1].val, "=") == 0) return 1;
+	else if(strcmp(tok[tkpos+1].val, "++") == 0) return 1;
+	else if(strcmp(tok[tkpos+1].val, "--") == 0) return 1;
 	else if(strcmp(tok[tkpos+1].val, "[") == 0) {
 		int i = tkpos + 1;
 		while(strcmp(tok[i].val, "]")) {
@@ -477,30 +480,42 @@ static int assignment() {
 	Variable *v = getVariable(tok[tkpos].val);
 	if(v == NULL) v = declareVariable();
 	tkpos++;
-	if(skip("[")) {
+	if(skip("[")) { // Array?
 		relExpr();
 		genas("push eax");
-		if(!skip("]") || !skip("="))
-			 error("error: %d: invalid assignment", tok[tkpos].nline);
+		if(skip("]") && skip("=")) {
 			relExpr();
-		genCode(0x8b); genCode(0x4d);
-		genCode(256 -
-			(v->type == T_INT ? sizeof(int) :
-				v->type == T_CHAR ? sizeof(int*) :
-				v->type == T_DOUBLE ? sizeof(double) : 4) * v->id); // mov ecx [ebp-n]
-		genas("pop edx");
-		if(v->type == T_INT) {
-			genCode(0x89); genCode(0x04); genCode(0x91); // mov [ecx+edx*4], eax
-		} else {
-			genCode(0x89); genCode(0x04); genCode(0x11); // mov [ecx+edx], eax
+			genCode(0x8b); genCode(0x4d);
+			genCode(256 -
+				(v->type == T_INT ? sizeof(int) :
+					v->type == T_STRING ? sizeof(int*) :
+					v->type == T_DOUBLE ? sizeof(double) : 4) * v->id); // mov ecx [ebp-n]
+			genas("pop edx");
+			if(v->type == T_INT) {
+				genCode(0x89); genCode(0x04); genCode(0x91); // mov [ecx+edx*4], eax
+			} else {
+				genCode(0x89); genCode(0x04); genCode(0x11); // mov [ecx+edx], eax
+			}
+		} else if(skip("++")) {
+
+		} else error("error: %d: invalid assignment", tok[tkpos].nline);
+	} else { // Scalar?
+		int inc = 0, dec = 0;
+		if(skip("=")) {
+			relExpr();
+		} else if((inc=skip("++")) || (dec=skip("--"))) {
+			genCode(0x8b); genCode(0x45);
+			genCode(256 -
+				(v->type == T_INT ? sizeof(int) :
+					v->type == T_STRING ? sizeof(int*) :
+					v->type == T_DOUBLE ? sizeof(double) : 4) * v->id); // mov eax varaible
+			if(inc) genCode(0x40); // inc eax
+			else if(dec) genCode(0x48); // dec eax
 		}
-	} else {
-		skip("=");
-		relExpr();
 		genCode(0x89); genCode(0x45);
 		genCode(256 -
 			(v->type == T_INT ? sizeof(int) :
-				v->type == T_CHAR ? sizeof(int*) :
+				v->type == T_STRING ? sizeof(int*) :
 				v->type == T_DOUBLE ? sizeof(double) : 4) * v->id); // mov var eax
 	}
 
@@ -513,7 +528,7 @@ static Variable *declareVariable() {
 		tkpos++;
 		if(skip(":")) {
 			if(skip("int")) { --tkpos; return appendVariable(tok[npos].val, T_INT); }
-			if(skip("string")) { --tkpos; return appendVariable(tok[npos].val, T_CHAR); }
+			if(skip("string")) { --tkpos; return appendVariable(tok[npos].val, T_STRING); }
 			if(skip("double")) { --tkpos; return appendVariable(tok[npos].val, T_DOUBLE); }
 		} else { --tkpos; return appendVariable(tok[npos].val, T_INT); }
 	}

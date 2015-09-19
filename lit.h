@@ -61,7 +61,7 @@ int varSize[0xFF], varCounter;
 
 enum {
 	T_INT,
-	T_CHAR,
+	T_STRING,
 	T_DOUBLE
 };
 

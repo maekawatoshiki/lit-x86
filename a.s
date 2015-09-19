@@ -16,3 +16,5 @@ _start:
   mov [esp], eax
   mov [esp+ 4], eax
   movzx eax, byte [edx + ecx]
+  dec eax
+  inc eax
