@@ -91,8 +91,6 @@ int isFunction; // With in function?
 
 static void init();
 static void dispose();
-static int xor128();
-static void set_xor128();
 
 static int lex(char *);
 static int eval(int, int);
@@ -121,5 +119,25 @@ static int appendReturn();
 static int skip(char *);
 static int error(char *, ...);
 static char *replaceEscape(char *);
+
+
+/* for native(JIT) code. */
+
+struct {
+	int addr[0xff];
+	int count;
+} memad;
+
+
+void freeMem();
+void putNumber(int);
+void putString(int *);
+void putln(); 
+void appendMem(int);
+void freeMem();
+
+unsigned int w;
+void set_xor128();
+int  xor128();
 
 #endif

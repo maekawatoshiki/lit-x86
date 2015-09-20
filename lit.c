@@ -25,6 +25,7 @@ static void dispose() {
 	free(Breaks.addr);
 	free(Returns.addr);
 	free(tok);
+	freeMem();
 }
 
 static int getString() {
@@ -342,6 +343,7 @@ static int primExpr() {
 		genas("mov eax %d", tok[tkpos++].val[0]);
 		skip("'");
 	} else if(skip("\"")) { // string?
+		puts("here");
 		genCode(0xb8); getString();
 		genCodeInt32(0x00); // mov eax string_address
   } else if(isalpha(tok[tkpos].val[0])) { // variable or inc or dec
@@ -373,10 +375,16 @@ static int primExpr() {
 					genas("shl eax 2");
 					genCode(0x89); genCode(0x04); genCode(0x24); // mov [esp], eax
 					genCode(0xff); genCode(0x56); genCode(12 + 0); // call malloc
+					genas("push eax");
+					genas("push eax");
+					genCode(0xff); genCode(0x56); genCode(12 + 12); // call appendMem
+					genas("pop ebx");
+					genas("pop eax");
 				} else { // User Function?
 					int address = getFunction(name, 0), args = 0;
 					printf("addr: %d\n", address);
-					if(isalpha(tok[tkpos].val[0]) || isdigit(tok[tkpos].val[0])) { // has arg?
+					if(isalpha(tok[tkpos].val[0]) || isdigit(tok[tkpos].val[0]) || 
+						!strcmp(tok[tkpos].val, "\"") || !strcmp(tok[tkpos].val, "(")) { // has arg?
 						do {
 							relExpr();
 							genas("push eax");
@@ -386,6 +394,7 @@ static int primExpr() {
 					genCode(0xe8); genCodeInt32(0xFFFFFFFF - (ntvCount - address) - 3); // call func
 					genas("add esp %d", args * sizeof(int));
 				}
+				printf("%s\n", tok[tkpos].val);
 				if(!skip(")")) error("func: error: %d: expected expression ')'", tok[tkpos].nline);
 			} else {
 				if((v = getVariable(name)) == NULL)
@@ -496,8 +505,10 @@ static int isassign() {
 
 static int assignment() {
 	Variable *v = getVariable(tok[tkpos].val);
+	int inc = 0, dec = 0;
 	if(v == NULL) v = declareVariable();
 	tkpos++;
+
 	if(skip("[")) { // Array?
 		relExpr();
 		genas("push eax");
@@ -518,7 +529,6 @@ static int assignment() {
 
 		} else error("error: %d: invalid assignment", tok[tkpos].nline);
 	} else { // Scalar?
-		int inc = 0, dec = 0;
 		if(skip("=")) {
 			relExpr();
 		} else if((inc=skip("++")) || (dec=skip("--"))) {
@@ -527,6 +537,7 @@ static int assignment() {
 				(v->type == T_INT ? sizeof(int) :
 					v->type == T_STRING ? sizeof(int*) :
 					v->type == T_DOUBLE ? sizeof(double) : 4) * v->id); // mov eax varaible
+			genas("push eax");
 			if(inc) genCode(0x40); // inc eax
 			else if(dec) genCode(0x48); // dec eax
 		}
@@ -535,6 +546,7 @@ static int assignment() {
 			(v->type == T_INT ? sizeof(int) :
 				v->type == T_STRING ? sizeof(int*) :
 				v->type == T_DOUBLE ? sizeof(double) : 4) * v->id); // mov var eax
+		if(inc || dec) genas("pop eax");
 	}
 
 	return 0;
@@ -583,9 +595,18 @@ void putString(int *n) {
 }
 void putln() { printf("\n"); }
 
-unsigned int w;
+void appendMem(int addr) {
+	memad.addr[memad.count++] = addr;
+}
 
-static void set_xor128() { 
+void freeMem() {
+	for(--memad.count; memad.count>=0; --memad.count) {
+		free((void*)memad.addr[memad.count]);
+		printf("Free: %p\n", (void*)memad.addr[memad.count]);
+	}
+}
+
+void set_xor128() { 
 #if defined(WIN32) || defined(WINDOWS)
 #else 
 	w = 12345 * getpid() + (time(0) ^ 0xFFBA1235); 
@@ -603,7 +624,7 @@ int xor128() {
 }
 
 void *funcTable[] = { (void *) putNumber, (void*) putString, (void*) putln,
-	 (void*)malloc, (void*) xor128, (void*) printf };
+	 (void*)malloc, (void*) xor128, (void*) printf, (void*) appendMem };
 
 static int run() {
 	printf("size: %dbyte, %.2lf%%\n", ntvCount, ((double)ntvCount / 0xFFFF) * 100.0);
