@@ -3,14 +3,14 @@ def qsort(a, left, right)
 	pv = l
 	while 1 == 1
 		while a[l] < a[pv]
-			l = l + 1
+			l++
 		end
 		while a[pv] < a[r]
-			r = r - 1
+			r--
 		end
 		if l >= r break end
 		t = a[l]; a[l] = a[r]; a[r] = t;
-		l = l + 1; r = r - 1
+		l++; r--
 	end
 	if left < l - 1
 		qsort(a, left, l - 1)

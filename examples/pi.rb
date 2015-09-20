@@ -1,18 +1,6 @@
 # The calculate of pi program by Maekawa Toshiki.
 # Used http://xn--w6q13e505b.jp/program/spigot.html as reference
 
-def format(n, long)
-  l = 0
-  h = 1
-  while n / h != 0
-    l = l + 1; h = h * 10
-  end
-  for i = long - l, i > 0, i = i - 1
-    output "0"
-  end
-  output n
-end
-
 def pi
   N = 14*5000
   NM = N - 14 # PI LONG
@@ -32,7 +20,7 @@ def pi
       a[b] = d % g
       d = d / g
     end
-    format(e + d / f, 4)
+    printf "%04d", e + d / f
 
     if cnt % 10 == 0 puts "" end; cnt = cnt + 1
   end

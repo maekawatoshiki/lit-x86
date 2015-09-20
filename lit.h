@@ -21,7 +21,8 @@
 #else
 	#include <unistd.h>
 	#include <sys/types.h>
-	#include <sys/mman.h>
+	#include <sys/mman.h>	
+	#include <sys/wait.h>
 #endif
 
 #define JA 0x7f
@@ -68,7 +69,10 @@ enum {
 int nowFunc; // number of function
 int isFunction;
 
-int *breaks; int brkCount;
+struct {
+	int *addr;
+	int count;
+} Breaks, Returns;
 
 int blocksCount; // for while ~ end and if ~ end error check
 
@@ -87,6 +91,8 @@ int isFunction; // With in function?
 
 static void init();
 static void dispose();
+static int xor128();
+static void set_xor128();
 
 static int lex(char *);
 static int eval(int, int);
@@ -110,6 +116,7 @@ static int getFunction(char *, int);
 static Variable *getVariable(char *);
 static Variable *appendVariable(char *, int);
 static int appendBreak();
+static int appendReturn();
 
 static int skip(char *);
 static int error(char *, ...);

@@ -1,19 +1,18 @@
 # The prime number search program by maekawa toshiki.
 
 def prime(i)
-	isprime = 0
-	if i == 2
-		isprime = 1
-	elsif i % 2 != 0
-		isprime = 1
-		for k = 3, k * k <= i, k = k + 2
-			if i % k == 0
-				isprime = 0
-				break
-			end
+	if i == 2 
+		return 1
+	elsif i % 2 == 0
+		return 0
+	end
+
+	for k = 3, k * k <= i, k = k + 2
+		if i % k == 0
+			return 0
 		end
 	end
-	isprime
+	1
 end
 
 for i = 2, i < 10000, i++

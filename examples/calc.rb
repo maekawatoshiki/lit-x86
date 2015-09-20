@@ -1,11 +1,10 @@
 def strlen(d:string)
-  for len = 0, d[len] != 0, len = len + 1
-  end
+  for len = 0, d[len] != 0, len++; end
   len
 end
 
 def strcpy(d:string, s:string)
-  for i = 0, s[i] != 0, i = i + 1
+  for i = 0, s[i] != 0, i++
     d[i] = s[i]
   end
   d[i] = 0
@@ -14,18 +13,18 @@ end
 def strcat(d:string, s:string)
   i = 0
   len = strlen(d)
-  for j = len, s[i] != 0, i = i + 1
+  for j = len, s[i] != 0, i++
     d[j] = s[i]
-    j = j + 1
+    j++
   end
 end
 
 def isdigit(n)
   res = 0
   if '0' < n if n <= '9'
-      res = 1
+      return 1
   end end
-  res
+  0
 end
 
 def calc(a:string)

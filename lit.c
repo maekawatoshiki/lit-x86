@@ -12,16 +12,18 @@ static void init() {
 		perror("mprotect");
 #endif
 	tkpos = ntvCount = 0; tksize = 0xfff;
-	srand(time(0));
+	set_xor128();
 	tok = calloc(sizeof(Token), tksize);
-	breaks = calloc(sizeof(int), 1);
+	Breaks.addr = calloc(sizeof(int), 1);
+	Returns.addr = calloc(sizeof(int), 1);
 	memset(ntvCode, 0, 0xFFFF);
 	memset(tok, 0, sizeof(Token));
 }
 
 static void dispose() {
 	free(ntvCode);
-	free(breaks);
+	free(Breaks.addr);
+	free(Returns.addr);
 	free(tok);
 }
 
@@ -63,11 +65,22 @@ static int getFunction(char *name, int address) {
 
 static int appendBreak() {
 	genCode(0xe9); // jmp
-	breaks = realloc(breaks, brkCount + 1);
-	breaks[brkCount] = ntvCount;
+	Breaks.addr = realloc(Breaks.addr, Breaks.count + 1);
+	Breaks.addr[Breaks.count] = ntvCount;
 	genCodeInt32(0);
-	return brkCount++;
+	return Breaks.count++;
 }
+
+static int appendReturn() {
+	relExpr(); // get argument
+	genCode(0xe9); // jmp
+	Returns.addr = realloc(Returns.addr, Returns.count + 1);
+	if(Returns.addr == NULL) error("LitSystemError: no enough memory");
+	Returns.addr[Returns.count] = ntvCount;
+	genCodeInt32(0);
+	return Returns.count++;
+}
+
 
 static int skip(char *s) {
   if(strcmp(s, tok[tkpos].val) == 0) {
@@ -80,6 +93,7 @@ static int error(char *errs, ...) {
 	va_start(args, errs);
 	vprintf(errs, args); puts("");
 	va_end(args);
+
 	exit(0);
 	return 0;
 }
@@ -152,7 +166,11 @@ static int eval(int pos, int isblock) {
 			espBgn = ntvCount + 2; genas("sub esp 0");
 			genCode(0x8b); genCode(0x75); genCode(0x0c); // mov esi, 0xc(%ebp)
 				eval(0, NON);
-			printf("tkpos = %d, tksize = %d\n", tkpos, tksize);
+			
+			for(--Returns.count; Returns.count >= 0; Returns.count--) {
+				genCodeInt32Insert(ntvCount - Returns.addr[Returns.count] - 4, Returns.addr[Returns.count]);
+			} Returns.count = 0;
+
 			genCode(0x81); genCode(0xc4); genCodeInt32(sizeof(int) * (varSize[nowFunc] + 6)); // add %esp nn
 			genCode(0xc9);// leave
 			genCode(0xc3);// ret
@@ -203,6 +221,9 @@ static int eval(int pos, int isblock) {
 			whileStmt();
 		} else if(skip("if")) { blocksCount++;
 			ifStmt();
+		} else if(skip("return")) {
+			puts("return ");
+			appendReturn();
 		} else if(skip("else")) {
 			int end;
 			genCode(0xe9); end = ntvCount; genCodeInt32(0);// jmp while end
@@ -413,9 +434,9 @@ static int whileStmt() {
 		genCodeInt32(n);
 		genCodeInt32Insert(ntvCount - end - 4, end);
 
-		for(--brkCount; brkCount >= 0; brkCount--) {
-			genCodeInt32Insert(ntvCount - breaks[brkCount] - 4, breaks[brkCount]);
-		} brkCount = 0;
+		for(--Breaks.count; Breaks.count >= 0; Breaks.count--) {
+			genCodeInt32Insert(ntvCount - Breaks.addr[Breaks.count] - 4, Breaks.addr[Breaks.count]);
+		} Breaks.count = 0;
 	}
 
 	return 0;
@@ -562,8 +583,27 @@ void putString(int *n) {
 }
 void putln() { printf("\n"); }
 
+unsigned int w;
+
+static void set_xor128() { 
+#if defined(WIN32) || defined(WINDOWS)
+#else 
+	w = 12345 * getpid() + (time(0) ^ 0xFFBA1235); 
+#endif
+}
+
+int xor128() { 
+  static unsigned int x = 123456789;
+  static unsigned int y = 362436069;
+  static unsigned int z = 521288629;
+  unsigned int t;
+  t = x ^ (x << 11); x = y; y = z; z = w;
+  w = (w ^ (w >> 19)) ^ (t ^ (t >> 8));
+  return ((int)w < 0) ? -(int)w : (int)w;
+}
+
 void *funcTable[] = { (void *) putNumber, (void*) putString, (void*) putln,
-	 (void*)malloc, (void*) rand, (void*) printf };
+	 (void*)malloc, (void*) xor128, (void*) printf };
 
 static int run() {
 	printf("size: %dbyte, %.2lf%%\n", ntvCount, ((double)ntvCount / 0xFFFF) * 100.0);
