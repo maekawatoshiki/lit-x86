@@ -315,8 +315,6 @@ static int mulDivExpr() {
 	return 0;
 }
 static int primExpr() {
-	int inc=0, dec=0;
-
   if(isdigit(tok[tkpos].val[0])) { // number?
     genas("mov eax %s", tok[tkpos++].val);
 	} else if(skip("'")) { // char?
@@ -330,7 +328,6 @@ static int primExpr() {
 		Variable *v;
 
 		if(isassign()) {
-			puts("assignment");
 			assignment();
 		} else {
 			tkpos++;
@@ -347,9 +344,9 @@ static int primExpr() {
 				}
 			if(!skip("]"))
 				error("error: %d: expected expression ']'", tok[tkpos].nline);
-		} else if(skip("(")) { // Function?
+			} else if(skip("(")) { // Function?
 				if(strcmp(name, "rand") == 0) {
-					genCode(0xff); genCode(0x56); genCode(12 + 4); // rand
+					genCode(0xff); genCode(0x56); genCode(12 + 4); // call rand
 				} else if(strcmp(name, "Array") == 0) {
 					relExpr(); // get array size
 					genas("shl eax 2");
@@ -531,7 +528,7 @@ static Variable *declareVariable() {
 			if(skip("string")) { --tkpos; return appendVariable(tok[npos].val, T_STRING); }
 			if(skip("double")) { --tkpos; return appendVariable(tok[npos].val, T_DOUBLE); }
 		} else { --tkpos; return appendVariable(tok[npos].val, T_INT); }
-	}
+	} else error("error: %d: can't declare variable", tok[tkpos].nline);
 	return NULL;
 }
 
@@ -563,8 +560,8 @@ void putNumber(int n) {
 void putString(int *n) {
 	printf("%s", n);
 }
-
 void putln() { printf("\n"); }
+
 void *funcTable[] = { (void *) putNumber, (void*) putString, (void*) putln,
 	 (void*)malloc, (void*) rand, (void*) printf };
 
