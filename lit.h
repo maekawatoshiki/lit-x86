@@ -53,12 +53,23 @@ int tkpos, tksize;
 
 typedef struct {
 	char name[32];
+	unsigned int id;
 	int type;
-	int id;
+	int loctype;
 } Variable;
 
-Variable varNames[0xFF][0xFF];
+struct {
+	Variable var[0xFF];
+	int count;
+} gblVar;
+
+Variable locVar[0xFF][0xFF];
 int varSize[0xFF], varCounter;
+
+enum {
+	V_LOCAL,
+	V_GLOBAL
+};
 
 enum {
 	T_INT,
@@ -72,7 +83,7 @@ int isFunction;
 struct {
 	int *addr;
 	int count;
-} Breaks, Returns;
+} brks, rets;
 
 int blocksCount; // for while ~ end and if ~ end error check
 

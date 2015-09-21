@@ -1,4 +1,6 @@
-def table(a, max)
+$a = 0
+
+def table(max)
 	for i = 0, i < max, i++
   	a[i] = 0
 	end
@@ -11,7 +13,7 @@ def table(a, max)
 	end
 end
 
-def isprime(a, n)
+def isprime(n)
 	if a[n] == 0
 		1
 	else
@@ -22,10 +24,10 @@ end
 N = 1000000
 a = Array(N)
 
-table(a, N)
+table(N)
 
 for i = 2, i < N, i++
-  if isprime(a, i) == 1
+  if isprime(i) == 1
     puts i, " is prime"
   end
 end

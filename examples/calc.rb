@@ -1,3 +1,7 @@
+$srcLen = 0
+$pos = 0
+
+
 def strlen(d:string)
   for len = 0, d[len] != 0, len++; end
   len
@@ -27,54 +31,53 @@ def isdigit(n)
   0
 end
 
-def atoi(s:string, p)
-  sum = 0
-  n = 1
-  for l = 0, isdigit(s[p+l]) == 1, l++; n = n * 10; end
+def atoi(s:string)
+  sum = 0; n = 1
+  for l = 0, isdigit(s[pos + l]) == 1, l++; 
+    n = n * 10
+  end
   for i = 0, i < l, i++
     n = n / 10
-    sum = sum + n * (s[p+i] - '0')
+    sum = sum + n * (s[pos++] - '0')
   end
   sum
 end
 
-def prim(a:string, pos, out:string)
+def prim(a:string, out:string)
   while isdigit(a[pos]) == 1
     out[strlen(out)] = a[pos++]
   end
-  out[strlen(out)] = ','
-  pos
+  strcat(out, ",")
 end
 
-def muldiv(a:string, pos, out:string)
-  pos = prim(a, pos, out)
+def muldiv(a:string, out:string)
+  prim(a, out)
   while 1 == 1
     if a[pos] == '*'
       pos++
-      pos = prim(a, pos, out)
+      prim(a, out)
       strcat(out, "*")
     elsif a[pos] == '/'
       pos++
-      pos = prim(a, pos, out)
+      prim(a, out)
       strcat(out, "/")
     else
       break
     end
   end
-  pos
 end
 
 
-def addsub(a:string, pos, out:string) 
-  pos = muldiv(a, pos, out)
-  while 1 == 1
+def addsub(a:string, out:string) 
+  muldiv(a, out)
+  while pos < srcLen
     if a[pos] == '+'
       pos++
-      pos = muldiv(a, pos, out)
+      muldiv(a, out)
       strcat(out, "+")
     elsif a[pos] == '-'
       pos++
-      pos = muldiv(a, pos, out)
+      muldiv(a, out)
       strcat(out, "-")
     else
       break
@@ -93,29 +96,28 @@ end
 
 def calc(a:string)
   out:string = Array(100)
-  addsub(a, 0, out)
+  srcLen = strlen(a)
+  addsub(a, out)
   printf "parse=> %s\n", out
   strcpy(a, out)
 
   num = Array(64); sp = 0
   len = strlen(a)
-  for i = 0, i < len, i = i + 1
-    if a[i] == '+'
+  for pos = 0, pos < len, pos++
+    if a[pos] == '+'
       num[sp - 2] = num[sp - 2] + num[sp - 1]
       sp--
-    elsif a[i] == '-'
+    elsif a[pos] == '-'
       num[sp - 2] = num[sp - 2] - num[sp - 1]
       sp--
-    elsif a[i] == '*'
+    elsif a[pos] == '*'
       num[sp - 2] = num[sp - 2] * num[sp - 1]
       sp--
-    elsif a[i] == '/'
+    elsif a[pos] == '/'
       num[sp - 2] = num[sp - 2] / num[sp - 1]
       sp--
-    elsif isdigit(a[i]) == 1
-      num[sp] = atoi(a, i)
-      i = i + len(num[sp])
-      sp++
+    elsif isdigit(a[pos]) == 1
+      num[sp++] = atoi(a)
     end
   end
   num[0]
@@ -123,7 +125,7 @@ end
 
 a:string = Array(256)
 
-strcpy(a, "1+3*30/5-10")
+strcpy(a, "1+3*2-10/2+2*4-1")
 
 printf "expr=> %s\n", a
 

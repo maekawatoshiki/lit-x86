@@ -14,16 +14,16 @@ static void init() {
 	tkpos = ntvCount = 0; tksize = 0xfff;
 	set_xor128();
 	tok = calloc(sizeof(Token), tksize);
-	Breaks.addr = calloc(sizeof(int), 1);
-	Returns.addr = calloc(sizeof(int), 1);
+	brks.addr = calloc(sizeof(int), 1);
+	rets.addr = calloc(sizeof(int), 1);
 	memset(ntvCode, 0, 0xFFFF);
 	memset(tok, 0, sizeof(Token));
 }
 
 static void dispose() {
 	free(ntvCode);
-	free(Breaks.addr);
-	free(Returns.addr);
+	free(brks.addr);
+	free(rets.addr);
 	free(tok);
 	freeMem();
 }
@@ -36,20 +36,43 @@ static int getString() {
 
 static Variable *getVariable(char *name) {
 	int i;
+	// loval variable
 	for(i = 0; i < varCounter; i++) {
-		if(strcmp(name, varNames[nowFunc][i].name) == 0)
-			return &varNames[nowFunc][i];
+		if(strcmp(name, locVar[nowFunc][i].name) == 0)
+			return &locVar[nowFunc][i];
 	}
+	// global variable
+	for(i = 0; i < gblVar.count; i++) {
+		printf("*%s *%s\n", name, gblVar.var[i].name);
+		if(strcmp(name, gblVar.var[i].name) == 0) {
+			return &gblVar.var[i];
+		}
+	}
+
 	return NULL;
 }
 
 static Variable *appendVariable(char *name, int type) {
-	int sz;
-	sz = 1 + ++varSize[nowFunc];
-	strcpy(varNames[nowFunc][varCounter].name, name);
-	varNames[nowFunc][varCounter].type = type;
-	varNames[nowFunc][varCounter].id = sz;
-	return &varNames[nowFunc][varCounter++];
+	printf("append>%s %d\n", name, isFunction);
+	if(isFunction == IN_FUNC) {
+		int sz;
+		sz = 1 + ++varSize[nowFunc];
+		strcpy(locVar[nowFunc][varCounter].name, name);
+		locVar[nowFunc][varCounter].type = type;
+		locVar[nowFunc][varCounter].id = sz;
+		locVar[nowFunc][varCounter].loctype = V_LOCAL;
+
+		return &locVar[nowFunc][varCounter++];
+	} else if(isFunction == IN_GLOBAL) {
+		// global varibale
+		strcpy(gblVar.var[gblVar.count].name, name);
+		gblVar.var[gblVar.count].type = type;
+		gblVar.var[gblVar.count].loctype = V_GLOBAL;
+		gblVar.var[gblVar.count].id = (unsigned int)&ntvCode[ntvCount];
+		ntvCount += sizeof(int); // type
+
+		return &gblVar.var[gblVar.count++];
+	}
 }
 
 static int getFunction(char *name, int address) {
@@ -66,20 +89,20 @@ static int getFunction(char *name, int address) {
 
 static int appendBreak() {
 	genCode(0xe9); // jmp
-	Breaks.addr = realloc(Breaks.addr, Breaks.count + 1);
-	Breaks.addr[Breaks.count] = ntvCount;
+	brks.addr = realloc(brks.addr, brks.count + 1);
+	brks.addr[brks.count] = ntvCount;
 	genCodeInt32(0);
-	return Breaks.count++;
+	return brks.count++;
 }
 
 static int appendReturn() {
 	relExpr(); // get argument
 	genCode(0xe9); // jmp
-	Returns.addr = realloc(Returns.addr, Returns.count + 1);
-	if(Returns.addr == NULL) error("LitSystemError: no enough memory");
-	Returns.addr[Returns.count] = ntvCount;
+	rets.addr = realloc(rets.addr, rets.count + 1);
+	if(rets.addr == NULL) error("LitSystemError: no enough memory");
+	rets.addr[rets.count] = ntvCount;
 	genCodeInt32(0);
-	return Returns.count++;
+	return rets.count++;
 }
 
 
@@ -92,9 +115,8 @@ static int skip(char *s) {
 static int error(char *errs, ...) {
 	va_list args;
 	va_start(args, errs);
-	vprintf(errs, args); puts("");
+		vprintf(errs, args); puts("");
 	va_end(args);
-
 	exit(0);
 	return 0;
 }
@@ -154,10 +176,12 @@ static int lex(char *code) {
 static int eval(int pos, int isblock) {
 	int isputs = 0, is1byte = 0, isformat = 0;
 	while(tkpos < tksize) {
-		if(skip("def")) { blocksCount++;
+		if(skip("$")) { // global varibale?
+			if(isassign()) assignment();
+		} else if(skip("def")) { blocksCount++;
 			functionStmt();
-		} else if(isFunction == IN_GLOBAL &&  strcmp("def", tok[tkpos+1].val) != 0 &&
-				strcmp(";", tok[tkpos+1].val) != 0) {	// main function entry
+		} else if(isFunction == IN_GLOBAL && strcmp("def", tok[tkpos+1].val) &&
+				strcmp("$", tok[tkpos+1].val) && strcmp(";", tok[tkpos+1].val)) {	// main function entry
 			isFunction = IN_FUNC;
 			nowFunc++;
 			int espBgn;
@@ -166,11 +190,12 @@ static int eval(int pos, int isblock) {
 			genas("mov ebp esp");
 			espBgn = ntvCount + 2; genas("sub esp 0");
 			genCode(0x8b); genCode(0x75); genCode(0x0c); // mov esi, 0xc(%ebp)
-				eval(0, NON);
+	
+			eval(0, NON);
 			
-			for(--Returns.count; Returns.count >= 0; Returns.count--) {
-				genCodeInt32Insert(ntvCount - Returns.addr[Returns.count] - 4, Returns.addr[Returns.count]);
-			} Returns.count = 0;
+			for(--rets.count; rets.count >= 0; rets.count--) {
+				genCodeInt32Insert(ntvCount - rets.addr[rets.count] - 4, rets.addr[rets.count]);
+			} rets.count = 0;
 
 			genCode(0x81); genCode(0xc4); genCodeInt32(sizeof(int) * (varSize[nowFunc] + 6)); // add %esp nn
 			genCode(0xc9);// leave
@@ -250,8 +275,6 @@ static int eval(int pos, int isblock) {
 			return 1;
 		} else if(!skip(";")) {
 			relExpr();
-			//puts("func");
-			//printf("%s %d %d\n", tok[tkpos].val, tkpos, tksize);
 		}
 	}
 	if(blocksCount != 0)
@@ -343,7 +366,6 @@ static int primExpr() {
 		genas("mov eax %d", tok[tkpos++].val[0]);
 		skip("'");
 	} else if(skip("\"")) { // string?
-		puts("here");
 		genCode(0xb8); getString();
 		genCodeInt32(0x00); // mov eax string_address
   } else if(isalpha(tok[tkpos].val[0])) { // variable or inc or dec
@@ -359,7 +381,13 @@ static int primExpr() {
 					error("error: %d: '%s' was not declared", tok[tkpos].nline, name);
 				relExpr();
 				genas("mov ecx eax");
-				genCode(0x8b); genCode(0x55); genCode(256 - sizeof(int) * v->id); // mov edx, [ebp - v*4]
+
+				if(v->loctype == V_LOCAL) {
+					genCode(0x8b); genCode(0x55); genCode(256 - sizeof(int) * v->id); // mov edx, [ebp - v*4]
+				} else if(v->loctype == V_GLOBAL) {
+					genCode(0x8b); genCode(0x15); genCodeInt32(v->id); // mov edx, GLOBAL_ADDR
+				}
+
 				if(v->type == T_INT) {
 					genCode(0x8b); genCode(0x04); genCode(0x8a);// mov eax, [edx + ecx * 4]
 				} else {
@@ -378,7 +406,7 @@ static int primExpr() {
 					genas("push eax");
 					genas("push eax");
 					genCode(0xff); genCode(0x56); genCode(12 + 12); // call appendMem
-					genas("pop ebx");
+					genas("add esp 4");
 					genas("pop eax");
 				} else { // User Function?
 					int address = getFunction(name, 0), args = 0;
@@ -398,9 +426,13 @@ static int primExpr() {
 				if(!skip(")")) error("func: error: %d: expected expression ')'", tok[tkpos].nline);
 			} else {
 				if((v = getVariable(name)) == NULL)
-				error("var: error: %d: '%s' was not declared", tok[tkpos].nline, name);
-				genCode(0x8b); genCode(0x45);
-				genCode(256 - sizeof(int) * v->id); // mov %eax variable
+					error("var: error: %d: '%s' was not declared", tok[tkpos].nline, name);
+				if(v->loctype == V_LOCAL) {
+					genCode(0x8b); genCode(0x45);
+					genCode(256 - sizeof(int) * v->id); // mov eax variable
+				} else if(v->loctype == V_GLOBAL) {
+					genCode(0xa1); genCodeInt32(v->id); // mov eax GLOBAL_ADDR
+				}
 			}
 		}
 	} else if(skip("]")) {
@@ -439,13 +471,12 @@ static int whileStmt() {
 			tkpos = stepBgn[1];
 		}
 		unsigned int n = 0xFFFFFFFF - ntvCount + loopBgn - 4;
-		genCode(0xe9); // jmp n
-		genCodeInt32(n);
+		genCode(0xe9); genCodeInt32(n); // jmp n
 		genCodeInt32Insert(ntvCount - end - 4, end);
 
-		for(--Breaks.count; Breaks.count >= 0; Breaks.count--) {
-			genCodeInt32Insert(ntvCount - Breaks.addr[Breaks.count] - 4, Breaks.addr[Breaks.count]);
-		} Breaks.count = 0;
+		for(--brks.count; brks.count >= 0; brks.count--) {
+			genCodeInt32Insert(ntvCount - brks.addr[brks.count] - 4, brks.addr[brks.count]);
+		} brks.count = 0;
 	}
 
 	return 0;
@@ -483,7 +514,7 @@ static int functionStmt() {
 }
 
 static int isassign() {
-	puts("isassign()");
+	//puts("isassign()");
 	if(strcmp(tok[tkpos+1].val, "=") == 0) return 1;
 	else if(strcmp(tok[tkpos+1].val, "++") == 0) return 1;
 	else if(strcmp(tok[tkpos+1].val, "--") == 0) return 1;
@@ -496,7 +527,7 @@ static int isassign() {
 		}
 		printf(">%s\n", tok[i].val); i++;
 		if(strcmp(tok[i].val, "=") == 0) return 1;
-	} else if(strcmp(tok[tkpos+1].val, ":") == 0){
+	} else if(strcmp(tok[tkpos+1].val, ":") == 0) {
 		int i = tkpos + 3;
 		if(strcmp(tok[i].val, "=") == 0) return 1;
 	}
@@ -505,48 +536,82 @@ static int isassign() {
 
 static int assignment() {
 	Variable *v = getVariable(tok[tkpos].val);
-	int inc = 0, dec = 0;
-	if(v == NULL) v = declareVariable();
+	int inc = 0, dec = 0, declare = 0;
+	if(v == NULL) { declare++; v = declareVariable(); }
 	tkpos++;
 
-	if(skip("[")) { // Array?
-		relExpr();
-		genas("push eax");
-		if(skip("]") && skip("=")) {
+	if(v->loctype == V_LOCAL) {
+		if(skip("[")) { // Array?
 			relExpr();
-			genCode(0x8b); genCode(0x4d);
-			genCode(256 -
-				(v->type == T_INT ? sizeof(int) :
-					v->type == T_STRING ? sizeof(int*) :
-					v->type == T_DOUBLE ? sizeof(double) : 4) * v->id); // mov ecx [ebp-n]
-			genas("pop edx");
-			if(v->type == T_INT) {
-				genCode(0x89); genCode(0x04); genCode(0x91); // mov [ecx+edx*4], eax
-			} else {
-				genCode(0x89); genCode(0x04); genCode(0x11); // mov [ecx+edx], eax
-			}
-		} else if(skip("++")) {
-
-		} else error("error: %d: invalid assignment", tok[tkpos].nline);
-	} else { // Scalar?
-		if(skip("=")) {
-			relExpr();
-		} else if((inc=skip("++")) || (dec=skip("--"))) {
-			genCode(0x8b); genCode(0x45);
-			genCode(256 -
-				(v->type == T_INT ? sizeof(int) :
-					v->type == T_STRING ? sizeof(int*) :
-					v->type == T_DOUBLE ? sizeof(double) : 4) * v->id); // mov eax varaible
 			genas("push eax");
-			if(inc) genCode(0x40); // inc eax
-			else if(dec) genCode(0x48); // dec eax
+			if(skip("]") && skip("=")) {
+				relExpr();
+				genCode(0x8b); genCode(0x4d);
+				genCode(256 -
+					(v->type == T_INT ? sizeof(int) :
+						v->type == T_STRING ? sizeof(int*) :
+						v->type == T_DOUBLE ? sizeof(double) : 4) * v->id); // mov ecx [ebp-n]
+				genas("pop edx");
+				if(v->type == T_INT) {
+					genCode(0x89); genCode(0x04); genCode(0x91); // mov [ecx+edx*4], eax
+				} else {
+					genCode(0x89); genCode(0x04); genCode(0x11); // mov [ecx+edx], eax
+				}
+			} else if((inc=skip("++")) || (dec=skip("--"))) {
+		
+			} else error("error: %d: invalid assignment", tok[tkpos].nline);
+		} else { // Scalar?
+			if(skip("=")) {
+				relExpr();
+			} else if((inc=skip("++")) || (dec=skip("--"))) {
+				genCode(0x8b); genCode(0x45);
+				genCode(256 -
+					(v->type == T_INT ? sizeof(int) :
+						v->type == T_STRING ? sizeof(int*) :
+						v->type == T_DOUBLE ? sizeof(double) : 4) * v->id); // mov eax varaible
+				genas("push eax");
+				if(inc) genCode(0x40); // inc eax
+				else if(dec) genCode(0x48); // dec eax
+			}
+			genCode(0x89); genCode(0x45);
+			genCode(256 -
+				(v->type == T_INT ? sizeof(int) :
+					v->type == T_STRING ? sizeof(int*) :
+					v->type == T_DOUBLE ? sizeof(double) : 4) * v->id); // mov var eax
+			if(inc || dec) genas("pop eax");
 		}
-		genCode(0x89); genCode(0x45);
-		genCode(256 -
-			(v->type == T_INT ? sizeof(int) :
-				v->type == T_STRING ? sizeof(int*) :
-				v->type == T_DOUBLE ? sizeof(double) : 4) * v->id); // mov var eax
-		if(inc || dec) genas("pop eax");
+	} else if(v->loctype == V_GLOBAL) {
+		if(declare) { // first declare for global variable?
+			// assignment only interger
+			if(skip("=")) {
+				unsigned *m = v->id; *m = atoi(tok[tkpos++].val);
+			}
+		} else {
+			if(skip("[")) { // Array?
+				relExpr();
+				genas("push eax");
+				if(skip("]") && skip("=")) {
+					relExpr();
+					genCode(0x8b); genCode(0x0d); genCodeInt32(v->id); // mov ecx GLOBAL_ADDR
+					genas("pop edx");
+					if(v->type == T_INT) {
+						genCode(0x89); genCode(0x04); genCode(0x91); // mov [ecx+edx*4], eax
+					} else {
+						genCode(0x89); genCode(0x04); genCode(0x11); // mov [ecx+edx], eax
+					}
+				} else error("error: %d: invalid assignment", tok[tkpos].nline);
+			} else if(skip("=")) {
+				relExpr();
+				genCode(0xa3); genCodeInt32(v->id); // mov GLOBAL_ADDR eax
+			} else if((inc=skip("++")) || (dec=skip("--"))) {
+				genCode(0xa1); genCodeInt32(v->id);// mov eax GLOBAL_ADDR
+				genas("push eax");
+				if(inc) genCode(0x40); // inc eax
+				else if(dec) genCode(0x48); // dec eax
+				genCode(0xa3); genCodeInt32(v->id); // mov GLOBAL_ADDR eax
+			}
+			if(inc || dec) genas("pop eax");
+		}
 	}
 
 	return 0;
