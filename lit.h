@@ -21,7 +21,7 @@
 #else
 	#include <unistd.h>
 	#include <sys/types.h>
-	#include <sys/mman.h>	
+	#include <sys/mman.h>
 	#include <sys/wait.h>
 #endif
 
@@ -139,11 +139,10 @@ struct {
 	int count;
 } memad;
 
-
 void freeMem();
 void putNumber(int);
 void putString(int *);
-void putln(); 
+void putln();
 void appendMem(int);
 void freeMem();
 

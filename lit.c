@@ -14,8 +14,8 @@ static void init() {
 	tkpos = ntvCount = 0; tksize = 0xfff;
 	set_xor128();
 	tok = calloc(sizeof(Token), tksize);
-	brks.addr = calloc(sizeof(int), 1);
-	rets.addr = calloc(sizeof(int), 1);
+	brks.addr = calloc(sizeof(unsigned int), 1);
+	rets.addr = calloc(sizeof(unsigned int), 1);
 	memset(ntvCode, 0, 0xFFFF);
 	memset(tok, 0, sizeof(Token));
 }
@@ -73,6 +73,8 @@ static Variable *appendVariable(char *name, int type) {
 
 		return &gblVar.var[gblVar.count++];
 	}
+
+	return NULL;
 }
 
 static int getFunction(char *name, int address) {
@@ -89,7 +91,7 @@ static int getFunction(char *name, int address) {
 
 static int appendBreak() {
 	genCode(0xe9); // jmp
-	brks.addr = realloc(brks.addr, brks.count + 1);
+	brks.addr = realloc(brks.addr, sizeof(brks.addr) * (brks.count + 1));
 	brks.addr[brks.count] = ntvCount;
 	genCodeInt32(0);
 	return brks.count++;
@@ -97,8 +99,9 @@ static int appendBreak() {
 
 static int appendReturn() {
 	relExpr(); // get argument
+	genas("push eax");
 	genCode(0xe9); // jmp
-	rets.addr = realloc(rets.addr, rets.count + 1);
+	rets.addr = realloc(rets.addr, sizeof(rets.addr) * (rets.count + 1));
 	if(rets.addr == NULL) error("LitSystemError: no enough memory");
 	rets.addr[rets.count] = ntvCount;
 	genCodeInt32(0);
@@ -190,12 +193,8 @@ static int eval(int pos, int isblock) {
 			genas("mov ebp esp");
 			espBgn = ntvCount + 2; genas("sub esp 0");
 			genCode(0x8b); genCode(0x75); genCode(0x0c); // mov esi, 0xc(%ebp)
-	
+
 			eval(0, NON);
-			
-			for(--rets.count; rets.count >= 0; rets.count--) {
-				genCodeInt32Insert(ntvCount - rets.addr[rets.count] - 4, rets.addr[rets.count]);
-			} rets.count = 0;
 
 			genCode(0x81); genCode(0xc4); genCodeInt32(sizeof(int) * (varSize[nowFunc] + 6)); // add %esp nn
 			genCode(0xc9);// leave
@@ -248,7 +247,6 @@ static int eval(int pos, int isblock) {
 		} else if(skip("if")) { blocksCount++;
 			ifStmt();
 		} else if(skip("return")) {
-			puts("return ");
 			appendReturn();
 		} else if(skip("else")) {
 			int end;
@@ -294,7 +292,7 @@ static int parser() {
 	genCodeInt32Insert(addr - 5, main_address);
 
 	for(strAddr--; strCount; strAddr--) {
-		genCodeInt32Insert(&ntvCode[ntvCount], *strAddr);
+		genCodeInt32Insert((unsigned int)&ntvCode[ntvCount], *strAddr);
 		int i;
 		replaceEscape(strings[--strCount]);
 		for(i = 0; strings[strCount][i]; i++) {
@@ -361,7 +359,7 @@ static int mulDivExpr() {
 }
 static int primExpr() {
   if(isdigit(tok[tkpos].val[0])) { // number?
-    genas("mov eax %s", tok[tkpos++].val);
+    genas("mov eax %d", atoi(tok[tkpos++].val));
 	} else if(skip("'")) { // char?
 		genas("mov eax %d", tok[tkpos++].val[0]);
 		skip("'");
@@ -411,7 +409,7 @@ static int primExpr() {
 				} else { // User Function?
 					int address = getFunction(name, 0), args = 0;
 					printf("addr: %d\n", address);
-					if(isalpha(tok[tkpos].val[0]) || isdigit(tok[tkpos].val[0]) || 
+					if(isalpha(tok[tkpos].val[0]) || isdigit(tok[tkpos].val[0]) ||
 						!strcmp(tok[tkpos].val, "\"") || !strcmp(tok[tkpos].val, "(")) { // has arg?
 						do {
 							relExpr();
@@ -500,9 +498,16 @@ static int functionStmt() {
 		argpos[i] = ntvCount; genCode(0x00);
 	}
 	eval(0, BLOCK_FUNC);
-	genas("add esp %lu", sizeof(int) * (varSize[nowFunc] + 6)); // add esp nn
+
+	for(--rets.count; rets.count >= 0; --rets.count) {
+		genCodeInt32Insert(ntvCount - rets.addr[rets.count] - 4, rets.addr[rets.count]);
+		genas("pop eax");
+	} rets.count = 0;
+
+	genas("add esp %u", sizeof(int) * (varSize[nowFunc] + 6)); // add esp nn
 	genCode(0xc9);// leave
 	genCode(0xc3);// ret
+
 	genCodeInt32Insert(sizeof(int) * (varSize[nowFunc] + 6), espBgn);
 	for(i = 1; i <= argsc; i++) {
 		ntvCode[argpos[i - 1]] = 256 - sizeof(int) * i + (((varSize[nowFunc] + 6) * sizeof(int)) - 4);
@@ -558,7 +563,7 @@ static int assignment() {
 					genCode(0x89); genCode(0x04); genCode(0x11); // mov [ecx+edx], eax
 				}
 			} else if((inc=skip("++")) || (dec=skip("--"))) {
-		
+
 			} else error("error: %d: invalid assignment", tok[tkpos].nline);
 		} else { // Scalar?
 			if(skip("=")) {
@@ -584,7 +589,7 @@ static int assignment() {
 		if(declare) { // first declare for global variable?
 			// assignment only interger
 			if(skip("=")) {
-				unsigned *m = v->id; *m = atoi(tok[tkpos++].val);
+				unsigned *m = (unsigned *)v->id; *m = atoi(tok[tkpos++].val);
 			}
 		} else {
 			if(skip("[")) { // Array?
@@ -671,14 +676,14 @@ void freeMem() {
 	}
 }
 
-void set_xor128() { 
+void set_xor128() {
 #if defined(WIN32) || defined(WINDOWS)
-#else 
-	w = 12345 * getpid() + (time(0) ^ 0xFFBA1235); 
+#else
+	w = 12345 * getpid() + (time(0) ^ 0xFFBA1235);
 #endif
 }
 
-int xor128() { 
+int xor128() {
   static unsigned int x = 123456789;
   static unsigned int y = 362436069;
   static unsigned int z = 521288629;
