@@ -43,7 +43,7 @@ static Variable *getVariable(char *name) {
 	}
 	// global variable
 	for(i = 0; i < gblVar.count; i++) {
-		printf("*%s *%s\n", name, gblVar.var[i].name);
+		debug("*%s *%s\n", name, gblVar.var[i].name);
 		if(strcmp(name, gblVar.var[i].name) == 0) {
 			return &gblVar.var[i];
 		}
@@ -53,7 +53,7 @@ static Variable *getVariable(char *name) {
 }
 
 static Variable *appendVariable(char *name, int type) {
-	printf("append>%s %d\n", name, isFunction);
+	debug("append>%s %d\n", name, isFunction);
 	if(isFunction == IN_FUNC) {
 		int sz;
 		sz = 1 + ++varSize[nowFunc];
@@ -169,7 +169,7 @@ static int lex(char *code) {
   }
   tok[tkpos].nline = line;
 	for(i = 0; i < tkpos; i++) {
-		printf("tk: %d > %s\n", i, tok[i].val);
+		debug("tk: %d > %s\n", i, tok[i].val);
 	}
   tksize = tkpos - 1;
 
@@ -222,7 +222,7 @@ static int eval(int pos, int isblock) {
 				genas("add esp 4");
 			} while(skip(","));
 			// for new line
-			if(isputs) { isputs = 0;
+			if(isputs) {
 				genCode(0xff); genCode(0x56); genCode(8);// call *0x08(esi) putLN
 			}
 		} else if(skip("printf")) {
@@ -288,7 +288,7 @@ static int parser() {
 	eval(0, 0);
 
 	int addr = getFunction("main", 0);
-	printf("main() addr> %u\n", addr);
+	debug("main() addr> %u\n", addr);
 	genCodeInt32Insert(addr - 5, main_address);
 
 	for(strAddr--; strCount; strAddr--) {
@@ -298,11 +298,11 @@ static int parser() {
 		for(i = 0; strings[strCount][i]; i++) {
 			genCode(strings[strCount][i]);
 		} genCode(0); // '\0'
-		printf("string addr> %d\n", (int) strAddr);
+		debug("string addr> %d\n", (int) strAddr);
 	}
 	int i;
-	for(i=0;i<ntvCount;i++) printf("%02x", ntvCode[i]);puts("");
-	printf("memsz: %d\n", varSize[nowFunc]);
+	for(i=0;i<ntvCount;i++) printf("%02x", ntvCode[i]); puts("");
+	debug("memsz: %d\n", varSize[nowFunc]);
 
 	return 1;
 }
@@ -408,7 +408,7 @@ static int primExpr() {
 					genas("pop eax");
 				} else { // User Function?
 					int address = getFunction(name, 0), args = 0;
-					printf("addr: %d\n", address);
+					debug("addr: %d\n", address);
 					if(isalpha(tok[tkpos].val[0]) || isdigit(tok[tkpos].val[0]) ||
 						!strcmp(tok[tkpos].val, "\"") || !strcmp(tok[tkpos].val, "(")) { // has arg?
 						do {
@@ -420,7 +420,7 @@ static int primExpr() {
 					genCode(0xe8); genCodeInt32(0xFFFFFFFF - (ntvCount - address) - 3); // call func
 					genas("add esp %d", args * sizeof(int));
 				}
-				printf("%s\n", tok[tkpos].val);
+				debug("%s\n", tok[tkpos].val);
 				if(!skip(")")) error("func: error: %d: expected expression ')'", tok[tkpos].nline);
 			} else {
 				if((v = getVariable(name)) == NULL)
@@ -513,7 +513,7 @@ static int functionStmt() {
 		ntvCode[argpos[i - 1]] = 256 - sizeof(int) * i + (((varSize[nowFunc] + 6) * sizeof(int)) - 4);
 	}
 
-	printf("%s() has %u functions or variables\n", funcName, varSize[nowFunc] * sizeof(int));
+	debug("%s() has %u functions or variables\n", funcName, varSize[nowFunc] * sizeof(int));
 
 	return 0;
 }
@@ -530,7 +530,7 @@ static int isassign() {
 				error("error: %d: invalid expression", tok[tkpos].nline);
 			i++;
 		}
-		printf(">%s\n", tok[i].val); i++;
+		debug(">%s\n", tok[i].val); i++;
 		if(strcmp(tok[i].val, "=") == 0) return 1;
 	} else if(strcmp(tok[tkpos+1].val, ":") == 0) {
 		int i = tkpos + 3;

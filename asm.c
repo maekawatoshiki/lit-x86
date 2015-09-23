@@ -44,12 +44,11 @@ int genas(char *s, ...) {
 	char *src = calloc(sizeof(char), strlen(s) + 0xff);
 	va_list args;
 	char nem[4][16] = { 0 };
-	int i, n = 0, sz;
+	int i, n;
 	va_start(args, s);
 	vsprintf(src, s, args);
-	sz = strlen(src) + 1;
 
-	for(; *src; src++) {
+	for(n = 0; *src; src++) {
 		if(isalpha(*src) || isdigit(*src)) {
 			for(; *src != ' ' && *src != 0; src++)
 				strncat(nem[n], src, 1);

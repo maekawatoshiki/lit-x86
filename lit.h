@@ -1,5 +1,6 @@
 #ifndef _LIT_MAIN_HEAD_
 #define _LIT_MAIN_HEAD_
+#include "debug.h"
 
 #include <assert.h>
 #include <ctype.h>
@@ -81,7 +82,7 @@ int nowFunc; // number of function
 int isFunction;
 
 struct {
-	int *addr;
+	unsigned int *addr;
 	int count;
 } brks, rets;
 

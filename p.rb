@@ -15,7 +15,7 @@ def prime(i)
 	1
 end
 
-for i = 2, i < 10000, i++
+for i = 2, i < 100, i++
 	if prime(i) == 1
 		puts i, " is prime"
 	end
