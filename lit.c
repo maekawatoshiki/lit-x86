@@ -91,7 +91,7 @@ static int getFunction(char *name, int address) {
 
 static int appendBreak() {
 	genCode(0xe9); // jmp
-	brks.addr = realloc(brks.addr, sizeof(brks.addr) * (brks.count + 1));
+	brks.addr = realloc(brks.addr, 4 * (brks.count + 1));
 	brks.addr[brks.count] = ntvCount;
 	genCodeInt32(0);
 	return brks.count++;
@@ -99,9 +99,9 @@ static int appendBreak() {
 
 static int appendReturn() {
 	relExpr(); // get argument
-	genas("push eax");
+	//genas("push eax");
 	genCode(0xe9); // jmp
-	rets.addr = realloc(rets.addr, sizeof(rets.addr) * (rets.count + 1));
+	rets.addr = realloc(rets.addr, 4 * (rets.count + 1));
 	if(rets.addr == NULL) error("LitSystemError: no enough memory");
 	rets.addr[rets.count] = ntvCount;
 	genCodeInt32(0);
@@ -501,7 +501,7 @@ static int functionStmt() {
 
 	for(--rets.count; rets.count >= 0; --rets.count) {
 		genCodeInt32Insert(ntvCount - rets.addr[rets.count] - 4, rets.addr[rets.count]);
-		genas("pop eax");
+		//genas("pop eax");
 	} rets.count = 0;
 
 	genas("add esp %u", sizeof(int) * (varSize[nowFunc] + 6)); // add esp nn
