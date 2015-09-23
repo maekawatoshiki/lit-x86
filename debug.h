@@ -2,12 +2,16 @@
 #define _DEBUG_H_
 
 #ifdef NDEBUG
-  // No debug
-  #define debug( fmt, ... ) ((void)0)
+// not use debug
+	#define debug(s, ...) ((void)0)
 #else /* !NDEBUG */
-  // on debug
-  #include <stdio.h>
-  #define debug( fmt, ... ) \
-        fprintf( stdout, "[%s:%d] " fmt "", __FILE__, __LINE__, ##__VA_ARGS__ )
-#endif /* NDEBUG */
-#endif /* _DEBUG_H_ */
+// Use debug
+	void debug(char *str, ...) {
+		va_list args;
+		va_start(args, str);
+		vprintf(str, args);
+		va_end(args);
+	}
+#endif
+
+#endif

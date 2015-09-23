@@ -1,3 +1,4 @@
+#include "debug.h"
 #include "lit.h"
 #include "asm.h"
 
@@ -300,8 +301,13 @@ static int parser() {
 		} genCode(0); // '\0'
 		debug("string addr> %d\n", (int) strAddr);
 	}
-	int i;
-	for(i=0;i<ntvCount;i++) printf("%02x", ntvCode[i]); puts("");
+#ifdef NDEBUG
+	// Nothing
+#else
+	for(int i = 0; i < ntvCount; i++)
+		printf("%02x", ntvCode[i]);
+	puts("");
+#endif
 	debug("memsz: %d\n", varSize[nowFunc]);
 
 	return 1;

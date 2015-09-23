@@ -1,6 +1,5 @@
 #ifndef _LIT_MAIN_HEAD_
 #define _LIT_MAIN_HEAD_
-#include "debug.h"
 
 #include <assert.h>
 #include <ctype.h>
