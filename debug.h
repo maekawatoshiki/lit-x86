@@ -5,7 +5,8 @@
 // not use debug
 	#define debug(s, ...) ((void)0)
 #else /* !NDEBUG */
-// Use debug
+	// Use debug
+	#include "lit.h"
 	void debug(char *str, ...) {
 		va_list args;
 		va_start(args, str);
