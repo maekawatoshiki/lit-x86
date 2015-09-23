@@ -1,7 +1,6 @@
 $srcLen = 0
 $pos = 0
 
-
 def strlen(d:string)
   for len = 0, d[len] != 0, len++; end
   len
