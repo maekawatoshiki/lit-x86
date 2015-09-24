@@ -12,6 +12,7 @@
 #include <signal.h>
 #include <stdarg.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -33,8 +34,6 @@
 #define JAE 0x7d
 
 #define NON 0
-
-typedef unsigned int ui;
 
 enum {
 	IN_GLOBAL = 0,

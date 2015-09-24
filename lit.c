@@ -16,8 +16,8 @@ static void init() {
 	tkpos = ntvCount = 0; tksize = 0xfff;
 	set_xor128();
 	tok = calloc(sizeof(Token), tksize);
-	brks.addr = calloc(sizeof(ui), 1);
-	rets.addr = calloc(sizeof(ui), 1);
+	brks.addr = calloc(sizeof(uint32_t), 1);
+	rets.addr = calloc(sizeof(uint32_t), 1);
 }
 
 static void dispose() {
@@ -53,8 +53,7 @@ static Variable *getVariable(char *name) {
 static Variable *appendVariable(char *name, int32_t type) {
 	debug("append>%s %d\n", name, isFunction);
 	if(isFunction == IN_FUNC) {
-		int32_t sz;
-		sz = 1 + ++varSize[nowFunc];
+		int32_t sz = 1 + ++varSize[nowFunc];
 		strcpy(locVar[nowFunc][varCounter].name, name);
 		locVar[nowFunc][varCounter].type = type;
 		locVar[nowFunc][varCounter].id = sz;
@@ -66,7 +65,7 @@ static Variable *appendVariable(char *name, int32_t type) {
 		strcpy(gblVar.var[gblVar.count].name, name);
 		gblVar.var[gblVar.count].type = type;
 		gblVar.var[gblVar.count].loctype = V_GLOBAL;
-		gblVar.var[gblVar.count].id = (ui)&ntvCode[ntvCount];
+		gblVar.var[gblVar.count].id = (uint32_t)&ntvCode[ntvCount];
 		ntvCount += sizeof(int32_t); // type
 
 		return &gblVar.var[gblVar.count++];
@@ -76,7 +75,7 @@ static Variable *appendVariable(char *name, int32_t type) {
 }
 
 static int32_t getFunction(char *name, int32_t address) {
-	for(int32_t i = 0; i < funcCount; i++) {
+	for(int i = 0; i < funcCount; i++) {
 		if(strcmp(functions[i].name, name) == 0) {
 			return functions[i].address;
 		}
@@ -189,7 +188,7 @@ static int32_t eval(int32_t pos, int32_t isblock) {
 			getFunction("main", ntvCount); // append function
 			genas("push ebp");
 			genas("mov ebp esp");
-			ui espBgn = ntvCount + 2; genas("sub esp 0");
+			uint32_t espBgn = ntvCount + 2; genas("sub esp 0");
 			genCode(0x8b); genCode(0x75); genCode(0x0c); // mov esi, 0xc(%ebp)
 
 			eval(0, NON);
@@ -230,7 +229,7 @@ static int32_t eval(int32_t pos, int32_t isblock) {
 				genCode(0x89); genCode(0x44); genCode(0x24); genCode(0x00); // mov [esp+0], eax
 			}
 			if(skip(",")) {
-				ui a = 4;
+				uint32_t a = 4;
 				do {
 					relExpr();
 					genCode(0x89); genCode(0x44); genCode(0x24); genCode(a); // mov [esp+a], eax
@@ -290,7 +289,7 @@ static int32_t parser() {
 	genCodeInt32Insert(addr - 5, main_address);
 
 	for(strAddr--; strCount; strAddr--) {
-		genCodeInt32Insert((ui)&ntvCode[ntvCount], *strAddr);
+		genCodeInt32Insert((uint32_t)&ntvCode[ntvCount], *strAddr);
 		replaceEscape(strings[--strCount]);
 		for(int32_t i = 0; strings[strCount][i]; i++) {
 			genCode(strings[strCount][i]);
@@ -485,7 +484,7 @@ static int32_t whileStmt() {
 			if(isassign()) assignment();
 			tkpos = stepBgn[1];
 		}
-		ui n = 0xFFFFFFFF - ntvCount + loopBgn - 4;
+		uint32_t n = 0xFFFFFFFF - ntvCount + loopBgn - 4;
 		genCode(0xe9); genCodeInt32(n); // jmp n
 		genCodeInt32Insert(ntvCount - end - 4, end);
 
@@ -700,10 +699,10 @@ void set_xor128() {
 }
 
 int32_t xor128() {
-  static ui x = 123456789;
-  static ui y = 362436069;
-  static ui z = 521288629;
-  ui t;
+  static uint32_t x = 123456789;
+  static uint32_t y = 362436069;
+  static uint32_t z = 521288629;
+  uint32_t t;
   t = x ^ (x << 11); x = y; y = z; z = w;
   w = (w ^ (w >> 19)) ^ (t ^ (t >> 8));
   return ((int32_t)w < 0) ? -(int32_t)w : (int32_t)w;
