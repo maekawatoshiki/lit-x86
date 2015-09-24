@@ -18,3 +18,4 @@ _start:
   movzx eax, byte [edx + ecx]
   dec eax
   inc eax
+	mov eax, [eax * 4+ ecx]
