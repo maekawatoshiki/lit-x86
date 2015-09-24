@@ -22,7 +22,7 @@ def pi
     end
     printf "%04d", e + d / f
 
-    if cnt % 32 == 0 puts "" end; cnt = cnt + 1
+    if cnt % 16 == 0 puts "" end; cnt = cnt + 1
   end
 end
 
