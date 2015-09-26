@@ -44,7 +44,6 @@ static Variable *getVariable(char *name) {
 	}
 	// global variable
 	for(i = 0; i < gblVar.count; i++) {
-		debug("*%s *%s\n", name, gblVar.var[i].name);
 		if(strcmp(name, gblVar.var[i].name) == 0) {
 			return &gblVar.var[i];
 		}
@@ -54,7 +53,6 @@ static Variable *getVariable(char *name) {
 }
 
 static Variable *appendVariable(char *name, int type) {
-	debug("append>%s %d\n", name, isFunction);
 	if(isFunction == IN_FUNC) {
 		int sz;
 		sz = 1 + ++varSize[nowFunc];
@@ -79,8 +77,7 @@ static Variable *appendVariable(char *name, int type) {
 }
 
 static int getFunction(char *name, int address) {
-	int i;
-	for(i = 0; i < funcCount; i++) {
+	for(int i = 0; i < funcCount; i++) {
 		if(strcmp(functions[i].name, name) == 0) {
 			return functions[i].address;
 		}
@@ -743,4 +740,5 @@ int main(int argc, char **argv) {
 	printf("time: %lfsec\n", (double)(end - bgn) / CLOCKS_PER_SEC);
 
 	dispose();
+	return 0;
 }

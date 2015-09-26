@@ -1,4 +1,4 @@
-$size = 20
+$size = 10
 
 def max(a, b)
 	if a < b
