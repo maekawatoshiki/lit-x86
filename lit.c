@@ -11,14 +11,13 @@ static void init() {
 		perror("posix_memalign");
 	if(mprotect((void*)ntvCode, memsize, PROT_READ | PROT_WRITE | PROT_EXEC))
 		perror("mprotect");
+	memset(ntvCode, 0, 0xFFFF);
 #endif
 	tkpos = ntvCount = 0; tksize = 0xfff;
 	set_xor128();
 	tok = calloc(sizeof(Token), tksize);
-	brks.addr = calloc(sizeof(unsigned int), 1);
-	rets.addr = calloc(sizeof(unsigned int), 1);
-	memset(ntvCode, 0, 0xFFFF);
-	memset(tok, 0, sizeof(Token));
+	brks.addr = calloc(sizeof(uint32_t), 1);
+	rets.addr = calloc(sizeof(uint32_t), 1);
 }
 
 static void dispose() {
@@ -29,21 +28,24 @@ static void dispose() {
 	freeMem();
 }
 
-static int getString() {
+static int32_t getString() {
 	strcpy(strings[strCount], tok[tkpos++].val);
 	*strAddr++ = ntvCount;
 	return strCount++;
 }
 
 static Variable *getVariable(char *name) {
-	int i;
 	// loval variable
-	for(i = 0; i < varCounter; i++) {
+	for(int32_t i = 0; i < varCounter; i++) {
 		if(strcmp(name, locVar[nowFunc][i].name) == 0)
 			return &locVar[nowFunc][i];
 	}
 	// global variable
+<<<<<<< HEAD
 	for(i = 0; i < gblVar.count; i++) {
+=======
+	for(int i = 0; i < gblVar.count; i++) {
+>>>>>>> 84ccdd1e182feb9a3f1fba480890e91e379a8c48
 		if(strcmp(name, gblVar.var[i].name) == 0) {
 			return &gblVar.var[i];
 		}
@@ -52,10 +54,14 @@ static Variable *getVariable(char *name) {
 	return NULL;
 }
 
+<<<<<<< HEAD
 static Variable *appendVariable(char *name, int type) {
+=======
+static Variable *appendVariable(char *name, int32_t type) {
+	debug("append>%s %d\n", name, isFunction);
+>>>>>>> 84ccdd1e182feb9a3f1fba480890e91e379a8c48
 	if(isFunction == IN_FUNC) {
-		int sz;
-		sz = 1 + ++varSize[nowFunc];
+		int32_t sz = 1 + ++varSize[nowFunc];
 		strcpy(locVar[nowFunc][varCounter].name, name);
 		locVar[nowFunc][varCounter].type = type;
 		locVar[nowFunc][varCounter].id = sz;
@@ -67,8 +73,8 @@ static Variable *appendVariable(char *name, int type) {
 		strcpy(gblVar.var[gblVar.count].name, name);
 		gblVar.var[gblVar.count].type = type;
 		gblVar.var[gblVar.count].loctype = V_GLOBAL;
-		gblVar.var[gblVar.count].id = (unsigned int)&ntvCode[ntvCount];
-		ntvCount += sizeof(int); // type
+		gblVar.var[gblVar.count].id = (uint32_t)&ntvCode[ntvCount];
+		ntvCount += sizeof(int32_t); // type
 
 		return &gblVar.var[gblVar.count++];
 	}
@@ -76,7 +82,11 @@ static Variable *appendVariable(char *name, int type) {
 	return NULL;
 }
 
+<<<<<<< HEAD
 static int getFunction(char *name, int address) {
+=======
+static int32_t getFunction(char *name, int32_t address) {
+>>>>>>> 84ccdd1e182feb9a3f1fba480890e91e379a8c48
 	for(int i = 0; i < funcCount; i++) {
 		if(strcmp(functions[i].name, name) == 0) {
 			return functions[i].address;
@@ -87,7 +97,7 @@ static int getFunction(char *name, int address) {
 	return functions[funcCount++].address;
 }
 
-static int appendBreak() {
+static int32_t appendBreak() {
 	genCode(0xe9); // jmp
 	brks.addr = realloc(brks.addr, 4 * (brks.count + 1));
 	brks.addr[brks.count] = ntvCount;
@@ -95,9 +105,8 @@ static int appendBreak() {
 	return brks.count++;
 }
 
-static int appendReturn() {
+static int32_t appendReturn() {
 	relExpr(); // get argument
-	//genas("push eax");
 	genCode(0xe9); // jmp
 	rets.addr = realloc(rets.addr, 4 * (rets.count + 1));
 	if(rets.addr == NULL) error("LitSystemError: no enough memory");
@@ -107,13 +116,13 @@ static int appendReturn() {
 }
 
 
-static int skip(char *s) {
+static int32_t skip(char *s) {
   if(strcmp(s, tok[tkpos].val) == 0) {
   	tkpos++; return 1;
   } else return 0;
 }
 
-static int error(char *errs, ...) {
+static int32_t error(char *errs, ...) {
 	va_list args;
 	va_start(args, errs);
 		vprintf(errs, args); puts("");
@@ -122,11 +131,11 @@ static int error(char *errs, ...) {
 	return 0;
 }
 
-static int lex(char *code) {
-  int i, codeSize = strlen(code), line = 1;
-	int iswindows = 0;
+static int32_t lex(char *code) {
+  int32_t codeSize = strlen(code), line = 1;
+	int32_t iswindows = 0;
 
-	for(i = 0; i < codeSize; i++) {
+	for(int32_t i = 0; i < codeSize; i++) {
  		if(tksize <= i)
 			tok = realloc(tok, (tksize += 512 * sizeof(Token)));
 		if(isdigit(code[i])) { // number?
@@ -166,16 +175,19 @@ static int lex(char *code) {
     }
   }
   tok[tkpos].nline = line;
-	for(i = 0; i < tkpos; i++) {
+#ifdef NDEBUG
+#else
+	for(int32_t i = 0; i < tkpos; i++) {
 		debug("tk: %d > %s\n", i, tok[i].val);
 	}
+#endif
   tksize = tkpos - 1;
 
 	return 0;
 }
 
-static int eval(int pos, int isblock) {
-	int isputs = 0, is1byte = 0, isformat = 0;
+static int32_t eval(int32_t pos, int32_t isblock) {
+	int32_t isputs = 0, is1byte = 0, isformat = 0;
 	while(tkpos < tksize) {
 		if(skip("$")) { // global varibale?
 			if(isassign()) assignment();
@@ -185,25 +197,24 @@ static int eval(int pos, int isblock) {
 				strcmp("$", tok[tkpos+1].val) && strcmp(";", tok[tkpos+1].val)) {	// main function entry
 			isFunction = IN_FUNC;
 			nowFunc++;
-			int espBgn;
 			getFunction("main", ntvCount); // append function
 			genas("push ebp");
 			genas("mov ebp esp");
-			espBgn = ntvCount + 2; genas("sub esp 0");
+			uint32_t espBgn = ntvCount + 2; genas("sub esp 0");
 			genCode(0x8b); genCode(0x75); genCode(0x0c); // mov esi, 0xc(%ebp)
 
 			eval(0, NON);
 
-			genCode(0x81); genCode(0xc4); genCodeInt32(sizeof(int) * (varSize[nowFunc] + 6)); // add %esp nn
+			genCode(0x81); genCode(0xc4); genCodeInt32(sizeof(int32_t) * (varSize[nowFunc] + 6)); // add %esp nn
 			genCode(0xc9);// leave
 			genCode(0xc3);// ret
-			genCodeInt32Insert(sizeof(int) * (varSize[nowFunc] + 6), espBgn);
+			genCodeInt32Insert(sizeof(int32_t) * (varSize[nowFunc] + 6), espBgn);
 			isFunction = IN_GLOBAL;
 		} else if(isassign()) {
 			assignment();
 		} else if((isputs=skip("puts")) || skip("output")) {
 			do {
-				int isstring = 0;
+				int32_t isstring = 0;
 				if(skip("\"")) {
 					genCode(0xb8); getString();
 					genCodeInt32(0x00); // mov eax string_address
@@ -230,7 +241,7 @@ static int eval(int pos, int isblock) {
 				genCode(0x89); genCode(0x44); genCode(0x24); genCode(0x00); // mov [esp+0], eax
 			}
 			if(skip(",")) {
-				int a = 4;
+				uint32_t a = 4;
 				do {
 					relExpr();
 					genCode(0x89); genCode(0x44); genCode(0x24); genCode(a); // mov [esp+a], eax
@@ -247,16 +258,16 @@ static int eval(int pos, int isblock) {
 		} else if(skip("return")) {
 			appendReturn();
 		} else if(skip("else")) {
-			int end;
+			int32_t end;
 			genCode(0xe9); end = ntvCount; genCodeInt32(0);// jmp while end
 			genCodeInt32Insert(ntvCount - pos - 4, pos);
 			eval(end, NON);
 			return 1;
 		} else if(skip("elsif")) {
-			int endif, end;
+			int32_t endif, end;
 			genCode(0xe9); endif = ntvCount; genCodeInt32(0);// jmp while end
 			genCodeInt32Insert(ntvCount - pos - 4, pos);
-			int type = relExpr();
+			int32_t type = relExpr();
 			genCode(type); genCode(0x05);
 			genCode(0xe9); end = ntvCount; genCodeInt32(0);// jmp while end
 			eval(end, NON);
@@ -278,30 +289,29 @@ static int eval(int pos, int isblock) {
 	return 0;
 }
 
-static int parser() {
+static int32_t parser() {
 	tkpos = ntvCount = 0;
-	strAddr = calloc(0xFF, sizeof(int));
-	int main_address;
+	strAddr = calloc(0xFF, sizeof(int32_t));
+	int32_t main_address;
 	genCode(0xe9); main_address = ntvCount; genCodeInt32(0);
 	eval(0, 0);
 
-	int addr = getFunction("main", 0);
+	int32_t addr = getFunction("main", 0);
 	debug("main() addr> %u\n", addr);
 	genCodeInt32Insert(addr - 5, main_address);
 
 	for(strAddr--; strCount; strAddr--) {
-		genCodeInt32Insert((unsigned int)&ntvCode[ntvCount], *strAddr);
-		int i;
+		genCodeInt32Insert((uint32_t)&ntvCode[ntvCount], *strAddr);
 		replaceEscape(strings[--strCount]);
-		for(i = 0; strings[strCount][i]; i++) {
+		for(int32_t i = 0; strings[strCount][i]; i++) {
 			genCode(strings[strCount][i]);
 		} genCode(0); // '\0'
-		debug("string addr> %d\n", (int) strAddr);
+		debug("string addr> %d\n", (int32_t) strAddr);
 	}
 #ifdef NDEBUG
 	// Nothing
 #else
-	for(int i = 0; i < ntvCount; i++)
+	for(int32_t i = 0; i < ntvCount; i++)
 		printf("%02x", ntvCode[i]);
 	puts("");
 #endif
@@ -311,8 +321,8 @@ static int parser() {
 }
 
 
-static int relExpr() {
-	int lt=0, gt=0, diff=0, eql=0, fle=0;
+static int32_t relExpr() {
+	int32_t lt=0, gt=0, diff=0, eql=0, fle=0;
 	addSubExpr();
 	if((lt=skip("<")) || (gt=skip(">")) || (diff=skip("!=")) ||
 			(eql=skip("==")) || (fle=skip("<=")) || skip(">=")) {
@@ -326,8 +336,8 @@ static int relExpr() {
 
 	return 0;
 }
-static int addSubExpr() {
-	int add;
+static int32_t addSubExpr() {
+	int32_t add;
 	mulDivExpr();
 	while((add = skip("+")) || skip("-")) {
 		genas("push eax");
@@ -339,8 +349,8 @@ static int addSubExpr() {
 	}
 	return 0;
 }
-static int mulDivExpr() {
-  int mul, div;
+static int32_t mulDivExpr() {
+  int32_t mul, div;
   primExpr();
   while((mul = skip("*")) || (div=skip("/")) || skip("%")) {
 		genas("push eax");
@@ -360,7 +370,7 @@ static int mulDivExpr() {
   }
 	return 0;
 }
-static int primExpr() {
+static int32_t primExpr() {
   if(isdigit(tok[tkpos].val[0])) { // number?
     genas("mov eax %d", atoi(tok[tkpos++].val));
 	} else if(skip("'")) { // char?
@@ -369,6 +379,7 @@ static int primExpr() {
 	} else if(skip("\"")) { // string?
 		genCode(0xb8); getString();
 		genCodeInt32(0x00); // mov eax string_address
+		if(isArray()) genArray();
   } else if(isalpha(tok[tkpos].val[0])) { // variable or inc or dec
 		char *name = tok[tkpos].val;
 		Variable *v;
@@ -384,7 +395,7 @@ static int primExpr() {
 				genas("mov ecx eax");
 
 				if(v->loctype == V_LOCAL) {
-					genCode(0x8b); genCode(0x55); genCode(256 - sizeof(int) * v->id); // mov edx, [ebp - v*4]
+					genCode(0x8b); genCode(0x55); genCode(256 - sizeof(int32_t) * v->id); // mov edx, [ebp - v*4]
 				} else if(v->loctype == V_GLOBAL) {
 					genCode(0x8b); genCode(0x15); genCodeInt32(v->id); // mov edx, GLOBAL_ADDR
 				}
@@ -410,7 +421,7 @@ static int primExpr() {
 					genas("add esp 4");
 					genas("pop eax");
 				} else { // User Function?
-					int address = getFunction(name, 0), args = 0;
+					int32_t address = getFunction(name, 0), args = 0;
 					debug("addr: %d\n", address);
 					if(isalpha(tok[tkpos].val[0]) || isdigit(tok[tkpos].val[0]) ||
 						!strcmp(tok[tkpos].val, "\"") || !strcmp(tok[tkpos].val, "(")) { // has arg?
@@ -421,16 +432,17 @@ static int primExpr() {
 						} while(skip(","));
 					}
 					genCode(0xe8); genCodeInt32(0xFFFFFFFF - (ntvCount - address) - 3); // call func
-					genas("add esp %d", args * sizeof(int));
+					genas("add esp %d", args * sizeof(int32_t));
 				}
 				debug("%s\n", tok[tkpos].val);
 				if(!skip(")")) error("func: error: %d: expected expression ')'", tok[tkpos].nline);
+				if(isArray()) genArray();
 			} else {
 				if((v = getVariable(name)) == NULL)
 					error("var: error: %d: '%s' was not declared", tok[tkpos].nline, name);
 				if(v->loctype == V_LOCAL) {
 					genCode(0x8b); genCode(0x45);
-					genCode(256 - sizeof(int) * v->id); // mov eax variable
+					genCode(256 - sizeof(int32_t) * v->id); // mov eax variable
 				} else if(v->loctype == V_GLOBAL) {
 					genCode(0xa1); genCodeInt32(v->id); // mov eax GLOBAL_ADDR
 				}
@@ -447,16 +459,29 @@ static int primExpr() {
 	return 0;
 }
 
-static int ifStmt() {
-	int end, type = relExpr(); // if conditions
+static int32_t isArray() {
+	if(strcmp(tok[tkpos].val, "[") == 0) {
+		return 1;	
+	}
+	return 0;
+}
+
+static int32_t genArray() {
+	genas("mov ecx eax");
+	skip("["); relExpr(); skip("]");
+	genCode(0x8b); genCode(0x04); genCode(0x81); // mov eax [eax * 4 + ecx]
+}
+
+static int32_t ifStmt() {
+	int32_t end, type = relExpr(); // if conditions
 	genCode(type); genCode(0x05);
 	genCode(0xe9); end = ntvCount; genCodeInt32(0);// jmp while's end:
 	return eval(end, NON);
 }
 
-static int whileStmt() {
-	int loopBgn = ntvCount, end, stepBgn[2], stepOn = 0;
-	int type = relExpr();
+static int32_t whileStmt() {
+	int32_t loopBgn = ntvCount, end, stepBgn[2], stepOn = 0;
+	int32_t type = relExpr();
 	if(skip(",")) {
 		stepOn = 1;
 		stepBgn[0] = tkpos;
@@ -471,7 +496,7 @@ static int whileStmt() {
 			if(isassign()) assignment();
 			tkpos = stepBgn[1];
 		}
-		unsigned int n = 0xFFFFFFFF - ntvCount + loopBgn - 4;
+		uint32_t n = 0xFFFFFFFF - ntvCount + loopBgn - 4;
 		genCode(0xe9); genCodeInt32(n); // jmp n
 		genCodeInt32Insert(ntvCount - end - 4, end);
 
@@ -483,8 +508,8 @@ static int whileStmt() {
 	return 0;
 }
 
-static int functionStmt() {
-	int espBgn, argsc = 0;
+static int32_t functionStmt() {
+	int32_t espBgn, argsc = 0;
 	char *funcName = tok[tkpos++].val;
 	nowFunc++; isFunction = IN_FUNC;
 	if(skip("(")) {
@@ -495,8 +520,8 @@ static int functionStmt() {
 	genas("push ebp");
 	genas("mov ebp esp");
 	espBgn = ntvCount + 2; genas("sub esp 0"); // align
-	int argpos[128], i; for(i = 0; i < argsc; i++) {
-		genCode(0x8b); genCode(0x45); genCode(0x08 + (argsc - i - 1) * sizeof(int));
+	int32_t argpos[128], i; for(i = 0; i < argsc; i++) {
+		genCode(0x8b); genCode(0x45); genCode(0x08 + (argsc - i - 1) * sizeof(int32_t));
 		genCode(0x89); genCode(0x44); genCode(0x24);
 		argpos[i] = ntvCount; genCode(0x00);
 	}
@@ -504,30 +529,29 @@ static int functionStmt() {
 
 	for(--rets.count; rets.count >= 0; --rets.count) {
 		genCodeInt32Insert(ntvCount - rets.addr[rets.count] - 4, rets.addr[rets.count]);
-		//genas("pop eax");
 	} rets.count = 0;
 
-	genas("add esp %u", sizeof(int) * (varSize[nowFunc] + 6)); // add esp nn
+	genas("add esp %u", sizeof(int32_t) * (varSize[nowFunc] + 6)); // add esp nn
 	genCode(0xc9);// leave
 	genCode(0xc3);// ret
 
-	genCodeInt32Insert(sizeof(int) * (varSize[nowFunc] + 6), espBgn);
+	genCodeInt32Insert(sizeof(int32_t) * (varSize[nowFunc] + 6), espBgn);
 	for(i = 1; i <= argsc; i++) {
-		ntvCode[argpos[i - 1]] = 256 - sizeof(int) * i + (((varSize[nowFunc] + 6) * sizeof(int)) - 4);
+		ntvCode[argpos[i - 1]] = 256 - sizeof(int32_t) * i + (((varSize[nowFunc] + 6) * sizeof(int32_t)) - 4);
 	}
 
-	debug("%s() has %u functions or variables\n", funcName, varSize[nowFunc] * sizeof(int));
+	debug("%s() has %u functions or variables\n", funcName, varSize[nowFunc] * sizeof(int32_t));
 
 	return 0;
 }
 
-static int isassign() {
+static int32_t isassign() {
 	//puts("isassign()");
 	if(strcmp(tok[tkpos+1].val, "=") == 0) return 1;
 	else if(strcmp(tok[tkpos+1].val, "++") == 0) return 1;
 	else if(strcmp(tok[tkpos+1].val, "--") == 0) return 1;
 	else if(strcmp(tok[tkpos+1].val, "[") == 0) {
-		int i = tkpos + 1;
+		int32_t i = tkpos + 1;
 		while(strcmp(tok[i].val, "]")) {
 			if(strcmp(tok[i].val, ";") == 0)
 				error("error: %d: invalid expression", tok[tkpos].nline);
@@ -536,15 +560,15 @@ static int isassign() {
 		debug(">%s\n", tok[i].val); i++;
 		if(strcmp(tok[i].val, "=") == 0) return 1;
 	} else if(strcmp(tok[tkpos+1].val, ":") == 0) {
-		int i = tkpos + 3;
+		int32_t i = tkpos + 3;
 		if(strcmp(tok[i].val, "=") == 0) return 1;
 	}
 	return 0;
 }
 
-static int assignment() {
+static int32_t assignment() {
 	Variable *v = getVariable(tok[tkpos].val);
-	int inc = 0, dec = 0, declare = 0;
+	int32_t inc = 0, dec = 0, declare = 0;
 	if(v == NULL) { declare++; v = declareVariable(); }
 	tkpos++;
 
@@ -556,8 +580,8 @@ static int assignment() {
 				relExpr();
 				genCode(0x8b); genCode(0x4d);
 				genCode(256 -
-					(v->type == T_INT ? sizeof(int) :
-						v->type == T_STRING ? sizeof(int*) :
+					(v->type == T_INT ? sizeof(int32_t) :
+						v->type == T_STRING ? sizeof(int32_t*) :
 						v->type == T_DOUBLE ? sizeof(double) : 4) * v->id); // mov ecx [ebp-n]
 				genas("pop edx");
 				if(v->type == T_INT) {
@@ -574,8 +598,8 @@ static int assignment() {
 			} else if((inc=skip("++")) || (dec=skip("--"))) {
 				genCode(0x8b); genCode(0x45);
 				genCode(256 -
-					(v->type == T_INT ? sizeof(int) :
-						v->type == T_STRING ? sizeof(int*) :
+					(v->type == T_INT ? sizeof(int32_t) :
+						v->type == T_STRING ? sizeof(int32_t*) :
 						v->type == T_DOUBLE ? sizeof(double) : 4) * v->id); // mov eax varaible
 				genas("push eax");
 				if(inc) genCode(0x40); // inc eax
@@ -583,14 +607,14 @@ static int assignment() {
 			}
 			genCode(0x89); genCode(0x45);
 			genCode(256 -
-				(v->type == T_INT ? sizeof(int) :
-					v->type == T_STRING ? sizeof(int*) :
+				(v->type == T_INT ? sizeof(int32_t) :
+					v->type == T_STRING ? sizeof(int32_t*) :
 					v->type == T_DOUBLE ? sizeof(double) : 4) * v->id); // mov var eax
 			if(inc || dec) genas("pop eax");
 		}
 	} else if(v->loctype == V_GLOBAL) {
 		if(declare) { // first declare for global variable?
-			// assignment only interger
+			// assignment only int32_terger
 			if(skip("=")) {
 				unsigned *m = (unsigned *)v->id; *m = atoi(tok[tkpos++].val);
 			}
@@ -626,11 +650,11 @@ static int assignment() {
 }
 
 static Variable *declareVariable() {
-	int npos = tkpos;
+	int32_t npos = tkpos;
 	if(isalpha(tok[tkpos].val[0])) {
 		tkpos++;
 		if(skip(":")) {
-			if(skip("int")) { --tkpos; return appendVariable(tok[npos].val, T_INT); }
+			if(skip("int32_t")) { --tkpos; return appendVariable(tok[npos].val, T_INT); }
 			if(skip("string")) { --tkpos; return appendVariable(tok[npos].val, T_STRING); }
 			if(skip("double")) { --tkpos; return appendVariable(tok[npos].val, T_DOUBLE); }
 		} else { --tkpos; return appendVariable(tok[npos].val, T_INT); }
@@ -639,7 +663,7 @@ static Variable *declareVariable() {
 }
 
 static char *replaceEscape(char *str) {
-	int i;
+	int32_t i;
 	char *pos;
 	char escape[12][3] = {
 		"\\a", "\a",
@@ -660,15 +684,15 @@ static char *replaceEscape(char *str) {
 	return str;
 }
 
-void putNumber(int n) {
+void putNumber(int32_t n) {
 	printf("%d", n);
 }
-void putString(int *n) {
+void putString(int32_t *n) {
 	printf("%s", n);
 }
 void putln() { printf("\n"); }
 
-void appendMem(int addr) {
+void appendMem(int32_t addr) {
 	memad.addr[memad.count++] = addr;
 }
 
@@ -686,22 +710,22 @@ void set_xor128() {
 #endif
 }
 
-int xor128() {
-  static unsigned int x = 123456789;
-  static unsigned int y = 362436069;
-  static unsigned int z = 521288629;
-  unsigned int t;
+int32_t xor128() {
+  static uint32_t x = 123456789;
+  static uint32_t y = 362436069;
+  static uint32_t z = 521288629;
+  uint32_t t;
   t = x ^ (x << 11); x = y; y = z; z = w;
   w = (w ^ (w >> 19)) ^ (t ^ (t >> 8));
-  return ((int)w < 0) ? -(int)w : (int)w;
+  return ((int32_t)w < 0) ? -(int32_t)w : (int32_t)w;
 }
 
 void *funcTable[] = { (void *) putNumber, (void*) putString, (void*) putln,
 	 (void*)malloc, (void*) xor128, (void*) printf, (void*) appendMem };
 
-static int run() {
+static int32_t run() {
 	printf("size: %dbyte, %.2lf%%\n", ntvCount, ((double)ntvCount / 0xFFFF) * 100.0);
-	return ((int (*)(int *, void**))ntvCode)(0, funcTable);
+	return ((int32_t (*)(int32_t *, void**))ntvCode)(0, funcTable);
 }
 
 int main(int argc, char **argv) {
@@ -721,7 +745,7 @@ int main(int argc, char **argv) {
 		lex(input);
 	} else {
 		FILE *codefp = fopen(argv[1], "rb");
-		int sourceSize = 0;
+		int32_t sourceSize = 0;
 
 		if(!codefp) { perror("file not found"); exit(0); }
 		fseek(codefp, 0, SEEK_END);

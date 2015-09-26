@@ -12,6 +12,7 @@
 #include <signal.h>
 #include <stdarg.h>
 #include <stddef.h>
+#include <stdint.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -34,11 +35,15 @@
 
 #define NON 0
 
-#define IN_FUNC 1
-#define IN_GLOBAL 0
+enum {
+	IN_GLOBAL = 0,
+	IN_FUNC
+};
 
-#define BLOCK_LOOP 1
-#define BLOCK_FUNC 2
+enum {
+	BLOCK_LOOP = 1,
+	BLOCK_FUNC = 2
+};
 
 unsigned char *ntvCode;
 int ntvCount;
@@ -111,6 +116,9 @@ static int addSubExpr();
 static int mulDivExpr();
 static int relExpr();
 static int primExpr();
+
+static int isArray();
+static int genArray();
 
 static int isassign();
 static int assignment();
