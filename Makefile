@@ -1,5 +1,5 @@
 CFLAGS = -m32 -O0 -std=c99
-CC = clang $(CFLAGS) 
+CC = clang  $(CFLAGS) 
 
 
 lit: asm.c asm.h lit.c lit.h debug.h

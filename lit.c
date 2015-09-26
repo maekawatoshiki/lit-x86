@@ -173,106 +173,113 @@ static int32_t lex(char *code) {
 	return 0;
 }
 
-static int32_t eval(int32_t pos, int32_t isblock) {
-	int32_t isputs = 0, is1byte = 0, isformat = 0;
-	while(tkpos < tksize) {
-		if(skip("$")) { // global varibale?
-			if(isassign()) assignment();
-		} else if(skip("def")) { blocksCount++;
-			functionStmt();
-		} else if(isFunction == IN_GLOBAL && strcmp("def", tok[tkpos+1].val) &&
-				strcmp("$", tok[tkpos+1].val) && strcmp(";", tok[tkpos+1].val)) {	// main function entry
-			isFunction = IN_FUNC;
-			nowFunc++;
-			getFunction("main", ntvCount); // append function
-			genas("push ebp");
-			genas("mov ebp esp");
-			uint32_t espBgn = ntvCount + 2; genas("sub esp 0");
-			genCode(0x8b); genCode(0x75); genCode(0x0c); // mov esi, 0xc(%ebp)
+static int expression(int pos, int status) {
+	int isputs = 0;
 
-			eval(0, NON);
+	if(skip("$")) { // global varibale?
+		if(isassign()) assignment();
+	} else if(skip("def")) { blocksCount++;
+		functionStmt();
+	} else if(isFunction == IN_GLOBAL && strcmp("def", tok[tkpos+1].val) &&
+			strcmp("$", tok[tkpos+1].val) && strcmp(";", tok[tkpos+1].val)) {	// main function entry
+		isFunction = IN_FUNC;
+		nowFunc++;
+		getFunction("main", ntvCount); // append function
+		genas("push ebp");
+		genas("mov ebp esp");
+		uint32_t espBgn = ntvCount + 2; genas("sub esp 0");
+		genCode(0x8b); genCode(0x75); genCode(0x0c); // mov esi, 0xc(%ebp)
 
-			genCode(0x81); genCode(0xc4); genCodeInt32(sizeof(int32_t) * (varSize[nowFunc] + 6)); // add %esp nn
-			genCode(0xc9);// leave
-			genCode(0xc3);// ret
-			genCodeInt32Insert(sizeof(int32_t) * (varSize[nowFunc] + 6), espBgn);
-			isFunction = IN_GLOBAL;
-		} else if(isassign()) {
-			assignment();
-		} else if((isputs=skip("puts")) || skip("output")) {
-			do {
-				int isstring = 0;
-				if(skip("\"")) {
-					genCode(0xb8); getString();
-					genCodeInt32(0x00); // mov eax string_address
-					isstring = 1;
-				} else {
-					relExpr();
-				}
-				genas("push eax");
-				if(isstring) {
-					genCode(0xff); genCode(0x56); genCode(4);// call *0x04(esi) putString
-				} else {
-					genCode(0xff); genCode(0x16); // call (esi) putNumber
-				}
-				genas("add esp 4");
-			} while(skip(","));
-			// for new line
-			if(isputs) {
-				genCode(0xff); genCode(0x56); genCode(8);// call *0x08(esi) putLN
-			}
-		} else if(skip("printf")) {
+		eval(0, NON);
+
+		genCode(0x81); genCode(0xc4); genCodeInt32(sizeof(int32_t) * (varSize[nowFunc] + 6)); // add %esp nn
+		genCode(0xc9);// leave
+		genCode(0xc3);// ret
+		genCodeInt32Insert(sizeof(int32_t) * (varSize[nowFunc] + 6), espBgn);
+		isFunction = IN_GLOBAL;
+	} else if(isassign()) {
+		assignment();
+	} else if((isputs=skip("puts")) || skip("output")) {
+		do {
+			int isstring = 0;
 			if(skip("\"")) {
 				genCode(0xb8); getString();
 				genCodeInt32(0x00); // mov eax string_address
-				genCode(0x89); genCode(0x44); genCode(0x24); genCode(0x00); // mov [esp+0], eax
+				isstring = 1;
+			} else {
+				relExpr();
 			}
-			if(skip(",")) {
-				uint32_t a = 4;
-				do {
-					relExpr();
-					genCode(0x89); genCode(0x44); genCode(0x24); genCode(a); // mov [esp+a], eax
-					a += 4;
-				} while(skip(","));
+			genas("push eax");
+			if(isstring) {
+				genCode(0xff); genCode(0x56); genCode(4);// call *0x04(esi) putString
+			} else {
+				genCode(0xff); genCode(0x16); // call (esi) putNumber
 			}
-			genCode(0xff); genCode(0x56); genCode(12 + 8); // call printf
-		} else if(skip("for")) { blocksCount++;
-			assignment(); skip(","); whileStmt();
-		} else if(skip("while")) { blocksCount++;
-			whileStmt();
-		} else if(skip("if")) { blocksCount++;
-			ifStmt();
-		} else if(skip("return")) {
-			appendReturn();
-		} else if(skip("else")) {
-			int32_t end;
-			genCode(0xe9); end = ntvCount; genCodeInt32(0);// jmp while end
-			genCodeInt32Insert(ntvCount - pos - 4, pos);
-			eval(end, NON);
-			return 1;
-		} else if(skip("elsif")) {
-			int32_t endif, end;
-			genCode(0xe9); endif = ntvCount; genCodeInt32(0);// jmp while end
-			genCodeInt32Insert(ntvCount - pos - 4, pos);
-			int32_t type = relExpr();
-			genCode(type); genCode(0x05);
-			genCode(0xe9); end = ntvCount; genCodeInt32(0);// jmp while end
-			eval(end, NON);
-			genCodeInt32Insert(ntvCount - endif - 4, endif);
-			return 1;
-		} else if(skip("break")) {
-			appendBreak();
-		} else if(skip("end")) { blocksCount--; 
-			if(isblock == 0) {
-				genCodeInt32Insert(ntvCount - pos - 4, pos);
-			} else if(isblock == BLOCK_FUNC) isFunction = IN_GLOBAL;
-			return 1;
-		} else if(!skip(";")) {
-			relExpr();
+			genas("add esp 4");
+		} while(skip(","));
+		// for new line
+		if(isputs) {
+			genCode(0xff); genCode(0x56); genCode(8);// call *0x08(esi) putLN
 		}
+	} else if(skip("printf")) {
+		if(skip("\"")) {
+			genCode(0xb8); getString();
+			genCodeInt32(0x00); // mov eax string_address
+			genCode(0x89); genCode(0x44); genCode(0x24); genCode(0x00); // mov [esp+0], eax
+		}
+		if(skip(",")) {
+			uint32_t a = 4;
+			do {
+				relExpr();
+				genCode(0x89); genCode(0x44); genCode(0x24); genCode(a); // mov [esp+a], eax
+				a += 4;
+			} while(skip(","));
+		}
+		genCode(0xff); genCode(0x56); genCode(12 + 8); // call printf
+	} else if(skip("for")) { blocksCount++;
+		assignment(); skip(","); whileStmt();
+	} else if(skip("while")) { blocksCount++;
+		whileStmt();
+	} else if(skip("return")) {
+		appendReturn();
+	} else if(skip("if")) {
+		ifStmt();
+	} else if(skip("else")) {
+		int32_t end;
+		genCode(0xe9); end = ntvCount; genCodeInt32(0);// jmp while end
+		genCodeInt32Insert(ntvCount - pos - 4, pos);
+		eval(end, NON);
+		return 1;
+	} else if(skip("elsif")) {
+		int32_t endif, end;
+		genCode(0xe9); endif = ntvCount; genCodeInt32(0);// jmp while end
+		genCodeInt32Insert(ntvCount - pos - 4, pos);
+		int32_t type = relExpr();
+		genCode(type); genCode(0x05);
+		genCode(0xe9); end = ntvCount; genCodeInt32(0);// jmp while end
+		eval(end, NON);
+		genCodeInt32Insert(ntvCount - endif - 4, endif);
+		return 1;
+	} else if(skip("break")) {
+		appendBreak();
+	} else if(skip("end")) { blocksCount--;
+		if(status == NON) {
+			genCodeInt32Insert(ntvCount - pos - 4, pos);
+		} else if(status == BLOCK_FUNC) isFunction = IN_GLOBAL;
+		return 1;
+	} else if(!skip(";")) {
+		relExpr();
 	}
-	if(blocksCount != 0)
-		error("error: expected 'end' before %d line", tok[tkpos].nline);
+
+	return 0;
+}
+
+static int eval(int pos, int status) {
+	while(tkpos < tksize) {
+		if(expression(pos, status)) return 1;
+	}
+	//if(blocksCount != 0)
+//		error("error: expected 'end' before %d line", tok[tkpos].nline);
 	return 0;
 }
 
@@ -452,7 +459,7 @@ static int32_t primExpr() {
 
 static int32_t isArray() {
 	if(strcmp(tok[tkpos].val, "[") == 0) {
-		return 1;	
+		return 1;
 	}
 	return 0;
 }
@@ -464,9 +471,9 @@ static int32_t genArray() {
 }
 
 static int32_t ifStmt() {
-	int32_t end, type = relExpr(); // if conditions
+	uint32_t end, type = relExpr(); // if condition
 	genCode(type); genCode(0x05);
-	genCode(0xe9); end = ntvCount; genCodeInt32(0);// jmp while's end:
+	genCode(0xe9); end = ntvCount; genCodeInt32(0);// jmp
 	return eval(end, NON);
 }
 
@@ -480,21 +487,24 @@ static int32_t whileStmt() {
 	}
 	genCode(type); genCode(0x05); // ifjmp 5
 	genCode(0xe9); end = ntvCount; genCodeInt32(0);// jmp while end
-	if(eval(0, BLOCK_LOOP)) {
-		if(stepOn) {
-			stepBgn[1] = tkpos;
-			tkpos = stepBgn[0];
-			if(isassign()) assignment();
-			tkpos = stepBgn[1];
-		}
-		uint32_t n = 0xFFFFFFFF - ntvCount + loopBgn - 4;
-		genCode(0xe9); genCodeInt32(n); // jmp n
-		genCodeInt32Insert(ntvCount - end - 4, end);
+	
+	if(skip(":")) expression(0, BLOCK_LOOP);
+	else eval(0, BLOCK_LOOP);
 
-		for(--brks.count; brks.count >= 0; brks.count--) {
-			genCodeInt32Insert(ntvCount - brks.addr[brks.count] - 4, brks.addr[brks.count]);
-		} brks.count = 0;
+	if(stepOn) {
+		stepBgn[1] = tkpos;
+		tkpos = stepBgn[0];
+		if(isassign()) assignment();
+		tkpos = stepBgn[1];
 	}
+	uint32_t n = 0xFFFFFFFF - ntvCount + loopBgn - 4;
+	genCode(0xe9); genCodeInt32(n); // jmp n
+	genCodeInt32Insert(ntvCount - end - 4, end);
+
+	for(--brks.count; brks.count >= 0; brks.count--) {
+		genCodeInt32Insert(ntvCount - brks.addr[brks.count] - 4, brks.addr[brks.count]);
+	} brks.count = 0;
+
 
 	return 0;
 }

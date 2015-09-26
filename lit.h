@@ -34,7 +34,7 @@
 #define JAE 0x7d
 
 #define NON 0
-
+#define ONE_SENT 1
 enum {
 	IN_GLOBAL = 0,
 	IN_FUNC
@@ -127,6 +127,8 @@ static Variable *declareVariable();
 static int ifStmt();
 static int whileStmt();
 static int functionStmt();
+
+static int expression(int, int);
 
 static int getString();
 static int getFunction(char *, int);

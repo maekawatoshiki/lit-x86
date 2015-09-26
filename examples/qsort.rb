@@ -2,12 +2,8 @@ def qsort(a, left, right)
 	l = left; r = right
 	pv = l
 	while 1 == 1
-		while a[l] < a[pv]
-			l++
-		end
-		while a[pv] < a[r]
-			r--
-		end
+		while a[l] < a[pv]; l++; end
+		while a[pv] < a[r]; r--; end
 		if l >= r break end
 		t = a[l]; a[l] = a[r]; a[r] = t;
 		l++; r--
@@ -22,12 +18,10 @@ end
 
 max = 20
 a = Array(max)
-for i = 0, i < max, i = i + 1
-	a[i] = rand() % 20
-end
+
+for i = 0, i < max, i++; a[i] = rand() % max; end
+
 qsort(a, 0, max - 1)
 
-for i = 0, i < max, i = i + 1
-	puts a[i]
-end
+for i = 0, i < max, i++; puts i; end
 
