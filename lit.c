@@ -36,16 +36,12 @@ static int32_t getString() {
 
 static Variable *getVariable(char *name) {
 	// loval variable
-	for(int32_t i = 0; i < varCounter; i++) {
+	for(int i = 0; i < varCounter; i++) {
 		if(strcmp(name, locVar[nowFunc][i].name) == 0)
 			return &locVar[nowFunc][i];
 	}
 	// global variable
-<<<<<<< HEAD
-	for(i = 0; i < gblVar.count; i++) {
-=======
 	for(int i = 0; i < gblVar.count; i++) {
->>>>>>> 84ccdd1e182feb9a3f1fba480890e91e379a8c48
 		if(strcmp(name, gblVar.var[i].name) == 0) {
 			return &gblVar.var[i];
 		}
@@ -54,12 +50,7 @@ static Variable *getVariable(char *name) {
 	return NULL;
 }
 
-<<<<<<< HEAD
 static Variable *appendVariable(char *name, int type) {
-=======
-static Variable *appendVariable(char *name, int32_t type) {
-	debug("append>%s %d\n", name, isFunction);
->>>>>>> 84ccdd1e182feb9a3f1fba480890e91e379a8c48
 	if(isFunction == IN_FUNC) {
 		int32_t sz = 1 + ++varSize[nowFunc];
 		strcpy(locVar[nowFunc][varCounter].name, name);
@@ -82,11 +73,7 @@ static Variable *appendVariable(char *name, int32_t type) {
 	return NULL;
 }
 
-<<<<<<< HEAD
 static int getFunction(char *name, int address) {
-=======
-static int32_t getFunction(char *name, int32_t address) {
->>>>>>> 84ccdd1e182feb9a3f1fba480890e91e379a8c48
 	for(int i = 0; i < funcCount; i++) {
 		if(strcmp(functions[i].name, name) == 0) {
 			return functions[i].address;
@@ -214,7 +201,7 @@ static int32_t eval(int32_t pos, int32_t isblock) {
 			assignment();
 		} else if((isputs=skip("puts")) || skip("output")) {
 			do {
-				int32_t isstring = 0;
+				int isstring = 0;
 				if(skip("\"")) {
 					genCode(0xb8); getString();
 					genCodeInt32(0x00); // mov eax string_address
@@ -275,7 +262,7 @@ static int32_t eval(int32_t pos, int32_t isblock) {
 			return 1;
 		} else if(skip("break")) {
 			appendBreak();
-		} else if(skip("end")) { blocksCount--;
+		} else if(skip("end")) { blocksCount--; 
 			if(isblock == 0) {
 				genCodeInt32Insert(ntvCount - pos - 4, pos);
 			} else if(isblock == BLOCK_FUNC) isFunction = IN_GLOBAL;
@@ -410,6 +397,10 @@ static int32_t primExpr() {
 			} else if(skip("(")) { // Function?
 				if(strcmp(name, "rand") == 0) {
 					genCode(0xff); genCode(0x56); genCode(12 + 4); // call rand
+				} else if(strcmp(name, "sleep") == 0) {
+					relExpr();
+					genCode(0x89); genCode(0x04); genCode(0x24); // mov [esp], eax
+					genCode(0xff); genCode(0x56); genCode(28); // call ssleep
 				} else if(strcmp(name, "Array") == 0) {
 					relExpr(); // get array size
 					genas("shl eax 2");
@@ -696,6 +687,10 @@ void appendMem(int32_t addr) {
 	memad.addr[memad.count++] = addr;
 }
 
+void ssleep(int32_t t) {
+	usleep((t / 1000.0 * CLOCKS_PER_SEC));
+}
+
 void freeMem() {
 	for(--memad.count; memad.count>=0; --memad.count) {
 		free((void*)memad.addr[memad.count]);
@@ -721,7 +716,7 @@ int32_t xor128() {
 }
 
 void *funcTable[] = { (void *) putNumber, (void*) putString, (void*) putln,
-	 (void*)malloc, (void*) xor128, (void*) printf, (void*) appendMem };
+	 (void*)malloc, (void*) xor128, (void*) printf, (void*) appendMem, (void*) usleep };
 
 static int32_t run() {
 	printf("size: %dbyte, %.2lf%%\n", ntvCount, ((double)ntvCount / 0xFFFF) * 100.0);
