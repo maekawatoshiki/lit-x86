@@ -45,6 +45,7 @@ enum {
 	IN_FUNC = 1,
 	IN_GLOBAL = 0
 };
+
 enum {
 	BLOCK_LOOP = 1,
 	BLOCK_FUNC ,

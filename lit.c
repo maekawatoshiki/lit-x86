@@ -131,14 +131,15 @@ void freeMem() {
 void set_xor128() {
 #if defined(WIN32) || defined(WINDOWS)
 #else
-	w = 12345 + getpid() + (time(0) >> 12);
+	w = 1234 + getpid() ^ 0xFFBA9285;
+	puts("set_xor128()");
 #endif
 }
 
-int32_t xor128() {
-  uint32_t x = 123456789;
-  uint32_t y = 362436069;
-  uint32_t z = 521288629;
+int xor128() {
+  static uint32_t x = 123456789;
+  static uint32_t y = 362436069;
+  static uint32_t z = 521288629;
   uint32_t t;
   t = x ^ (x << 11); x = y; y = z; z = w;
   w = (w ^ (w >> 19)) ^ (t ^ (t >> 8));
