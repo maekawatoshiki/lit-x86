@@ -52,9 +52,6 @@ enum {
 	BLOCK_GLOBAL
 };
 
-unsigned char *ntvCode;
-int ntvCount;
-
 typedef struct {
   char val[32];
   int nline;
@@ -84,13 +81,6 @@ struct {
 
 int blocksCount; // for while ~ end and if ~ end error check
 
-typedef struct {
-	int address;
-	char name[0xFF];
-} Function;
-
-Function functions[0xFF];
-int funcCount;
 
 char strings[0xFF][0xFF];
 int *strAddr, strCount; // strings in program

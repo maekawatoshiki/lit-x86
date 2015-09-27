@@ -302,7 +302,7 @@ int32_t functionStmt() {
 		ntvCode[argpos[i - 1]] = 256 - sizeof(int32_t) * i + (((varSize[nowFunc] + 6) * sizeof(int32_t)) - 4);
 	}
 
-	printf("%s() has %u functions or variables\n", funcName, varSize[nowFunc] * sizeof(int32_t));
+	printf("%s() has %lu functions or variables\n", funcName, varSize[nowFunc] * sizeof(int32_t));
 
 	return 0;
 }

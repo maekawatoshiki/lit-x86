@@ -9,7 +9,7 @@ def init
 	data = Array((X+1)*(Y+1))
 	for y = 0, y <= Y, y++
 		for x = 0, x <= X, x++
-			map[y * Y + x] = rand() % 2
+			map[y * Y + x] = (rand() + rand())% 2
 		end
 	end
 end

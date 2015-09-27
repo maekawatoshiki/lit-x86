@@ -20,6 +20,14 @@ struct {
 Variable locVar[0xFF][0xFF];
 int varSize[0xFF], varCounter;
 
+typedef struct {
+	int address;
+	char name[0xFF];
+} Function;
+
+Function functions[0xFF];
+int funcCount;
+
 int ifStmt();
 int whileStmt();
 int functionStmt();

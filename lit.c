@@ -109,7 +109,7 @@ void putNumber(int32_t n) {
 	printf("%d", n);
 }
 void putString(int32_t *n) {
-	printf("%s", n);
+	printf("%s", (char *)n);
 }
 void putln() { printf("\n"); }
 
