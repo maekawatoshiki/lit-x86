@@ -17,6 +17,11 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
+#include "asm.h"
+#include "expr.h"
+#include "parse.h"
+
 #if defined(WIN32) || defined(WINDOWS)
 	#include <windows.h>
 #else
@@ -35,14 +40,11 @@
 
 #define NON 0
 #define ONE_SENT 1
-enum {
-	IN_GLOBAL = 0,
-	IN_FUNC
-};
 
 enum {
 	BLOCK_LOOP = 1,
-	BLOCK_FUNC = 2
+	BLOCK_FUNC,
+	BLOCK_GLOBAL
 };
 
 unsigned char *ntvCode;
@@ -55,21 +57,6 @@ typedef struct {
 
 Token *tok;
 int tkpos, tksize;
-
-typedef struct {
-	char name[32];
-	unsigned int id;
-	int type;
-	int loctype;
-} Variable;
-
-struct {
-	Variable var[0xFF];
-	int count;
-} gblVar;
-
-Variable locVar[0xFF][0xFF];
-int varSize[0xFF], varCounter;
 
 enum {
 	V_LOCAL,
@@ -105,42 +92,17 @@ int *strAddr, strCount; // strings in program
 
 int isFunction; // With in function?
 
-static void init();
-static void dispose();
+void init();
+void dispose();
 
-static int lex(char *);
-static int eval(int, int);
-static int parser();
+int lex(char *);
 
-static int addSubExpr();
-static int mulDivExpr();
-static int relExpr();
-static int primExpr();
 
-static int isArray();
-static int genArray();
+int skip(char *);
+int error(char *, ...);
+char *replaceEscape(char *);
 
-static int isassign();
-static int assignment();
-static Variable *declareVariable();
-
-static int ifStmt();
-static int whileStmt();
-static int functionStmt();
-
-static int expression(int, int);
-
-static int getString();
-static int getFunction(char *, int);
-static Variable *getVariable(char *);
-static Variable *appendVariable(char *, int);
-static int appendBreak();
-static int appendReturn();
-
-static int skip(char *);
-static int error(char *, ...);
-static char *replaceEscape(char *);
-
+int execute(char *);
 
 /* for native(JIT) code. */
 
