@@ -24,7 +24,7 @@ Variable *getVariable(char *name) {
 }
 
 Variable *appendVariable(char *name, int type) {
-	if(isFunction == BLOCK_FUNC) {
+	if(isFunction == IN_FUNC) {
 		int32_t sz = 1 + ++varSize[nowFunc];
 		strcpy(locVar[nowFunc][varCounter].name, name);
 		locVar[nowFunc][varCounter].type = type;
@@ -32,7 +32,7 @@ Variable *appendVariable(char *name, int type) {
 		locVar[nowFunc][varCounter].loctype = V_LOCAL;
 
 		return &locVar[nowFunc][varCounter++];
-	} else if(isFunction == BLOCK_GLOBAL) {
+	} else if(isFunction == IN_GLOBAL) {
 		// global varibale
 		strcpy(gblVar.var[gblVar.count].name, name);
 		gblVar.var[gblVar.count].type = type;
@@ -98,9 +98,9 @@ int expression(int pos, int status) {
 		if(isassign()) assignment();
 	} else if(skip("def")) { blocksCount++;
 		functionStmt();
-	} else if(isFunction == BLOCK_GLOBAL && strcmp("def", tok[tkpos+1].val) &&
+	} else if(isFunction == IN_GLOBAL && strcmp("def", tok[tkpos+1].val) &&
 			strcmp("$", tok[tkpos+1].val) && strcmp(";", tok[tkpos+1].val)) {	// main function entry
-		isFunction = BLOCK_FUNC;
+		isFunction = IN_FUNC;
 		nowFunc++;
 		getFunction("main", ntvCount); // append function
 		genas("push ebp");
@@ -114,7 +114,7 @@ int expression(int pos, int status) {
 		genCode(0xc9);// leave
 		genCode(0xc3);// ret
 		genCodeInt32Insert(sizeof(int32_t) * (varSize[nowFunc] + 6), espBgn);
-		isFunction = BLOCK_GLOBAL;
+		isFunction = IN_GLOBAL;
 	} else if(isassign()) {
 		assignment();
 	} else if((isputs=skip("puts")) || skip("output")) {
@@ -183,7 +183,7 @@ int expression(int pos, int status) {
 	} else if(skip("end")) { blocksCount--;
 		if(status == NON) {
 			genCodeInt32Insert(ntvCount - pos - 4, pos);
-		} else if(status == BLOCK_FUNC) isFunction = BLOCK_GLOBAL;
+		} else if(status == BLOCK_FUNC) isFunction = IN_GLOBAL;
 		return 1;
 	} else if(!skip(";")) {
 		relExpr();
@@ -273,7 +273,7 @@ int whileStmt() {
 int32_t functionStmt() {
 	int32_t espBgn, argsc = 0;
 	char *funcName = tok[tkpos++].val;
-	nowFunc++; isFunction = BLOCK_FUNC;
+	nowFunc++; isFunction = IN_FUNC;
 	if(skip("(")) {
 		do { declareVariable(); tkpos++; argsc++; } while(skip(","));
 		skip(")");
