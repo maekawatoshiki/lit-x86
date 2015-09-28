@@ -113,12 +113,12 @@ void putString(int32_t *n) {
 }
 void putln() { printf("\n"); }
 
-void appendMem(int32_t addr) {
-	memad.addr[memad.count++] = addr;
-}
-
 void ssleep(int32_t t) {
 	usleep((t / 1000.0 * CLOCKS_PER_SEC));
+}
+
+void appendMem(int32_t addr) {
+	memad.addr[memad.count++] = addr;
 }
 
 void freeMem() {
@@ -146,8 +146,20 @@ int xor128() {
   return ((int32_t)w < 0) ? -(int32_t)w : (int32_t)w;
 }
 
-void *funcTable[] = { (void *) putNumber, (void*) putString, (void*) putln,
-	 (void*)malloc, (void*) xor128, (void*) printf, (void*) appendMem, (void*) usleep };
+void *funcTable[] = { 
+	(void *) putNumber, // 0
+	(void*) putString, 	// 4
+	(void*) putln,			// 8
+	(void*)malloc, 			// 12
+	(void*) xor128, 		// 16
+	(void*) printf, 		// 20
+	(void*) appendMem,	// 24
+	(void*) usleep, 		// 28
+	(void*) fopen, 			// 32
+	(void*) fprintf, 		// 36
+	(void*) fclose,			// 40
+	(void*) fgets				// 44
+};
 
 int run() {
 	printf("size: %dbyte, %.2lf%%\n", ntvCount, ((double)ntvCount / 0xFFFF) * 100.0);

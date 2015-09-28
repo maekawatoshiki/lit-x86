@@ -109,8 +109,35 @@ int32_t primExpr() {
 					genCode(0xff); genCode(0x56); genCode(12 + 12); // call appendMem
 					genas("add esp 4");
 					genas("pop eax");
+				} else if(strcmp(name, "fopen") == 0) {
+					uint32_t a = 0;
+					do {
+						relExpr();
+						genCode(0x89); genCode(0x44); genCode(0x24); genCode(a); // mov [esp+a], eax
+						a += 4;
+					} while(skip(","));
+					genCode(0xff); genCode(0x56); genCode(32); // call fopen
+				} else if(strcmp(name, "fprintf") == 0) {
+					uint32_t a = 0;
+					do {
+						relExpr();
+						genCode(0x89); genCode(0x44); genCode(0x24); genCode(a); // mov [esp+a], eax
+						a += 4;
+					} while(skip(","));
+					genCode(0xff); genCode(0x56); genCode(36); // call fprintf
+				} else if(strcmp(name, "fgets") == 0) {
+					uint32_t a = 0;
+					do {
+						relExpr();
+						genCode(0x89); genCode(0x44); genCode(0x24); genCode(a); // mov [esp+a], eax
+						a += 4;
+					} while(skip(","));
+					genCode(0xff); genCode(0x56); genCode(44); // call fgets
+				} else if(strcmp(name, "fclose") == 0) {
+					relExpr();
+					genCode(0x89); genCode(0x44); genCode(0x24); genCode(0); // mov [esp], eax
+					genCode(0xff); genCode(0x56); genCode(40); // call fclose
 				} else { // User Function?
-				
 					int32_t address = getFunction(name, 0), args = 0;
 					printf("addr: %d\n", address);
 					if(isalpha(tok[tkpos].val[0]) || isdigit(tok[tkpos].val[0]) ||
