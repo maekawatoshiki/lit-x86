@@ -19,9 +19,9 @@ int32_t relExpr() {
 		 * == sete 0x94
 		 * != setne 0x95
 		 */
-		genCode(0x0f); genCode(lt ? 0x9c : gt ? 0x9f : ne ? 0x95 : eql ? 0x94 : fle ? 0x9e : 0x9d); genCode(0xc1); // setX al
-		genCode(0x80); genCode(0xe1); genCode(0x01); // and al 1
-		genCode(0x0f); genCode(0xb6); genCode(0xc1); // movzx eax al 0f b6 c0
+		//genCode(0x0f); genCode(lt ? 0x9c : gt ? 0x9f : ne ? 0x95 : eql ? 0x94 : fle ? 0x9e : 0x9d); genCode(0xc1); // setX al
+		//genCode(0x80); genCode(0xe1); genCode(0x01); // and al 1
+		//genCode(0x0f); genCode(0xb6); genCode(0xc1); // movzx eax al
 		return lt ? JB : gt ? JA : ne ? JNE : eql ? JE : fle ? JBE : JAE;
 	}
 
