@@ -27,10 +27,7 @@ int main(int argc, char **argv) {
 		fclose(srcfp);
 	}
 
-	volatile clock_t bgn = clock();
 		execute(src);
-	volatile clock_t end = clock();
-	printf("time: %lfsec\n", (double)(end - bgn) / CLOCKS_PER_SEC);
 
 	return 0;
 }

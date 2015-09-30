@@ -129,3 +129,4 @@ strcpy(a, "1+3*2-10/2+2*4-1")
 printf "expr=> %s\n", a
 
 puts calc(a) # => 9
+
