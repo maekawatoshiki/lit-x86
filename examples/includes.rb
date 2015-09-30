@@ -32,7 +32,7 @@ def strcmp(a:string, b:string)
 	diff
 end
 
-# util
+# utility
 
 def isdigit(n)
   if '0' <= n; if n <= '9'
@@ -54,7 +54,6 @@ end
 def atoi(s:string)
   sum = 0; n = 1
   for l = 0, isdigit(s[l]) == 1, l++; n = n * 10; end
-
   for i = 0, i < l, i++
     n = n / 10
     sum = sum + n * (s[i] - '0')
@@ -87,9 +86,18 @@ def pow(a, b)
 end
 
 def abs(a)
-	if a < 0; return 0 - a; end
-	a
+	if a < 0; 0 - a else a end
 end
+
+def fact(n)
+	for ret = n--, n > 0, n--
+		ret = ret * n
+	end
+	ret
+end
+
+
+# Main entry
 
 hello:string = Array(10)
 
@@ -98,4 +106,6 @@ puts strcmp(hello, "world")
 puts strcmp("abc", "abc")
 
 puts abs(12 - 20), " ", abs(10)
+puts fact(10)
+puts fact(3)
 
