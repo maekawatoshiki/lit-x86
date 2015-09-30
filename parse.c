@@ -2,9 +2,12 @@
 
 
 int32_t getString() {
-	strcpy(strings[strCount], tok[tkpos++].val);
-	*strAddr++ = ntvCount;
-	return strCount++;
+	strings.text[ strings.count ] = 
+		calloc(sizeof(char), strlen(tok[tkpos].val) + 1);
+	strcpy(strings.text[strings.count], tok[tkpos++].val);
+
+	*strings.addr++ = ntvCount;
+	return strings.count++;
 }
 
 Variable *getVariable(char *name) {
@@ -201,7 +204,7 @@ int eval(int pos, int status) {
 
 int32_t parser() {
 	tkpos = ntvCount = 0;
-	strAddr = calloc(0xFF, sizeof(int32_t));
+	strings.addr = calloc(0xFF, sizeof(int32_t));
 	uint32_t main_address;
 	genCode(0xe9); main_address = ntvCount; genCodeInt32(0);
 	eval(0, 0);
@@ -209,13 +212,12 @@ int32_t parser() {
 	uint32_t addr = getFunction("main", 0);
 	genCodeInt32Insert(addr - 5, main_address);
 
-	for(strAddr--; strCount; strAddr--) {
-		genCodeInt32Insert((uint32_t)&ntvCode[ntvCount], *strAddr);
-		replaceEscape(strings[--strCount]);
-		for(int32_t i = 0; strings[strCount][i]; i++) {
-			genCode(strings[strCount][i]);
+	for(strings.addr--; strings.count; strings.addr--) {
+		genCodeInt32Insert((uint32_t)&ntvCode[ntvCount], *strings.addr);
+		replaceEscape(strings.text[--strings.count]);
+		for(int32_t i = 0; strings.text[strings.count][i]; i++) {
+			genCode(strings.text[strings.count][i]);
 		} genCode(0); // '\0'
-		printf("string addr> %d\n", (int32_t) strAddr);
 	}
 #ifdef NDEBUG
 	// Nothing

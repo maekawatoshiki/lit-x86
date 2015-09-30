@@ -28,6 +28,16 @@ typedef struct {
 Function functions[0xFF];
 int funcCount;
 
+/*
+char strings[0xFF][0xFF];
+int *strAddr, strCount; // strings in program
+*/
+struct {
+	char *text[0xff];
+	int *addr;
+	int count;
+} strings;
+
 int ifStmt();
 int whileStmt();
 int functionStmt();
