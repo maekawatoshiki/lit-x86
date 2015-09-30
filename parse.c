@@ -418,7 +418,7 @@ Variable *declareVariable() {
 	if(isalpha(tok[tkpos].val[0])) {
 		tkpos++;
 		if(skip(":")) {
-			if(skip("int32_t")) { --tkpos; return appendVariable(tok[npos].val, T_INT); }
+			if(skip("int")) { --tkpos; return appendVariable(tok[npos].val, T_INT); }
 			if(skip("string")) { --tkpos; return appendVariable(tok[npos].val, T_STRING); }
 			if(skip("double")) { --tkpos; return appendVariable(tok[npos].val, T_DOUBLE); }
 		} else { --tkpos; return appendVariable(tok[npos].val, T_INT); }
