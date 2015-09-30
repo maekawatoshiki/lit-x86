@@ -50,14 +50,14 @@ Variable *appendVariable(char *name, int type) {
 }
 
 int getFunction(char *name, int address) {
-	for(int i = 0; i < funcCount; i++) {
-		if(strcmp(functions[i].name, name) == 0) {
-			return functions[i].address;
+	for(int i = 0; i < functions.count; i++) {
+		if(strcmp(functions.func[i].name, name) == 0) {
+			return functions.func[i].address;
 		}
 	}
-	functions[funcCount].address = address;
-	strcpy(functions[funcCount].name, name);
-	return functions[funcCount++].address;
+	functions.func[functions.count].address = address;
+	strcpy(functions.func[functions.count].name, name);
+	return functions.func[functions.count++].address;
 }
 
 int32_t appendBreak() {

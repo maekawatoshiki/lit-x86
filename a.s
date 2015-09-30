@@ -19,3 +19,11 @@ _start:
   dec eax
   inc eax
 	mov eax, [eax * 4+ ecx]
+	sete cl
+	setl cl
+	setg cl
+	setne cl
+	and cl, 1
+	movzx eax, cl
+	setle cl
+	setge cl

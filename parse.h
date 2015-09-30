@@ -23,15 +23,16 @@ int varSize[0xFF], varCounter;
 typedef struct {
 	int address;
 	char name[0xFF];
-} Function;
+} func_t;
 
-Function functions[0xFF];
-int funcCount;
+struct {
+	func_t func[0xff];
+	int count;
+} functions;
 
-/*
-char strings[0xFF][0xFF];
-int *strAddr, strCount; // strings in program
-*/
+int nowFunc; // number of function
+int isFunction; // With in function?
+
 struct {
 	char *text[0xff];
 	int *addr;

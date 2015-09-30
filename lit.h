@@ -80,17 +80,13 @@ struct {
 } brks, rets;
 
 int blocksCount; // for while ~ end and if ~ end error check
-/*
-char strings[0xFF][0xFF];
-int *strAddr, strCount; // strings in program
-*/
+int nowFunc; // number of function
 int isFunction; // With in function?
 
 void init();
 void dispose();
 
 int lex(char *);
-
 
 int skip(char *);
 int error(char *, ...);

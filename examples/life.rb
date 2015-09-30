@@ -91,9 +91,8 @@ end
 init()
 
 for i = 0, i < 20000, i++
-	printf "%c%c%c%c", 27, 91, 50, 74
 	gen()
 	show()
-	sleep(30000)
+	sleep(100000)
 end
 

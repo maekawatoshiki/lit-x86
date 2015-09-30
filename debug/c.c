@@ -1,7 +1,7 @@
 #include <stdio.h>
 
 int main() {
-	FILE *fp = fopen("hello", "w");
-	fprintf(fp, "Hello %s\n", "world!!!");
-	fclose(fp);
+	int n = 1, k = 2;
+	int a;
+	a = n != 2;
 }

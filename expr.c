@@ -2,16 +2,27 @@
 
 
 int32_t relExpr() {
-	int32_t lt=0, gt=0, diff=0, eql=0, fle=0;
+	int32_t lt=0, gt=0, ne=0, eql=0, fle=0;
 	addSubExpr();
-	if((lt=skip("<")) || (gt=skip(">")) || (diff=skip("!=")) ||
+	if((lt=skip("<")) || (gt=skip(">")) || (ne=skip("!=")) ||
 			(eql=skip("==")) || (fle=skip("<=")) || skip(">=")) {
 		genas("push eax");
 		addSubExpr();
 		genas("mov ebx eax");
 		genas("pop eax");
 		genCode(0x39); genCode(0xd8); // cmp %eax, %ebx
-		return lt ? JB : gt ? JA : diff ? JNE : eql ? JE : fle ? JBE : JAE;
+		/*
+		 * < setl 0x9c
+		 * > setg 0x9f
+		 * <= setle 0x9e
+		 * >= setge 0x9d
+		 * == sete 0x94
+		 * != setne 0x95
+		 */
+		genCode(0x0f); genCode(lt ? 0x9c : gt ? 0x9f : ne ? 0x95 : eql ? 0x94 : fle ? 0x9e : 0x9d); genCode(0xc1); // setX al
+		genCode(0x80); genCode(0xe1); genCode(0x01); // and al 1
+		genCode(0x0f); genCode(0xb6); genCode(0xc1); // movzx eax al 0f b6 c0
+		return lt ? JB : gt ? JA : ne ? JNE : eql ? JE : fle ? JBE : JAE;
 	}
 
 	return 0;
