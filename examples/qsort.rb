@@ -19,9 +19,14 @@ end
 max = 20
 a = Array(max)
 
-for i = 0, i < max, i++; a[i] = rand() % max; end
+for i = 0, i < max, i++
+	printf "%c ", a[i] = 'A' + rand() % ('Z' - 'A')
+end; puts ""
 
 qsort(a, 0, max - 1)
 
-for i = 0, i < max, i++; puts i; end
+for i = 0, i < max, i++
+	printf "%c ", a[i]
+end; puts ""
+
 
