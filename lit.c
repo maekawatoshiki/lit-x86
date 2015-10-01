@@ -113,8 +113,8 @@ void putString(int32_t *n) {
 }
 void putln() { printf("\n"); }
 
-void ssleep(int32_t t) {
-	usleep((t / 1000.0 * CLOCKS_PER_SEC));
+void ssleep(uint32_t t) {
+	usleep(t * (CLOCKS_PER_SEC / 1000));
 }
 
 void appendMem(int32_t addr) {
@@ -148,17 +148,17 @@ int xor128() {
 
 void *funcTable[] = { 
 	(void *) putNumber, // 0
-	(void*) putString, 	// 4
-	(void*) putln,			// 8
-	(void*) malloc, 		// 12
-	(void*) xor128, 		// 16
-	(void*) printf, 		// 20
-	(void*) appendMem,	// 24
-	(void*) usleep, 		// 28
-	(void*) fopen, 			// 32
-	(void*) fprintf, 		// 36
-	(void*) fclose,			// 40
-	(void*) fgets				// 44
+	(void *) putString, // 4
+	(void *) putln,			// 8
+	(void *) malloc, 		// 12
+	(void *) xor128, 		// 16
+	(void *) printf, 		// 20
+	(void *) appendMem,	// 24
+	(void *) ssleep, 		// 28
+	(void *) fopen, 		// 32
+	(void *) fprintf, 	// 36
+	(void *) fclose,		// 40
+	(void *) fgets			// 44
 };
 
 int run() {

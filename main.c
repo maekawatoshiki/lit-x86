@@ -26,8 +26,10 @@ int main(int argc, char **argv) {
 		fread(src, sizeof(char), ssz, srcfp);
 		fclose(srcfp);
 	}
-
+	clock_t bgn = clock();
 		execute(src);
+	clock_t end = clock();
+	printf("time: %.3lf\n", (double)(end - bgn) / CLOCKS_PER_SEC);
 
 	return 0;
 }

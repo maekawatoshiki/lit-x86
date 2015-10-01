@@ -9,7 +9,6 @@ def prime(i)
 
 	for k = 3, k * k <= i, k = k + 2
 		if i % k == 0
-			#puts
 			return 0
 		end
 	end

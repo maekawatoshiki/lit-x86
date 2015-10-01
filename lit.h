@@ -31,12 +31,14 @@
 	#include <sys/wait.h>
 #endif
 
-#define JA 0x7f
-#define JB 0x7c
-#define JE 0x74
-#define JNE 0x75
-#define JBE 0x7e
-#define JAE 0x7d
+enum {
+	JA = 0x7f ,
+	JB = 0x7c,
+	JE = 0x74,
+	JNE = 0x75,
+	JBE = 0x7e,
+	JAE = 0x7d
+};
 
 #define NON 0
 #define ONE_SENT 1
