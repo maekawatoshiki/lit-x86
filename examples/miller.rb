@@ -20,33 +20,27 @@ def prime(n)
 	end
 
 	d = n - 1
-	s = 0
-	while d % 2 == 0
-		d = d / 2
-		s++
-	end
+	while d % 2 == 0; d = d / 2; end
+
 	for q = 0, q < 30, q++
 		a = (rand() % (n - 2)) + 1
-		y = modPow(a, d, n)
-
-		if y == 1; return 1; end
-		if y == n - 1; return 1; end
-
-		for j = 0, j < s, j++
-			y = modPow(y, 2, n)
-			if y == n - 1
-				return 1
-			end
+		t = d
+		y = modPow(a, t, n)
+		while t != n - 1 and y != 1 and y != n - 1
+			y = (y * y) % n
+			t = t * 2
 		end
-		return 0
+		if y != n - 1 and t % 2 == 0
+			return 0
+		end
 	end
-	0
+	1
 end
 
 isp = 0
 while isp < 100
 	r = rand() % 65536
-	if prime(r) == 1
+	if prime(r)
 		puts r, " is prime"
 		isp++
 	end

@@ -27,3 +27,7 @@ _start:
 	movzx eax, cl
 	setle cl
 	setge cl
+	je 5
+	cmp eax, 0
+	and eax, ebx
+	or eax, ebx

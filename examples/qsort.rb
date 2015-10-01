@@ -1,7 +1,7 @@
 def qsort(a, left, right)
 	l = left; r = right
 	pv = l
-	while 1 == 1
+	while 1
 		while a[l] < a[pv]; l++; end
 		while a[pv] < a[r]; r--; end
 		if l >= r break end

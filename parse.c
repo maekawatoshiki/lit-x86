@@ -175,8 +175,9 @@ int expression(int pos, int status) {
 		int32_t endif, end;
 		genCode(0xe9); endif = ntvCount; genCodeInt32(0);// jmp while end
 		genCodeInt32Insert(ntvCount - pos - 4, pos);
-		int32_t type = relExpr();
-		genCode(type); genCode(0x05);
+		relExpr(); // if condition
+		genCode(0x83); genCode(0xf8); genCode(0x00);// cmp eax, 0
+		genCode(JNE); genCode(0x05); // jne 5
 		genCode(0xe9); end = ntvCount; genCodeInt32(0);// jmp while end
 		eval(end, NON);
 		genCodeInt32Insert(ntvCount - endif - 4, endif);
@@ -234,21 +235,24 @@ int32_t parser() {
 
 
 int ifStmt() {
-	uint32_t end, type = relExpr(); // if condition
-	genCode(type); genCode(0x05);
+	uint32_t end;
+	relExpr(); // if condition
+	genCode(0x83); genCode(0xf8); genCode(0x00);// cmp eax, 0
+	genCode(JNE); genCode(0x05); // jne 5
 	genCode(0xe9); end = ntvCount; genCodeInt32(0);// jmp
 	return eval(end, NON);
 }
 
 int whileStmt() {
 	uint32_t loopBgn = ntvCount, end, stepBgn[2], stepOn = 0;
-	int32_t type = relExpr();
+	relExpr(); // condition
 	if(skip(",")) {
 		stepOn = 1;
 		stepBgn[0] = tkpos;
 		for(; tok[tkpos].val[0] != ';'; tkpos++);
 	}
-	genCode(type); genCode(0x05); // ifjmp 5
+	genCode(0x83); genCode(0xf8); genCode(0x00);// cmp eax, 0
+	genCode(JNE); genCode(0x05); // jne 5
 	genCode(0xe9); end = ntvCount; genCodeInt32(0);// jmp while end
 	
 	if(skip(":")) expression(0, BLOCK_LOOP);

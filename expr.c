@@ -1,7 +1,20 @@
 #include "expr.h"
 
-
 int32_t relExpr() {
+	int and=0;
+	condExpr();
+	while((and=skip("and")) || skip("or")) {
+		genas("push eax");
+		condExpr();
+		genas("mov ebx eax");
+		genas("pop eax");
+		genCode(and ? 0x21 : 0x09); genCode(0xd8); // and eax ebx
+	}
+
+	return 0;
+}
+
+int condExpr() {
 	int32_t lt=0, gt=0, ne=0, eql=0, fle=0;
 	addSubExpr();
 	if((lt=skip("<")) || (gt=skip(">")) || (ne=skip("!=")) ||
@@ -19,10 +32,8 @@ int32_t relExpr() {
 		 * == sete 0x94
 		 * != setne 0x95
 		 */
-		//genCode(0x0f); genCode(lt ? 0x9c : gt ? 0x9f : ne ? 0x95 : eql ? 0x94 : fle ? 0x9e : 0x9d); genCode(0xc1); // setX al
-		//genCode(0x80); genCode(0xe1); genCode(0x01); // and al 1
-		//genCode(0x0f); genCode(0xb6); genCode(0xc1); // movzx eax al
-		return lt ? JB : gt ? JA : ne ? JNE : eql ? JE : fle ? JBE : JAE;
+		genCode(0x0f); genCode(lt ? 0x9c : gt ? 0x9f : ne ? 0x95 : eql ? 0x94 : fle ? 0x9e : 0x9d); genCode(0xc0); // setX al
+		genCode(0x0f); genCode(0xb6); genCode(0xc0); // movzx eax al
 	}
 
 	return 0;

@@ -5,9 +5,10 @@
 #include "asm.h"
 #include "parse.h"
 
+int relExpr();
+int condExpr();
 int addSubExpr();
 int mulDivExpr();
-int relExpr();
 int primExpr();
 
 int isArray();
