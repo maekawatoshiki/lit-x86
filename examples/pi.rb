@@ -7,7 +7,7 @@ def pi
   a = Array(N)
   d = 0; e = 0; g = 0; h = 0
   f = 10000; cnt = 1
-  for c = NM, c > 0, c = c - 14
+  for c = NM, c, c = c - 14
     d = d % f
     e = d
     for b = c - 1, b > 0, b = b - 1

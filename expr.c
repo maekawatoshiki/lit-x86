@@ -121,6 +121,10 @@ int32_t primExpr() {
 					relExpr();
 					genCode(0x89); genCode(0x04); genCode(0x24); // mov [esp], eax
 					genCode(0xff); genCode(0x56); genCode(28); // call ssleep
+				} else if(strcmp(name, "free") == 0) {
+					relExpr();
+					genCode(0x89); genCode(0x04); genCode(0x24); // mov [esp], eax
+					genCode(0xff); genCode(0x56); genCode(48); // call ssleep
 				} else if(strcmp(name, "Array") == 0) {
 					relExpr(); // get array size
 					genas("shl eax 2");

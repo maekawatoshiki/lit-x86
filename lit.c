@@ -124,7 +124,6 @@ void appendMem(int32_t addr) {
 void freeMem() {
 	for(--memad.count; memad.count>=0; --memad.count) {
 		free((void *)memad.addr[memad.count]);
-		printf("Free: %p\n", (void*)memad.addr[memad.count]);
 	}
 }
 
@@ -158,7 +157,8 @@ void *funcTable[] = {
 	(void *) fopen, 		// 32
 	(void *) fprintf, 	// 36
 	(void *) fclose,		// 40
-	(void *) fgets			// 44
+	(void *) fgets,			// 44
+	(void *) free
 };
 
 int run() {
