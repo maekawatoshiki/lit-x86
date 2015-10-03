@@ -21,7 +21,7 @@ Variable locVar[0xFF][0xFF];
 int varSize[0xFF], varCounter;
 
 typedef struct {
-	int address;
+	int address, args;
 	char name[0xFF];
 } func_t;
 
@@ -48,7 +48,10 @@ int expression(int, int);
 
 int parser();
 int getString();
-int getFunction(char *, int);
+
+func_t *getFunction(char *);
+func_t *appendFunction(char *, int, int);
+
 Variable *getVariable(char *);
 Variable *appendVariable(char *, int);
 int appendBreak();

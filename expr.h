@@ -4,6 +4,7 @@
 #include "lit.h"
 #include "asm.h"
 #include "parse.h"
+#include "stdfunc.h"
 
 int relExpr();
 int condExpr();
@@ -13,6 +14,5 @@ int primExpr();
 
 int isArray();
 int genArray();
-
 
 #endif

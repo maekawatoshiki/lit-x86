@@ -49,15 +49,20 @@ Variable *appendVariable(char *name, int type) {
 	return NULL;
 }
 
-int getFunction(char *name, int address) {
+func_t *getFunction(char *name) {
 	for(int i = 0; i < functions.count; i++) {
 		if(strcmp(functions.func[i].name, name) == 0) {
-			return functions.func[i].address;
+			return &functions.func[i];
 		}
 	}
+	return NULL;
+}
+
+func_t *appendFunction(char *name, int address, int args) {
 	functions.func[functions.count].address = address;
+	functions.func[functions.count].args = args;
 	strcpy(functions.func[functions.count].name, name);
-	return functions.func[functions.count++].address;
+	return &functions.func[functions.count++];
 }
 
 int32_t appendBreak() {
@@ -105,7 +110,7 @@ int expression(int pos, int status) {
 			strcmp("$", tok[tkpos+1].val) && strcmp(";", tok[tkpos+1].val)) {	// main function entry
 		isFunction = IN_FUNC;
 		nowFunc++;
-		getFunction("main", ntvCount); // append function
+		appendFunction("main", ntvCount, 0); // append function
 		genas("push ebp");
 		genas("mov ebp esp");
 		uint32_t espBgn = ntvCount + 2; genas("sub esp 0");
@@ -210,7 +215,7 @@ int32_t parser() {
 	genCode(0xe9); main_address = ntvCount; genCodeInt32(0);
 	eval(0, 0);
 
-	uint32_t addr = getFunction("main", 0);
+	uint32_t addr = getFunction("main")->address;
 	genCodeInt32Insert(addr - 5, main_address);
 
 	for(strings.addr--; strings.count; strings.addr--) {
@@ -284,7 +289,7 @@ int32_t functionStmt() {
 		do { declareVariable(); tkpos++; argsc++; } while(skip(","));
 		skip(")");
 	}
-	getFunction(funcName, ntvCount); // append function
+	appendFunction(funcName, ntvCount, argsc); // append function
 	genas("push ebp");
 	genas("mov ebp esp");
 	espBgn = ntvCount + 2; genas("sub esp 0"); // align
@@ -294,11 +299,11 @@ int32_t functionStmt() {
 		argpos[i] = ntvCount; genCode(0x00);
 	}
 	eval(0, BLOCK_FUNC);
-
+	
 	for(--rets.count; rets.count >= 0; --rets.count) {
 		genCodeInt32Insert(ntvCount - rets.addr[rets.count] - 4, rets.addr[rets.count]);
 	} rets.count = 0;
-
+	
 	genas("add esp %u", sizeof(int32_t) * (varSize[nowFunc] + 6)); // add esp nn
 	genCode(0xc9);// leave
 	genCode(0xc3);// ret

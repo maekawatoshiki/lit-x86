@@ -114,68 +114,19 @@ int32_t primExpr() {
 					error("error: %d: expected expression ']'", tok[tkpos].nline);
 			
 			} else if(skip("(")) { // Function?
-				// standard function
-				if(strcmp(name, "rand") == 0) {
-					genCode(0xff); genCode(0x56); genCode(12 + 4); // call rand
-				} else if(strcmp(name, "sleep") == 0) {
-					relExpr();
-					genCode(0x89); genCode(0x04); genCode(0x24); // mov [esp], eax
-					genCode(0xff); genCode(0x56); genCode(28); // call ssleep
-				} else if(strcmp(name, "free") == 0) {
-					relExpr();
-					genCode(0x89); genCode(0x04); genCode(0x24); // mov [esp], eax
-					genCode(0xff); genCode(0x56); genCode(48); // call ssleep
-				} else if(strcmp(name, "Array") == 0) {
-					relExpr(); // get array size
-					genas("shl eax 2");
-					genCode(0x89); genCode(0x04); genCode(0x24); // mov [esp], eax
-					genCode(0xff); genCode(0x56); genCode(12 + 0); // call malloc
-					genas("push eax");
-					genas("push eax");
-					genCode(0xff); genCode(0x56); genCode(12 + 12); // call appendMem
-					genas("add esp 4");
-					genas("pop eax");
-				} else if(strcmp(name, "fopen") == 0) {
-					uint32_t a = 0;
-					do {
-						relExpr();
-						genCode(0x89); genCode(0x44); genCode(0x24); genCode(a); // mov [esp+a], eax
-						a += 4;
-					} while(skip(","));
-					genCode(0xff); genCode(0x56); genCode(32); // call fopen
-				} else if(strcmp(name, "fprintf") == 0) {
-					uint32_t a = 0;
-					do {
-						relExpr();
-						genCode(0x89); genCode(0x44); genCode(0x24); genCode(a); // mov [esp+a], eax
-						a += 4;
-					} while(skip(","));
-					genCode(0xff); genCode(0x56); genCode(36); // call fprintf
-				} else if(strcmp(name, "fgets") == 0) {
-					uint32_t a = 0;
-					do {
-						relExpr();
-						genCode(0x89); genCode(0x44); genCode(0x24); genCode(a); // mov [esp+a], eax
-						a += 4;
-					} while(skip(","));
-					genCode(0xff); genCode(0x56); genCode(44); // call fgets
-				} else if(strcmp(name, "fclose") == 0) {
-					relExpr();
-					genCode(0x89); genCode(0x44); genCode(0x24); genCode(0); // mov [esp], eax
-					genCode(0xff); genCode(0x56); genCode(40); // call fclose
-				} else { // User Function?
-					int32_t address = getFunction(name, 0), args = 0;
-					printf("addr: %d\n", address);
+				if(!make_stdfunc(name)) {	// standard function
+					func_t *function = getFunction(name);
+					printf("addr: %d\n", function->address);
 					if(isalpha(tok[tkpos].val[0]) || isdigit(tok[tkpos].val[0]) ||
 						!strcmp(tok[tkpos].val, "\"") || !strcmp(tok[tkpos].val, "(")) { // has arg?
-						do {
+						for(int i = 0; i < function->args; i++) {
 							relExpr();
 							genas("push eax");
-							args++;
-						} while(skip(","));
+							skip(","); //TODO: add error handler 
+						}
 					}
-					genCode(0xe8); genCodeInt32(0xFFFFFFFF - (ntvCount - address) - 3); // call func
-					genas("add esp %d", args * sizeof(int32_t));
+					genCode(0xe8); genCodeInt32(0xFFFFFFFF - (ntvCount - function->address) - 3); // call func
+					genas("add esp %d", function->args * sizeof(int32_t));
 				}
 				if(!skip(")")) error("func: error: %d: expected expression ')'", tok[tkpos].nline);
 			} else {

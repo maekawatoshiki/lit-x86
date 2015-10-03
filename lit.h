@@ -21,6 +21,7 @@
 #include "asm.h"
 #include "expr.h"
 #include "parse.h"
+#include "stdfunc.h"
 
 #if defined(WIN32) || defined(WINDOWS)
 	#include <windows.h>
