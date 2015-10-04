@@ -2,14 +2,13 @@
 
 void init() {
 #if defined(WIN32) || defined(WINDOWS)
-	ntvCode = (unsigned char*) calloc(sizeof(unsigned char), 0xFFFF);
+	ntvCode = VirtualAlloc(NULL, 0xFFF, MEMORY_COMMIT, PAGE_EXECUTE_READWRITE);
 #else
 	long memsize = 0xFFFF + 1;
 	if((posix_memalign((void **)&ntvCode, memsize, memsize)))
 		perror("posix_memalign");
 	if(mprotect((void*)ntvCode, memsize, PROT_READ | PROT_WRITE | PROT_EXEC))
 		perror("mprotect");
-	memset(ntvCode, 0, 0xFFFF);
 #endif
 	tkpos = ntvCount = 0; tksize = 0xfff;
 	set_xor128();
@@ -114,7 +113,11 @@ void putString(int32_t *n) {
 void putln() { printf("\n"); }
 
 void ssleep(uint32_t t) {
-	usleep(t * (CLOCKS_PER_SEC / 1000));
+#if defined(WIN32) || defined(WINDOWS)
+	Sleep(t * CLOCKS_PER_SEC / 1000);
+#else
+	usleep(t * CLOCKS_PER_SEC / 1000);
+#endif
 }
 
 void appendMem(int32_t addr) {
