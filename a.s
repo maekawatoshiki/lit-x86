@@ -31,3 +31,4 @@ _start:
 	cmp eax, 0
 	and eax, ebx
 	or eax, ebx
+	movsd xmm0, xmm1

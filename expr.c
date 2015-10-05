@@ -1,14 +1,14 @@
 #include "expr.h"
 
 int32_t relExpr() {
-	int and=0;
+	int and=0, or=0;
 	condExpr();
-	while((and=skip("and")) || skip("or")) {
+	while((and=skip("and")) || (or=skip("or")) || skip("xor")) {
 		genas("push eax");
 		condExpr();
 		genas("mov ebx eax");
 		genas("pop eax");
-		genCode(and ? 0x21 : 0x09); genCode(0xd8); // and eax ebx
+		genCode(and ? 0x21 : or ? 0x09 : 0x31); genCode(0xd8); // and eax ebx
 	}
 
 	return 0;
@@ -146,23 +146,22 @@ int32_t primExpr() {
 		 error("error: %d: expected expression ')'", tok[tkpos].nline);
   }
 
-	while(isArray()) genArray();
+	while(isIndex()) genIndex();
 
 	return 0;
 }
 
-int32_t isArray() {
+int32_t isIndex() {
 	if(strcmp(tok[tkpos].val, "[") == 0) {
 		return 1;
 	}
 	return 0;
 }
 
-int genArray() {
+int genIndex() {
 	genas("mov ecx eax");
 	skip("["); relExpr(); skip("]");
 	genCode(0x8b); genCode(0x04); genCode(0x81); // mov eax [eax * 4 + ecx]
 	return 0;
 }
-
 

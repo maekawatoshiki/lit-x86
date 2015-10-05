@@ -12,7 +12,7 @@ int addSubExpr();
 int mulDivExpr();
 int primExpr();
 
-int isArray();
-int genArray();
+int isIndex();
+int genIndex();
 
 #endif
