@@ -26,11 +26,11 @@ def prime(n)
 		a = (rand() % (n - 2)) + 1
 		t = d
 		y = modPow(a, t, n)
-		while t != n - 1 and y != 1 and y != n - 1
+		while t != n - 1 & y != 1 & y != n - 1
 			y = (y * y) % n
 			t = t * 2
 		end
-		if y != n - 1 and t % 2 == 0
+		if y != n - 1 & t % 2 == 0
 			return 0
 		end
 	end

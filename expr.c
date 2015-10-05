@@ -3,7 +3,7 @@
 int32_t relExpr() {
 	int and=0, or=0;
 	condExpr();
-	while((and=skip("and")) || (or=skip("or")) || skip("xor")) {
+	while((and=skip("and") || skip("&")) || (or=skip("or") || skip("|")) || skip("xor") || skip("^")) {
 		genas("push eax");
 		condExpr();
 		genas("mov ebx eax");
