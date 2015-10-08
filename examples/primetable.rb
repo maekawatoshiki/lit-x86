@@ -14,10 +14,10 @@ def table(max)
 end
 
 def isprime(n)
-	if a[n] == 0
-		1
-	else
+	if a[n]
 		0
+	else
+		1
 	end
 end
 

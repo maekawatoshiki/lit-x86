@@ -42,6 +42,7 @@ int make_stdfunc(char *name) {
 					for(int arg = 0; arg < stdfunc[i].args; arg++) {
 						relExpr();
 						genCode(0x89); genCode(0x44); genCode(0x24); genCode(arg * 4); // mov [esp+arg*4], eax
+						skip(",");
 					}
 				}
 				genCode(0xff); genCode(0x56); genCode(stdfunc[i].addr); // call $function
