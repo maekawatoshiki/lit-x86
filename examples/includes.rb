@@ -96,16 +96,17 @@ def fact(n)
 	ret
 end
 
+# I/O
 
-# Main entry
+def input(str:string)
+	f = fopen("/dev/stdin", "w+")
+	fgets(str, 100, f)
+	fclose(f)
+	str
+end
 
-hello:string = Array(10)
+# Main 
 
-strcpy(hello, "Hello")
-puts strcmp(hello, "world")
-puts strcmp("abc", "abc")
-
-puts abs(12 - 20), " ", abs(10)
-puts fact(10)
-puts fact(3)
+s:string = Array(100)
+printf "%s", input(s)
 

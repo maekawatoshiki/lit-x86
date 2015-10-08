@@ -24,9 +24,9 @@ end
 
 def isdigit(n)
   res = 0
-  if '0' <= n if n <= '9'
-      return 1
-  end end
+  if '0' <= n and n <= '9'
+		return 1
+  end
   0
 end
 
@@ -43,7 +43,8 @@ def atoi(s:string)
 end
 
 def prim(a:string, out:string)
-  while isdigit(a[pos]) == 1
+	while a[pos] == ' '; pos++; end
+  while isdigit(a[pos])
     out[strlen(out)] = a[pos++]
   end
   strcat(out, ",")
@@ -51,7 +52,7 @@ end
 
 def muldiv(a:string, out:string)
   prim(a, out)
-  while 1 == 1
+  while 1
     if a[pos] == '*'
       pos++
       prim(a, out)
@@ -60,7 +61,9 @@ def muldiv(a:string, out:string)
       pos++
       prim(a, out)
       strcat(out, "/")
-    else
+		elsif a[pos] == ' '
+			pos++
+		else
       break
     end
   end
@@ -78,19 +81,19 @@ def addsub(a:string, out:string)
       pos++
       muldiv(a, out)
       strcat(out, "-")
-    else
+		elsif a[pos] == ' '
+			pos++
+		else
       break
     end
   end
 end
 
-def len(n)
-  len = 0
-  while n > 0
-    n = n / 10
-    len++
-  end
-  len
+def input(str:string)
+	f = fopen("/dev/stdin", "w+")
+	fgets(str, 100, f)
+	fclose(f)
+	str
 end
 
 def calc(a:string)
@@ -124,7 +127,7 @@ end
 
 a:string = Array(256)
 
-strcpy(a, "1+3*2-10/2+2*4-1")
+input(a)
 
 printf "expr=> %s\n", a
 
