@@ -60,8 +60,10 @@ typedef struct {
   int nline;
 } Token;
 
-Token *tok;
-int tkpos, tksize;
+struct {
+	Token *tok;
+	int size, pos;
+} tok;
 
 enum {
 	V_LOCAL,

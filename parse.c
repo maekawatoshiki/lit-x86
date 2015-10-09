@@ -3,8 +3,8 @@
 
 int32_t getString() {
 	strings.text[ strings.count ] = 
-		calloc(sizeof(char), strlen(tok[tkpos].val) + 1);
-	strcpy(strings.text[strings.count], tok[tkpos++].val);
+		calloc(sizeof(char), strlen(tok.tok[tok.pos].val) + 1);
+	strcpy(strings.text[strings.count], tok.tok[tok.pos++].val);
 
 	*strings.addr++ = ntvCount;
 	return strings.count++;
@@ -85,8 +85,8 @@ int32_t appendReturn() {
 
 
 int32_t skip(char *s) {
-  if(strcmp(s, tok[tkpos].val) == 0) {
-  	tkpos++; return 1;
+  if(strcmp(s, tok.tok[tok.pos].val) == 0) {
+  	tok.pos++; return 1;
   } else return 0;
 }
 
@@ -106,8 +106,8 @@ int expression(int pos, int status) {
 		if(isassign()) assignment();
 	} else if(skip("def")) { blocksCount++;
 		functionStmt();
-	} else if(isFunction == IN_GLOBAL && strcmp("def", tok[tkpos+1].val) &&
-			strcmp("$", tok[tkpos+1].val) && strcmp(";", tok[tkpos+1].val)) {	// main function entry
+	} else if(isFunction == IN_GLOBAL && strcmp("def", tok.tok[tok.pos+1].val) &&
+			strcmp("$", tok.tok[tok.pos+1].val) && strcmp(";", tok.tok[tok.pos+1].val)) {	// main function entry
 		isFunction = IN_FUNC;
 		nowFunc++;
 		appendFunction("main", ntvCount, 0); // append function
@@ -202,14 +202,14 @@ int expression(int pos, int status) {
 }
 
 int eval(int pos, int status) {
-	while(tkpos < tksize) {
+	while(tok.pos < tok.size) {
 		if(expression(pos, status)) return 1;
 	}
 	return 0;
 }
 
 int32_t parser() {
-	tkpos = ntvCount = 0;
+	tok.pos = ntvCount = 0;
 	strings.addr = calloc(0xFF, sizeof(int32_t));
 	uint32_t main_address;
 	genCode(0xe9); main_address = ntvCount; genCodeInt32(0);
@@ -253,8 +253,8 @@ int whileStmt() {
 	relExpr(); // condition
 	if(skip(",")) {
 		stepOn = 1;
-		stepBgn[0] = tkpos;
-		for(; tok[tkpos].val[0] != ';'; tkpos++);
+		stepBgn[0] = tok.pos;
+		for(; tok.tok[tok.pos].val[0] != ';'; tok.pos++);
 	}
 	genCode(0x83); genCode(0xf8); genCode(0x00);// cmp eax, 0
 	genCode(JNE); genCode(0x05); // jne 5
@@ -264,10 +264,10 @@ int whileStmt() {
 	else eval(0, BLOCK_LOOP);
 
 	if(stepOn) {
-		stepBgn[1] = tkpos;
-		tkpos = stepBgn[0];
+		stepBgn[1] = tok.pos;
+		tok.pos = stepBgn[0];
 		if(isassign()) assignment();
-		tkpos = stepBgn[1];
+		tok.pos = stepBgn[1];
 	}
 	uint32_t n = 0xFFFFFFFF - ntvCount + loopBgn - 4;
 	genCode(0xe9); genCodeInt32(n); // jmp n
@@ -283,10 +283,10 @@ int whileStmt() {
 
 int32_t functionStmt() {
 	int32_t espBgn, argsc = 0;
-	char *funcName = tok[tkpos++].val;
+	char *funcName = tok.tok[tok.pos++].val;
 	nowFunc++; isFunction = IN_FUNC;
 	if(skip("(")) {
-		do { declareVariable(); tkpos++; argsc++; } while(skip(","));
+		do { declareVariable(); tok.pos++; argsc++; } while(skip(","));
 		skip(")");
 	}
 	appendFunction(funcName, ntvCount, argsc); // append function
@@ -320,30 +320,30 @@ int32_t functionStmt() {
 
 int32_t isassign() {
 	//puts("isassign()");
-	if(strcmp(tok[tkpos+1].val, "=") == 0) return 1;
-	else if(strcmp(tok[tkpos+1].val, "++") == 0) return 1;
-	else if(strcmp(tok[tkpos+1].val, "--") == 0) return 1;
-	else if(strcmp(tok[tkpos+1].val, "[") == 0) {
-		int32_t i = tkpos + 1;
-		while(strcmp(tok[i].val, "]")) {
-			if(strcmp(tok[i].val, ";") == 0)
-				error("error: %d: invalid expression", tok[tkpos].nline);
+	if(strcmp(tok.tok[tok.pos+1].val, "=") == 0) return 1;
+	else if(strcmp(tok.tok[tok.pos+1].val, "++") == 0) return 1;
+	else if(strcmp(tok.tok[tok.pos+1].val, "--") == 0) return 1;
+	else if(strcmp(tok.tok[tok.pos+1].val, "[") == 0) {
+		int32_t i = tok.pos + 1;
+		while(strcmp(tok.tok[i].val, "]")) {
+			if(strcmp(tok.tok[i].val, ";") == 0)
+				error("error: %d: invalid expression", tok.tok[tok.pos].nline);
 			i++;
 		}
-		printf(">%s\n", tok[i].val); i++;
-		if(strcmp(tok[i].val, "=") == 0) return 1;
-	} else if(strcmp(tok[tkpos+1].val, ":") == 0) {
-		int32_t i = tkpos + 3;
-		if(strcmp(tok[i].val, "=") == 0) return 1;
+		printf(">%s\n", tok.tok[i].val); i++;
+		if(strcmp(tok.tok[i].val, "=") == 0) return 1;
+	} else if(strcmp(tok.tok[tok.pos+1].val, ":") == 0) {
+		int32_t i = tok.pos + 3;
+		if(strcmp(tok.tok[i].val, "=") == 0) return 1;
 	}
 	return 0;
 }
 
 int32_t assignment() {
-	Variable *v = getVariable(tok[tkpos].val);
+	Variable *v = getVariable(tok.tok[tok.pos].val);
 	int32_t inc = 0, dec = 0, declare = 0;
 	if(v == NULL) { declare++; v = declareVariable(); }
-	tkpos++;
+	tok.pos++;
 
 	if(v->loctype == V_LOCAL) {
 		if(skip("[")) { // Array?
@@ -364,7 +364,7 @@ int32_t assignment() {
 				}
 			} else if((inc=skip("++")) || (dec=skip("--"))) {
 
-			} else error("error: %d: invalid assignment", tok[tkpos].nline);
+			} else error("error: %d: invalid assignment", tok.tok[tok.pos].nline);
 		} else { // Scalar?
 			if(skip("=")) {
 				relExpr();
@@ -389,7 +389,7 @@ int32_t assignment() {
 		if(declare) { // first declare for global variable?
 			// assignment only int32_terger
 			if(skip("=")) {
-				unsigned *m = (unsigned *)v->id; *m = atoi(tok[tkpos++].val);
+				unsigned *m = (unsigned *)v->id; *m = atoi(tok.tok[tok.pos++].val);
 			}
 		} else {
 			if(skip("[")) { // Array?
@@ -404,7 +404,7 @@ int32_t assignment() {
 					} else {
 						genCode(0x89); genCode(0x04); genCode(0x11); // mov [ecx+edx], eax
 					}
-				} else error("error: %d: invalid assignment", tok[tkpos].nline);
+				} else error("error: %d: invalid assignment", tok.tok[tok.pos].nline);
 			} else if(skip("=")) {
 				relExpr();
 				genCode(0xa3); genCodeInt32(v->id); // mov GLOBAL_ADDR eax
@@ -423,14 +423,14 @@ int32_t assignment() {
 }
 
 Variable *declareVariable() {
-	int32_t npos = tkpos;
-	if(isalpha(tok[tkpos].val[0])) {
-		tkpos++;
+	int32_t npos = tok.pos;
+	if(isalpha(tok.tok[tok.pos].val[0])) {
+		tok.pos++;
 		if(skip(":")) {
-			if(skip("int")) { --tkpos; return appendVariable(tok[npos].val, T_INT); }
-			if(skip("string")) { --tkpos; return appendVariable(tok[npos].val, T_STRING); }
-			if(skip("double")) { --tkpos; return appendVariable(tok[npos].val, T_DOUBLE); }
-		} else { --tkpos; return appendVariable(tok[npos].val, T_INT); }
-	} else error("error: %d: can't declare variable", tok[tkpos].nline);
+			if(skip("int")) { --tok.pos; return appendVariable(tok.tok[npos].val, T_INT); }
+			if(skip("string")) { --tok.pos; return appendVariable(tok.tok[npos].val, T_STRING); }
+			if(skip("double")) { --tok.pos; return appendVariable(tok.tok[npos].val, T_DOUBLE); }
+		} else { --tok.pos; return appendVariable(tok.tok[npos].val, T_INT); }
+	} else error("error: %d: can't declare variable", tok.tok[tok.pos].nline);
 	return NULL;
 }

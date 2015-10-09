@@ -10,9 +10,9 @@ void init() {
 	if(mprotect((void*)ntvCode, memsize, PROT_READ | PROT_WRITE | PROT_EXEC))
 		perror("mprotect");
 #endif
-	tkpos = ntvCount = 0; tksize = 0xfff;
+	tok.pos = ntvCount = 0; tok.size = 0xfff;
 	set_xor128();
-	tok = calloc(sizeof(Token), tksize);
+	tok.tok = calloc(sizeof(Token), tok.size);
 	brks.addr = calloc(sizeof(uint32_t), 1);
 	rets.addr = calloc(sizeof(uint32_t), 1);
 }
@@ -21,7 +21,7 @@ void dispose() {
 	free(ntvCode);
 	free(brks.addr);
 	free(rets.addr);
-	free(tok);
+	free(tok.tok);
 	freeMem();
 }
 
@@ -31,52 +31,52 @@ int32_t lex(char *code) {
 	int32_t iswindows = 0;
 
 	for(int32_t i = 0; i < codeSize; i++) {
- 		if(tksize <= i)
-			tok = realloc(tok, (tksize += 512 * sizeof(Token)));
+ 		if(tok.size <= i)
+			tok.tok = realloc(tok.tok, (tok.size += 512 * sizeof(Token)));
 		if(isdigit(code[i])) { // number?
       for(; isdigit(code[i]); i++)
-				strncat(tok[tkpos].val, &(code[i]), 1);
-			tok[tkpos].nline = line;
-      i--; tkpos++;
+				strncat(tok.tok[tok.pos].val, &(code[i]), 1);
+			tok.tok[tok.pos].nline = line;
+      i--; tok.pos++;
     } else if(isalpha(code[i])) { // ident?
       for(; isalpha(code[i]) || isdigit(code[i]) || code[i] == '_'; i++)
-        strncat(tok[tkpos].val, &(code[i]), 1);
-      tok[tkpos].nline = line;
-      i--; tkpos++;
+        strncat(tok.tok[tok.pos].val, &(code[i]), 1);
+      tok.tok[tok.pos].nline = line;
+      i--; tok.pos++;
     } else if(code[i] == ' ' || code[i] == '\t') { // space char?
     } else if(code[i] == '#') { // comment?
 			for(i++; code[i] != '\n'; i++) { } line++;
 		} else if(code[i] == '"') { // string?
-			strcpy(tok[tkpos].val, "\"");
-			tok[tkpos++].nline = line;
+			strcpy(tok.tok[tok.pos].val, "\"");
+			tok.tok[tok.pos++].nline = line;
 			for(i++; code[i] != '"' && code[i] != '\0'; i++)
-				strncat(tok[tkpos].val, &(code[i]), 1);
-			tok[tkpos].nline = line;
-			if(code[i] == '\0') error("error: %d: expected expression '\"'", tok[tkpos].nline);
-			tkpos++;
+				strncat(tok.tok[tok.pos].val, &(code[i]), 1);
+			tok.tok[tok.pos].nline = line;
+			if(code[i] == '\0') error("error: %d: expected expression '\"'", tok.tok[tok.pos].nline);
+			tok.pos++;
 		} else if(code[i] == '\n' ||
 			(iswindows=(code[i] == '\r' && code[i+1] == '\n'))) {
 			i += iswindows;
-			strcpy(tok[tkpos].val, ";");
-			tok[tkpos].nline = line++; tkpos++;
+			strcpy(tok.tok[tok.pos].val, ";");
+			tok.tok[tok.pos].nline = line++; tok.pos++;
 		} else {
-			strncat(tok[tkpos].val, &(code[i]), 1);
+			strncat(tok.tok[tok.pos].val, &(code[i]), 1);
 			if(code[i+1] == '=' ||
 				(code[i]=='+' && code[i+1]=='+') ||
 				(code[i]=='-' && code[i+1]=='-'))
-					strncat(tok[tkpos].val, &(code[++i]), 1);
-			tok[tkpos].nline = line;
-			tkpos++;
+					strncat(tok.tok[tok.pos].val, &(code[++i]), 1);
+			tok.tok[tok.pos].nline = line;
+			tok.pos++;
     }
   }
-  tok[tkpos].nline = line;
+  tok.tok[tok.pos].nline = line;
 #ifdef NDEBUG
 #else
-	for(int32_t i = 0; i < tkpos; i++) {
-		printf("tk: %d > %s\n", i, tok[i].val);
+	for(int32_t i = 0; i < tok.pos; i++) {
+		printf("tk: %d > %s\n", i, tok.tok[i].val);
 	}
 #endif
-  tksize = tkpos - 1;
+  tok.size = tok.pos - 1;
 
 	return 0;
 }

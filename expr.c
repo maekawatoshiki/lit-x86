@@ -76,25 +76,25 @@ int32_t mulDivExpr() {
 }
 
 int32_t primExpr() {
-  if(isdigit(tok[tkpos].val[0])) { // number?
-    genas("mov eax %d", atoi(tok[tkpos++].val));
+  if(isdigit(tok.tok[tok.pos].val[0])) { // number?
+    genas("mov eax %d", atoi(tok.tok[tok.pos++].val));
 	} else if(skip("'")) { // char?
-		genas("mov eax %d", tok[tkpos++].val[0]);
+		genas("mov eax %d", tok.tok[tok.pos++].val[0]);
 		skip("'");
 	} else if(skip("\"")) { // string?
 		genCode(0xb8); getString();
 		genCodeInt32(0x00); // mov eax string_address
-  } else if(isalpha(tok[tkpos].val[0])) { // variable or inc or dec
-		char *name = tok[tkpos].val;
+  } else if(isalpha(tok.tok[tok.pos].val[0])) { // variable or inc or dec
+		char *name = tok.tok[tok.pos].val;
 		Variable *v;
 
 		if(isassign()) assignment();
 		else {
-			tkpos++;
+			tok.pos++;
 			if(skip("[")) { // Array?
 		
 				if((v = getVariable(name)) == NULL)
-					error("error: %d: '%s' was not declared", tok[tkpos].nline, name);
+					error("error: %d: '%s' was not declared", tok.tok[tok.pos].nline, name);
 				relExpr();
 				genas("mov ecx eax");
 
@@ -111,14 +111,14 @@ int32_t primExpr() {
 				}
 			
 				if(!skip("]"))
-					error("error: %d: expected expression ']'", tok[tkpos].nline);
+					error("error: %d: expected expression ']'", tok.tok[tok.pos].nline);
 			
 			} else if(skip("(")) { // Function?
 				if(!make_stdfunc(name)) {	// standard function
 					func_t *function = getFunction(name);
 					printf("addr: %d\n", function->address);
-					if(isalpha(tok[tkpos].val[0]) || isdigit(tok[tkpos].val[0]) ||
-						!strcmp(tok[tkpos].val, "\"") || !strcmp(tok[tkpos].val, "(")) { // has arg?
+					if(isalpha(tok.tok[tok.pos].val[0]) || isdigit(tok.tok[tok.pos].val[0]) ||
+						!strcmp(tok.tok[tok.pos].val, "\"") || !strcmp(tok.tok[tok.pos].val, "(")) { // has arg?
 						for(int i = 0; i < function->args; i++) {
 							relExpr();
 							genas("push eax");
@@ -128,13 +128,13 @@ int32_t primExpr() {
 					genCode(0xe8); genCodeInt32(0xFFFFFFFF - (ntvCount - function->address) - 3); // call func
 					genas("add esp %d", function->args * sizeof(int32_t));
 				}
-				printf("%s%c", tok[tkpos-2].val, 0xa);
-				printf("%s%c", tok[tkpos-1].val, 0xa);
-				printf("%s%c", tok[tkpos-0].val, 0xa);
-				if(!skip(")")) error("func: error: %d: expected expression ')'", tok[tkpos].nline);
+				printf("%s%c", tok.tok[tok.pos-2].val, 0xa);
+				printf("%s%c", tok.tok[tok.pos-1].val, 0xa);
+				printf("%s%c", tok.tok[tok.pos-0].val, 0xa);
+				if(!skip(")")) error("func: error: %d: expected expression ')'", tok.tok[tok.pos].nline);
 			} else {
 				if((v = getVariable(name)) == NULL)
-					error("var: error: %d: '%s' was not declared", tok[tkpos].nline, name);
+					error("var: error: %d: '%s' was not declared", tok.tok[tok.pos].nline, name);
 				if(v->loctype == V_LOCAL) {
 					genCode(0x8b); genCode(0x45);
 					genCode(256 - sizeof(int32_t) * v->id); // mov eax variable
@@ -146,7 +146,7 @@ int32_t primExpr() {
 	} else if(skip("(")) {
     if(isassign()) assignment(); else relExpr();
 		if(!skip(")"))
-		 error("error: %d: expected expression ')'", tok[tkpos].nline);
+		 error("error: %d: expected expression ')'", tok.tok[tok.pos].nline);
   }
 
 	while(isIndex()) genIndex();
@@ -155,7 +155,7 @@ int32_t primExpr() {
 }
 
 int32_t isIndex() {
-	if(strcmp(tok[tkpos].val, "[") == 0) {
+	if(strcmp(tok.tok[tok.pos].val, "[") == 0) {
 		return 1;
 	}
 	return 0;
