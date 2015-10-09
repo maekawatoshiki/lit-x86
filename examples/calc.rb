@@ -43,7 +43,6 @@ def atoi(s:string)
 end
 
 def prim(a:string, out:string)
-	while a[pos] == ' '; pos++; end
   while isdigit(a[pos])
     out[strlen(out)] = a[pos++]
   end
@@ -92,6 +91,7 @@ end
 def input(str:string)
 	f = fopen("/dev/stdin", "w+")
 	fgets(str, 100, f)
+	str[ strlen(str) - 1 ] = 0
 	fclose(f)
 	str
 end
@@ -127,6 +127,7 @@ end
 
 a:string = Array(256)
 
+output "expression => "
 input(a)
 
 printf "expr=> %s\n", a

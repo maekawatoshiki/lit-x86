@@ -319,18 +319,19 @@ int32_t functionStmt() {
 }
 
 int32_t isassign() {
-	//puts("isassign()");
 	if(strcmp(tok.tok[tok.pos+1].val, "=") == 0) return 1;
 	else if(strcmp(tok.tok[tok.pos+1].val, "++") == 0) return 1;
 	else if(strcmp(tok.tok[tok.pos+1].val, "--") == 0) return 1;
 	else if(strcmp(tok.tok[tok.pos+1].val, "[") == 0) {
-		int32_t i = tok.pos + 1;
-		while(strcmp(tok.tok[i].val, "]")) {
+		int32_t i = tok.pos + 2, t = 1;
+		while(t) {
+			if(strcmp(tok.tok[i].val, "[") == 0) t++;
+			if(strcmp(tok.tok[i].val, "]") == 0) t--;
 			if(strcmp(tok.tok[i].val, ";") == 0)
 				error("error: %d: invalid expression", tok.tok[tok.pos].nline);
 			i++;
 		}
-		printf(">%s\n", tok.tok[i].val); i++;
+		printf(">%s\n", tok.tok[i].val);
 		if(strcmp(tok.tok[i].val, "=") == 0) return 1;
 	} else if(strcmp(tok.tok[tok.pos+1].val, ":") == 0) {
 		int32_t i = tok.pos + 3;
