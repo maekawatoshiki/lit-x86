@@ -42,12 +42,12 @@ def isdigit(n)
 end
 
 def isalpha(c)
-	if 'A' <= c; if c <= 'Z'
+	if 'A' <= c and c <= 'Z'
 		return 1
-	end end
-	if 'a' <= c; if c <= 'z'
+	end
+	if 'a' <= c and c <= 'z'
 		return 1
-	end end
+	end
 	0
 end
 
@@ -96,6 +96,24 @@ def fact(n)
 	ret
 end
 
+# Secure
+
+def SecureRandomString(str:string, len)
+	dev = fopen("/dev/random", "rb")
+	bytes = 128
+	data:string = Array(bytes)
+	fgets(data, bytes, dev)
+	chars = 0
+	for i = 0, i < bytes and chars < len, i++
+		if isalpha(data[i]) or isdigit(data[i])
+			str[chars++] = data[i]
+		else
+			fgets(data, bytes, dev)
+		end
+	end
+	str[chars] = 0
+end
+
 # I/O
 
 def input(str:string)
@@ -107,6 +125,10 @@ end
 
 # Main 
 
-s:string = Array(100)
-printf "%s", input(s)
+buf:string = Array(32)
+
+for i = 0, i < 8, i++
+	SecureRandomString(buf, 16)
+	printf "%s%c", buf, 10
+end
 

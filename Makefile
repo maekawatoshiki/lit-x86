@@ -21,6 +21,10 @@ parse.o: parse.h parse.c
 stdfunc.o: stdfunc.h stdfunc.c
 	$(CC) -c stdfunc.c
 
+install: lit
+	mkdir ~/.lit
+	cp -p lit ~/.lit
+
 clean:
 	$(RM) a.out lit *.o
 

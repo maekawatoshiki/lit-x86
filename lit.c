@@ -127,11 +127,11 @@ void appendMem(int32_t addr) {
 void freeMem() {
 	if(memad.count > 0) {
 		for(--memad.count; memad.count>=0; --memad.count) {
-			printf("Free: %p\n", (void *)memad.addr[memad.count]);
 			free((void *)memad.addr[memad.count]);
 		}
 		memad.count = 0;
 	}
+	puts("Free: OK");
 }
 
 void set_xor128() {
