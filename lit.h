@@ -76,17 +76,12 @@ enum {
 	T_DOUBLE
 };
 
-int nowFunc; // number of function
-int isFunction;
-
 struct {
 	unsigned int *addr;
 	int count;
 } brks, rets;
 
 int blocksCount; // for while ~ end and if ~ end error check
-int nowFunc; // number of function
-int isFunction; // With in function?
 
 void init();
 void dispose();
