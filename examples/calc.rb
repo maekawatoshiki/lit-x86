@@ -103,7 +103,7 @@ def calc(a:string)
   printf "parse=> %s\n", out
   strcpy(a, out)
 
-  num = Array(64); sp = 0
+  num = Array(128); sp = 0
   len = strlen(a)
   for pos = 0, pos < len, pos++
     if a[pos] == '+'
@@ -118,19 +118,18 @@ def calc(a:string)
     elsif a[pos] == '/'
       num[sp - 2] = num[sp - 2] / num[sp - 1]
       sp--
-    elsif isdigit(a[pos]) == 1
+    elsif isdigit(a[pos])
       num[sp++] = atoi(a)
     end
   end
   num[0]
 end
 
-a:string = Array(256)
+a:string = Array(100)
 
-output "expression => "
-input(a)
+output "expression => "; input(a)
 
-printf "expr=> %s\n", a
+printf "expr => %s\n", a
 
 puts calc(a) # => 9
 

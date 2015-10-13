@@ -39,8 +39,9 @@ int32_t lex(char *code) {
 			tok.tok[tok.pos].nline = line;
       i--; tok.pos++;
     } else if(isalpha(code[i])) { // ident?
+			char *str = tok.tok[tok.pos].val;
       for(; isalpha(code[i]) || isdigit(code[i]) || code[i] == '_'; i++)
-        strncat(tok.tok[tok.pos].val, &(code[i]), 1);
+        *str++ = code[i];
       tok.tok[tok.pos].nline = line;
       i--; tok.pos++;
     } else if(code[i] == ' ' || code[i] == '\t') { // space char?

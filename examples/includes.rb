@@ -99,16 +99,16 @@ end
 # Secure
 
 def SecureRandomString(str:string, len)
-	dev = fopen("/dev/urandom", "rb")
+	stdin = fopen("/dev/urandom", "rb")
 	bytes = 128
 	data:string = Array(bytes)
-	fgets(data, bytes, dev)
+	fgets(data, bytes, stdin)
 	chars = 0
 	for i = 0, i < bytes and chars < len, i++
 		if isalpha(data[i]) or isdigit(data[i])
 			str[chars++] = data[i]
 		else
-			fgets(data, bytes, dev)
+			fgets(data, bytes, stdin)
 		end
 	end
 	str[chars] = 0
