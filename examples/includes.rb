@@ -99,7 +99,7 @@ end
 # Secure
 
 def SecureRandomString(str:string, len)
-	dev = fopen("/dev/random", "rb")
+	dev = fopen("/dev/urandom", "rb")
 	bytes = 128
 	data:string = Array(bytes)
 	fgets(data, bytes, dev)
