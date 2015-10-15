@@ -128,9 +128,6 @@ int32_t primExpr() {
 					genCode(0xe8); genCodeInt32(0xFFFFFFFF - (ntvCount - function->address) - 3); // call func
 					genas("add esp %d", function->args * sizeof(int32_t));
 				}
-				printf("%s%c", tok.tok[tok.pos-2].val, 0xa);
-				printf("%s%c", tok.tok[tok.pos-1].val, 0xa);
-				printf("%s%c", tok.tok[tok.pos-0].val, 0xa);
 				if(!skip(")")) error("func: error: %d: expected expression ')'", tok.tok[tok.pos].nline);
 			} else {
 				if((v = getVariable(name)) == NULL)

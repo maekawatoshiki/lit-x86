@@ -27,11 +27,10 @@ typedef struct {
 
 struct {
 	func_t func[0xff];
-	int count;
+	int count, inside;
 } functions;
 
 int nowFunc; // number of function
-int isFunction; // With in function?
 
 struct {
 	char *text[0xff];

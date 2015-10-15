@@ -5,9 +5,9 @@ void init() {
 	ntvCode = VirtualAlloc(NULL, 0xFFF, MEMORY_COMMIT, PAGE_EXECUTE_READWRITE);
 #else
 	long memsize = 0xFFFF + 1;
-	if((posix_memalign((void **)&ntvCode, memsize, memsize)))
+	if(posix_memalign((void **)&ntvCode, memsize, memsize))
 		perror("posix_memalign");
-	if(mprotect((void*)ntvCode, memsize, PROT_READ | PROT_WRITE | PROT_EXEC))
+	if(mprotect(ntvCode, memsize, PROT_READ | PROT_WRITE | PROT_EXEC))
 		perror("mprotect");
 #endif
 	tok.pos = ntvCount = 0; tok.size = 0xfff;
@@ -22,7 +22,7 @@ void dispose() {
 	free(brks.addr);
 	free(rets.addr);
 	free(tok.tok);
-	freeMem();
+	freeAddr();
 }
 
 
@@ -121,18 +121,17 @@ void ssleep(uint32_t t) {
 #endif
 }
 
-void appendMem(int32_t addr) {
-	memad.addr[memad.count++] = addr;
+void appendAddr(int32_t addr) {
+	mem.addr[mem.count++] = addr;
 }
 
-void freeMem() {
-	if(memad.count > 0) {
-		for(--memad.count; memad.count>=0; --memad.count) {
-			free((void *)memad.addr[memad.count]);
+void freeAddr() {
+	if(mem.count > 0) {
+		for(--mem.count; mem.count >= 0; --mem.count) {
+			free((void *)mem.addr[mem.count]);
 		}
-		memad.count = 0;
+		mem.count = 0;
 	}
-	puts("Free: OK");
 }
 
 void set_xor128() {
@@ -160,14 +159,14 @@ void *funcTable[] = {
 	(void *) malloc, 		// 12
 	(void *) xor128, 		// 16
 	(void *) printf, 		// 20
-	(void *) appendMem,	// 24
+	(void *) appendAddr,// 24
 	(void *) ssleep, 		// 28
 	(void *) fopen, 		// 32
 	(void *) fprintf, 	// 36
 	(void *) fclose,		// 40
 	(void *) fgets,			// 44
 	(void *) free, 			// 48
-	(void *) freeMem		// 52
+	(void *) freeAddr,	// 52
 };
 
 int run() {

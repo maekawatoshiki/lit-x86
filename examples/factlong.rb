@@ -1,9 +1,8 @@
 $LEN = 1000
-$C = 0
 
 def bigPrint(a)
 	for i = LEN - 1, i >= 0, i--
-		printf "%d", a[i]
+		if a[i]; printf "%d", a[i]; end
 	end puts ""
 end
 
@@ -43,6 +42,7 @@ def bigFact(a, max)
 end
 
 A = Array(LEN)
-C = Array(LEN)
 bigSet(A, 11000)
 bigPrint( bigFact(A, 1000) )
+
+

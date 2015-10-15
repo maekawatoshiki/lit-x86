@@ -15,7 +15,7 @@ std_function stdfunc[] = {
 	{"fclose", 1, 40},
 	{"fgets", 3, 44},
 	{"free", 1, 48},
-	{"freeMem", 0, 52}
+	{"freeLocal", 0, 52}
 }; // len = sizeof(stdf) / sizeof(stdf[0])
 
 int make_stdfunc(char *name) {
@@ -28,7 +28,7 @@ int make_stdfunc(char *name) {
 				genCode(0xff); genCode(0x56); genCode(12); // call malloc
 				genas("push eax");
 				genCode(0x89); genCode(0x04); genCode(0x24); // mov [esp], eax
-				genCode(0xff); genCode(0x56); genCode(24); // call appendMem
+				genCode(0xff); genCode(0x56); genCode(24); // call appendAddr
 				genas("pop eax");
 			} else {
 				if(stdfunc[i].args == -1) { // vector

@@ -96,16 +96,15 @@ int execute(char *);
 /* for native(JIT) code. */
 
 struct {
-	int addr[0xff];
+	uint32_t addr[0xff];
 	int count;
-} memad;
+} mem;
 
-void freeMem();
+void freeAddr();
 void putNumber(int);
 void putString(int *);
 void putln();
-void appendMem(int);
-void freeMem();
+void appendAddr(int);
 
 unsigned int w;
 void set_xor128();
