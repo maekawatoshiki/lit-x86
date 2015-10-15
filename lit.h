@@ -42,7 +42,6 @@ enum {
 };
 
 #define NON 0
-#define ONE_SENT 1
 
 enum {
 	IN_FUNC = 1,
