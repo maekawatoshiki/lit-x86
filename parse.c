@@ -329,14 +329,14 @@ re:
 			if(strcmp(tok.tok[i].val, "[") == 0) t++;
 			if(strcmp(tok.tok[i].val, "]") == 0) t--;
 			if(strcmp(tok.tok[i].val, ";") == 0)
-				error("error: %d: invalid expression", tok.tok[tok.pos].nline);
+				error("index: error: %d: invalid expression", tok.tok[tok.pos].nline);
 			i++;
 		}
-		t = 2;
-		if(strcmp(tok.tok[i].val, "[") == 0) goto re;
+		t = 1;
+		if(strcmp(tok.tok[i].val, "[") == 0) { i++; goto re; }
 		printf(">%s\n", tok.tok[i].val);
 		if(strcmp(tok.tok[i].val, "=") == 0) return 1;
-	} else if(strcmp(tok.tok[tok.pos+1].val, ":") == 0) {
+	} else if(strcmp(tok.tok[tok.pos + 1].val, ":") == 0) {
 		int32_t i = tok.pos + 3;
 		if(strcmp(tok.tok[i].val, "=") == 0) return 1;
 	}
@@ -352,7 +352,9 @@ int32_t assignment() {
 		if(skip("[")) { // Array?
 			relExpr();
 			genas("push eax");
-			if(skip("]") && skip("=")) {
+			skip("]");
+			if(isIndex()) make_index();
+			if(skip("=")) {
 				relExpr();
 				genCode(0x8b); genCode(0x4d);
 				genCode(256 -
