@@ -13,6 +13,6 @@ int mulDivExpr();
 int primExpr();
 
 int isIndex();
-int genIndex();
+int make_index();
 
 #endif

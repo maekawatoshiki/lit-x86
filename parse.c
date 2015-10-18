@@ -324,6 +324,7 @@ int32_t isassign() {
 	else if(strcmp(tok.tok[tok.pos+1].val, "--") == 0) return 1;
 	else if(strcmp(tok.tok[tok.pos+1].val, "[") == 0) {
 		int32_t i = tok.pos + 2, t = 1;
+re:
 		while(t) {
 			if(strcmp(tok.tok[i].val, "[") == 0) t++;
 			if(strcmp(tok.tok[i].val, "]") == 0) t--;
@@ -331,6 +332,8 @@ int32_t isassign() {
 				error("error: %d: invalid expression", tok.tok[tok.pos].nline);
 			i++;
 		}
+		t = 2;
+		if(strcmp(tok.tok[i].val, "[") == 0) goto re;
 		printf(">%s\n", tok.tok[i].val);
 		if(strcmp(tok.tok[i].val, "=") == 0) return 1;
 	} else if(strcmp(tok.tok[tok.pos+1].val, ":") == 0) {
@@ -345,7 +348,6 @@ int32_t assignment() {
 	int32_t inc = 0, dec = 0, declare = 0;
 	if(v == NULL) { declare++; v = declareVariable(); }
 	tok.pos++;
-
 	if(v->loctype == V_LOCAL) {
 		if(skip("[")) { // Array?
 			relExpr();

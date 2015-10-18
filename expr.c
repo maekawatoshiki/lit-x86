@@ -146,7 +146,7 @@ int32_t primExpr() {
 		 error("error: %d: expected expression ')'", tok.tok[tok.pos].nline);
   }
 
-	while(isIndex()) genIndex();
+	while(isIndex()) make_index();
 
 	return 0;
 }
@@ -158,7 +158,7 @@ int32_t isIndex() {
 	return 0;
 }
 
-int genIndex() {
+int make_index() {
 	genas("mov ecx eax");
 	skip("["); relExpr(); skip("]");
 	genCode(0x8b); genCode(0x04); genCode(0x81); // mov eax [eax * 4 + ecx]
