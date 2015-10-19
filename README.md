@@ -41,13 +41,13 @@ for i = 1, i < 100, i = i + 1
 end
 
 # create function
-# return is not support...
 def sum(n)
   sm = 0
-  for i = 1, i <= n, i = i + 1
+  for i = 1, i <= n, i++
     sm = sm + i
   end
   sm
+	# "return sm" is OK
 end
 ```
 
@@ -63,6 +63,24 @@ def fibo(n)
 end
 
 puts fibo(39)
+```
+
+- quick sort
+
+```
+def sort(a, left, right)
+	l = left; r = right; pv = a[(l + r) / 2]
+	while 1
+		while a[l] < pv; l++; end
+		while pv < a[r]; r--; end
+		if l >= r; break end
+		tmp = a[l]; a[l] = a[r]; a[r] = tmp
+		l++; r--;
+	end
+	l--; r++
+	if left < l; sort(a, left, l); end
+	if r < right; sort(a, r, right); end
+end
 ```
 
 - compile

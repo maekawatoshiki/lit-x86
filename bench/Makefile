@@ -1,5 +1,5 @@
 fibo:
-	gcc -o fibo test.c
+	gcc -o fibo test.c -O3
 	javac test.java
 	luac test.lua
 
