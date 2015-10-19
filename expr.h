@@ -3,6 +3,7 @@
 
 #include "lit.h"
 #include "asm.h"
+#include "lex.h"
 #include "parse.h"
 #include "stdfunc.h"
 

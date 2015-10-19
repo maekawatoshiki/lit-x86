@@ -19,6 +19,7 @@
 #include <time.h>
 
 #include "asm.h"
+#include "lex.h"
 #include "expr.h"
 #include "parse.h"
 #include "stdfunc.h"
@@ -85,11 +86,8 @@ int blocksCount; // for while ~ end and if ~ end error check
 void init();
 void dispose();
 
-int lex(char *);
-
 int skip(char *);
 int error(char *, ...);
-char *replaceEscape(char *);
 
 int execute(char *);
 

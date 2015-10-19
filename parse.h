@@ -3,6 +3,7 @@
 
 #include "lit.h"
 #include "asm.h"
+#include "lex.h"
 #include "expr.h"
 
 typedef struct {
@@ -56,9 +57,10 @@ Variable *appendVariable(char *, int);
 int appendBreak();
 int appendReturn();
 
-
 int isassign();
 int assignment();
 Variable *declareVariable();
+
+char *replaceEscape(char *);
 
 #endif

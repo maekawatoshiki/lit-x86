@@ -439,3 +439,25 @@ Variable *declareVariable() {
 	} else error("error: %d: can't declare variable", tok.tok[tok.pos].nline);
 	return NULL;
 }
+
+char *replaceEscape(char *str) {
+	int32_t i;
+	char *pos;
+	char escape[12][3] = {
+		"\\a", "\a",
+		"\\r", "\r",
+		"\\f", "\f",
+		"\\n", "\n",
+		"\\t", "\t",
+		"\\b", "\b"
+	};
+	for (i = 0; i < 12; i += 2)
+	{
+		while ((pos = strstr(str, escape[i])) != NULL)
+		{
+			*pos = escape[i + 1][0];
+			memmove(pos + 1, pos + 2, strlen(str) - 2 + 1);
+		}
+	}
+	return str;
+}
