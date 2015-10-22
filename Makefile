@@ -1,5 +1,5 @@
 CFLAGS = -m32 -O0 -std=c99
-CC = clang  $(CFLAGS) 
+CC = clang $(CFLAGS) 
 
 lit: main.o lit.o asm.o lex.o expr.o parse.o stdfunc.o
 
