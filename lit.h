@@ -42,7 +42,9 @@ enum {
 	JAE = 0x7d
 };
 
-#define NON 0
+enum {
+	NON = 0
+};
 
 enum {
 	IN_FUNC = 1,

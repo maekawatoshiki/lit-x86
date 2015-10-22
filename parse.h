@@ -18,8 +18,10 @@ struct {
 	int count;
 } gblVar;
 
-Variable locVar[0xFF][0xFF];
-int varSize[0xFF], varCounter;
+struct {
+	Variable var[0xFF][0xFF]; // var[ "functions.now" ] [ each variable ]
+	int count, size[0xFF];
+} locVar;
 
 typedef struct {
 	int address, args;
@@ -28,11 +30,10 @@ typedef struct {
 
 struct {
 	func_t func[0xff];
-	int count, inside;
+	int count, inside, now;
 } functions;
 
-int nowFunc; // number of function
-
+// strings embedded in native code
 struct {
 	char *text[0xff];
 	int *addr;
@@ -54,8 +55,8 @@ func_t *appendFunction(char *, int, int);
 
 Variable *getVariable(char *);
 Variable *appendVariable(char *, int);
-int appendBreak();
-int appendReturn();
+int make_break();
+int make_return();
 
 int isassign();
 int assignment();
