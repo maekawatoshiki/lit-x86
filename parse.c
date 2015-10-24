@@ -1,6 +1,5 @@
 #include "parse.h"
 
-
 int32_t getString() {
 	strings.text[ strings.count ] = 
 		calloc(sizeof(char), strlen(tok.tok[tok.pos].val) + 1);

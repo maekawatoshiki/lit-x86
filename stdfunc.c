@@ -1,10 +1,5 @@
 #include "stdfunc.h"
 
-typedef struct {
-	char *name;
-	int args, addr;
-} std_function;
-
 std_function stdfunc[] = {
 	{"Array", 1, 12},
 	{"rand", 0, 16},
