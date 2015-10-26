@@ -88,7 +88,7 @@ int32_t primExpr() {
 		char *name = tok.tok[tok.pos].val, *mod_name = "";
 		Variable *v;
 
-		if(strcmp(tok.tok[tok.pos+1].val, ":") == 0) { mod_name = tok.tok[tok.pos].val; tok.pos += 2; name = tok.tok[tok.pos].val; }
+		if(strcmp(tok.tok[tok.pos+1].val, ".") == 0) { mod_name = tok.tok[tok.pos].val; tok.pos += 2; name = tok.tok[tok.pos].val; }
 
 		if(isassign()) assignment();
 		else {
@@ -135,7 +135,7 @@ int32_t primExpr() {
 				}
 				if(!skip(")")) error("func: error: %d: expected expression ')'", tok.tok[tok.pos].nline);
 			} else {
-				v = getVariable(name , mod_name);
+				v = getVariable(name, mod_name);
 				if(v == NULL) v = getVariable(name, module);
 				if(v == NULL)
 					error("var: error: %d: '%s' was not declared", tok.tok[tok.pos].nline, name);

@@ -34,10 +34,6 @@
 #endif
 
 enum {
-	NON = 0
-};
-
-enum {
 	IN_FUNC = 1,
 	IN_GLOBAL = 0
 };

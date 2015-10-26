@@ -18,12 +18,12 @@ module Math
 			fact(a - 1) * a
 		end
 	end
-endmodule
+end
 
-puts Math:add(1, 2)
-puts Math:PI
+puts Math.add(1, 2)
+puts Math.PI
 
 add(1, 2)
 
-puts Math:fact(10)
+puts Math.fact(10)
 

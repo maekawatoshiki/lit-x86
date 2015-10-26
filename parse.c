@@ -111,11 +111,10 @@ int expression(int pos, int status) {
 		if(isassign()) assignment();
 	} else if(skip("def")) { blocksCount++;
 		functionStmt();
-	} else if(skip("module")) {
+	} else if(skip("module")) { blocksCount++;
 		module = tok.tok[tok.pos++].val;
-	} else if(skip("endmodule")) {
+		eval(0, NON);
 		module = "";
-		puts(module);
 	} else if(functions.inside == IN_GLOBAL && strcmp("def", tok.tok[tok.pos+1].val) && 
 			strcmp("module", tok.tok[tok.pos+1].val) && strcmp("$", tok.tok[tok.pos+1].val) && 
 			strcmp(";", tok.tok[tok.pos+1].val)) {	// main function entry
@@ -127,7 +126,7 @@ int expression(int pos, int status) {
 		uint32_t espBgn = ntvCount + 2; genas("sub esp 0");
 		genCode(0x8b); genCode(0x75); genCode(0x0c); // mov esi, 0xc(%ebp)
 
-		eval(0, NON);
+		eval(0, BLOCK_NORMAL);
 
 		genCode(0x81); genCode(0xc4); genCodeInt32(sizeof(int32_t) * (locVar.size[functions.now] + 6)); // add %esp nn
 		genCode(0xc9);// leave
@@ -185,7 +184,7 @@ int expression(int pos, int status) {
 		int32_t end;
 		genCode(0xe9); end = ntvCount; genCodeInt32(0);// jmp while end
 		genCodeInt32Insert(ntvCount - pos - 4, pos);
-		eval(end, NON);
+		eval(end, BLOCK_NORMAL);
 		return 1;
 	} else if(skip("elsif")) {
 		int32_t endif, end;
@@ -195,13 +194,14 @@ int expression(int pos, int status) {
 		genCode(0x83); genCode(0xf8); genCode(0x00);// cmp eax, 0
 		genCode(0x75); genCode(0x05); // jne 5
 		genCode(0xe9); end = ntvCount; genCodeInt32(0);// jmp while end
-		eval(end, NON);
+		eval(end, BLOCK_NORMAL);
 		genCodeInt32Insert(ntvCount - endif - 4, endif);
 		return 1;
 	} else if(skip("break")) {
 		make_break();
 	} else if(skip("end")) { blocksCount--;
-		if(status == NON) {
+		if(status == NON) return 1;
+		if(status == BLOCK_NORMAL) {
 			genCodeInt32Insert(ntvCount - pos - 4, pos);
 		} else if(status == BLOCK_FUNC) functions.inside = IN_GLOBAL;
 		return 1;
@@ -257,7 +257,7 @@ int ifStmt() {
 	genCode(0x83); genCode(0xf8); genCode(0x00);// cmp eax, 0
 	genCode(0x75); genCode(0x05); // jne 5
 	genCode(0xe9); end = ntvCount; genCodeInt32(0);// jmp
-	return eval(end, NON);
+	return eval(end, BLOCK_NORMAL);
 }
 
 int whileStmt() {
@@ -272,7 +272,7 @@ int whileStmt() {
 	genCode(0x75); genCode(0x05); // jne 5
 	genCode(0xe9); end = ntvCount; genCodeInt32(0);// jmp while end
 	
-	if(skip(":")) expression(0, BLOCK_LOOP);
+	if(skip(".")) expression(0, BLOCK_LOOP);
 	else eval(0, BLOCK_LOOP);
 
 	if(stepOn) {
@@ -348,7 +348,7 @@ re:
 		if(strcmp(tok.tok[i].val, "[") == 0) { i++; goto re; }
 		printf(">%s\n", tok.tok[i].val);
 		if(strcmp(tok.tok[i].val, "=") == 0) return 1;
-	} else if(strcmp(tok.tok[tok.pos + 1].val, ":") == 0) {
+	} else if(strcmp(tok.tok[tok.pos + 1].val, ".") == 0 || strcmp(tok.tok[tok.pos + 1].val, ":") == 0) {
 		int32_t i = tok.pos + 3;
 		if(strcmp(tok.tok[i].val, "=") == 0) return 1;
 	}
@@ -357,18 +357,19 @@ re:
 
 int32_t assignment() {
 	char *name = tok.tok[tok.pos].val, *mod_name = "";
-	if(strcmp(tok.tok[tok.pos+1].val, ":") == 0) {
+	if(strcmp(tok.tok[tok.pos+1].val, ".") == 0) {
 		mod_name = tok.tok[tok.pos].val;
 		tok.pos += 2;
 		name = tok.tok[tok.pos].val;
 	}
 
+	int inc = 0, dec = 0, declare = 0;
 	Variable *v = getVariable(name, mod_name);
 	if(v == NULL) v = getVariable(name, module);
-
-	int inc = 0, dec = 0, declare = 0;
 	if(v == NULL) { declare++; v = declareVariable(); }
+	printf("NULL>%p\n", v);	
 	tok.pos++;
+	
 	if(v->loctype == V_LOCAL) {
 		if(skip("[")) { // Array?
 			relExpr();
