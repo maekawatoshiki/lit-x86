@@ -11,7 +11,7 @@ int32_t getString() {
 	return strings.count++;
 }
 
-Variable *getVariable(char *name) {
+Variable *getVariable(char *name, char *mod_name) {
 	// loval variable
 	for(int i = 0; i < locVar.count; i++) {
 		if(strcmp(name, locVar.var[functions.now][i].name) == 0)
@@ -19,7 +19,7 @@ Variable *getVariable(char *name) {
 	}
 	// global variable
 	for(int i = 0; i < gblVar.count; i++) {
-		if(strcmp(name, gblVar.var[i].name) == 0) {
+		if(strcmp(name, gblVar.var[i].name) == 0 && strcmp(mod_name, gblVar.var[i].mod_name) == 0) {
 			return &gblVar.var[i];
 		}
 	}
@@ -39,6 +39,7 @@ Variable *appendVariable(char *name, int type) {
 	} else if(functions.inside == IN_GLOBAL) {
 		// global varibale
 		strcpy(gblVar.var[gblVar.count].name, name);
+		strcpy(gblVar.var[gblVar.count].mod_name, module);
 		gblVar.var[gblVar.count].type = type;
 		gblVar.var[gblVar.count].loctype = V_GLOBAL;
 		gblVar.var[gblVar.count].id = (uint32_t)&ntvCode[ntvCount];
@@ -50,10 +51,10 @@ Variable *appendVariable(char *name, int type) {
 	return NULL;
 }
 
-func_t *getFunction(char *name, char* mod_name) {
+func_t *getFunction(char *name, char *mod_name) {
 	for(int i = 0; i < functions.count; i++) {
-		if(strcmp(functions.func[i].name, name) == 0 &&
-				strcmp(functions.func[i].mod_name, mod_name) == 0) {
+		printf("%s %s >> %s : %s\n", mod_name, name, functions.func[i].mod_name, functions.func[i].name);
+		if(strcmp(functions.func[i].name, name) == 0 && strcmp(functions.func[i].mod_name, mod_name) == 0) {
 			return &functions.func[i];
 		}
 	}
@@ -64,7 +65,7 @@ func_t *appendFunction(char *name, int address, int args) {
 	functions.func[functions.count].address = address;
 	functions.func[functions.count].args = args;
 	strcpy(functions.func[functions.count].mod_name, module);
-	printf("%s # %s\n", module, name);
+	printf("%s:%s\n", functions.func[functions.count].mod_name, name);
 	strcpy(functions.func[functions.count].name, name);
 	return &functions.func[functions.count++];
 }
@@ -115,8 +116,9 @@ int expression(int pos, int status) {
 	} else if(skip("endmodule")) {
 		module = "";
 		puts(module);
-	} else if(functions.inside == IN_GLOBAL && strcmp("def", tok.tok[tok.pos+1].val) &&
-			strcmp("$", tok.tok[tok.pos+1].val) && strcmp(";", tok.tok[tok.pos+1].val)) {	// main function entry
+	} else if(functions.inside == IN_GLOBAL && strcmp("def", tok.tok[tok.pos+1].val) && 
+			strcmp("module", tok.tok[tok.pos+1].val) && strcmp("$", tok.tok[tok.pos+1].val) && 
+			strcmp(";", tok.tok[tok.pos+1].val)) {	// main function entry
 		functions.inside = IN_FUNC;
 		functions.now++;
 		appendFunction("main", ntvCount, 0); // append function
@@ -212,6 +214,7 @@ int expression(int pos, int status) {
 
 int eval(int pos, int status) {
 	while(tok.pos < tok.size) {
+		skip(";");
 		if(expression(pos, status)) return 1;
 	}
 	return 0;
@@ -224,7 +227,7 @@ int32_t parser() {
 	genCode(0xe9); main_address = ntvCount; genCodeInt32(0);
 	eval(0, 0);
 
-	uint32_t addr = getFunction("main", module)->address;
+	uint32_t addr = getFunction("main", "")->address;
 	genCodeInt32Insert(addr - 5, main_address);
 
 	for(strings.addr--; strings.count; strings.addr--) {
@@ -353,8 +356,17 @@ re:
 }
 
 int32_t assignment() {
-	Variable *v = getVariable(tok.tok[tok.pos].val);
-	int32_t inc = 0, dec = 0, declare = 0;
+	char *name = tok.tok[tok.pos].val, *mod_name = "";
+	if(strcmp(tok.tok[tok.pos+1].val, ":") == 0) {
+		mod_name = tok.tok[tok.pos].val;
+		tok.pos += 2;
+		name = tok.tok[tok.pos].val;
+	}
+
+	Variable *v = getVariable(name, mod_name);
+	if(v == NULL) v = getVariable(name, module);
+
+	int inc = 0, dec = 0, declare = 0;
 	if(v == NULL) { declare++; v = declareVariable(); }
 	tok.pos++;
 	if(v->loctype == V_LOCAL) {

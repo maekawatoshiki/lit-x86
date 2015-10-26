@@ -85,15 +85,18 @@ int32_t primExpr() {
 		genCode(0xb8); getString();
 		genCodeInt32(0x00); // mov eax string_address
   } else if(isalpha(tok.tok[tok.pos].val[0])) { // variable or inc or dec
-		char *name = tok.tok[tok.pos].val;
+		char *name = tok.tok[tok.pos].val, *mod_name = "";
 		Variable *v;
+
+		if(strcmp(tok.tok[tok.pos+1].val, ":") == 0) { mod_name = tok.tok[tok.pos].val; tok.pos += 2; name = tok.tok[tok.pos].val; }
 
 		if(isassign()) assignment();
 		else {
 			tok.pos++;
 			if(skip("[")) { // Array?
-		
-				if((v = getVariable(name)) == NULL)
+				v = getVariable(name , mod_name);
+				if(v == NULL) v = getVariable(name, module);
+				if(v == NULL)
 					error("error: %d: '%s' was not declared", tok.tok[tok.pos].nline, name);
 				relExpr();
 				genas("mov ecx eax");
@@ -115,7 +118,9 @@ int32_t primExpr() {
 			
 			} else if(skip("(")) { // Function?
 				if(!make_stdfunc(name)) {	// standard function
-					func_t *function = getFunction(name, module);
+					func_t *function = getFunction(name, mod_name);
+					if(function == NULL) function = getFunction(name, module);
+					
 					printf("addr: %d\n", function->address);
 					if(isalpha(tok.tok[tok.pos].val[0]) || isdigit(tok.tok[tok.pos].val[0]) ||
 						!strcmp(tok.tok[tok.pos].val, "\"") || !strcmp(tok.tok[tok.pos].val, "(")) { // has arg?
@@ -130,7 +135,9 @@ int32_t primExpr() {
 				}
 				if(!skip(")")) error("func: error: %d: expected expression ')'", tok.tok[tok.pos].nline);
 			} else {
-				if((v = getVariable(name)) == NULL)
+				v = getVariable(name , mod_name);
+				if(v == NULL) v = getVariable(name, module);
+				if(v == NULL)
 					error("var: error: %d: '%s' was not declared", tok.tok[tok.pos].nline, name);
 				if(v->loctype == V_LOCAL) {
 					genCode(0x8b); genCode(0x45);

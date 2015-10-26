@@ -8,7 +8,7 @@
 
 
 typedef struct {
-	char name[32];
+	char name[32], mod_name[32];
 	unsigned int id;
 	int type;
 	int loctype;
@@ -54,7 +54,7 @@ int getString();
 func_t *getFunction(char *, char *);
 func_t *appendFunction(char *, int, int);
 
-Variable *getVariable(char *);
+Variable *getVariable(char *, char *);
 Variable *appendVariable(char *, int);
 int make_break();
 int make_return();
