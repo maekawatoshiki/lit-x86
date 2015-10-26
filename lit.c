@@ -1,5 +1,8 @@
 #include "lit.h"
 
+extern unsigned char *ntvCode;
+extern int ntvCount;
+
 void init() {
 #if defined(WIN32) || defined(WINDOWS)
 	ntvCode = VirtualAlloc(NULL, 0xFFF, MEMORY_COMMIT, PAGE_EXECUTE_READWRITE);
@@ -54,6 +57,7 @@ void freeAddr() {
 	}
 }
 
+unsigned int w;
 void set_xor128() {
 #if defined(WIN32) || defined(WINDOWS)
 #else

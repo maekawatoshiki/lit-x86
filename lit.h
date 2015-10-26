@@ -70,8 +70,6 @@ struct {
 	int count;
 } brks, rets;
 
-int blocksCount; // for while ~ end and if ~ end error check
-
 void init();
 void dispose();
 
@@ -93,7 +91,6 @@ void putString(int *);
 void putln();
 void appendAddr(int);
 
-unsigned int w;
 void set_xor128();
 int  xor128();
 

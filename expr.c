@@ -1,5 +1,8 @@
 #include "expr.h"
 
+extern char *module;
+extern int ntvCount;
+
 int32_t relExpr() {
 	int andop=0, orop=0;
 	condExpr();

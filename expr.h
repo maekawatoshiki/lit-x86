@@ -7,8 +7,6 @@
 #include "parse.h"
 #include "stdfunc.h"
 
-extern char *module;
-
 int relExpr();
 int condExpr();
 int addSubExpr();

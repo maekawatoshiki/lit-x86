@@ -1,6 +1,9 @@
 #include "parse.h"
 
 char *module = "";
+int blocksCount;
+extern unsigned char *ntvCode;
+extern int ntvCount;
 
 int32_t getString() {
 	strings.text[ strings.count ] = (char *)

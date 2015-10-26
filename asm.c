@@ -1,5 +1,8 @@
 #include "asm.h"
 
+unsigned char *ntvCode;
+int ntvCount;
+
 void genCode(unsigned char val) { ntvCode[ntvCount++] = (val); }
 void genCodeInt32(unsigned int val) {
 	// for little endian

@@ -9,6 +9,7 @@
 #define NON 0xffff
 #define BLOCK_NORMAL 0x0000
 
+
 typedef struct {
 	char name[32], mod_name[32];
 	unsigned int id;

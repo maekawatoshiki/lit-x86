@@ -3,9 +3,6 @@
 
 #include "lit.h"
 
-unsigned char *ntvCode;
-int ntvCount;
-
 enum {
 	EAX = 0, ECX, EDX, EBX,
 	ESP, EBP, ESI, EDI
