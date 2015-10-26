@@ -41,7 +41,7 @@ int mk_modrm(char *r32, char *rm32) {
 }
 
 int genas(char *s, ...) {
-	char *src = calloc(sizeof(char), strlen(s) + 0xff);
+	char *src = (char *)calloc(sizeof(char), strlen(s) + 0xff);
 	va_list args;
 	char nem[4][16] = { 0 };
 	int i, n;

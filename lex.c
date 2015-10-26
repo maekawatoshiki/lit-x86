@@ -5,7 +5,7 @@ int lex(char *code) {
 	int iswindows = 0;
 
 	for(int i = 0; i < codeSize; i++) {
- 		if(tok.size <= i) tok.tok = realloc(tok.tok, (tok.size += 512 * sizeof(Token)));
+ 		if(tok.size <= i) tok.tok = (Token *)realloc(tok.tok, (tok.size += 512 * sizeof(Token)));
 		
 		if(isdigit(code[i])) { // number?
     

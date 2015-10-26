@@ -34,15 +34,6 @@
 #endif
 
 enum {
-	JA = 0x7f ,
-	JB = 0x7c,
-	JE = 0x74,
-	JNE = 0x75,
-	JBE = 0x7e,
-	JAE = 0x7d
-};
-
-enum {
 	NON = 0
 };
 

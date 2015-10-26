@@ -12,9 +12,9 @@ void init() {
 #endif
 	tok.pos = ntvCount = 0; tok.size = 0xfff;
 	set_xor128();
-	tok.tok = calloc(sizeof(Token), tok.size);
-	brks.addr = calloc(sizeof(uint32_t), 1);
-	rets.addr = calloc(sizeof(uint32_t), 1);
+	tok.tok = (Token *)calloc(sizeof(Token), tok.size);
+	brks.addr = (uint32_t *)calloc(sizeof(uint32_t), 1);
+	rets.addr = (uint32_t *)calloc(sizeof(uint32_t), 1);
 }
 
 void dispose() {

@@ -1,14 +1,14 @@
 #include "expr.h"
 
 int32_t relExpr() {
-	int and=0, or=0;
+	int andop=0, orop=0;
 	condExpr();
-	while((and=skip("and") || skip("&")) || (or=skip("or") || skip("|")) || skip("xor") || skip("^")) {
+	while((andop=skip("and") || skip("&")) || (orop=skip("or") || skip("|")) || skip("xor") || skip("^")) {
 		genas("push eax");
 		condExpr();
 		genas("mov ebx eax");
 		genas("pop eax");
-		genCode(and ? 0x21 : or ? 0x09 : 0x31); genCode(0xd8); // and eax ebx
+		genCode(andop ? 0x21 : orop ? 0x09 : 0x31); genCode(0xd8); // and eax ebx
 	}
 
 	return 0;
@@ -115,7 +115,7 @@ int32_t primExpr() {
 			
 			} else if(skip("(")) { // Function?
 				if(!make_stdfunc(name)) {	// standard function
-					func_t *function = getFunction(name);
+					func_t *function = getFunction(name, module);
 					printf("addr: %d\n", function->address);
 					if(isalpha(tok.tok[tok.pos].val[0]) || isdigit(tok.tok[tok.pos].val[0]) ||
 						!strcmp(tok.tok[tok.pos].val, "\"") || !strcmp(tok.tok[tok.pos].val, "(")) { // has arg?

@@ -6,6 +6,7 @@
 #include "lex.h"
 #include "expr.h"
 
+
 typedef struct {
 	char name[32];
 	unsigned int id;
@@ -25,7 +26,7 @@ struct {
 
 typedef struct {
 	int address, args;
-	char name[0xFF];
+	char name[0xFF], mod_name[0xff];
 } func_t;
 
 struct {
@@ -50,7 +51,7 @@ int expression(int, int);
 int parser();
 int getString();
 
-func_t *getFunction(char *);
+func_t *getFunction(char *, char *);
 func_t *appendFunction(char *, int, int);
 
 Variable *getVariable(char *);

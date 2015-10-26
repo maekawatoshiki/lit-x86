@@ -5,7 +5,7 @@ int main(int argc, char **argv) {
 	char *src;
 
 	if(argc < 2) {
-		src = calloc(sizeof(char), 0xFFFF);
+		src = (char*)calloc(sizeof(char), 0xFFFF);
 		char line[0xFF] = "";
 
 		puts("Lit 1.2.1 (C) 2015 maekawatoshiki");
@@ -22,7 +22,7 @@ int main(int argc, char **argv) {
 		fseek(srcfp, 0, SEEK_END);
 		ssz = ftell(srcfp);
 		fseek(srcfp, 0, SEEK_SET);
-		src = calloc(sizeof(char), ssz + 2);
+		src = (char*)calloc(sizeof(char), ssz + 2);
 		fread(src, sizeof(char), ssz, srcfp);
 		fclose(srcfp);
 	}

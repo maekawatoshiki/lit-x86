@@ -1,7 +1,9 @@
 #include "parse.h"
 
+char *module = "";
+
 int32_t getString() {
-	strings.text[ strings.count ] = 
+	strings.text[ strings.count ] = (char *)
 		calloc(sizeof(char), strlen(tok.tok[tok.pos].val) + 1);
 	strcpy(strings.text[strings.count], tok.tok[tok.pos++].val);
 
@@ -48,9 +50,10 @@ Variable *appendVariable(char *name, int type) {
 	return NULL;
 }
 
-func_t *getFunction(char *name) {
+func_t *getFunction(char *name, char* mod_name) {
 	for(int i = 0; i < functions.count; i++) {
-		if(strcmp(functions.func[i].name, name) == 0) {
+		if(strcmp(functions.func[i].name, name) == 0 &&
+				strcmp(functions.func[i].mod_name, mod_name) == 0) {
 			return &functions.func[i];
 		}
 	}
@@ -60,13 +63,15 @@ func_t *getFunction(char *name) {
 func_t *appendFunction(char *name, int address, int args) {
 	functions.func[functions.count].address = address;
 	functions.func[functions.count].args = args;
+	strcpy(functions.func[functions.count].mod_name, module);
+	printf("%s # %s\n", module, name);
 	strcpy(functions.func[functions.count].name, name);
 	return &functions.func[functions.count++];
 }
 
 int32_t make_break() {
 	genCode(0xe9); // jmp
-	brks.addr = realloc(brks.addr, 4 * (brks.count + 1));
+	brks.addr = (uint32_t*)realloc(brks.addr, 4 * (brks.count + 1));
 	brks.addr[brks.count] = ntvCount;
 	genCodeInt32(0);
 	return brks.count++;
@@ -75,7 +80,7 @@ int32_t make_break() {
 int32_t make_return() {
 	relExpr(); // get argument
 	genCode(0xe9); // jmp
-	rets.addr = realloc(rets.addr, 4 * (rets.count + 1));
+	rets.addr = (uint32_t*)realloc(rets.addr, 4 * (rets.count + 1));
 	if(rets.addr == NULL) error("LitSystemError: no enough memory");
 	rets.addr[rets.count] = ntvCount;
 	genCodeInt32(0);
@@ -105,6 +110,11 @@ int expression(int pos, int status) {
 		if(isassign()) assignment();
 	} else if(skip("def")) { blocksCount++;
 		functionStmt();
+	} else if(skip("module")) {
+		module = tok.tok[tok.pos++].val;
+	} else if(skip("endmodule")) {
+		module = "";
+		puts(module);
 	} else if(functions.inside == IN_GLOBAL && strcmp("def", tok.tok[tok.pos+1].val) &&
 			strcmp("$", tok.tok[tok.pos+1].val) && strcmp(";", tok.tok[tok.pos+1].val)) {	// main function entry
 		functions.inside = IN_FUNC;
@@ -181,7 +191,7 @@ int expression(int pos, int status) {
 		genCodeInt32Insert(ntvCount - pos - 4, pos);
 		relExpr(); // if condition
 		genCode(0x83); genCode(0xf8); genCode(0x00);// cmp eax, 0
-		genCode(JNE); genCode(0x05); // jne 5
+		genCode(0x75); genCode(0x05); // jne 5
 		genCode(0xe9); end = ntvCount; genCodeInt32(0);// jmp while end
 		eval(end, NON);
 		genCodeInt32Insert(ntvCount - endif - 4, endif);
@@ -209,12 +219,12 @@ int eval(int pos, int status) {
 
 int32_t parser() {
 	tok.pos = ntvCount = 0;
-	strings.addr = calloc(0xFF, sizeof(int32_t));
+	strings.addr = (int32_t*)calloc(0xFF, sizeof(int32_t));
 	uint32_t main_address;
 	genCode(0xe9); main_address = ntvCount; genCodeInt32(0);
 	eval(0, 0);
 
-	uint32_t addr = getFunction("main")->address;
+	uint32_t addr = getFunction("main", module)->address;
 	genCodeInt32Insert(addr - 5, main_address);
 
 	for(strings.addr--; strings.count; strings.addr--) {
@@ -242,7 +252,7 @@ int ifStmt() {
 	uint32_t end;
 	relExpr(); // if condition
 	genCode(0x83); genCode(0xf8); genCode(0x00);// cmp eax, 0
-	genCode(JNE); genCode(0x05); // jne 5
+	genCode(0x75); genCode(0x05); // jne 5
 	genCode(0xe9); end = ntvCount; genCodeInt32(0);// jmp
 	return eval(end, NON);
 }
@@ -256,7 +266,7 @@ int whileStmt() {
 		for(; tok.tok[tok.pos].val[0] != ';'; tok.pos++);
 	}
 	genCode(0x83); genCode(0xf8); genCode(0x00);// cmp eax, 0
-	genCode(JNE); genCode(0x05); // jne 5
+	genCode(0x75); genCode(0x05); // jne 5
 	genCode(0xe9); end = ntvCount; genCodeInt32(0);// jmp while end
 	
 	if(skip(":")) expression(0, BLOCK_LOOP);
