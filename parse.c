@@ -360,7 +360,7 @@ re:
 
 int32_t assignment() {
 	char *name = tok.tok[tok.pos].val, *mod_name = "";
-	if(strcmp(tok.tok[tok.pos+1].val, ".") == 0) {
+	if(strcmp(tok.tok[tok.pos+1].val, ".") == 0) { // module's function or variable?
 		mod_name = tok.tok[tok.pos].val;
 		tok.pos += 2;
 		name = tok.tok[tok.pos].val;
@@ -370,7 +370,6 @@ int32_t assignment() {
 	Variable *v = getVariable(name, mod_name);
 	if(v == NULL) v = getVariable(name, module);
 	if(v == NULL) { declare++; v = declareVariable(); }
-	printf("NULL>%p\n", v);	
 	tok.pos++;
 	
 	if(v->loctype == V_LOCAL) {
