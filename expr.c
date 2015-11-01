@@ -3,12 +3,12 @@
 extern char *module;
 extern int ntvCount;
 
-int32_t relExpr() {
+int32_t expr_compare() {
 	int andop=0, orop=0;
-	condExpr();
+	expr_logic();
 	while((andop=skip("and") || skip("&")) || (orop=skip("or") || skip("|")) || skip("xor") || skip("^")) {
 		genas("push eax");
-		condExpr();
+		expr_logic();
 		genas("mov ebx eax");
 		genas("pop eax");
 		genCode(andop ? 0x21 : orop ? 0x09 : 0x31); genCode(0xd8); // and eax ebx
@@ -17,13 +17,13 @@ int32_t relExpr() {
 	return 0;
 }
 
-int condExpr() {
+int expr_logic() {
 	int32_t lt=0, gt=0, ne=0, eql=0, fle=0;
-	addSubExpr();
+	expr_add_sub();
 	if((lt=skip("<")) || (gt=skip(">")) || (ne=skip("!=")) ||
 			(eql=skip("==")) || (fle=skip("<=")) || skip(">=")) {
 		genas("push eax");
-		addSubExpr();
+		expr_add_sub();
 		genas("mov ebx eax");
 		genas("pop eax");
 		genCode(0x39); genCode(0xd8); // cmp %eax, %ebx
@@ -42,12 +42,12 @@ int condExpr() {
 	return 0;
 }
 
-int32_t addSubExpr() {
+int32_t expr_add_sub() {
 	int32_t add;
-	mulDivExpr();
+	expr_mul_div();
 	while((add = skip("+")) || skip("-")) {
 		genas("push eax");
-		mulDivExpr();
+		expr_mul_div();
 		genas("mov ebx eax");  // mov %ebx %eax
 		genas("pop eax");
 		if(add) { genas("add eax ebx"); }// add %eax %ebx
@@ -56,12 +56,12 @@ int32_t addSubExpr() {
 	return 0;
 }
 
-int32_t mulDivExpr() {
+int32_t expr_mul_div() {
   int32_t mul, div;
-  primExpr();
+  expr_primary();
   while((mul = skip("*")) || (div=skip("/")) || skip("%")) {
 		genas("push eax");
-    primExpr();
+    expr_primary();
     genas("mov ebx eax"); // mov %ebx %eax
     genas("pop eax");
     if(mul) {
@@ -78,7 +78,7 @@ int32_t mulDivExpr() {
 	return 0;
 }
 
-int32_t primExpr() {
+int32_t expr_primary() {
   if(isdigit(tok.tok[tok.pos].val[0])) { // number?
     genas("mov eax %d", atoi(tok.tok[tok.pos++].val));
 	} else if(skip("'")) { // char?
@@ -101,7 +101,7 @@ int32_t primExpr() {
 				if(v == NULL) v = getVariable(name, module);
 				if(v == NULL)
 					error("error: %d: '%s' was not declared", tok.tok[tok.pos].nline, name);
-				relExpr();
+				expr_compare();
 				genas("mov ecx eax");
 
 				if(v->loctype == V_LOCAL) {
@@ -128,7 +128,7 @@ int32_t primExpr() {
 					if(isalpha(tok.tok[tok.pos].val[0]) || isdigit(tok.tok[tok.pos].val[0]) ||
 						!strcmp(tok.tok[tok.pos].val, "\"") || !strcmp(tok.tok[tok.pos].val, "(")) { // has arg?
 						for(int i = 0; i < function->args; i++) {
-							relExpr();
+							expr_compare();
 							genas("push eax");
 							skip(","); //TODO: add error handler 
 						}
@@ -151,7 +151,7 @@ int32_t primExpr() {
 			}
 		}
 	} else if(skip("(")) {
-    if(isassign()) assignment(); else relExpr();
+    if(isassign()) assignment(); else expr_compare();
 		if(!skip(")"))
 		 error("error: %d: expected expression ')'", tok.tok[tok.pos].nline);
   }
@@ -170,7 +170,7 @@ int32_t isIndex() {
 
 int make_index() {
 	genas("mov ecx eax");
-	skip("["); relExpr(); skip("]");
+	skip("["); expr_compare(); skip("]");
 	genCode(0x8b); genCode(0x04); genCode(0x81); // mov eax [eax * 4 + ecx]
 	return 0;
 }

@@ -82,7 +82,7 @@ int32_t make_break() {
 }
 
 int32_t make_return() {
-	relExpr(); // get argument
+	expr_compare(); // get argument
 	genCode(0xe9); // jmp
 	rets.addr = (uint32_t*)realloc(rets.addr, 4 * (rets.count + 1));
 	if(rets.addr == NULL) error("LitSystemError: no enough memory");
@@ -146,7 +146,7 @@ int expression(int pos, int status) {
 				genCodeInt32(0x00); // mov eax string_address
 				isstring = 1;
 			} else {
-				relExpr();
+				expr_compare();
 			}
 			genas("push eax");
 			if(isstring) {
@@ -169,7 +169,7 @@ int expression(int pos, int status) {
 		if(skip(",")) {
 			uint32_t a = 4;
 			do {
-				relExpr();
+				expr_compare();
 				genCode(0x89); genCode(0x44); genCode(0x24); genCode(a); // mov [esp+a], eax
 				a += 4;
 			} while(skip(","));
@@ -193,7 +193,7 @@ int expression(int pos, int status) {
 		int32_t endif, end;
 		genCode(0xe9); endif = ntvCount; genCodeInt32(0);// jmp while end
 		genCodeInt32Insert(ntvCount - pos - 4, pos);
-		relExpr(); // if condition
+		expr_compare(); // if condition
 		genCode(0x83); genCode(0xf8); genCode(0x00);// cmp eax, 0
 		genCode(0x75); genCode(0x05); // jne 5
 		genCode(0xe9); end = ntvCount; genCodeInt32(0);// jmp while end
@@ -209,7 +209,7 @@ int expression(int pos, int status) {
 		} else if(status == BLOCK_FUNC) functions.inside = IN_GLOBAL;
 		return 1;
 	} else if(!skip(";")) {
-		relExpr();
+		expr_compare();
 	}
 
 	return 0;
@@ -256,7 +256,7 @@ int32_t parser() {
 
 int ifStmt() {
 	uint32_t end;
-	relExpr(); // if condition
+	expr_compare(); // if condition
 	genCode(0x83); genCode(0xf8); genCode(0x00);// cmp eax, 0
 	genCode(0x75); genCode(0x05); // jne 5
 	genCode(0xe9); end = ntvCount; genCodeInt32(0);// jmp
@@ -265,7 +265,7 @@ int ifStmt() {
 
 int whileStmt() {
 	uint32_t loopBgn = ntvCount, end, stepBgn[2], stepOn = 0;
-	relExpr(); // condition
+	expr_compare(); // condition
 	if(skip(",")) {
 		stepOn = 1;
 		stepBgn[0] = tok.pos;
@@ -374,12 +374,12 @@ int32_t assignment() {
 	
 	if(v->loctype == V_LOCAL) {
 		if(skip("[")) { // Array?
-			relExpr();
+			expr_compare();
 			genas("push eax");
 			skip("]");
 			if(isIndex()) make_index();
 			if(skip("=")) {
-				relExpr();
+				expr_compare();
 				genCode(0x8b); genCode(0x4d);
 				genCode(256 -
 					(v->type == T_INT ? sizeof(int32_t) :
@@ -396,7 +396,7 @@ int32_t assignment() {
 			} else error("error: %d: invalid assignment", tok.tok[tok.pos].nline);
 		} else { // Scalar?
 			if(skip("=")) {
-				relExpr();
+				expr_compare();
 			} else if((inc=skip("++")) || (dec=skip("--"))) {
 				genCode(0x8b); genCode(0x45);
 				genCode(256 -
@@ -422,10 +422,10 @@ int32_t assignment() {
 			}
 		} else {
 			if(skip("[")) { // Array?
-				relExpr();
+				expr_compare();
 				genas("push eax");
 				if(skip("]") && skip("=")) {
-					relExpr();
+					expr_compare();
 					genCode(0x8b); genCode(0x0d); genCodeInt32(v->id); // mov ecx GLOBAL_ADDR
 					genas("pop edx");
 					if(v->type == T_INT) {
@@ -435,7 +435,7 @@ int32_t assignment() {
 					}
 				} else error("error: %d: invalid assignment", tok.tok[tok.pos].nline);
 			} else if(skip("=")) {
-				relExpr();
+				expr_compare();
 				genCode(0xa3); genCodeInt32(v->id); // mov GLOBAL_ADDR eax
 			} else if((inc=skip("++")) || (dec=skip("--"))) {
 				genCode(0xa1); genCodeInt32(v->id);// mov eax GLOBAL_ADDR
