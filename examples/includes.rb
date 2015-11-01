@@ -130,14 +130,36 @@ module IO
 	end
 end
 
+# File module
+
+module File
+	$fp = 0
+
+	def open(name:string, mode:string)
+		fp = fopen(name, mode)
+	end
+	def close
+		fclose(fp)
+	end
+
+	def write(str:string)
+		fprintf(fp, str)
+	end
+	def read(buf:string, size)
+		pos:string = buf
+		while fgets(pos, size, fp) != NULL
+			pos = buf + String.length(buf)
+		end
+		buf
+	end
+end
+
 # Main 
 
 buf:string = Array(32)
-IO.input(buf)
-len = String.atoi(buf)
 
-for i = 0, i < 8, i++
-	SecureRandomString(buf, len)
-	printf "%s\n", buf
-end
+File.open("includes.rb.test", "a+")
+File.read(buf, 32)
+printf "%s", buf
+File.close()
 

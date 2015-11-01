@@ -64,6 +64,8 @@ int make_return();
 
 int isassign();
 int assignment();
+int assignment_single(Variable *);
+int assignment_array(Variable *);
 Variable *declareVariable();
 
 char *replaceEscape(char *);

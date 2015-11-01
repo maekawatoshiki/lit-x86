@@ -358,7 +358,7 @@ re:
 	return 0;
 }
 
-int32_t assignment() {
+int assignment() {
 	char *name = tok.tok[tok.pos].val, *mod_name = "";
 	if(strcmp(tok.tok[tok.pos+1].val, ".") == 0) { // module's function or variable?
 		mod_name = tok.tok[tok.pos].val;
@@ -374,78 +374,102 @@ int32_t assignment() {
 	
 	if(v->loctype == V_LOCAL) {
 		if(skip("[")) { // Array?
-			expr_compare();
-			genas("push eax");
-			skip("]");
-			if(isIndex()) make_index();
-			if(skip("=")) {
-				expr_compare();
-				genCode(0x8b); genCode(0x4d);
-				genCode(256 -
-					(v->type == T_INT ? sizeof(int32_t) :
-						v->type == T_STRING ? sizeof(int32_t*) :
-						v->type == T_DOUBLE ? sizeof(double) : 4) * v->id); // mov ecx [ebp-n]
-				genas("pop edx");
-				if(v->type == T_INT) {
-					genCode(0x89); genCode(0x04); genCode(0x91); // mov [ecx+edx*4], eax
-				} else {
-					genCode(0x89); genCode(0x04); genCode(0x11); // mov [ecx+edx], eax
-				}
-			} else if((inc=skip("++")) || (dec=skip("--"))) {
-
-			} else error("error: %d: invalid assignment", tok.tok[tok.pos].nline);
+			assignment_array(v);
 		} else { // Scalar?
-			if(skip("=")) {
-				expr_compare();
-			} else if((inc=skip("++")) || (dec=skip("--"))) {
-				genCode(0x8b); genCode(0x45);
-				genCode(256 -
-					(v->type == T_INT ? sizeof(int32_t) :
-						v->type == T_STRING ? sizeof(int32_t*) :
-						v->type == T_DOUBLE ? sizeof(double) : 4) * v->id); // mov eax varaible
-				genas("push eax");
-				if(inc) genCode(0x40); // inc eax
-				else if(dec) genCode(0x48); // dec eax
-			}
-			genCode(0x89); genCode(0x45);
-			genCode(256 -
-				(v->type == T_INT ? sizeof(int32_t) :
-					v->type == T_STRING ? sizeof(int32_t*) :
-					v->type == T_DOUBLE ? sizeof(double) : 4) * v->id); // mov var eax
-			if(inc || dec) genas("pop eax");
+			assignment_single(v);
 		}
 	} else if(v->loctype == V_GLOBAL) {
-		if(declare) { // first declare for global variable?
+		if(declare) { // declare for global variable?
 			// assignment only int32_terger
 			if(skip("=")) {
-				unsigned *m = (unsigned *)v->id; *m = atoi(tok.tok[tok.pos++].val);
+				unsigned *m = (unsigned *)v->id; // v->id is gloval variable's address
+				*m = atoi(tok.tok[tok.pos++].val);
 			}
 		} else {
 			if(skip("[")) { // Array?
-				expr_compare();
-				genas("push eax");
-				if(skip("]") && skip("=")) {
-					expr_compare();
-					genCode(0x8b); genCode(0x0d); genCodeInt32(v->id); // mov ecx GLOBAL_ADDR
-					genas("pop edx");
-					if(v->type == T_INT) {
-						genCode(0x89); genCode(0x04); genCode(0x91); // mov [ecx+edx*4], eax
-					} else {
-						genCode(0x89); genCode(0x04); genCode(0x11); // mov [ecx+edx], eax
-					}
-				} else error("error: %d: invalid assignment", tok.tok[tok.pos].nline);
-			} else if(skip("=")) {
-				expr_compare();
-				genCode(0xa3); genCodeInt32(v->id); // mov GLOBAL_ADDR eax
-			} else if((inc=skip("++")) || (dec=skip("--"))) {
-				genCode(0xa1); genCodeInt32(v->id);// mov eax GLOBAL_ADDR
-				genas("push eax");
-				if(inc) genCode(0x40); // inc eax
-				else if(dec) genCode(0x48); // dec eax
-				genCode(0xa3); genCodeInt32(v->id); // mov GLOBAL_ADDR eax
-			}
-			if(inc || dec) genas("pop eax");
+				assignment_array(v);
+			} else assignment_single(v);
 		}
+	}
+	return 0;
+}
+
+int assignment_single(Variable *v) {
+	int inc = 0, dec = 0;
+
+	if(v->loctype == V_LOCAL) { // local single
+		if(skip("=")) {
+			expr_compare();
+		} else if((inc=skip("++")) || (dec=skip("--"))) {
+			genCode(0x8b); genCode(0x45);
+			genCode(256 -
+					(v->type == T_INT ? sizeof(int32_t) :
+					 v->type == T_STRING ? sizeof(int32_t*) :
+					 v->type == T_DOUBLE ? sizeof(double) : 4) * v->id); // mov eax varaible
+			genas("push eax");
+			if(inc) genCode(0x40); // inc eax
+			else if(dec) genCode(0x48); // dec eax
+		}
+		genCode(0x89); genCode(0x45);
+		genCode(256 -
+				(v->type == T_INT ? sizeof(int32_t) :
+				 v->type == T_STRING ? sizeof(int32_t*) :
+				 v->type == T_DOUBLE ? sizeof(double) : 4) * v->id); // mov var eax
+		if(inc || dec) genas("pop eax");
+	} else if(v->loctype == V_GLOBAL) { // global single
+		if(skip("=")) {
+			expr_compare();
+			genCode(0xa3); genCodeInt32(v->id); // mov GLOBAL_ADDR eax
+		} else if((inc=skip("++")) || (dec=skip("--"))) {
+			genCode(0xa1); genCodeInt32(v->id);// mov eax GLOBAL_ADDR
+			genas("push eax");
+			if(inc) genCode(0x40); // inc eax
+			else if(dec) genCode(0x48); // dec eax
+			genCode(0xa3); genCodeInt32(v->id); // mov GLOBAL_ADDR eax
+			genas("pop eax");
+		}
+	}
+	return 0;
+}
+
+int assignment_array(Variable *v) {
+	int inc = 0, dec = 0;
+
+	if(v->loctype == V_LOCAL) {
+		expr_compare();
+		genas("push eax");
+		skip("]");
+		if(isIndex()) make_index();
+		if(skip("=")) {
+			expr_compare();
+			genCode(0x8b); genCode(0x4d);
+			genCode(256 -
+					(v->type == T_INT ? sizeof(int32_t) :
+					 v->type == T_STRING ? sizeof(int32_t*) :
+					 v->type == T_DOUBLE ? sizeof(double) : 4) * v->id); // mov ecx [ebp-n]
+			genas("pop edx");
+			if(v->type == T_INT) {
+				genCode(0x89); genCode(0x04); genCode(0x91); // mov [ecx+edx*4], eax
+			} else {
+				genCode(0x89); genCode(0x04); genCode(0x11); // mov [ecx+edx], eax
+			}
+		} else if((inc=skip("++")) || (dec=skip("--"))) {
+
+		} else error("error: %d: invalid assignment", tok.tok[tok.pos].nline);
+	} else if(v->loctype == V_GLOBAL) {
+		expr_compare();
+		genas("push eax");
+		skip("]");
+		if(skip("=")) {
+			expr_compare();
+			genCode(0x8b); genCode(0x0d); genCodeInt32(v->id); // mov ecx GLOBAL_ADDR
+			genas("pop edx");
+			if(v->type == T_INT) {
+				genCode(0x89); genCode(0x04); genCode(0x91); // mov [ecx+edx*4], eax
+			} else {
+				genCode(0x89); genCode(0x04); genCode(0x11); // mov [ecx+edx], eax
+			}
+		} else error("error: %d: invalid assignment", tok.tok[tok.pos].nline);
 	}
 
 	return 0;
