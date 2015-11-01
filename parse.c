@@ -436,11 +436,14 @@ int assignment_array(Variable *v) {
 	int inc = 0, dec = 0;
 
 	if(v->loctype == V_LOCAL) {
+		
 		expr_compare();
 		genas("push eax");
 		skip("]");
-		if(isIndex()) make_index();
+		while(isIndex()) make_index();
+
 		if(skip("=")) {
+
 			expr_compare();
 			genCode(0x8b); genCode(0x4d);
 			genCode(256 -
@@ -453,14 +456,18 @@ int assignment_array(Variable *v) {
 			} else {
 				genCode(0x89); genCode(0x04); genCode(0x11); // mov [ecx+edx], eax
 			}
+		
 		} else if((inc=skip("++")) || (dec=skip("--"))) {
 
-		} else error("error: %d: invalid assignment", tok.tok[tok.pos].nline);
+		} else 
+			error("error: %d: invalid assignment", tok.tok[tok.pos].nline);
 	} else if(v->loctype == V_GLOBAL) {
+
 		expr_compare();
 		genas("push eax");
 		skip("]");
 		if(skip("=")) {
+
 			expr_compare();
 			genCode(0x8b); genCode(0x0d); genCodeInt32(v->id); // mov ecx GLOBAL_ADDR
 			genas("pop edx");
@@ -469,7 +476,11 @@ int assignment_array(Variable *v) {
 			} else {
 				genCode(0x89); genCode(0x04); genCode(0x11); // mov [ecx+edx], eax
 			}
-		} else error("error: %d: invalid assignment", tok.tok[tok.pos].nline);
+		
+		} else if((inc=skip("++")) || (dec=skip("--"))) {
+
+		} else
+			error("error: %d: invalid assignment", tok.tok[tok.pos].nline);
 	}
 
 	return 0;
