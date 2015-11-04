@@ -49,6 +49,22 @@ def sum(n)
   sm
 	# "return sm" is OK
 end
+
+# create module(namespace)
+module Say
+  $v = 100
+  def hello
+    puts "hello"
+  end
+  def bye
+    puts "bye"
+  end
+  def get_v
+    v
+  end
+end
+
+Say.hello()
 ```
 
 - Fibonacci
