@@ -45,13 +45,26 @@ void ssleep(uint32_t t) {
 }
 
 void appendAddr(int32_t addr) {
-	mem.addr[mem.count++] = addr;
+	mem.addr[mem.count] = addr;
+	mem.isfree[mem.count++] = 0;
+}
+
+void freeInProgram(uint32_t addr) {
+	for(int i = 0; i < mem.count; i++) {
+		if(mem.addr[i] == addr) {
+			free(mem.addr[i]);
+			mem.addr[i] = 0;
+			mem.isfree[i] = 1;
+		}
+	}
 }
 
 void freeAddr() {
 	if(mem.count > 0) {
 		for(--mem.count; mem.count >= 0; --mem.count) {
-			free((void *)mem.addr[mem.count]);
+			if(mem.isfree[mem.count] == 0) {
+				free((void *)mem.addr[mem.count]);
+			}
 		}
 		mem.count = 0;
 	}
@@ -89,7 +102,7 @@ void *funcTable[] = {
 	(void *) fprintf, 	// 36
 	(void *) fclose,		// 40
 	(void *) fgets,			// 44
-	(void *) free, 			// 48
+	(void *) freeInProgram,// 48
 	(void *) freeAddr,	// 52
 };
 

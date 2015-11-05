@@ -82,10 +82,11 @@ int execute(char *);
 
 struct {
 	uint32_t addr[0xff];
-	int count;
+	int count, isfree[0xff];
 } mem;
 
 void freeAddr();
+void freeInProgram();
 void putNumber(int);
 void putString(int *);
 void putln();
