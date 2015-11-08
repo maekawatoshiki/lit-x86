@@ -158,7 +158,7 @@ end
 
 buf:string = Array(32)
 
-File.open("includes.rb.test", "a+")
+File.open("includes.rb.test", "r")
 File.read(buf, 32)
 printf "%s", buf
 File.close()
