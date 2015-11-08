@@ -115,6 +115,8 @@ int genas(char *s, ...) {
 		if(isalpha(*nem[1])) { // register?
 			genCode(0x58 + regBit(nem[1]));
 		}
+	} else if(strcmp(nem[0], "call") == 0) {
+		genCode(0xe8); genCodeInt32(atoi(nem[1]));
 	}
 
 	va_end(args);

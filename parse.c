@@ -5,6 +5,8 @@ int blocksCount;
 extern unsigned char *ntvCode;
 extern int ntvCount;
 
+void skip_tok() { tok.pos++; }
+
 int32_t getString() {
 	strings.text[ strings.count ] = (char *)
 		calloc(sizeof(char), strlen(tok.tok[tok.pos].val) + 1);

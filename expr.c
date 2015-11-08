@@ -124,9 +124,9 @@ int32_t expr_primary() {
 			} else if(skip("(")) { // Function?
 				if(!make_stdfunc(name)) {	// standard function
 					func_t *function = getFunction(name, mod_name);
-					if(function == NULL) function = getFunction(name, module);
-					
-					printf("addr: %d\n", function->address);
+
+					if(function == NULL) 
+						function = getFunction(name, module);
 					if(isalpha(tok.tok[tok.pos].val[0]) || isdigit(tok.tok[tok.pos].val[0]) ||
 						!strcmp(tok.tok[tok.pos].val, "\"") || !strcmp(tok.tok[tok.pos].val, "(")) { // has arg?
 						for(int i = 0; i < function->params; i++) {
@@ -140,16 +140,19 @@ int32_t expr_primary() {
 				}
 				if(!skip(")")) error("func: error: %d: expected expression ')'", tok.tok[tok.pos].nline);
 			} else {
+
 				v = getVariable(name, mod_name);
-				if(v == NULL) v = getVariable(name, module);
+				if(v == NULL) 
+					v = getVariable(name, module);
 				if(v == NULL)
 					error("var: error: %d: '%s' was not declared", tok.tok[tok.pos].nline, name);
 				if(v->loctype == V_LOCAL) {
 					genCode(0x8b); genCode(0x45);
-					genCode(256 - sizeof(int32_t) * v->id); // mov eax variable
+					genCode(256 - sizeof(uint32_t) * v->id); // mov eax variable
 				} else if(v->loctype == V_GLOBAL) {
 					genCode(0xa1); genCodeInt32(v->id); // mov eax GLOBAL_ADDR
 				}
+
 			}
 		}
 	} else if(skip("(")) {
@@ -164,7 +167,7 @@ int32_t expr_primary() {
 }
 
 int32_t isIndex() {
-	if(strcmp(tok.tok[tok.pos].val, "[") == 0) {
+	if(!strcmp(tok.tok[tok.pos].val, "[")) {
 		return 1;
 	}
 	return 0;

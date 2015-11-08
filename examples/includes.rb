@@ -158,8 +158,11 @@ end
 
 buf:string = Array(32)
 
-File.open("includes.rb.test", "r")
-File.read(buf, 32)
-printf "%s", buf
-File.close()
+if File.open("includes.rb.test", "r+") == NULL
+	puts "Error: not found file"
+else 
+	File.read(buf, 32)
+	printf "%s", buf
+	File.close()
+end
 

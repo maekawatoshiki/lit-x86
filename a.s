@@ -32,3 +32,4 @@ _start:
 	and eax, ebx
 	or eax, ebx
 	movsd xmm0, xmm1
+	mov eax, 1000

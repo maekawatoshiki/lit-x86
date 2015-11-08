@@ -12,7 +12,7 @@ int lex(char *code) {
 			for(; isdigit(code[i]); i++)
 				strncat(tok.tok[tok.pos].val, &(code[i]), 1);
 			tok.tok[tok.pos].nline = line;
-      i--; tok.pos++;
+      i--; skip_tok();
     
 		} else if(isalpha(code[i])) { // ident?
 		
@@ -20,7 +20,7 @@ int lex(char *code) {
       for(; isalpha(code[i]) || isdigit(code[i]) || code[i] == '_'; i++)
         *str++ = code[i];
       tok.tok[tok.pos].nline = line;
-      i--; tok.pos++;
+      i--; skip_tok();
     
 		} else if(code[i] == ' ' || code[i] == '\t') { // space char?
     } else if(code[i] == '#') { // comment?
@@ -35,13 +35,13 @@ int lex(char *code) {
 				strncat(tok.tok[tok.pos].val, &(code[i]), 1);
 			tok.tok[tok.pos].nline = line;
 			if(code[i] == '\0') error("error: %d: expected expression '\"'", tok.tok[tok.pos].nline);
-			tok.pos++;
+			skip_tok();
 	
 		} else if(code[i] == '\n' || (iswindows=(code[i] == '\r' && code[i+1] == '\n'))) {
 			
 			i += iswindows;
 			strcpy(tok.tok[tok.pos].val, ";");
-			tok.tok[tok.pos].nline = line++; tok.pos++;
+			tok.tok[tok.pos].nline = line++; skip_tok();
 		
 		} else {
 		

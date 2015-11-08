@@ -40,6 +40,8 @@ struct {
 	int count;
 } strings;
 
+void skip_tok();
+
 int ifStmt();
 int whileStmt();
 int functionStmt();
