@@ -7,6 +7,7 @@
 #include "parse.h"
 #include "stdfunc.h"
 
+int expr_entry();
 int expr_compare();
 int expr_logic();
 int expr_add_sub();

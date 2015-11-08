@@ -39,9 +39,11 @@ enum {
 };
 
 enum {
-	BLOCK_LOOP = 1,
-	BLOCK_FUNC ,
-	BLOCK_GLOBAL
+	BLOCK_NORMAL = 0,
+	BLOCK_LOOP,
+	BLOCK_FUNC,
+	BLOCK_GLOBAL,
+	NON
 };
 
 typedef struct {

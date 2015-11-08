@@ -3,6 +3,8 @@
 extern char *module;
 extern int ntvCount;
 
+int expr_entry() { return expr_compare(); }
+
 int32_t expr_compare() {
 	int andop=0, orop=0;
 	expr_logic();
@@ -127,14 +129,14 @@ int32_t expr_primary() {
 					printf("addr: %d\n", function->address);
 					if(isalpha(tok.tok[tok.pos].val[0]) || isdigit(tok.tok[tok.pos].val[0]) ||
 						!strcmp(tok.tok[tok.pos].val, "\"") || !strcmp(tok.tok[tok.pos].val, "(")) { // has arg?
-						for(int i = 0; i < function->args; i++) {
+						for(int i = 0; i < function->params; i++) {
 							expr_compare();
 							genas("push eax");
 							skip(","); //TODO: add error handler 
 						}
 					}
 					genCode(0xe8); genCodeInt32(0xFFFFFFFF - (ntvCount - function->address) - 3); // call func
-					genas("add esp %d", function->args * sizeof(int32_t));
+					genas("add esp %d", function->params * sizeof(int32_t));
 				}
 				if(!skip(")")) error("func: error: %d: expected expression ')'", tok.tok[tok.pos].nline);
 			} else {

@@ -64,9 +64,9 @@ func_t *getFunction(char *name, char *mod_name) {
 	return NULL;
 }
 
-func_t *appendFunction(char *name, int address, int args) {
+func_t *appendFunction(char *name, int address, int params) {
 	functions.func[functions.count].address = address;
-	functions.func[functions.count].args = args;
+	functions.func[functions.count].params = params;
 	strcpy(functions.func[functions.count].mod_name, module);
 	printf("%s:%s\n", functions.func[functions.count].mod_name, name);
 	strcpy(functions.func[functions.count].name, name);
@@ -110,17 +110,23 @@ int32_t error(char *errs, ...) {
 int expression(int pos, int status) {
 	int isputs = 0;
 
-	if(skip("$")) { // global varibale?
+	if(skip("$")) { // global varibale
+
 		if(isassign()) assignment();
+
 	} else if(skip("def")) { blocksCount++;
+
 		functionStmt();
+
 	} else if(skip("module")) { blocksCount++;
+
 		module = tok.tok[tok.pos++].val;
 		eval(0, NON);
 		module = "";
 	} else if(functions.inside == IN_GLOBAL && strcmp("def", tok.tok[tok.pos+1].val) && 
 			strcmp("module", tok.tok[tok.pos+1].val) && strcmp("$", tok.tok[tok.pos+1].val) && 
 			strcmp(";", tok.tok[tok.pos+1].val)) {	// main function entry
+
 		functions.inside = IN_FUNC;
 		functions.now++;
 		appendFunction("main", ntvCount, 0); // append function
@@ -136,9 +142,13 @@ int expression(int pos, int status) {
 		genCode(0xc3);// ret
 		genCodeInt32Insert(sizeof(int32_t) * (locVar.size[functions.now] + 6), espBgn);
 		functions.inside = IN_GLOBAL;
+	
 	} else if(isassign()) {
+	
 		assignment();
+	
 	} else if((isputs=skip("puts")) || skip("output")) {
+	
 		do {
 			int isstring = 0;
 			if(skip("\"")) {
@@ -160,7 +170,9 @@ int expression(int pos, int status) {
 		if(isputs) {
 			genCode(0xff); genCode(0x56); genCode(8);// call *0x08(esi) putLN
 		}
+
 	} else if(skip("printf")) {
+	
 		if(skip("\"")) {
 			genCode(0xb8); getString();
 			genCodeInt32(0x00); // mov eax string_address
@@ -175,21 +187,33 @@ int expression(int pos, int status) {
 			} while(skip(","));
 		}
 		genCode(0xff); genCode(0x56); genCode(12 + 8); // call printf
+	
 	} else if(skip("for")) { blocksCount++;
+	
 		assignment(); skip(","); whileStmt();
+	
 	} else if(skip("while")) { blocksCount++;
+	
 		whileStmt();
+	
 	} else if(skip("return")) {
+	
 		make_return();
+	
 	} else if(skip("if")) {
+	
 		ifStmt();
+
 	} else if(skip("else")) {
+	
 		int32_t end;
 		genCode(0xe9); end = ntvCount; genCodeInt32(0);// jmp while end
 		genCodeInt32Insert(ntvCount - pos - 4, pos);
 		eval(end, BLOCK_NORMAL);
 		return 1;
+
 	} else if(skip("elsif")) {
+	
 		int32_t endif, end;
 		genCode(0xe9); endif = ntvCount; genCodeInt32(0);// jmp while end
 		genCodeInt32Insert(ntvCount - pos - 4, pos);
@@ -200,16 +224,21 @@ int expression(int pos, int status) {
 		eval(end, BLOCK_NORMAL);
 		genCodeInt32Insert(ntvCount - endif - 4, endif);
 		return 1;
+
 	} else if(skip("break")) {
+	
 		make_break();
+	
 	} else if(skip("end")) { blocksCount--;
+	
 		if(status == NON) return 1;
 		if(status == BLOCK_NORMAL) {
 			genCodeInt32Insert(ntvCount - pos - 4, pos);
 		} else if(status == BLOCK_FUNC) functions.inside = IN_GLOBAL;
 		return 1;
+	
 	} else if(!skip(";")) {
-		expr_compare();
+		expr_entry();
 	}
 
 	return 0;
@@ -297,35 +326,41 @@ int whileStmt() {
 }
 
 int32_t functionStmt() {
-	int32_t espBgn, argsc = 0;
+	int32_t espBgn, params = 0;
 	char *funcName = tok.tok[tok.pos++].val;
+
 	functions.now++; functions.inside = IN_FUNC;
-	if(skip("(")) {
-		do { declareVariable(); tok.pos++; argsc++; } while(skip(","));
+	if(skip("(")) { // get params
+		do { declareVariable(); tok.pos++; params++; } while(skip(","));
 		skip(")");
 	}
-	appendFunction(funcName, ntvCount, argsc); // append function
+	appendFunction(funcName, ntvCount, params); // append function
 	genas("push ebp");
 	genas("mov ebp esp");
 	espBgn = ntvCount + 2; genas("sub esp 0"); // align
-	int32_t argpos[128], i; for(i = 0; i < argsc; i++) {
-		genCode(0x8b); genCode(0x45); genCode(0x08 + (argsc - i - 1) * sizeof(int32_t));
+	
+	uint32_t pos_save[128], i; 
+	for(i = 0; i < params; i++) {
+		genCode(0x8b); genCode(0x45); 
+		genCode(0x08 + (params - i - 1) * sizeof(int32_t));
 		genCode(0x89); genCode(0x44); genCode(0x24);
-		argpos[i] = ntvCount; genCode(0x00);
+		pos_save[i] = ntvCount; genCode(0x00);
 	}
+
 	eval(0, BLOCK_FUNC);
 
 	for(--rets.count; rets.count >= 0; --rets.count) {
 		genCodeInt32Insert(ntvCount - rets.addr[rets.count] - 4, rets.addr[rets.count]);
 	} rets.count = 0;
 
-	genas("add esp %u", sizeof(int32_t) * (locVar.size[functions.now] + 6)); // add esp nn
+	genas("add esp %u", sizeof(uint32_t) * (locVar.size[functions.now] + 6)); // add esp nn
 	genCode(0xc9);// leave
 	genCode(0xc3);// ret
 
-	genCodeInt32Insert(sizeof(int32_t) * (locVar.size[functions.now] + 6), espBgn);
-	for(i = 1; i <= argsc; i++) {
-		ntvCode[argpos[i - 1]] = 256 - sizeof(int32_t) * i + (((locVar.size[functions.now] + 6) * sizeof(int32_t)) - 4);
+	genCodeInt32Insert(sizeof(uint32_t) * (locVar.size[functions.now] + 6), espBgn);
+	for(i = 1; i <= params; i++) {
+		ntvCode[pos_save[i - 1]] = 
+			256 - sizeof(uint32_t) * i + (((locVar.size[functions.now] + 6) * sizeof(uint32_t)) - 4);
 	}
 
 	printf("%s() has %u functions or variables\n", funcName, locVar.size[functions.now] * sizeof(int32_t));
