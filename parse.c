@@ -84,7 +84,7 @@ int32_t make_break() {
 }
 
 int32_t make_return() {
-	expr_compare(); // get argument
+	expr_entry(); // get argument
 	genCode(0xe9); // jmp
 	rets.addr = (uint32_t*)realloc(rets.addr, 4 * (rets.count + 1));
 	if(rets.addr == NULL) error("LitSystemError: no enough memory");
@@ -118,7 +118,7 @@ int expression(int pos, int status) {
 
 	} else if(skip("def")) { blocksCount++;
 
-		functionStmt();
+		make_function();
 
 	} else if(skip("module")) { blocksCount++;
 
@@ -158,7 +158,7 @@ int expression(int pos, int status) {
 				genCodeInt32(0x00); // mov eax string_address
 				isstring = 1;
 			} else {
-				expr_compare();
+				expr_entry();
 			}
 			genas("push eax");
 			if(isstring) {
@@ -183,7 +183,7 @@ int expression(int pos, int status) {
 		if(skip(",")) {
 			uint32_t a = 4;
 			do {
-				expr_compare();
+				expr_entry();
 				genCode(0x89); genCode(0x44); genCode(0x24); genCode(a); // mov [esp+a], eax
 				a += 4;
 			} while(skip(","));
@@ -192,11 +192,11 @@ int expression(int pos, int status) {
 	
 	} else if(skip("for")) { blocksCount++;
 	
-		assignment(); skip(","); whileStmt();
+		assignment(); skip(","); make_while();
 	
 	} else if(skip("while")) { blocksCount++;
 	
-		whileStmt();
+		make_while();
 	
 	} else if(skip("return")) {
 	
@@ -204,7 +204,7 @@ int expression(int pos, int status) {
 	
 	} else if(skip("if")) {
 	
-		ifStmt();
+		make_if();
 
 	} else if(skip("else")) {
 	
@@ -219,7 +219,7 @@ int expression(int pos, int status) {
 		int32_t endif, end;
 		genCode(0xe9); endif = ntvCount; genCodeInt32(0);// jmp while end
 		genCodeInt32Insert(ntvCount - pos - 4, pos);
-		expr_compare(); // if condition
+		expr_entry(); // if condition
 		genCode(0x83); genCode(0xf8); genCode(0x00);// cmp eax, 0
 		genCode(0x75); genCode(0x05); // jne 5
 		genCode(0xe9); end = ntvCount; genCodeInt32(0);// jmp while end
@@ -285,18 +285,18 @@ int32_t parser() {
 
 
 
-int ifStmt() {
+int make_if() {
 	uint32_t end;
-	expr_compare(); // if condition
+	expr_entry(); // if condition
 	genCode(0x83); genCode(0xf8); genCode(0x00);// cmp eax, 0
 	genCode(0x75); genCode(0x05); // jne 5
 	genCode(0xe9); end = ntvCount; genCodeInt32(0);// jmp
 	return eval(end, BLOCK_NORMAL);
 }
 
-int whileStmt() {
+int make_while() {
 	uint32_t loopBgn = ntvCount, end, stepBgn[2], stepOn = 0;
-	expr_compare(); // condition
+	expr_entry(); // condition
 	if(skip(",")) {
 		stepOn = 1;
 		stepBgn[0] = tok.pos;
@@ -327,7 +327,7 @@ int whileStmt() {
 	return 0;
 }
 
-int32_t functionStmt() {
+int32_t make_function() {
 	int32_t espBgn, params = 0;
 	char *funcName = tok.tok[tok.pos++].val;
 
@@ -436,7 +436,7 @@ int assignment_single(Variable *v) {
 
 	if(v->loctype == V_LOCAL) { // local single
 		if(skip("=")) {
-			expr_compare();
+			expr_entry();
 		} else if((inc=skip("++")) || (dec=skip("--"))) {
 			genCode(0x8b); genCode(0x45);
 			genCode(256 -
@@ -455,7 +455,7 @@ int assignment_single(Variable *v) {
 		if(inc || dec) genas("pop eax");
 	} else if(v->loctype == V_GLOBAL) { // global single
 		if(skip("=")) {
-			expr_compare();
+			expr_entry();
 			genCode(0xa3); genCodeInt32(v->id); // mov GLOBAL_ADDR eax
 		} else if((inc=skip("++")) || (dec=skip("--"))) {
 			genCode(0xa1); genCodeInt32(v->id);// mov eax GLOBAL_ADDR
@@ -473,19 +473,17 @@ int assignment_array(Variable *v) {
 	int inc = 0, dec = 0;
 
 	if(v->loctype == V_LOCAL) {
-		
-		expr_compare();
+		expr_entry();
 		genas("push eax");
-		skip("]");
+		if(!skip("]")) error("error: %d: ']' except", tok.tok[tok.pos].nline);
 		while(isIndex()) make_index();
 
 		if(skip("=")) {
-
-			expr_compare();
+			expr_entry();
 			genCode(0x8b); genCode(0x4d);
 			genCode(256 -
 					(v->type == T_INT ? sizeof(int32_t) :
-					 v->type == T_STRING ? sizeof(int32_t*) :
+					 v->type == T_STRING ? sizeof(uint32_t*) :
 					 v->type == T_DOUBLE ? sizeof(double) : 4) * v->id); // mov ecx [ebp-n]
 			genas("pop edx");
 			if(v->type == T_INT) {
@@ -493,19 +491,17 @@ int assignment_array(Variable *v) {
 			} else {
 				genCode(0x89); genCode(0x04); genCode(0x11); // mov [ecx+edx], eax
 			}
-		
 		} else if((inc=skip("++")) || (dec=skip("--"))) {
 
 		} else 
 			error("error: %d: invalid assignment", tok.tok[tok.pos].nline);
 	} else if(v->loctype == V_GLOBAL) {
-
-		expr_compare();
+		expr_entry();
 		genas("push eax");
 		skip("]");
 		if(skip("=")) {
 
-			expr_compare();
+			expr_entry();
 			genCode(0x8b); genCode(0x0d); genCodeInt32(v->id); // mov ecx GLOBAL_ADDR
 			genas("pop edx");
 			if(v->type == T_INT) {

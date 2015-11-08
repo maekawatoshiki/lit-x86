@@ -93,17 +93,21 @@ int32_t expr_primary() {
 		char *name = tok.tok[tok.pos].val, *mod_name = "";
 		Variable *v;
 
-		if(strcmp(tok.tok[tok.pos+1].val, ".") == 0) { mod_name = tok.tok[tok.pos].val; tok.pos += 2; name = tok.tok[tok.pos].val; }
+		if(strcmp(tok.tok[tok.pos+1].val, ".") == 0) { 
+			mod_name = tok.tok[tok.pos++].val; 
+			skip(".");
+			name = tok.tok[tok.pos].val; 
+		}
 
 		if(isassign()) assignment();
 		else {
-			tok.pos++;
+			skip_tok();
 			if(skip("[")) { // Array?
 				v = getVariable(name , mod_name);
 				if(v == NULL) v = getVariable(name, module);
 				if(v == NULL)
 					error("error: %d: '%s' was not declared", tok.tok[tok.pos].nline, name);
-				expr_compare();
+				expr_entry();
 				genas("mov ecx eax");
 
 				if(v->loctype == V_LOCAL) {
@@ -122,15 +126,17 @@ int32_t expr_primary() {
 					error("error: %d: expected expression ']'", tok.tok[tok.pos].nline);
 			
 			} else if(skip("(")) { // Function?
-				if(!make_stdfunc(name)) {	// standard function
+				int is_stdfunc = make_stdfunc(name); // make standard function
+				
+				if(!is_stdfunc) {	// user function
 					func_t *function = getFunction(name, mod_name);
 
 					if(function == NULL) 
 						function = getFunction(name, module);
 					if(isalpha(tok.tok[tok.pos].val[0]) || isdigit(tok.tok[tok.pos].val[0]) ||
 						!strcmp(tok.tok[tok.pos].val, "\"") || !strcmp(tok.tok[tok.pos].val, "(")) { // has arg?
-						for(int i = 0; i < function->params; i++) {
-							expr_compare();
+						for(size_t i = 0; i < function->params; i++) {
+							expr_entry();
 							genas("push eax");
 							skip(","); //TODO: add error handler 
 						}
@@ -140,7 +146,6 @@ int32_t expr_primary() {
 				}
 				if(!skip(")")) error("func: error: %d: expected expression ')'", tok.tok[tok.pos].nline);
 			} else {
-
 				v = getVariable(name, mod_name);
 				if(v == NULL) 
 					v = getVariable(name, module);
@@ -152,7 +157,6 @@ int32_t expr_primary() {
 				} else if(v->loctype == V_GLOBAL) {
 					genCode(0xa1); genCodeInt32(v->id); // mov eax GLOBAL_ADDR
 				}
-
 			}
 		}
 	} else if(skip("(")) {

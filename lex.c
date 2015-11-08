@@ -1,16 +1,17 @@
 #include "lex.h"
 
 int lex(char *code) {
-  size_t codeSize = strlen(code), line = 1;
+  size_t code_sz = strlen(code), line = 1;
 	int iswindows = 0;
 
-	for(int i = 0; i < codeSize; i++) {
+	for(size_t i = 0; i < code_sz; i++) {
  		if(tok.size <= i) tok.tok = (Token *)realloc(tok.tok, (tok.size += 512 * sizeof(Token)));
 		
 		if(isdigit(code[i])) { // number?
     
+			char *str = tok.tok[tok.pos].val;
 			for(; isdigit(code[i]); i++)
-				strncat(tok.tok[tok.pos].val, &(code[i]), 1);
+				*str++ = code[i];
 			tok.tok[tok.pos].nline = line;
       i--; skip_tok();
     
@@ -31,8 +32,9 @@ int lex(char *code) {
 		
 			strcpy(tok.tok[tok.pos].val, "\"");
 			tok.tok[tok.pos++].nline = line;
+			char *str = tok.tok[tok.pos].val;
 			for(i++; code[i] != '"' && code[i] != '\0'; i++)
-				strncat(tok.tok[tok.pos].val, &(code[i]), 1);
+				*str++ = code[i];
 			tok.tok[tok.pos].nline = line;
 			if(code[i] == '\0') error("error: %d: expected expression '\"'", tok.tok[tok.pos].nline);
 			skip_tok();
@@ -51,7 +53,7 @@ int lex(char *code) {
 				(code[i]=='-' && code[i+1]=='-'))
 					strncat(tok.tok[tok.pos].val, &(code[++i]), 1);
 			tok.tok[tok.pos].nline = line;
-			tok.pos++;
+			skip_tok();
 
 		}
   }

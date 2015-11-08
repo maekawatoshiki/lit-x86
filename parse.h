@@ -42,9 +42,11 @@ struct {
 
 void skip_tok();
 
-int ifStmt();
-int whileStmt();
-int functionStmt();
+int make_if();
+int make_while();
+int make_function();
+int make_break();
+int make_return();
 
 int eval(int, int);
 int expression(int, int);
@@ -57,8 +59,6 @@ func_t *appendFunction(char *, int, int);
 
 Variable *getVariable(char *, char *);
 Variable *appendVariable(char *, int);
-int make_break();
-int make_return();
 
 int isassign();
 int assignment();

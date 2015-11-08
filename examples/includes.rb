@@ -50,6 +50,16 @@ module String
 		0
 	end
 
+	def ishex(c)
+		if 'A' <= c and c <= 'F'
+			return 1
+		end
+		if 'a' <= c and c <= 'f'
+			return 1
+		end
+		return isdigit(c)
+	end
+
 	def atoi(s:string)
 		sum = 0; n = 1
 		for l = 0, isdigit(s[l]) == 1, l++; n = n * 10; end
@@ -97,28 +107,46 @@ module Math
 		end
 		ret
 	end
+
+	def max(a, b)
+		if a < b
+			b
+		else
+			a
+		end
+	end
+
+	def min(a, b)
+		if a < b
+			a
+		else
+			b
+		end
+	end
 end
 
 # Secure
 
-def SecureRandomString(str:string, len)
-	stdin = fopen("/dev/urandom", "rb")
-	
-	bytes = 128
-	data:string = Array(bytes)
-	fgets(data, bytes, stdin)
-	chars = 0
-	for i = 0, i < bytes and chars < len, i++
-		if String.isalpha(data[i]) or String.isdigit(data[i])
-			str[chars++] = data[i]
+module SecureRandom
+	def hex(str:string, len)
+		stdin = fopen("/dev/urandom", "rb")
+
+		bytes = 128
+		data:string = Array(bytes)
+		fgets(data, bytes, stdin)
+		chars = 0
+		for i = 0, i < bytes and chars < len, i++
+			if String.ishex(data[i])
+				str[chars++] = data[i]
 		else
 			fgets(data, bytes, stdin)
 			i--
 		end
+		end
+		str[chars] = 0
+		str
 	end
-	str[chars] = 0
 end
-
 # I/O
 
 module IO
@@ -164,5 +192,10 @@ else
 	File.read(buf, 32)
 	printf "%s", buf
 	File.close()
+end
+
+puts "Test: SecureRandom module"
+for i = 0, i < 8, i++
+	printf "%s\n",  SecureRandom.hex(buf, 16)
 end
 
