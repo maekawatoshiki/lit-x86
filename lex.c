@@ -13,6 +13,7 @@ int lex(char *code) {
 			for(; isdigit(code[i]); i++)
 				*str++ = code[i];
 			tok.tok[tok.pos].nline = line;
+			tok.tok[tok.pos].type = TOK_NUMBER;
       i--; skip_tok();
     
 		} else if(isalpha(code[i])) { // ident?
@@ -21,6 +22,7 @@ int lex(char *code) {
       for(; isalpha(code[i]) || isdigit(code[i]) || code[i] == '_'; i++)
         *str++ = code[i];
       tok.tok[tok.pos].nline = line;
+			tok.tok[tok.pos].type = TOK_IDENT;
       i--; skip_tok();
     
 		} else if(code[i] == ' ' || code[i] == '\t') { // space char?
@@ -30,12 +32,11 @@ int lex(char *code) {
 		
 		} else if(code[i] == '"') { // string?
 		
-			strcpy(tok.tok[tok.pos].val, "\"");
-			tok.tok[tok.pos++].nline = line;
 			char *str = tok.tok[tok.pos].val;
 			for(i++; code[i] != '"' && code[i] != '\0'; i++)
 				*str++ = code[i];
 			tok.tok[tok.pos].nline = line;
+			tok.tok[tok.pos].type = TOK_STRING;
 			if(code[i] == '\0') error("error: %d: expected expression '\"'", tok.tok[tok.pos].nline);
 			skip_tok();
 	
@@ -43,6 +44,7 @@ int lex(char *code) {
 			
 			i += iswindows;
 			strcpy(tok.tok[tok.pos].val, ";");
+			tok.tok[tok.pos].type = TOK_END;
 			tok.tok[tok.pos].nline = line++; skip_tok();
 		
 		} else {
@@ -52,6 +54,7 @@ int lex(char *code) {
 				(code[i]=='+' && code[i+1]=='+') ||
 				(code[i]=='-' && code[i+1]=='-'))
 					strncat(tok.tok[tok.pos].val, &(code[++i]), 1);
+			tok.tok[tok.pos].type = TOK_SYMBOL;
 			tok.tok[tok.pos].nline = line;
 			skip_tok();
 
@@ -68,5 +71,3 @@ int lex(char *code) {
 
 	return 0;
 }
-
-

@@ -48,8 +48,9 @@ enum {
 
 typedef struct {
   char val[32];
-  int nline;
-} Token;
+	int type;
+	int nline;
+} Token; 
 
 struct {
 	Token *tok;

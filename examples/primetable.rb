@@ -1,20 +1,20 @@
-$a = 0
+$prime_list = 0
 
 def table(max)
 	for i = 0, i < max, i++
-  	a[i] = 0
+		prime_list[i] = 0
 	end
 	for i = 2, i * i < max, i++
-	  if a[i] == 0
+		if prime_list[i] == 0
 			for k = i * 2, k < max, k = k + i
-	      a[k] = 1
-	    end
-	  end
+				prime_list[k] = 1
+			end
+		end
 	end
 end
 
 def isprime(n)
-	if a[n]
+	if prime_list[n]
 		0
 	else
 		1
@@ -22,7 +22,7 @@ def isprime(n)
 end
 
 N = 1000000
-a = Array(N)
+prime_list = Array(N)
 
 table(N)
 

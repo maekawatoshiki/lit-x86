@@ -7,6 +7,9 @@
 #include "parse.h"
 #include "stdfunc.h"
 
+int is_string_tok();
+int is_number_tok();
+
 int expr_entry();
 int expr_compare();
 int expr_logic();

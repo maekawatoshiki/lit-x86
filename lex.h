@@ -7,6 +7,14 @@
 #include "parse.h"
 #include "stdfunc.h"
 
+enum {
+	TOK_SYMBOL,
+	TOK_IDENT,
+	TOK_NUMBER,
+	TOK_STRING,
+	TOK_END
+};
+
 int lex(char *);
 
 #endif

@@ -153,7 +153,7 @@ int expression(int pos, int status) {
 	
 		do {
 			int isstring = 0;
-			if(skip("\"")) {
+			if(is_string_tok()) {
 				genCode(0xb8); getString();
 				genCodeInt32(0x00); // mov eax string_address
 				isstring = 1;
@@ -175,7 +175,7 @@ int expression(int pos, int status) {
 
 	} else if(skip("printf")) {
 	
-		if(skip("\"")) {
+		if(is_string_tok()) {
 			genCode(0xb8); getString();
 			genCodeInt32(0x00); // mov eax string_address
 			genCode(0x89); genCode(0x44); genCode(0x24); genCode(0x00); // mov [esp+0], eax

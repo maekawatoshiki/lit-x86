@@ -158,6 +158,14 @@ module IO
 	end
 end
 
+# Time, Thread
+
+module Time
+	def sleep(sec)
+		sleep(sec)
+	end
+end
+
 # File module
 
 module File

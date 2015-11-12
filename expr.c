@@ -3,6 +3,9 @@
 extern char *module;
 extern int ntvCount;
 
+int is_string_tok() { return tok.tok[tok.pos].type == TOK_STRING; }
+int is_number_tok() { return tok.tok[tok.pos].type == TOK_NUMBER; }
+
 int expr_entry() { return expr_compare(); }
 
 int32_t expr_compare() {
@@ -81,12 +84,12 @@ int32_t expr_mul_div() {
 }
 
 int32_t expr_primary() {
-  if(isdigit(tok.tok[tok.pos].val[0])) { // number?
+  if(is_number_tok()) { // number?
     genas("mov eax %d", atoi(tok.tok[tok.pos++].val));
 	} else if(skip("'")) { // char?
 		genas("mov eax %d", tok.tok[tok.pos++].val[0]);
 		skip("'");
-	} else if(skip("\"")) { // string?
+	} else if(is_string_tok()) { // string?
 		genCode(0xb8); getString();
 		genCodeInt32(0x00); // mov eax string_address
   } else if(isalpha(tok.tok[tok.pos].val[0])) { // variable or inc or dec
@@ -134,7 +137,7 @@ int32_t expr_primary() {
 					if(function == NULL) 
 						function = getFunction(name, module);
 					if(isalpha(tok.tok[tok.pos].val[0]) || isdigit(tok.tok[tok.pos].val[0]) ||
-						!strcmp(tok.tok[tok.pos].val, "\"") || !strcmp(tok.tok[tok.pos].val, "(")) { // has arg?
+						is_string_tok() || !strcmp(tok.tok[tok.pos].val, "(")) { // has arg?
 						for(size_t i = 0; i < function->params; i++) {
 							expr_entry();
 							genas("push eax");
