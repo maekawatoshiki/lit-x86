@@ -47,8 +47,8 @@ int expr_logic() {
 	return 0;
 }
 
-int32_t expr_add_sub() {
-	int32_t add;
+int expr_add_sub() {
+	int add;
 	expr_mul_div();
 	while((add = skip("+")) || skip("-")) {
 		genas("push eax");
@@ -61,8 +61,8 @@ int32_t expr_add_sub() {
 	return 0;
 }
 
-int32_t expr_mul_div() {
-  int32_t mul, div;
+int expr_mul_div() {
+  int mul, div;
   expr_primary();
   while((mul = skip("*")) || (div=skip("/")) || skip("%")) {
 		genas("push eax");
@@ -83,7 +83,7 @@ int32_t expr_mul_div() {
 	return 0;
 }
 
-int32_t expr_primary() {
+int expr_primary() {
   if(is_number_tok()) { // number?
     genas("mov eax %d", atoi(tok.tok[tok.pos++].val));
 	} else if(skip("'")) { // char?
@@ -95,14 +95,14 @@ int32_t expr_primary() {
   } else if(isalpha(tok.tok[tok.pos].val[0])) { // variable or inc or dec
 		char *name = tok.tok[tok.pos].val, *mod_name = "";
 		Variable *v;
-
-		if(strcmp(tok.tok[tok.pos+1].val, ".") == 0) { 
+		
+		if(strcmp(tok.tok[tok.pos + 1].val, ".") == 0) { // module?
 			mod_name = tok.tok[tok.pos++].val; 
 			skip(".");
 			name = tok.tok[tok.pos].val; 
 		}
 
-		if(isassign()) assignment();
+		if(isassign()) {puts("assignmen");assignment();}
 		else {
 			skip_tok();
 			if(skip("[")) { // Array?
@@ -166,8 +166,8 @@ int32_t expr_primary() {
     if(isassign()) assignment(); else expr_compare();
 		if(!skip(")"))
 		 error("error: %d: expected expression ')'", tok.tok[tok.pos].nline);
-  }
-
+  } else if(skip(";") || 1) error("error: %d: invalid expression", tok.tok[tok.pos].nline);
+	
 	while(isIndex()) make_index();
 
 	return 0;

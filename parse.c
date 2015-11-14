@@ -34,7 +34,7 @@ Variable *getVariable(char *name, char *mod_name) {
 
 Variable *appendVariable(char *name, int type) {
 	if(functions.inside == IN_FUNC) {
-		int32_t sz = 1 + ++locVar.size[functions.now];
+		uint32_t sz = 1 + ++locVar.size[functions.now];
 		strcpy(locVar.var[functions.now][locVar.count].name, name);
 		locVar.var[functions.now][locVar.count].type = type;
 		locVar.var[functions.now][locVar.count].id = sz;
@@ -48,7 +48,7 @@ Variable *appendVariable(char *name, int type) {
 		gblVar.var[gblVar.count].type = type;
 		gblVar.var[gblVar.count].loctype = V_GLOBAL;
 		gblVar.var[gblVar.count].id = (uint32_t)&ntvCode[ntvCount];
-		ntvCount += sizeof(int32_t); // type
+		ntvCount += sizeof(uint32_t); // type
 
 		return &gblVar.var[gblVar.count++];
 	}
@@ -58,7 +58,7 @@ Variable *appendVariable(char *name, int type) {
 
 func_t *getFunction(char *name, char *mod_name) {
 	for(int i = 0; i < functions.count; i++) {
-		printf("%s %s >> %s : %s\n", mod_name, name, functions.func[i].mod_name, functions.func[i].name);
+		printf("%s : %s >> %s : %s\n", mod_name, name, functions.func[i].mod_name, functions.func[i].name);
 		if(strcmp(functions.func[i].name, name) == 0 && strcmp(functions.func[i].mod_name, mod_name) == 0) {
 			return &functions.func[i];
 		}
@@ -192,7 +192,9 @@ int expression(int pos, int status) {
 	
 	} else if(skip("for")) { blocksCount++;
 	
-		assignment(); skip(","); make_while();
+		assignment(); 
+		if(!skip(",")) error("error: %d: expected ','", tok.tok[tok.pos].nline);
+		make_while();
 	
 	} else if(skip("while")) { blocksCount++;
 	
@@ -302,17 +304,17 @@ int make_while() {
 		stepBgn[0] = tok.pos;
 		for(; tok.tok[tok.pos].val[0] != ';'; tok.pos++);
 	}
+	if(!skip(";")) error("error");
 	genCode(0x83); genCode(0xf8); genCode(0x00);// cmp eax, 0
 	genCode(0x75); genCode(0x05); // jne 5
 	genCode(0xe9); end = ntvCount; genCodeInt32(0);// jmp while end
 	
-	if(skip(".")) expression(0, BLOCK_LOOP);
-	else eval(0, BLOCK_LOOP);
+	eval(0, BLOCK_LOOP);
 
 	if(stepOn) {
 		stepBgn[1] = tok.pos;
 		tok.pos = stepBgn[0];
-		if(isassign()) assignment();
+		expr_entry();
 		tok.pos = stepBgn[1];
 	}
 	uint32_t n = 0xFFFFFFFF - ntvCount + loopBgn - 4;
@@ -322,7 +324,6 @@ int make_while() {
 	for(--brks.count; brks.count >= 0; brks.count--) {
 		genCodeInt32Insert(ntvCount - brks.addr[brks.count] - 4, brks.addr[brks.count]);
 	} brks.count = 0;
-
 
 	return 0;
 }

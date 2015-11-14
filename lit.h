@@ -34,6 +34,10 @@
 #endif
 
 enum {
+	ADDR_SIZE = 4
+};
+
+enum {
 	IN_FUNC = 1,
 	IN_GLOBAL = 0
 };

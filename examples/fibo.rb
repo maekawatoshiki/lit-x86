@@ -3,7 +3,7 @@ def fibo(n)
 		1
 	else
 		fibo(n - 1) + fibo(n - 2)
-	end
+	end		
 end
 
 puts fibo(30)
