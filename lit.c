@@ -52,7 +52,7 @@ void appendAddr(int32_t addr) {
 void freeInProgram(uint32_t addr) {
 	for(int i = 0; i < mem.count; i++) {
 		if(mem.addr[i] == addr) {
-			free(mem.addr[i]);
+			free((int *)mem.addr[i]);
 			mem.addr[i] = 0;
 			mem.isfree[i] = 1;
 		}

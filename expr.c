@@ -109,7 +109,7 @@ int expr_primary() {
 				v = getVariable(name , mod_name);
 				if(v == NULL) v = getVariable(name, module);
 				if(v == NULL)
-					error("error: %d: '%s' was not declared", tok.tok[tok.pos].nline, name);
+					error("error: %d: '%s' was not declare", tok.tok[tok.pos].nline, name);
 				expr_entry();
 				genas("mov ecx eax");
 
@@ -138,11 +138,13 @@ int expr_primary() {
 						function = getFunction(name, module);
 					if(isalpha(tok.tok[tok.pos].val[0]) || isdigit(tok.tok[tok.pos].val[0]) ||
 						is_string_tok() || !strcmp(tok.tok[tok.pos].val, "(")) { // has arg?
+
 						for(size_t i = 0; i < function->params; i++) {
 							expr_entry();
 							genas("push eax");
-							skip(","); //TODO: add error handler 
+							if(!skip(",") && function->params - 1 != i) error("error: %d: expected ','", tok.tok[tok.pos].nline);
 						}
+
 					}
 					genCode(0xe8); genCodeInt32(0xFFFFFFFF - (ntvCount - function->address) - 3); // call func
 					genas("add esp %d", function->params * sizeof(int32_t));
@@ -153,7 +155,7 @@ int expr_primary() {
 				if(v == NULL) 
 					v = getVariable(name, module);
 				if(v == NULL)
-					error("var: error: %d: '%s' was not declared", tok.tok[tok.pos].nline, name);
+					error("var: error: %d: '%s' was not declare", tok.tok[tok.pos].nline, name);
 				if(v->loctype == V_LOCAL) {
 					genCode(0x8b); genCode(0x45);
 					genCode(256 - sizeof(uint32_t) * v->id); // mov eax variable

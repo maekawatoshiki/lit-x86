@@ -48,7 +48,7 @@ Variable *appendVariable(char *name, int type) {
 		gblVar.var[gblVar.count].type = type;
 		gblVar.var[gblVar.count].loctype = V_GLOBAL;
 		gblVar.var[gblVar.count].id = (uint32_t)&ntvCode[ntvCount];
-		ntvCount += sizeof(uint32_t); // type
+		ntvCount += ADDR_SIZE;
 
 		return &gblVar.var[gblVar.count++];
 	}
@@ -139,10 +139,10 @@ int expression(int pos, int status) {
 
 		eval(0, BLOCK_NORMAL);
 
-		genCode(0x81); genCode(0xc4); genCodeInt32(sizeof(int32_t) * (locVar.size[functions.now] + 6)); // add %esp nn
+		genCode(0x81); genCode(0xc4); genCodeInt32(ADDR_SIZE * (locVar.size[functions.now] + 6)); // add %esp nn
 		genCode(0xc9);// leave
 		genCode(0xc3);// ret
-		genCodeInt32Insert(sizeof(int32_t) * (locVar.size[functions.now] + 6), espBgn);
+		genCodeInt32Insert(ADDR_SIZE * (locVar.size[functions.now] + 6), espBgn);
 		functions.inside = IN_GLOBAL;
 	
 	} else if(isassign()) {
@@ -204,7 +204,7 @@ int expression(int pos, int status) {
 	
 		make_return();
 	
-	} else if(skip("if")) {
+	} else if(skip("if")) { blocksCount++;
 	
 		make_if();
 
@@ -261,7 +261,11 @@ int32_t parser() {
 	strings.addr = (int32_t*)calloc(0xFF, sizeof(int32_t));
 	uint32_t main_address;
 	genCode(0xe9); main_address = ntvCount; genCodeInt32(0);
-	eval(0, 0);
+
+	blocksCount = 0;
+	eval(0, BLOCK_NORMAL);
+	printf("blocks: %d\n", blocksCount);
+	if(blocksCount != 0) error("error: 'end' is not enough");
 
 	uint32_t addr = getFunction("main", "")->address;
 	genCodeInt32Insert(addr - 5, main_address);
@@ -269,14 +273,14 @@ int32_t parser() {
 	for(strings.addr--; strings.count; strings.addr--) {
 		genCodeInt32Insert((uint32_t)&ntvCode[ntvCount], *strings.addr);
 		replaceEscape(strings.text[--strings.count]);
-		for(int32_t i = 0; strings.text[strings.count][i]; i++) {
+		for(int i = 0; strings.text[strings.count][i]; i++) {
 			genCode(strings.text[strings.count][i]);
 		} genCode(0); // '\0'
 	}
 #ifdef NDEBUG
 	// Nothing
 #else
-	for(int32_t i = 0; i < ntvCount; i++)
+	for(int i = 0; i < ntvCount; i++)
 		printf("%02x", ntvCode[i]);
 	puts("");
 #endif
@@ -345,7 +349,7 @@ int32_t make_function() {
 	uint32_t pos_save[128], i; 
 	for(i = 0; i < params; i++) {
 		genCode(0x8b); genCode(0x45); 
-		genCode(0x08 + (params - i - 1) * sizeof(int32_t));
+		genCode(0x08 + (params - i - 1) * ADDR_SIZE);
 		genCode(0x89); genCode(0x44); genCode(0x24);
 		pos_save[i] = ntvCount; genCode(0x00);
 	}
@@ -356,17 +360,17 @@ int32_t make_function() {
 		genCodeInt32Insert(ntvCount - rets.addr[rets.count] - 4, rets.addr[rets.count]);
 	} rets.count = 0;
 
-	genas("add esp %u", sizeof(uint32_t) * (locVar.size[functions.now] + 6)); // add esp nn
+	genas("add esp %u", ADDR_SIZE * (locVar.size[functions.now] + 6)); // add esp nn
 	genCode(0xc9);// leave
 	genCode(0xc3);// ret
 
-	genCodeInt32Insert(sizeof(uint32_t) * (locVar.size[functions.now] + 6), espBgn);
+	genCodeInt32Insert(ADDR_SIZE * (locVar.size[functions.now] + 6), espBgn);
 	for(i = 1; i <= params; i++) {
 		ntvCode[pos_save[i - 1]] = 
-			256 - sizeof(uint32_t) * i + (((locVar.size[functions.now] + 6) * sizeof(uint32_t)) - 4);
+			256 - ADDR_SIZE * i + (((locVar.size[functions.now] + 6) * ADDR_SIZE) - 4);
 	}
 
-	printf("%s() has %u functions or variables\n", funcName, locVar.size[functions.now] * sizeof(int32_t));
+	printf("%s() has %u functions or variables\n", funcName, locVar.size[functions.now]);
 
 	return 0;
 }
@@ -441,8 +445,8 @@ int assignment_single(Variable *v) {
 		} else if((inc=skip("++")) || (dec=skip("--"))) {
 			genCode(0x8b); genCode(0x45);
 			genCode(256 -
-					(v->type == T_INT ? sizeof(int32_t) :
-					 v->type == T_STRING ? sizeof(int32_t*) :
+					(v->type == T_INT ? ADDR_SIZE :
+					 v->type == T_STRING ? ADDR_SIZE :
 					 v->type == T_DOUBLE ? sizeof(double) : 4) * v->id); // mov eax varaible
 			genas("push eax");
 			if(inc) genCode(0x40); // inc eax
@@ -450,8 +454,8 @@ int assignment_single(Variable *v) {
 		}
 		genCode(0x89); genCode(0x45);
 		genCode(256 -
-				(v->type == T_INT ? sizeof(int32_t) :
-				 v->type == T_STRING ? sizeof(int32_t*) :
+				(v->type == T_INT ? ADDR_SIZE :
+				 v->type == T_STRING ? ADDR_SIZE :
 				 v->type == T_DOUBLE ? sizeof(double) : 4) * v->id); // mov var eax
 		if(inc || dec) genas("pop eax");
 	} else if(v->loctype == V_GLOBAL) { // global single
@@ -483,8 +487,8 @@ int assignment_array(Variable *v) {
 			expr_entry();
 			genCode(0x8b); genCode(0x4d);
 			genCode(256 -
-					(v->type == T_INT ? sizeof(int32_t) :
-					 v->type == T_STRING ? sizeof(uint32_t*) :
+					(v->type == T_INT ? ADDR_SIZE :
+					 v->type == T_STRING ? ADDR_SIZE :
 					 v->type == T_DOUBLE ? sizeof(double) : 4) * v->id); // mov ecx [ebp-n]
 			genas("pop edx");
 			if(v->type == T_INT) {
