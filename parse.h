@@ -42,6 +42,8 @@ struct {
 
 void skip_tok();
 
+int streql(char *, char *);
+
 int make_if();
 int make_while();
 int make_function();

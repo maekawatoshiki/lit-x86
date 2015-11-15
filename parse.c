@@ -7,6 +7,10 @@ extern int ntvCount;
 
 void skip_tok() { tok.pos++; }
 
+int streql(char *s1, char *s2) {
+	return (strcmp(s1, s2) == 0) ? 1 : 0;
+}
+
 int32_t getString() {
 	strings.text[ strings.count ] = (char *)
 		calloc(sizeof(char), strlen(tok.tok[tok.pos].val) + 1);
@@ -19,12 +23,12 @@ int32_t getString() {
 Variable *getVariable(char *name, char *mod_name) {
 	// loval variable
 	for(int i = 0; i < locVar.count; i++) {
-		if(strcmp(name, locVar.var[functions.now][i].name) == 0)
+		if(streql(name, locVar.var[functions.now][i].name))
 			return &locVar.var[functions.now][i];
 	}
 	// global variable
 	for(int i = 0; i < gblVar.count; i++) {
-		if(strcmp(name, gblVar.var[i].name) == 0 && strcmp(mod_name, gblVar.var[i].mod_name) == 0) {
+		if(streql(name, gblVar.var[i].name) && streql(mod_name, gblVar.var[i].mod_name)) {
 			return &gblVar.var[i];
 		}
 	}
@@ -34,6 +38,7 @@ Variable *getVariable(char *name, char *mod_name) {
 
 Variable *appendVariable(char *name, int type) {
 	if(functions.inside == IN_FUNC) {
+		// local variable
 		uint32_t sz = 1 + ++locVar.size[functions.now];
 		strcpy(locVar.var[functions.now][locVar.count].name, name);
 		locVar.var[functions.now][locVar.count].type = type;
@@ -59,7 +64,7 @@ Variable *appendVariable(char *name, int type) {
 func_t *getFunction(char *name, char *mod_name) {
 	for(int i = 0; i < functions.count; i++) {
 		printf("%s : %s >> %s : %s\n", mod_name, name, functions.func[i].mod_name, functions.func[i].name);
-		if(strcmp(functions.func[i].name, name) == 0 && strcmp(functions.func[i].mod_name, mod_name) == 0) {
+		if(streql(functions.func[i].name, name) && streql(functions.func[i].mod_name, mod_name)) {
 			return &functions.func[i];
 		}
 	}
@@ -95,7 +100,7 @@ int32_t make_return() {
 
 
 int32_t skip(char *s) {
-  if(strcmp(s, tok.tok[tok.pos].val) == 0) {
+  if(streql(s, tok.tok[tok.pos].val)) {
   	tok.pos++; return 1;
   } else return 0;
 }
@@ -125,9 +130,9 @@ int expression(int pos, int status) {
 		module = tok.tok[tok.pos++].val;
 		eval(0, NON);
 		module = "";
-	} else if(functions.inside == IN_GLOBAL && strcmp("def", tok.tok[tok.pos+1].val) && 
-			strcmp("module", tok.tok[tok.pos+1].val) && strcmp("$", tok.tok[tok.pos+1].val) && 
-			strcmp(";", tok.tok[tok.pos+1].val)) {	// main function entry
+	} else if(functions.inside == IN_GLOBAL && !streql("def", tok.tok[tok.pos+1].val) && 
+			!streql("module", tok.tok[tok.pos+1].val) && !streql("$", tok.tok[tok.pos+1].val) && 
+			!streql(";", tok.tok[tok.pos+1].val)) {	// main function entry
 
 		functions.inside = IN_FUNC;
 		functions.now++;
@@ -302,6 +307,7 @@ int make_if() {
 
 int make_while() {
 	uint32_t loopBgn = ntvCount, end, stepBgn[2], stepOn = 0;
+	
 	expr_entry(); // condition
 	if(skip(",")) {
 		stepOn = 1;
@@ -321,6 +327,7 @@ int make_while() {
 		expr_entry();
 		tok.pos = stepBgn[1];
 	}
+
 	uint32_t n = 0xFFFFFFFF - ntvCount + loopBgn - 4;
 	genCode(0xe9); genCodeInt32(n); // jmp n
 	genCodeInt32Insert(ntvCount - end - 4, end);
@@ -332,8 +339,8 @@ int make_while() {
 	return 0;
 }
 
-int32_t make_function() {
-	int32_t espBgn, params = 0;
+int make_function() {
+	uint32_t espBgn, params = 0;
 	char *funcName = tok.tok[tok.pos++].val;
 
 	functions.now++; functions.inside = IN_FUNC;
@@ -347,6 +354,7 @@ int32_t make_function() {
 	espBgn = ntvCount + 2; genas("sub esp 0"); // align
 	
 	uint32_t pos_save[128], i; 
+	
 	for(i = 0; i < params; i++) {
 		genCode(0x8b); genCode(0x45); 
 		genCode(0x08 + (params - i - 1) * ADDR_SIZE);
@@ -375,34 +383,34 @@ int32_t make_function() {
 	return 0;
 }
 
-int32_t isassign() {
-	if(strcmp(tok.tok[tok.pos+1].val, "=") == 0) return 1;
-	else if(strcmp(tok.tok[tok.pos+1].val, "++") == 0) return 1;
-	else if(strcmp(tok.tok[tok.pos+1].val, "--") == 0) return 1;
-	else if(strcmp(tok.tok[tok.pos+1].val, "[") == 0) {
-		int32_t i = tok.pos + 2, t = 1;
+int isassign() {
+	if(streql(tok.tok[tok.pos+1].val, "=")) return 1;
+	else if(streql(tok.tok[tok.pos+1].val, "++")) return 1;
+	else if(streql(tok.tok[tok.pos+1].val, "--")) return 1;
+	else if(streql(tok.tok[tok.pos+1].val, "[")) {
+		int i = tok.pos + 2, t = 1;
 re:
 		while(t) {
-			if(strcmp(tok.tok[i].val, "[") == 0) t++;
-			if(strcmp(tok.tok[i].val, "]") == 0) t--;
-			if(strcmp(tok.tok[i].val, ";") == 0)
+			if(streql(tok.tok[i].val, "[")) t++;
+			if(streql(tok.tok[i].val, "]")) t--;
+			if(streql(tok.tok[i].val, ";"))
 				error("index: error: %d: invalid expression", tok.tok[tok.pos].nline);
 			i++;
 		}
 		t = 1;
-		if(strcmp(tok.tok[i].val, "[") == 0) { i++; goto re; }
+		if(streql(tok.tok[i].val, "[")) { i++; goto re; }
 		printf(">%s\n", tok.tok[i].val);
-		if(strcmp(tok.tok[i].val, "=") == 0) return 1;
-	} else if(strcmp(tok.tok[tok.pos + 1].val, ".") == 0 || strcmp(tok.tok[tok.pos + 1].val, ":") == 0) {
-		int32_t i = tok.pos + 3;
-		if(strcmp(tok.tok[i].val, "=") == 0) return 1;
+		if(streql(tok.tok[i].val, "=")) return 1;
+	} else if(streql(tok.tok[tok.pos + 1].val, ".")) {
+		int i = tok.pos + 3;
+		if(streql(tok.tok[i].val, "=")) return 1;
 	}
 	return 0;
 }
 
 int assignment() {
 	char *name = tok.tok[tok.pos].val, *mod_name = "";
-	if(strcmp(tok.tok[tok.pos+1].val, ".") == 0) { // module's function or variable?
+	if(streql(tok.tok[tok.pos+1].val, ".")) { // module's function or variable?
 		mod_name = tok.tok[tok.pos].val;
 		tok.pos += 2;
 		name = tok.tok[tok.pos].val;
