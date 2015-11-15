@@ -186,11 +186,11 @@ int expression(int pos, int status) {
 			genCode(0x89); genCode(0x44); genCode(0x24); genCode(0x00); // mov [esp+0], eax
 		}
 		if(skip(",")) {
-			uint32_t a = 4;
+			uint32_t params = 4;
 			do {
 				expr_entry();
-				genCode(0x89); genCode(0x44); genCode(0x24); genCode(a); // mov [esp+a], eax
-				a += 4;
+				genCode(0x89); genCode(0x44); genCode(0x24); genCode(params); // mov [esp+params], eax
+				params += 4;
 			} while(skip(","));
 		}
 		genCode(0xff); genCode(0x56); genCode(12 + 8); // call printf
