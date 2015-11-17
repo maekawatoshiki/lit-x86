@@ -133,6 +133,7 @@ module SecureRandom
 
 		bytes = 128
 		data:string = Array(bytes)
+
 		fgets(data, bytes, stdin)
 		chars = 0
 		for i = 0, i < bytes and chars < len, i++

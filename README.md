@@ -1,4 +1,4 @@
-# Lit
+# Introduction
 - Lit is JIT Compile language.
 So very faster.
 

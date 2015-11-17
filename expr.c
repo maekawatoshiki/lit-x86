@@ -106,8 +106,8 @@ int expr_primary() {
 		else {
 			skip_tok();
 			if(skip("[")) { // Array?
-				v = getVariable(name , mod_name);
-				if(v == NULL) v = getVariable(name, module);
+				v = get_var(name , mod_name);
+				if(v == NULL) v = get_var(name, module);
 				if(v == NULL)
 					error("error: %d: '%s' was not declare", tok.tok[tok.pos].nline, name);
 				expr_entry();
@@ -132,10 +132,10 @@ int expr_primary() {
 				int is_stdfunc = make_stdfunc(name); // make standard function
 				
 				if(!is_stdfunc) {	// user function
-					func_t *function = getFunction(name, mod_name);
+					func_t *function = get_func(name, mod_name);
 
 					if(function == NULL) 
-						function = getFunction(name, module);
+						function = get_func(name, module);
 					if(isalpha(tok.tok[tok.pos].val[0]) || isdigit(tok.tok[tok.pos].val[0]) ||
 						is_string_tok() || !strcmp(tok.tok[tok.pos].val, "(")) { // has arg?
 
@@ -151,9 +151,9 @@ int expr_primary() {
 				}
 				if(!skip(")")) error("func: error: %d: expected expression ')'", tok.tok[tok.pos].nline);
 			} else {
-				v = getVariable(name, mod_name);
+				v = get_var(name, mod_name);
 				if(v == NULL) 
-					v = getVariable(name, module);
+					v = get_var(name, module);
 				if(v == NULL)
 					error("var: error: %d: '%s' was not declare", tok.tok[tok.pos].nline, name);
 				if(v->loctype == V_LOCAL) {

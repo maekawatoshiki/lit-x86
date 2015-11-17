@@ -56,11 +56,11 @@ int expression(int, int);
 int parser();
 int getString();
 
-func_t *getFunction(char *, char *);
-func_t *appendFunction(char *, int, int);
+func_t *get_func(char *, char *);
+func_t *append_func(char *, int, int);
 
-Variable *getVariable(char *, char *);
-Variable *appendVariable(char *, int);
+Variable *get_var(char *, char *);
+Variable *append_var(char *, int);
 
 int isassign();
 int assignment();

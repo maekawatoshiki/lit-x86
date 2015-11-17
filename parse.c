@@ -20,7 +20,7 @@ int32_t getString() {
 	return strings.count++;
 }
 
-Variable *getVariable(char *name, char *mod_name) {
+Variable *get_var(char *name, char *mod_name) {
 	// loval variable
 	for(int i = 0; i < locVar.count; i++) {
 		if(streql(name, locVar.var[functions.now][i].name))
@@ -36,7 +36,7 @@ Variable *getVariable(char *name, char *mod_name) {
 	return NULL;
 }
 
-Variable *appendVariable(char *name, int type) {
+Variable *append_var(char *name, int type) {
 	if(functions.inside == IN_FUNC) {
 		// local variable
 		uint32_t sz = 1 + ++locVar.size[functions.now];
@@ -61,7 +61,7 @@ Variable *appendVariable(char *name, int type) {
 	return NULL;
 }
 
-func_t *getFunction(char *name, char *mod_name) {
+func_t *get_func(char *name, char *mod_name) {
 	for(int i = 0; i < functions.count; i++) {
 		printf("%s : %s >> %s : %s\n", mod_name, name, functions.func[i].mod_name, functions.func[i].name);
 		if(streql(functions.func[i].name, name) && streql(functions.func[i].mod_name, mod_name)) {
@@ -71,7 +71,7 @@ func_t *getFunction(char *name, char *mod_name) {
 	return NULL;
 }
 
-func_t *appendFunction(char *name, int address, int params) {
+func_t *append_func(char *name, int address, int params) {
 	functions.func[functions.count].address = address;
 	functions.func[functions.count].params = params;
 	strcpy(functions.func[functions.count].mod_name, module);
@@ -136,7 +136,7 @@ int expression(int pos, int status) {
 
 		functions.inside = IN_FUNC;
 		functions.now++;
-		appendFunction("main", ntvCount, 0); // append function
+		append_func("main", ntvCount, 0); // append function
 		genas("push ebp");
 		genas("mov ebp esp");
 		uint32_t espBgn = ntvCount + 2; genas("sub esp 0");
@@ -272,7 +272,7 @@ int32_t parser() {
 	printf("blocks: %d\n", blocksCount);
 	if(blocksCount != 0) error("error: 'end' is not enough");
 
-	uint32_t addr = getFunction("main", "")->address;
+	uint32_t addr = get_func("main", "")->address;
 	genCodeInt32Insert(addr - 5, main_address);
 
 	for(strings.addr--; strings.count; strings.addr--) {
@@ -348,7 +348,7 @@ int make_function() {
 		do { declareVariable(); tok.pos++; params++; } while(skip(","));
 		skip(")");
 	}
-	appendFunction(funcName, ntvCount, params); // append function
+	append_func(funcName, ntvCount, params); // append function
 	genas("push ebp");
 	genas("mov ebp esp");
 	espBgn = ntvCount + 2; genas("sub esp 0"); // align
@@ -401,7 +401,7 @@ re:
 		if(streql(tok.tok[i].val, "[")) { i++; goto re; }
 		printf(">%s\n", tok.tok[i].val);
 		if(streql(tok.tok[i].val, "=")) return 1;
-	} else if(streql(tok.tok[tok.pos + 1].val, ".")) {
+	} else if(streql(tok.tok[tok.pos + 1].val, ".") /* module */ || streql(tok.tok[tok.pos + 1].val, ":") /* var:type */) {
 		int i = tok.pos + 3;
 		if(streql(tok.tok[i].val, "=")) return 1;
 	}
@@ -417,8 +417,8 @@ int assignment() {
 	}
 
 	int inc = 0, dec = 0, declare = 0;
-	Variable *v = getVariable(name, mod_name);
-	if(v == NULL) v = getVariable(name, module);
+	Variable *v = get_var(name, mod_name);
+	if(v == NULL) v = get_var(name, module);
 	if(v == NULL) { declare++; v = declareVariable(); }
 	tok.pos++;
 	
@@ -537,10 +537,10 @@ Variable *declareVariable() {
 	if(isalpha(tok.tok[tok.pos].val[0])) {
 		tok.pos++;
 		if(skip(":")) {
-			if(skip("int")) { --tok.pos; return appendVariable(tok.tok[npos].val, T_INT); }
-			if(skip("string")) { --tok.pos; return appendVariable(tok.tok[npos].val, T_STRING); }
-			if(skip("double")) { --tok.pos; return appendVariable(tok.tok[npos].val, T_DOUBLE); }
-		} else { --tok.pos; return appendVariable(tok.tok[npos].val, T_INT); }
+			if(skip("int")) { --tok.pos; return append_var(tok.tok[npos].val, T_INT); }
+			if(skip("string")) { --tok.pos; return append_var(tok.tok[npos].val, T_STRING); }
+			if(skip("double")) { --tok.pos; return append_var(tok.tok[npos].val, T_DOUBLE); }
+		} else { --tok.pos; return append_var(tok.tok[npos].val, T_INT); }
 	} else error("error: %d: can't declare variable", tok.tok[tok.pos].nline);
 	return NULL;
 }
