@@ -88,8 +88,8 @@ int execute(char *);
 /* for native(JIT) code. */
 
 struct {
-	uint32_t addr[0xff];
-	int count, isfree[0xff];
+	uint32_t addr[0xfff];
+	int count, isfree[0xfff];
 } mem;
 
 void freeAddr();
