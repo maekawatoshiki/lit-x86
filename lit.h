@@ -87,9 +87,14 @@ int execute(char *);
 
 /* for native(JIT) code. */
 
+typedef struct {
+	uint32_t addr;
+	int isfree;
+} mm;
+
 struct {
-	uint32_t addr[0xfff];
-	int count, isfree[0xfff];
+	mm *mem;
+	int count;
 } mem;
 
 void freeAddr();

@@ -14,6 +14,7 @@ void init() {
 		perror("mprotect");
 #endif
 	tok.pos = ntvCount = 0; tok.size = 0xfff;
+	mem.mem = calloc(1, sizeof(mm));
 	set_xor128();
 	tok.tok = (Token *)calloc(sizeof(Token), tok.size);
 	brks.addr = (uint32_t *)calloc(sizeof(uint32_t), 1);
@@ -45,16 +46,17 @@ void ssleep(uint32_t t) {
 }
 
 void appendAddr(int32_t addr) {
-	mem.addr[mem.count] = addr;
-	mem.isfree[mem.count++] = 0;
+	mem.mem = realloc(mem.mem, sizeof(mm) * (1 + mem.count));
+	mem.mem[mem.count].addr = addr;
+	mem.mem[mem.count++].isfree = 0;
 }
 
 void freeInProgram(uint32_t addr) {
 	for(int i = 0; i < mem.count; i++) {
-		if(mem.addr[i] == addr) {
-			free((int *)mem.addr[i]);
-			mem.addr[i] = 0;
-			mem.isfree[i] = 1;
+		if(mem.mem[i].addr == addr) {
+			free((int *)mem.mem[i].addr);
+			mem.mem[i].addr = 0;
+			mem.mem[i].isfree = 1;
 		}
 	}
 }
@@ -62,8 +64,8 @@ void freeInProgram(uint32_t addr) {
 void freeAddr() {
 	if(mem.count > 0) {
 		for(--mem.count; mem.count >= 0; --mem.count) {
-			if(mem.isfree[mem.count] == 0) {
-				free((void *)mem.addr[mem.count]);
+			if(mem.mem[mem.count].isfree == 0) {
+				free((void *)mem.mem[mem.count].addr);
 			}
 		}
 		mem.count = 0;
