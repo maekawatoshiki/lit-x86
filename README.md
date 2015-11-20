@@ -3,109 +3,16 @@
 So very faster.
 
 # How to use
+Please look at Wiki.
 
-- Easy to remember. Because syntax is like ruby.
+# Build
 
-- Syntax
-
-```ruby
-# Statement => write in the function.
-
-# output the string and number
-# puts is output and \n
-# output is output only.
-puts "Hello world!!" # => Hello world!!\n
-puts "number = ", 65536 # => number = 65536\n
-output "not new line" # => not new line
-
-# declaration is not required
-# support only integer
-i = 10
-i = i + 43
-i = i % 5
-i = i - 32
-sum = i * (12 / 5)
-12 / 5 # => 2
-
-# loop & if
-for i = 1, i < 100, i = i + 1
-  if i % 15 == 0
-    puts "fizzbuzz"
-  elsif i % 5 == 0
-    puts "buzz"
-  elsif i % 3 == 0
-  	puts "fizz"
-  else
-  	puts i
-  end
-end
-
-# create function
-def sum(n)
-  sm = 0
-  for i = 1, i <= n, i++
-    sm = sm + i
-  end
-  sm
-	# "return sm" is OK
-end
-
-# create module(namespace)
-module Say
-  $v = 100
-  def hello
-    puts "hello"
-  end
-  def bye
-    puts "bye"
-  end
-  def get_v
-    v
-  end
-end
-
-Say.hello()
-```
-
-- Fibonacci
-
-```ruby
-def fibo(n)
-  if n < 2
-    1
-  else
-    fibo(n - 1) + fibo(n - 2)
-  end
-end
-
-puts fibo(39)
-```
-
-- quick sort
-
-```
-def sort(a, left, right)
-	l = left; r = right; pv = a[(l + r) / 2]
-	while 1
-		while a[l] < pv; l++; end
-		while pv < a[r]; r--; end
-		if l >= r; break end
-		tmp = a[l]; a[l] = a[r]; a[r] = tmp
-		l++; r--;
-	end
-	l--; r++
-	if left < l; sort(a, left, l); end
-	if r < right; sort(a, r, right); end
-end
-```
-
-- compile
+- compile 
 
 ```
 $ make (need clang)
 $ ./lit [sourcefile]
 ```
-
 
 # Version Info
 - 2015/7/22 : First Commit

@@ -14,7 +14,7 @@ void init() {
 		perror("mprotect");
 #endif
 	tok.pos = ntvCount = 0; tok.size = 0xfff;
-	mem.mem = calloc(1024, sizeof(mm));
+	mem.mem = calloc(0x7ff, sizeof(mm));
 	set_xor128();
 	tok.tok = (Token *)calloc(sizeof(Token), tok.size);
 	brks.addr = (uint32_t *)calloc(sizeof(uint32_t), 1);

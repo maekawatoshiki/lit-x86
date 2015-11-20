@@ -8,7 +8,7 @@ int main(int argc, char **argv) {
 		src = (char*)calloc(sizeof(char), 0xFFFF);
 		char line[0xFF] = "";
 
-		puts("Lit 1.2.1 (C) 2015 maekawatoshiki");
+		puts("Lit 0.9.0 (C) 2015 maekawatoshiki");
 		while(strcmp(line, "run\n") != 0) {
 			printf(">> "); strcat(src, line);
 			memset(line, 0, 0xFF);
