@@ -102,8 +102,9 @@ int expr_primary() {
 			name = tok.tok[tok.pos].val; 
 		}
 
-		if(isassign()) {puts("assignmen");assignment();}
-		else {
+		if(isassign()) {
+			assignment();
+		} else {
 			skip_tok();
 			if(skip("[")) { // Array?
 				v = get_var(name , mod_name);

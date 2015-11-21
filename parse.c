@@ -11,7 +11,7 @@ int streql(char *s1, char *s2) {
 	return (strcmp(s1, s2) == 0) ? 1 : 0;
 }
 
-int32_t getString() {
+int getString() {
 	strings.text[ strings.count ] = (char *)
 		calloc(sizeof(char), strlen(tok.tok[tok.pos].val) + 1);
 	strcpy(strings.text[strings.count], tok.tok[tok.pos++].val);
@@ -82,7 +82,8 @@ func_t *append_func(char *name, int address, int params) {
 
 int make_break() {
 	genCode(0xe9); // jmp
-	brks.addr = (uint32_t*)realloc(brks.addr, 4 * (brks.count + 1));
+	brks.addr = (uint32_t*)realloc(brks.addr, ADDR_SIZE * (brks.count + 1));
+	if(brks.addr == NULL) error("LitSystemError: no enough memory");
 	brks.addr[brks.count] = ntvCount;
 	genCodeInt32(0);
 	return brks.count++;
@@ -91,7 +92,7 @@ int make_break() {
 int make_return() {
 	expr_entry(); // get argument
 	genCode(0xe9); // jmp
-	rets.addr = (uint32_t*)realloc(rets.addr, 4 * (rets.count + 1));
+	rets.addr = (uint32_t*)realloc(rets.addr, ADDR_SIZE * (rets.count + 1));
 	if(rets.addr == NULL) error("LitSystemError: no enough memory");
 	rets.addr[rets.count] = ntvCount;
 	genCodeInt32(0);
@@ -401,9 +402,9 @@ re:
 		if(streql(tok.tok[i].val, "[")) { i++; goto re; }
 		printf(">%s\n", tok.tok[i].val);
 		if(streql(tok.tok[i].val, "=")) return 1;
-	} else if(streql(tok.tok[tok.pos + 1].val, ".") /* module */ || streql(tok.tok[tok.pos + 1].val, ":") /* var:type */) {
-		int i = tok.pos + 3;
-		if(streql(tok.tok[i].val, "=")) return 1;
+	} else if(streql(tok.tok[tok.pos + 1].val, ".") /* module */ || 
+			streql(tok.tok[tok.pos + 1].val, ":") /* var:type */) {
+		if(streql(tok.tok[tok.pos + 3].val, "=")) return 1;
 	}
 	return 0;
 }
