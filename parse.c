@@ -80,7 +80,7 @@ func_t *append_func(char *name, int address, int params) {
 	return &functions.func[functions.count++];
 }
 
-int32_t make_break() {
+int make_break() {
 	genCode(0xe9); // jmp
 	brks.addr = (uint32_t*)realloc(brks.addr, 4 * (brks.count + 1));
 	brks.addr[brks.count] = ntvCount;
@@ -88,7 +88,7 @@ int32_t make_break() {
 	return brks.count++;
 }
 
-int32_t make_return() {
+int make_return() {
 	expr_entry(); // get argument
 	genCode(0xe9); // jmp
 	rets.addr = (uint32_t*)realloc(rets.addr, 4 * (rets.count + 1));
@@ -99,13 +99,13 @@ int32_t make_return() {
 }
 
 
-int32_t skip(char *s) {
+int skip(char *s) {
   if(streql(s, tok.tok[tok.pos].val)) {
   	tok.pos++; return 1;
   } else return 0;
 }
 
-int32_t error(char *errs, ...) {
+int error(char *errs, ...) {
 	va_list args;
 	va_start(args, errs);
 		vprintf(errs, args); puts("");
