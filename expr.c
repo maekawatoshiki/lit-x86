@@ -5,6 +5,7 @@ extern int ntvCount;
 
 int is_string_tok() { return tok.tok[tok.pos].type == TOK_STRING; }
 int is_number_tok() { return tok.tok[tok.pos].type == TOK_NUMBER; }
+int is_ident_tok()  { return tok.tok[tok.pos].type == TOK_IDENT;  }
 
 int expr_entry() { return expr_compare(); }
 
@@ -84,6 +85,9 @@ int expr_mul_div() {
 }
 
 int expr_primary() {
+	int is_get_addr = 0;
+	if(skip("&")) is_get_addr = 1;
+	
   if(is_number_tok()) { // number?
     genas("mov eax %d", atoi(tok.tok[tok.pos++].val));
 	} else if(skip("'")) { // char?
@@ -92,9 +96,9 @@ int expr_primary() {
 	} else if(is_string_tok()) { // string?
 		genCode(0xb8); getString();
 		genCodeInt32(0x00); // mov eax string_address
-  } else if(isalpha(tok.tok[tok.pos].val[0])) { // variable or inc or dec
+  } else if(is_ident_tok()) { // variable or inc or dec
 		char *name = tok.tok[tok.pos].val, *mod_name = "";
-		Variable *v;
+		Variable *v; 
 		
 		if(strcmp(tok.tok[tok.pos + 1].val, ".") == 0) { // module?
 			mod_name = tok.tok[tok.pos++].val; 
@@ -128,7 +132,6 @@ int expr_primary() {
 			
 				if(!skip("]"))
 					error("error: %d: expected expression ']'", tok.tok[tok.pos].nline);
-			
 			} else if(skip("(")) { // Function?
 				int is_stdfunc = make_stdfunc(name); // make standard function
 				
@@ -137,21 +140,20 @@ int expr_primary() {
 
 					if(function == NULL) 
 						function = get_func(name, module);
-					if(isalpha(tok.tok[tok.pos].val[0]) || isdigit(tok.tok[tok.pos].val[0]) ||
-						is_string_tok() || !strcmp(tok.tok[tok.pos].val, "(")) { // has arg?
-
+					if(is_number_tok() || is_ident_tok() || is_string_tok() || streql(tok.tok[tok.pos].val, "(")) { // has arg?
 						for(size_t i = 0; i < function->params; i++) {
 							expr_entry();
 							genas("push eax");
-							if(!skip(",") && function->params - 1 != i) error("error: %d: expected ','", tok.tok[tok.pos].nline);
+							if(!skip(",") && function->params - 1 != i) 
+								error("error: %d: expected ','", tok.tok[tok.pos].nline);
 						}
 
 					}
 					genCode(0xe8); genCodeInt32(0xFFFFFFFF - (ntvCount - function->address) - 3); // call func
-					genas("add esp %d", function->params * sizeof(int32_t));
+					genas("add esp %d", function->params * ADDR_SIZE);
 				}
 				if(!skip(")")) error("func: error: %d: expected expression ')'", tok.tok[tok.pos].nline);
-			} else {
+			} else { // single variable
 				v = get_var(name, mod_name);
 				if(v == NULL) 
 					v = get_var(name, module);

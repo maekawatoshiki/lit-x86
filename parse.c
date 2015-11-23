@@ -417,11 +417,11 @@ int assignment() {
 		name = tok.tok[tok.pos].val;
 	}
 
-	int inc = 0, dec = 0, declare = 0;
+	int declare = 0;
 	Variable *v = get_var(name, mod_name);
 	if(v == NULL) v = get_var(name, module);
-	if(v == NULL) { declare++; v = declareVariable(); }
-	tok.pos++;
+	if(v == NULL) { declare = 1; v = declareVariable(); }
+	skip_tok();
 	
 	if(v->loctype == V_LOCAL) {
 		if(skip("[")) { // Array?
