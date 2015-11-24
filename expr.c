@@ -100,7 +100,7 @@ int expr_primary() {
 		char *name = tok.tok[tok.pos].val, *mod_name = "";
 		Variable *v; 
 		
-		if(strcmp(tok.tok[tok.pos + 1].val, ".") == 0) { // module?
+		if(streql(tok.tok[tok.pos + 1].val, ".")) { // module?
 			mod_name = tok.tok[tok.pos++].val; 
 			skip(".");
 			name = tok.tok[tok.pos].val; 
@@ -141,7 +141,7 @@ int expr_primary() {
 					if(function == NULL) 
 						function = get_func(name, module);
 			
-					if(function == NULL) { // undefined
+					if(function == NULL) { // undef
 						size_t params = 0;
 						if(is_number_tok() || is_ident_tok() || 
 								is_string_tok() || streql(tok.tok[tok.pos].val, "(")) { // has arg?
@@ -151,7 +151,7 @@ int expr_primary() {
 								skip(",");
 							}
 						}
-						genCode(0xe8); append_undefined_func(name, streql(module, "") ? mod_name : module, ntvCount);
+						genCode(0xe8); append_undef_func(name, streql(module, "") ? mod_name : module, ntvCount);
 						genCodeInt32(0x00000000); // call func
 						genas("add esp %d", params * ADDR_SIZE);
 					} else { // defined

@@ -80,17 +80,17 @@ func_t *append_func(char *name, int address, int params) {
 	return &funcs.func[funcs.count++];
 }
 
-int append_undefined_func(char *name, char *mod_name, int ntvc) {
-	undefined_funcs.func[undefined_funcs.count].address = ntvc;
-	strcpy(undefined_funcs.func[undefined_funcs.count].mod_name, mod_name);
-	strcpy(undefined_funcs.func[undefined_funcs.count++].name, name);
+int append_undef_func(char *name, char *mod_name, int ntvc) {
+	undef_funcs.func[undef_funcs.count].address = ntvc;
+	strcpy(undef_funcs.func[undef_funcs.count].mod_name, mod_name);
+	strcpy(undef_funcs.func[undef_funcs.count++].name, name);
 	return 0;
 }
 
-int is_undefined_func(char *name, int ntvc) {
-	int count = undefined_funcs.count;
-	func_t *f = undefined_funcs.func;
-	for(int i = 0; i < undefined_funcs.count; i++) {
+int is_undef_func(char *name, int ntvc) {
+	int count = undef_funcs.count;
+	func_t *f = undef_funcs.func;
+	for(int i = 0; i < undef_funcs.count; i++) {
 		if(streql(f[i].name, name) && streql(f[i].mod_name, module)) {
 			genCodeInt32Insert(ntvc - f[i].address - 4, f[i].address);
 		}
@@ -368,7 +368,7 @@ int make_func() {
 		skip(")");
 	}
 	append_func(funcName, ntvCount, params); // append funcs
-	is_undefined_func(funcName, ntvCount);
+	is_undef_func(funcName, ntvCount);
 	
 	genas("push ebp");
 	genas("mov ebp esp");

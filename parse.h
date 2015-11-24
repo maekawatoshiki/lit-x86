@@ -31,7 +31,7 @@ typedef struct {
 struct {
 	func_t func[0xff];
 	int count;
-} undefined_funcs;
+} undef_funcs;
 
 struct {
 	func_t func[0xff];
@@ -67,8 +67,8 @@ func_t *append_func(char *, int, int);
 Variable *get_var(char *, char *);
 Variable *append_var(char *, int);
 
-int append_undefined_func(char *, char *, int);
-int is_undefined_func(char *, int);
+int append_undef_func(char *, char *, int);
+int is_undef_func(char *, int);
 
 int isassign();
 int assignment();
