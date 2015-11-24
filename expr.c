@@ -140,17 +140,31 @@ int expr_primary() {
 
 					if(function == NULL) 
 						function = get_func(name, module);
-					if(is_number_tok() || is_ident_tok() || is_string_tok() || streql(tok.tok[tok.pos].val, "(")) { // has arg?
-						for(size_t i = 0; i < function->params; i++) {
-							expr_entry();
-							genas("push eax");
-							if(!skip(",") && function->params - 1 != i) 
-								error("error: %d: expected ','", tok.tok[tok.pos].nline);
+			
+					if(function == NULL) { // undefined
+						size_t params = 0;
+						if(is_number_tok() || is_ident_tok() || is_string_tok() || streql(tok.tok[tok.pos].val, "(")) { // has arg?
+							for(params = 0; !streql(tok.tok[tok.pos].val, ")"); params++) {
+								expr_entry();
+								genas("push eax");
+								if(!skip(",")) error("expr: not declare");
+							}
 						}
-
+						genCode(0xe8); append_undefined_func(name, streql(module, "") ? mod_name : module, ntvCount);
+						genCodeInt32(0x00000000); // call func
+						genas("add esp %d", params * ADDR_SIZE);
+					} else { // defined
+						if(is_number_tok() || is_ident_tok() || is_string_tok() || streql(tok.tok[tok.pos].val, "(")) { // has arg?
+							for(size_t i = 0; i < function->params; i++) {
+								expr_entry();
+								genas("push eax");
+								if(!skip(",") && function->params - 1 != i) 
+									error("error: %d: expected ','", tok.tok[tok.pos].nline);
+							}
+						}
+						genCode(0xe8); genCodeInt32(0xFFFFFFFF - (ntvCount - function->address) - 3); // call func
+						genas("add esp %d", function->params * ADDR_SIZE);
 					}
-					genCode(0xe8); genCodeInt32(0xFFFFFFFF - (ntvCount - function->address) - 3); // call func
-					genas("add esp %d", function->params * ADDR_SIZE);
 				}
 				if(!skip(")")) error("func: error: %d: expected expression ')'", tok.tok[tok.pos].nline);
 			} else { // single variable

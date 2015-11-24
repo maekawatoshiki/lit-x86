@@ -23,8 +23,8 @@ int getString() {
 Variable *get_var(char *name, char *mod_name) {
 	// loval variable
 	for(int i = 0; i < locVar.count; i++) {
-		if(streql(name, locVar.var[functions.now][i].name))
-			return &locVar.var[functions.now][i];
+		if(streql(name, locVar.var[funcs.now][i].name))
+			return &locVar.var[funcs.now][i];
 	}
 	// global variable
 	for(int i = 0; i < gblVar.count; i++) {
@@ -37,16 +37,16 @@ Variable *get_var(char *name, char *mod_name) {
 }
 
 Variable *append_var(char *name, int type) {
-	if(functions.inside == IN_FUNC) {
+	if(funcs.inside == IN_FUNC) {
 		// local variable
-		uint32_t sz = 1 + ++locVar.size[functions.now];
-		strcpy(locVar.var[functions.now][locVar.count].name, name);
-		locVar.var[functions.now][locVar.count].type = type;
-		locVar.var[functions.now][locVar.count].id = sz;
-		locVar.var[functions.now][locVar.count].loctype = V_LOCAL;
+		uint32_t sz = 1 + ++locVar.size[funcs.now];
+		strcpy(locVar.var[funcs.now][locVar.count].name, name);
+		locVar.var[funcs.now][locVar.count].type = type;
+		locVar.var[funcs.now][locVar.count].id = sz;
+		locVar.var[funcs.now][locVar.count].loctype = V_LOCAL;
 
-		return &locVar.var[functions.now][locVar.count++];
-	} else if(functions.inside == IN_GLOBAL) {
+		return &locVar.var[funcs.now][locVar.count++];
+	} else if(funcs.inside == IN_GLOBAL) {
 		// global varibale
 		strcpy(gblVar.var[gblVar.count].name, name);
 		strcpy(gblVar.var[gblVar.count].mod_name, module);
@@ -62,22 +62,41 @@ Variable *append_var(char *name, int type) {
 }
 
 func_t *get_func(char *name, char *mod_name) {
-	for(int i = 0; i < functions.count; i++) {
-		printf("%s : %s >> %s : %s\n", mod_name, name, functions.func[i].mod_name, functions.func[i].name);
-		if(streql(functions.func[i].name, name) && streql(functions.func[i].mod_name, mod_name)) {
-			return &functions.func[i];
+	for(int i = 0; i < funcs.count; i++) {
+		printf("%s : %s >> %s : %s\n", mod_name, name, funcs.func[i].mod_name, funcs.func[i].name);
+		if(streql(funcs.func[i].name, name) && streql(funcs.func[i].mod_name, mod_name)) {
+			return &funcs.func[i];
 		}
 	}
 	return NULL;
 }
 
 func_t *append_func(char *name, int address, int params) {
-	functions.func[functions.count].address = address;
-	functions.func[functions.count].params = params;
-	strcpy(functions.func[functions.count].mod_name, module);
-	printf("%s:%s\n", functions.func[functions.count].mod_name, name);
-	strcpy(functions.func[functions.count].name, name);
-	return &functions.func[functions.count++];
+	funcs.func[funcs.count].address = address;
+	funcs.func[funcs.count].params = params;
+	strcpy(funcs.func[funcs.count].mod_name, module);
+	printf("%s:%s\n", funcs.func[funcs.count].mod_name, name);
+	strcpy(funcs.func[funcs.count].name, name);
+	return &funcs.func[funcs.count++];
+}
+
+int append_undefined_func(char *name, char *mod_name, int ntvc) {
+	undefined_funcs.func[undefined_funcs.count].address = ntvc;
+	strcpy(undefined_funcs.func[undefined_funcs.count].mod_name, mod_name);
+	strcpy(undefined_funcs.func[undefined_funcs.count++].name, name);
+	return 0;
+}
+
+int is_undefined_func(char *name, int ntvc) {
+	int count = undefined_funcs.count;
+	func_t *f = undefined_funcs.func;
+	for(int i = 0; i < undefined_funcs.count; i++) {
+		if(streql(f[i].name, name) && streql(f[i].mod_name, module)) {
+			genCodeInt32Insert(ntvc - f[i].address - 4, f[i].address);
+			return 1;
+		}
+	}
+	return 0;
 }
 
 int make_break() {
@@ -124,20 +143,20 @@ int expression(int pos, int status) {
 
 	} else if(skip("def")) { blocksCount++;
 
-		make_function();
+		make_func();
 
 	} else if(skip("module")) { blocksCount++;
 
 		module = tok.tok[tok.pos++].val;
 		eval(0, NON);
 		module = "";
-	} else if(functions.inside == IN_GLOBAL && !streql("def", tok.tok[tok.pos+1].val) && 
+	} else if(funcs.inside == IN_GLOBAL && !streql("def", tok.tok[tok.pos+1].val) && 
 			!streql("module", tok.tok[tok.pos+1].val) && !streql("$", tok.tok[tok.pos+1].val) && 
-			!streql(";", tok.tok[tok.pos+1].val)) {	// main function entry
+			!streql(";", tok.tok[tok.pos+1].val)) {	// main func entry
 
-		functions.inside = IN_FUNC;
-		functions.now++;
-		append_func("main", ntvCount, 0); // append function
+		funcs.inside = IN_FUNC;
+		funcs.now++;
+		append_func("main", ntvCount, 0); // append func
 		genas("push ebp");
 		genas("mov ebp esp");
 		uint32_t espBgn = ntvCount + 2; genas("sub esp 0");
@@ -145,11 +164,11 @@ int expression(int pos, int status) {
 
 		eval(0, BLOCK_NORMAL);
 
-		genCode(0x81); genCode(0xc4); genCodeInt32(ADDR_SIZE * (locVar.size[functions.now] + 6)); // add %esp nn
+		genCode(0x81); genCode(0xc4); genCodeInt32(ADDR_SIZE * (locVar.size[funcs.now] + 6)); // add %esp nn
 		genCode(0xc9);// leave
 		genCode(0xc3);// ret
-		genCodeInt32Insert(ADDR_SIZE * (locVar.size[functions.now] + 6), espBgn);
-		functions.inside = IN_GLOBAL;
+		genCodeInt32Insert(ADDR_SIZE * (locVar.size[funcs.now] + 6), espBgn);
+		funcs.inside = IN_GLOBAL;
 	
 	} else if(isassign()) {
 	
@@ -244,7 +263,7 @@ int expression(int pos, int status) {
 		if(status == NON) return 1;
 		if(status == BLOCK_NORMAL) {
 			genCodeInt32Insert(ntvCount - pos - 4, pos);
-		} else if(status == BLOCK_FUNC) functions.inside = IN_GLOBAL;
+		} else if(status == BLOCK_FUNC) funcs.inside = IN_GLOBAL;
 		return 1;
 	
 	} else if(!skip(";")) {
@@ -290,7 +309,7 @@ int32_t parser() {
 		printf("%02x", ntvCode[i]);
 	puts("");
 #endif
-	printf("memsz: %d\n", locVar.size[functions.now]);
+	printf("memsz: %d\n", locVar.size[funcs.now]);
 
 	return 1;
 }
@@ -340,16 +359,18 @@ int make_while() {
 	return 0;
 }
 
-int make_function() {
+int make_func() {
 	uint32_t espBgn, params = 0;
 	char *funcName = tok.tok[tok.pos++].val;
 
-	functions.now++; functions.inside = IN_FUNC;
+	funcs.now++; funcs.inside = IN_FUNC;
 	if(skip("(")) { // get params
 		do { declareVariable(); tok.pos++; params++; } while(skip(","));
 		skip(")");
 	}
-	append_func(funcName, ntvCount, params); // append function
+	append_func(funcName, ntvCount, params); // append funcs
+	is_undefined_func(funcName, ntvCount);
+	
 	genas("push ebp");
 	genas("mov ebp esp");
 	espBgn = ntvCount + 2; genas("sub esp 0"); // align
@@ -369,17 +390,17 @@ int make_function() {
 		genCodeInt32Insert(ntvCount - rets.addr[rets.count] - 4, rets.addr[rets.count]);
 	} rets.count = 0;
 
-	genas("add esp %u", ADDR_SIZE * (locVar.size[functions.now] + 6)); // add esp nn
+	genas("add esp %u", ADDR_SIZE * (locVar.size[funcs.now] + 6)); // add esp nn
 	genCode(0xc9);// leave
 	genCode(0xc3);// ret
 
-	genCodeInt32Insert(ADDR_SIZE * (locVar.size[functions.now] + 6), espBgn);
+	genCodeInt32Insert(ADDR_SIZE * (locVar.size[funcs.now] + 6), espBgn);
 	for(i = 1; i <= params; i++) {
 		ntvCode[pos_save[i - 1]] = 
-			256 - ADDR_SIZE * i + (((locVar.size[functions.now] + 6) * ADDR_SIZE) - 4);
+			256 - ADDR_SIZE * i + (((locVar.size[funcs.now] + 6) * ADDR_SIZE) - 4);
 	}
 
-	printf("%s() has %u functions or variables\n", funcName, locVar.size[functions.now]);
+	printf("%s() has %u funcs or variables\n", funcName, locVar.size[funcs.now]);
 
 	return 0;
 }
@@ -411,7 +432,7 @@ re:
 
 int assignment() {
 	char *name = tok.tok[tok.pos].val, *mod_name = "";
-	if(streql(tok.tok[tok.pos+1].val, ".")) { // module's function or variable?
+	if(streql(tok.tok[tok.pos+1].val, ".")) { // module's func or variable?
 		mod_name = tok.tok[tok.pos].val;
 		tok.pos += 2;
 		name = tok.tok[tok.pos].val;
