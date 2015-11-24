@@ -147,7 +147,7 @@ int expr_primary() {
 							for(params = 0; !streql(tok.tok[tok.pos].val, ")"); params++) {
 								expr_entry();
 								genas("push eax");
-								if(!skip(",")) error("expr: not declare");
+								skip(",");
 							}
 						}
 						genCode(0xe8); append_undefined_func(name, streql(module, "") ? mod_name : module, ntvCount);

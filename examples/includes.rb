@@ -173,6 +173,9 @@ module File
 	$fp = 0
 
 	def open(name:string, mode:string)
+		if fp != 0
+			close(fp)
+		end
 		fp = fopen(name, mode)
 	end
 	def close
