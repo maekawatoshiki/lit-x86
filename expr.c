@@ -143,7 +143,8 @@ int expr_primary() {
 			
 					if(function == NULL) { // undefined
 						size_t params = 0;
-						if(is_number_tok() || is_ident_tok() || is_string_tok() || streql(tok.tok[tok.pos].val, "(")) { // has arg?
+						if(is_number_tok() || is_ident_tok() || 
+								is_string_tok() || streql(tok.tok[tok.pos].val, "(")) { // has arg?
 							for(params = 0; !streql(tok.tok[tok.pos].val, ")"); params++) {
 								expr_entry();
 								genas("push eax");
@@ -154,7 +155,8 @@ int expr_primary() {
 						genCodeInt32(0x00000000); // call func
 						genas("add esp %d", params * ADDR_SIZE);
 					} else { // defined
-						if(is_number_tok() || is_ident_tok() || is_string_tok() || streql(tok.tok[tok.pos].val, "(")) { // has arg?
+						if(is_number_tok() || is_ident_tok() || 
+								is_string_tok() || streql(tok.tok[tok.pos].val, "(")) { // has arg?
 							for(size_t i = 0; i < function->params; i++) {
 								expr_entry();
 								genas("push eax");
