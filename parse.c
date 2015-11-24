@@ -93,7 +93,6 @@ int is_undefined_func(char *name, int ntvc) {
 	for(int i = 0; i < undefined_funcs.count; i++) {
 		if(streql(f[i].name, name) && streql(f[i].mod_name, module)) {
 			genCodeInt32Insert(ntvc - f[i].address - 4, f[i].address);
-			return 1;
 		}
 	}
 	return 0;
