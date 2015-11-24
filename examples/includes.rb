@@ -57,7 +57,7 @@ module String
 		if 'a' <= c and c <= 'f'
 			return 1
 		end
-		return isdigit(c)
+		isdigit(c)
 	end
 
 	def atoi(s:string)

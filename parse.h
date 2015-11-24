@@ -19,7 +19,7 @@ struct {
 } gblVar;
 
 struct {
-	Variable var[0xFF][0xFF]; // var[ "funcs.now" ] [ each variable ]
+	Variable var[0xFF][0xFF]; // var[ "funcs.now" ] [ each var ]
 	int count, size[0xFF];
 } locVar;
 
@@ -74,7 +74,7 @@ int isassign();
 int assignment();
 int assignment_single(Variable *);
 int assignment_array(Variable *);
-Variable *declareVariable();
+Variable *declare_var();
 
 char *replaceEscape(char *);
 

@@ -21,12 +21,12 @@ int getString() {
 }
 
 Variable *get_var(char *name, char *mod_name) {
-	// loval variable
+	// loval var
 	for(int i = 0; i < locVar.count; i++) {
 		if(streql(name, locVar.var[funcs.now][i].name))
 			return &locVar.var[funcs.now][i];
 	}
-	// global variable
+	// global var
 	for(int i = 0; i < gblVar.count; i++) {
 		if(streql(name, gblVar.var[i].name) && streql(mod_name, gblVar.var[i].mod_name)) {
 			return &gblVar.var[i];
@@ -38,7 +38,7 @@ Variable *get_var(char *name, char *mod_name) {
 
 Variable *append_var(char *name, int type) {
 	if(funcs.inside == IN_FUNC) {
-		// local variable
+		// local var
 		uint32_t sz = 1 + ++locVar.size[funcs.now];
 		strcpy(locVar.var[funcs.now][locVar.count].name, name);
 		locVar.var[funcs.now][locVar.count].type = type;
@@ -365,7 +365,7 @@ int make_func() {
 
 	funcs.now++; funcs.inside = IN_FUNC;
 	if(skip("(")) { // get params
-		do { declareVariable(); tok.pos++; params++; } while(skip(","));
+		do { declare_var(); tok.pos++; params++; } while(skip(","));
 		skip(")");
 	}
 	append_func(funcName, ntvCount, params); // append funcs
@@ -400,7 +400,7 @@ int make_func() {
 			256 - ADDR_SIZE * i + (((locVar.size[funcs.now] + 6) * ADDR_SIZE) - 4);
 	}
 
-	printf("%s() has %u funcs or variables\n", funcName, locVar.size[funcs.now]);
+	printf("%s() has %u funcs or vars\n", funcName, locVar.size[funcs.now]);
 
 	return 0;
 }
@@ -432,7 +432,7 @@ re:
 
 int assignment() {
 	char *name = tok.tok[tok.pos].val, *mod_name = "";
-	if(streql(tok.tok[tok.pos+1].val, ".")) { // module's func or variable?
+	if(streql(tok.tok[tok.pos+1].val, ".")) { // module's func or var?
 		mod_name = tok.tok[tok.pos].val;
 		tok.pos += 2;
 		name = tok.tok[tok.pos].val;
@@ -441,7 +441,7 @@ int assignment() {
 	int declare = 0;
 	Variable *v = get_var(name, mod_name);
 	if(v == NULL) v = get_var(name, module);
-	if(v == NULL) { declare = 1; v = declareVariable(); }
+	if(v == NULL) { declare = 1; v = declare_var(); }
 	skip_tok();
 	
 	if(v->loctype == V_LOCAL) {
@@ -451,10 +451,10 @@ int assignment() {
 			assignment_single(v);
 		}
 	} else if(v->loctype == V_GLOBAL) {
-		if(declare) { // declare for global variable?
+		if(declare) { // declare for global var?
 			// assignment only int32_terger
 			if(skip("=")) {
-				unsigned *m = (unsigned *)v->id; // v->id is gloval variable's address
+				unsigned *m = (unsigned *)v->id; // v->id is gloval var's address
 				*m = atoi(tok.tok[tok.pos++].val);
 			}
 		} else {
@@ -554,7 +554,7 @@ int assignment_array(Variable *v) {
 	return 0;
 }
 
-Variable *declareVariable() {
+Variable *declare_var() {
 	int32_t npos = tok.pos;
 	if(isalpha(tok.tok[tok.pos].val[0])) {
 		tok.pos++;
@@ -563,7 +563,7 @@ Variable *declareVariable() {
 			if(skip("string")) { --tok.pos; return append_var(tok.tok[npos].val, T_STRING); }
 			if(skip("double")) { --tok.pos; return append_var(tok.tok[npos].val, T_DOUBLE); }
 		} else { --tok.pos; return append_var(tok.tok[npos].val, T_INT); }
-	} else error("error: %d: can't declare variable", tok.tok[tok.pos].nline);
+	} else error("error: %d: can't declare var", tok.tok[tok.pos].nline);
 	return NULL;
 }
 
