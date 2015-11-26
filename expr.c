@@ -106,8 +106,8 @@ int expr_primary() {
 			name = tok.tok[tok.pos].val; 
 		}
 
-		if(isassign()) {
-			assignment();
+		if(is_asgmt()) {
+			asgmt();
 		} else {
 			skip_tok();
 			if(skip("[")) { // Array?
@@ -184,7 +184,7 @@ int expr_primary() {
 			}
 		}
 	} else if(skip("(")) {
-    if(isassign()) assignment(); else expr_compare();
+    if(is_asgmt()) asgmt(); else expr_compare();
 		if(!skip(")"))
 		 error("error: %d: expected expression ')'", tok.tok[tok.pos].nline);
   } else if(skip(";") || 1) error("error: %d: invalid expression", tok.tok[tok.pos].nline);

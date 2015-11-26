@@ -97,7 +97,7 @@ int expression(int pos, int status) {
 
 	if(skip("$")) { // global varibale
 
-		if(isassign()) assignment();
+		if(is_asgmt()) asgmt();
 
 	} else if(skip("def")) { blocksCount++;
 
@@ -128,9 +128,9 @@ int expression(int pos, int status) {
 		genCodeInt32Insert(ADDR_SIZE * (locVar.size[funcs.now] + 6), espBgn);
 		funcs.inside = IN_GLOBAL;
 	
-	} else if(isassign()) {
+	} else if(is_asgmt()) {
 	
-		assignment();
+		asgmt();
 	
 	} else if((isputs=skip("puts")) || skip("output")) {
 	
@@ -175,7 +175,7 @@ int expression(int pos, int status) {
 	
 	} else if(skip("for")) { blocksCount++;
 	
-		assignment(); 
+		asgmt(); 
 		if(!skip(",")) error("error: %d: expected ','", tok.tok[tok.pos].nline);
 		make_while();
 	

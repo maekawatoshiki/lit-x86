@@ -46,7 +46,7 @@ Variable *append_var(char *name, int type) {
 	return NULL;
 }
 
-int isassign() {
+int is_asgmt() {
 	if(streql(tok.tok[tok.pos+1].val, "=")) return 1;
 	else if(streql(tok.tok[tok.pos+1].val, "++")) return 1;
 	else if(streql(tok.tok[tok.pos+1].val, "--")) return 1;
@@ -71,7 +71,7 @@ re:
 	return 0;
 }
 
-int assignment() {
+int asgmt() {
 	char *name = tok.tok[tok.pos].val, *mod_name = "";
 	if(streql(tok.tok[tok.pos+1].val, ".")) { // module's func or var?
 		mod_name = tok.tok[tok.pos].val;
@@ -86,28 +86,28 @@ int assignment() {
 	skip_tok();
 	
 	if(v->loctype == V_LOCAL) {
-		if(skip("[")) { // Array?
-			assignment_array(v);
+		if(streql(tok.tok[tok.pos].val, "[")) { // Array?
+			asgmt_array(v);
 		} else { // Scalar?
-			assignment_single(v);
+			asgmt_single(v);
 		}
 	} else if(v->loctype == V_GLOBAL) {
 		if(declare) { // declare for global var?
-			// assignment only int32_terger
+			// asgmt only int32_terger
 			if(skip("=")) {
 				unsigned *m = (unsigned *)v->id; // v->id is gloval var's address
 				*m = atoi(tok.tok[tok.pos++].val);
 			}
 		} else {
-			if(skip("[")) { // Array?
-				assignment_array(v);
-			} else assignment_single(v);
+			if(streql(tok.tok[tok.pos].val, "[")) { // Array?
+				asgmt_array(v);
+			} else asgmt_single(v);
 		}
 	}
 	return 0;
 }
 
-int assignment_single(Variable *v) {
+int asgmt_single(Variable *v) {
 	int inc = 0, dec = 0;
 
 	if(v->loctype == V_LOCAL) { // local single
@@ -145,9 +145,10 @@ int assignment_single(Variable *v) {
 	return 0;
 }
 
-int assignment_array(Variable *v) {
+int asgmt_array(Variable *v) {
 	int inc = 0, dec = 0;
 
+	if(!skip("[")) error("error: %d: expected '['", tok.tok[tok.pos].nline);
 	if(v->loctype == V_LOCAL) {
 		expr_entry();
 		genas("push eax");
@@ -170,7 +171,7 @@ int assignment_array(Variable *v) {
 		} else if((inc=skip("++")) || (dec=skip("--"))) {
 
 		} else 
-			error("error: %d: invalid assignment", tok.tok[tok.pos].nline);
+			error("error: %d: invalid asgmt", tok.tok[tok.pos].nline);
 	} else if(v->loctype == V_GLOBAL) {
 		expr_entry();
 		genas("push eax");
@@ -189,7 +190,7 @@ int assignment_array(Variable *v) {
 		} else if((inc=skip("++")) || (dec=skip("--"))) {
 
 		} else
-			error("error: %d: invalid assignment", tok.tok[tok.pos].nline);
+			error("error: %d: invalid asgmt", tok.tok[tok.pos].nline);
 	}
 
 	return 0;

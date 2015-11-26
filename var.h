@@ -25,9 +25,9 @@ Variable *get_var(char *, char *);
 Variable *append_var(char *, int);
 Variable *declare_var();
 
-int isassign();
-int assignment();
-int assignment_single(Variable *);
-int assignment_array(Variable *);
+int is_asgmt();
+int asgmt();
+int asgmt_single(Variable *);
+int asgmt_array(Variable *);
 
 #endif // _LIT_VAR_
