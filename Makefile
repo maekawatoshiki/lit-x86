@@ -1,7 +1,7 @@
 CFLAGS = -m32 -O2 -std=c99 -Wno-strict-aliasing -Wno-strict-aliasing
 CC = clang $(CFLAGS) 
 
-lit: main.o lit.o asm.o lex.o expr.o parse.o stdfunc.o
+lit: main.o lit.o asm.o lex.o var.o expr.o parse.o stdfunc.o
 
 main.o: main.c
 	$(CC) -c main.c
@@ -14,6 +14,9 @@ asm.o: asm.h asm.c
 
 lex.o: lex.h lex.c
 	$(CC) -c lex.c
+
+var.o: var.h var.c
+	$(CC) -c var.c
 
 expr.o: expr.h expr.c
 	$(CC) -c expr.c

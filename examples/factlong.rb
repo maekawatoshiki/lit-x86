@@ -1,4 +1,4 @@
-$LEN = 1000
+$LEN = 10000
 
 def bigPrint(a)
 	for i = LEN - 1, i >= 0, i--
