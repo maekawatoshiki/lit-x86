@@ -33,6 +33,8 @@
 	#include <sys/wait.h>
 #endif
 
+#define _LIT_VERSION_ "0.9.2"
+
 enum {
 	ADDR_SIZE = 4
 };
@@ -89,6 +91,9 @@ int skip(char *);
 int error(char *, ...);
 
 int execute(char *);
+
+void lit_interpret();
+void lit_run();
 
 /* for native(JIT) code. */
 

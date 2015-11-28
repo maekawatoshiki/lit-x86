@@ -122,3 +122,47 @@ int execute(char *source) {
 	return 0;
 }
 
+size_t get_file_size(FILE *fp) {
+	size_t sz;
+
+	fseek(fp, 0, SEEK_END);
+	sz = ftell(fp);
+	fseek(fp, 0, SEEK_SET);
+
+	return sz;
+}
+
+void lit_interpret() {
+	char *src;
+	src = (char*)calloc(sizeof(char), 0xFFFF);
+	char line[0xFF] = "";
+
+	while(strcmp(line, "run\n") != 0) {
+		printf(">> "); strcat(src, line);
+		memset(line, 0, 0xFF);
+		fgets(line, 0xFF, stdin);
+	}
+
+	clock_t bgn = clock();
+	execute(src);
+	clock_t end = clock();
+	printf("time: %.3lf\n", (double)(end - bgn) / CLOCKS_PER_SEC);
+}
+
+void lit_run(char *file) {
+	char *src;
+	FILE *srcfp = fopen(file, "rb");
+
+	{
+		if(!srcfp) { perror("file not found"); exit(0); }
+		size_t size = get_file_size(srcfp);
+		src = (char*)calloc(sizeof(char), size + 2);
+		fread(src, sizeof(char), size, srcfp);
+		fclose(srcfp);
+	}
+
+	clock_t bgn = clock();
+	execute(src);
+	clock_t end = clock();
+	printf("time: %.3lf\n", (double)(end - bgn) / CLOCKS_PER_SEC);
+}
