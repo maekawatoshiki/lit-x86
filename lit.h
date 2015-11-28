@@ -43,6 +43,11 @@ enum {
 };
 
 enum {
+	FALSE = 0,
+	TRUE = 1
+};
+
+enum {
 	BLOCK_NORMAL = 0,
 	BLOCK_LOOP,
 	BLOCK_FUNC,
@@ -102,7 +107,7 @@ void freeInProgram();
 void putNumber(int);
 void putString(int *);
 void putln();
-void appendAddr(int);
+void appendAddr(uint32_t);
 
 void set_xor128();
 int  xor128();

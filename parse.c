@@ -108,11 +108,11 @@ int expression(int pos, int status) {
 		module = tok.tok[tok.pos++].val;
 		eval(0, NON);
 		module = "";
-	} else if(funcs.inside == IN_GLOBAL && !streql("def", tok.tok[tok.pos+1].val) && 
+	} else if(funcs.inside == FALSE && !streql("def", tok.tok[tok.pos+1].val) && 
 			!streql("module", tok.tok[tok.pos+1].val) && !streql("$", tok.tok[tok.pos+1].val) && 
 			!streql(";", tok.tok[tok.pos+1].val)) {	// main func entry
 
-		funcs.inside = IN_FUNC;
+		funcs.inside = TRUE;
 		funcs.now++;
 		append_func("main", ntvCount, 0); // append func
 		genas("push ebp");
@@ -126,7 +126,7 @@ int expression(int pos, int status) {
 		genCode(0xc9);// leave
 		genCode(0xc3);// ret
 		genCodeInt32Insert(ADDR_SIZE * (locVar.size[funcs.now] + 6), espBgn);
-		funcs.inside = IN_GLOBAL;
+		funcs.inside = FALSE;
 	
 	} else if(is_asgmt()) {
 	
@@ -136,10 +136,9 @@ int expression(int pos, int status) {
 	
 		do {
 			int isstring = 0;
-			if(is_string_tok()) {
+			if((isstring = is_string_tok())) {
 				genCode(0xb8); getString();
 				genCodeInt32(0x00); // mov eax string_address
-				isstring = 1;
 			} else {
 				expr_entry();
 			}
@@ -221,7 +220,7 @@ int expression(int pos, int status) {
 		if(status == NON) return 1;
 		if(status == BLOCK_NORMAL) {
 			genCodeInt32Insert(ntvCount - pos - 4, pos);
-		} else if(status == BLOCK_FUNC) funcs.inside = IN_GLOBAL;
+		} else if(status == BLOCK_FUNC) funcs.inside = FALSE;
 		return 1;
 	
 	} else if(!skip(";")) {
@@ -321,7 +320,7 @@ int make_func() {
 	uint32_t espBgn, params = 0;
 	char *funcName = tok.tok[tok.pos++].val;
 
-	funcs.now++; funcs.inside = IN_FUNC;
+	funcs.now++; funcs.inside = TRUE;
 	if(skip("(")) { // get params
 		do { declare_var(); tok.pos++; params++; } while(skip(","));
 		skip(")");

@@ -22,7 +22,7 @@ Variable *get_var(char *name, char *mod_name) {
 }
 
 Variable *append_var(char *name, int type) {
-	if(funcs.inside == IN_FUNC) {
+	if(funcs.inside == TRUE) {
 		// local var
 		uint32_t sz = 1 + ++locVar.size[funcs.now];
 		strcpy(locVar.var[funcs.now][locVar.count].name, name);
@@ -31,7 +31,7 @@ Variable *append_var(char *name, int type) {
 		locVar.var[funcs.now][locVar.count].loctype = V_LOCAL;
 
 		return &locVar.var[funcs.now][locVar.count++];
-	} else if(funcs.inside == IN_GLOBAL) {
+	} else if(funcs.inside == FALSE) {
 		// global varibale
 		strcpy(gblVar.var[gblVar.count].name, name);
 		strcpy(gblVar.var[gblVar.count].mod_name, module);
