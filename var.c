@@ -114,17 +114,17 @@ int asgmt_single(Variable *v) {
 		if(skip("=")) {
 			expr_entry();
 		} else if((inc=skip("++")) || (dec=skip("--"))) {
-			genCode(0x8b); genCode(0x45);
-			genCode(256 -
+			gencode(0x8b); gencode(0x45);
+			gencode(256 -
 					(v->type == T_INT ? ADDR_SIZE :
 					 v->type == T_STRING ? ADDR_SIZE :
 					 v->type == T_DOUBLE ? sizeof(double) : 4) * v->id); // mov eax varaible
 			genas("push eax");
-			if(inc) genCode(0x40); // inc eax
-			else if(dec) genCode(0x48); // dec eax
+			if(inc) gencode(0x40); // inc eax
+			else if(dec) gencode(0x48); // dec eax
 		}
-		genCode(0x89); genCode(0x45);
-		genCode(256 -
+		gencode(0x89); gencode(0x45);
+		gencode(256 -
 				(v->type == T_INT ? ADDR_SIZE :
 				 v->type == T_STRING ? ADDR_SIZE :
 				 v->type == T_DOUBLE ? sizeof(double) : 4) * v->id); // mov var eax
@@ -132,13 +132,13 @@ int asgmt_single(Variable *v) {
 	} else if(v->loctype == V_GLOBAL) { // global single
 		if(skip("=")) {
 			expr_entry();
-			genCode(0xa3); genCodeInt32(v->id); // mov GLOBAL_ADDR eax
+			gencode(0xa3); gencode_int32(v->id); // mov GLOBAL_ADDR eax
 		} else if((inc=skip("++")) || (dec=skip("--"))) {
-			genCode(0xa1); genCodeInt32(v->id);// mov eax GLOBAL_ADDR
+			gencode(0xa1); gencode_int32(v->id);// mov eax GLOBAL_ADDR
 			genas("push eax");
-			if(inc) genCode(0x40); // inc eax
-			else if(dec) genCode(0x48); // dec eax
-			genCode(0xa3); genCodeInt32(v->id); // mov GLOBAL_ADDR eax
+			if(inc) gencode(0x40); // inc eax
+			else if(dec) gencode(0x48); // dec eax
+			gencode(0xa3); gencode_int32(v->id); // mov GLOBAL_ADDR eax
 			genas("pop eax");
 		}
 	}
@@ -157,16 +157,16 @@ int asgmt_array(Variable *v) {
 
 		if(skip("=")) {
 			expr_entry();
-			genCode(0x8b); genCode(0x4d);
-			genCode(256 -
+			gencode(0x8b); gencode(0x4d);
+			gencode(256 -
 					(v->type == T_INT ? ADDR_SIZE :
 					 v->type == T_STRING ? ADDR_SIZE :
 					 v->type == T_DOUBLE ? sizeof(double) : 4) * v->id); // mov ecx [ebp-n]
 			genas("pop edx");
 			if(v->type == T_INT) {
-				genCode(0x89); genCode(0x04); genCode(0x91); // mov [ecx+edx*4], eax
+				gencode(0x89); gencode(0x04); gencode(0x91); // mov [ecx+edx*4], eax
 			} else {
-				genCode(0x89); genCode(0x04); genCode(0x11); // mov [ecx+edx], eax
+				gencode(0x89); gencode(0x04); gencode(0x11); // mov [ecx+edx], eax
 			}
 		} else if((inc=skip("++")) || (dec=skip("--"))) {
 
@@ -179,12 +179,12 @@ int asgmt_array(Variable *v) {
 		if(skip("=")) {
 
 			expr_entry();
-			genCode(0x8b); genCode(0x0d); genCodeInt32(v->id); // mov ecx GLOBAL_ADDR
+			gencode(0x8b); gencode(0x0d); gencode_int32(v->id); // mov ecx GLOBAL_ADDR
 			genas("pop edx");
 			if(v->type == T_INT) {
-				genCode(0x89); genCode(0x04); genCode(0x91); // mov [ecx+edx*4], eax
+				gencode(0x89); gencode(0x04); gencode(0x91); // mov [ecx+edx*4], eax
 			} else {
-				genCode(0x89); genCode(0x04); genCode(0x11); // mov [ecx+edx], eax
+				gencode(0x89); gencode(0x04); gencode(0x11); // mov [ecx+edx], eax
 			}
 		
 		} else if((inc=skip("++")) || (dec=skip("--"))) {

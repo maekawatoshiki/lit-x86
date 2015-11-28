@@ -43,7 +43,7 @@ int eval(int, int);
 int expression(int, int);
 
 int parser();
-int getString();
+int get_string();
 
 func_t *get_func(char *, char *);
 func_t *append_func(char *, int, int);

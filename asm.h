@@ -8,9 +8,9 @@ enum {
 	ESP, EBP, ESI, EDI
 };
 
-void genCode(unsigned char);
-void genCodeInt32(unsigned int);
-void genCodeInt32Insert(unsigned int, int);
+void gencode(unsigned char);
+void gencode_int32(unsigned int);
+void gencode_int32_insert(unsigned int, int);
 
 int regBit(char *reg);
 int mk_modrm(char *, char *);

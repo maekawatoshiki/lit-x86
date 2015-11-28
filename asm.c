@@ -3,15 +3,15 @@
 unsigned char *ntvCode;
 int ntvCount;
 
-void genCode(unsigned char val) { ntvCode[ntvCount++] = (val); }
-void genCodeInt32(unsigned int val) {
+void gencode(unsigned char val) { ntvCode[ntvCount++] = (val); }
+void gencode_int32(unsigned int val) {
 	// for little endian
-	genCode(val << 24 >> 24);
-	genCode(val << 16 >> 24);
-	genCode(val << 8 >> 24);
-	genCode(val << 0 >> 24);
+	gencode(val << 24 >> 24);
+	gencode(val << 16 >> 24);
+	gencode(val << 8 >> 24);
+	gencode(val << 0 >> 24);
 }
-void genCodeInt32Insert(unsigned int val, int pos) {
+void gencode_int32_insert(unsigned int val, int pos) {
 	// for little endian
 	ntvCode[pos] = (val << 24 >> 24);
 	ntvCode[pos+1] = (val << 16 >> 24);
@@ -61,62 +61,62 @@ int genas(char *s, ...) {
 
 	if(strcmp(nem[0], "mov") == 0) { // mov?
 		if(isalpha(*nem[2])) { // register?
-			genCode(0x89);
-			genCode(0xc0 + regBit(nem[2]) * 8 + regBit(nem[1]));
+			gencode(0x89);
+			gencode(0xc0 + regBit(nem[2]) * 8 + regBit(nem[1]));
 		} else if(isdigit(*nem[2])) { // integer?
-			genCode(0xb8 + regBit(nem[1]));
-			genCodeInt32(atoi(nem[2]));
+			gencode(0xb8 + regBit(nem[1]));
+			gencode_int32(atoi(nem[2]));
 		} else {
 		}
 	} else if(strcmp(nem[0], "add") == 0) { // add
 		if(isalpha(*nem[2])) { // register?
-			genCode(0x03);
-			genCode(mk_modrm(nem[1], nem[2]));
+			gencode(0x03);
+			gencode(mk_modrm(nem[1], nem[2]));
 		} else if(isdigit(*nem[2])) { // integer?
-			genCode(0x81);
-			genCode(0xc0 + regBit(nem[1]));
-			genCodeInt32(atoi(nem[2]));
+			gencode(0x81);
+			gencode(0xc0 + regBit(nem[1]));
+			gencode_int32(atoi(nem[2]));
 		} else {
 		}
 	} else if(strcmp(nem[0], "sub") == 0) { // sub
 		if(isalpha(*nem[2])) { // register?
-			genCode(0x2b);
-			genCode(mk_modrm(nem[1], nem[2]));
+			gencode(0x2b);
+			gencode(mk_modrm(nem[1], nem[2]));
     } else if(isdigit(*nem[2])) { // integer?
-  		genCode(0x81);
-  		genCode(0xe8 + regBit(nem[1]));
-  		genCodeInt32(atoi(nem[2]));
+  		gencode(0x81);
+  		gencode(0xe8 + regBit(nem[1]));
+  		gencode_int32(atoi(nem[2]));
   	}
 	} else if(strcmp(nem[0], "mul") == 0) { // mul
 		if(isalpha(*nem[1])) { // register?
-			genCode(0xf7);
-			genCode(0xe8 + regBit(nem[1]));
+			gencode(0xf7);
+			gencode(0xe8 + regBit(nem[1]));
 		}
 	} else if(strcmp(nem[0], "div") == 0) { // div
 		if(isalpha(*nem[1])) { // register?
-			genCode(0xf7);
-			genCode(0xf8 + regBit(nem[1]));
+			gencode(0xf7);
+			gencode(0xf8 + regBit(nem[1]));
 		}
 	} else if(strcmp(nem[0], "push") == 0) {
 		if(isalpha(*nem[1])) { // register?
-			genCode(0x50 + regBit(nem[1]));
+			gencode(0x50 + regBit(nem[1]));
 		}
 	} else if(strcmp(nem[0], "shl") == 0) {
 		if(isalpha(*nem[1])) { // register?
-			genCode(0xc1); genCode(0xe0 + regBit(nem[1]));
-			genCode(atoi(nem[2]));
+			gencode(0xc1); gencode(0xe0 + regBit(nem[1]));
+			gencode(atoi(nem[2]));
 		}
 	} else if(strcmp(nem[0], "shr") == 0) {
 		if(isalpha(*nem[1])) { // register?
-			genCode(0xc1); genCode(0xe8 + regBit(nem[1]));
-			genCode(atoi(nem[2]));
+			gencode(0xc1); gencode(0xe8 + regBit(nem[1]));
+			gencode(atoi(nem[2]));
 		}
 	} else if(strcmp(nem[0], "pop") == 0) {
 		if(isalpha(*nem[1])) { // register?
-			genCode(0x58 + regBit(nem[1]));
+			gencode(0x58 + regBit(nem[1]));
 		}
 	} else if(strcmp(nem[0], "call") == 0) {
-		genCode(0xe8); genCodeInt32(atoi(nem[1]));
+		gencode(0xe8); gencode_int32(atoi(nem[1]));
 	}
 
 	va_end(args);

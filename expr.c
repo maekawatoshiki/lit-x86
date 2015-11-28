@@ -17,7 +17,7 @@ int32_t expr_compare() {
 		expr_logic();
 		genas("mov ebx eax");
 		genas("pop eax");
-		genCode(andop ? 0x21 : orop ? 0x09 : 0x31); genCode(0xd8); // and eax ebx
+		gencode(andop ? 0x21 : orop ? 0x09 : 0x31); gencode(0xd8); // and eax ebx
 	}
 
 	return 0;
@@ -32,7 +32,7 @@ int expr_logic() {
 		expr_add_sub();
 		genas("mov ebx eax");
 		genas("pop eax");
-		genCode(0x39); genCode(0xd8); // cmp %eax, %ebx
+		gencode(0x39); gencode(0xd8); // cmp %eax, %ebx
 		/*
 		 * < setl 0x9c
 		 * > setg 0x9f
@@ -41,8 +41,8 @@ int expr_logic() {
 		 * == sete 0x94
 		 * != setne 0x95
 		 */
-		genCode(0x0f); genCode(lt ? 0x9c : gt ? 0x9f : ne ? 0x95 : eql ? 0x94 : fle ? 0x9e : 0x9d); genCode(0xc0); // setX al
-		genCode(0x0f); genCode(0xb6); genCode(0xc0); // movzx eax al
+		gencode(0x0f); gencode(lt ? 0x9c : gt ? 0x9f : ne ? 0x95 : eql ? 0x94 : fle ? 0x9e : 0x9d); gencode(0xc0); // setX al
+		gencode(0x0f); gencode(0xb6); gencode(0xc0); // movzx eax al
 	}
 
 	return 0;
@@ -94,8 +94,8 @@ int expr_primary() {
 		genas("mov eax %d", tok.tok[tok.pos++].val[0]);
 		skip("'");
 	} else if(is_string_tok()) { // string?
-		genCode(0xb8); getString();
-		genCodeInt32(0x00); // mov eax string_address
+		gencode(0xb8); get_string();
+		gencode_int32(0x00); // mov eax string_address
   } else if(is_ident_tok()) { // variable or inc or dec
 		char *name = tok.tok[tok.pos].val, *mod_name = "";
 		Variable *v; 
@@ -119,15 +119,15 @@ int expr_primary() {
 				genas("mov ecx eax");
 
 				if(v->loctype == V_LOCAL) {
-					genCode(0x8b); genCode(0x55); genCode(256 - sizeof(int32_t) * v->id); // mov edx, [ebp - v*4]
+					gencode(0x8b); gencode(0x55); gencode(256 - sizeof(int32_t) * v->id); // mov edx, [ebp - v*4]
 				} else if(v->loctype == V_GLOBAL) {
-					genCode(0x8b); genCode(0x15); genCodeInt32(v->id); // mov edx, GLOBAL_ADDR
+					gencode(0x8b); gencode(0x15); gencode_int32(v->id); // mov edx, GLOBAL_ADDR
 				}
 
 				if(v->type == T_INT) {
-					genCode(0x8b); genCode(0x04); genCode(0x8a);// mov eax, [edx + ecx * 4]
+					gencode(0x8b); gencode(0x04); gencode(0x8a);// mov eax, [edx + ecx * 4]
 				} else {
-					genCode(0x0f); genCode(0xb6); genCode(0x04); genCode(0x0a);// movzx eax, [edx + ecx]
+					gencode(0x0f); gencode(0xb6); gencode(0x04); gencode(0x0a);// movzx eax, [edx + ecx]
 				}
 			
 				if(!skip("]"))
@@ -151,8 +151,8 @@ int expr_primary() {
 								skip(",");
 							}
 						}
-						genCode(0xe8); append_undef_func(name, streql(module, "") ? mod_name : module, ntvCount);
-						genCodeInt32(0x00000000); // call func
+						gencode(0xe8); append_undef_func(name, streql(module, "") ? mod_name : module, ntvCount);
+						gencode_int32(0x00000000); // call func
 						genas("add esp %d", params * ADDR_SIZE);
 					} else { // defined
 						if(is_number_tok() || is_ident_tok() || 
@@ -164,7 +164,7 @@ int expr_primary() {
 									error("error: %d: expected ','", tok.tok[tok.pos].nline);
 							}
 						}
-						genCode(0xe8); genCodeInt32(0xFFFFFFFF - (ntvCount - function->address) - 3); // call func
+						gencode(0xe8); gencode_int32(0xFFFFFFFF - (ntvCount - function->address) - 3); // call func
 						genas("add esp %d", function->params * ADDR_SIZE);
 					}
 				}
@@ -176,10 +176,10 @@ int expr_primary() {
 				if(v == NULL)
 					error("var: error: %d: '%s' was not declare", tok.tok[tok.pos].nline, name);
 				if(v->loctype == V_LOCAL) {
-					genCode(0x8b); genCode(0x45);
-					genCode(256 - sizeof(uint32_t) * v->id); // mov eax variable
+					gencode(0x8b); gencode(0x45);
+					gencode(256 - sizeof(uint32_t) * v->id); // mov eax variable
 				} else if(v->loctype == V_GLOBAL) {
-					genCode(0xa1); genCodeInt32(v->id); // mov eax GLOBAL_ADDR
+					gencode(0xa1); gencode_int32(v->id); // mov eax GLOBAL_ADDR
 				}
 			}
 		}
@@ -204,7 +204,7 @@ int32_t isIndex() {
 int make_index() {
 	genas("mov ecx eax");
 	skip("["); expr_compare(); skip("]");
-	genCode(0x8b); genCode(0x04); genCode(0x81); // mov eax [eax * 4 + ecx]
+	gencode(0x8b); gencode(0x04); gencode(0x81); // mov eax [eax * 4 + ecx]
 	return 0;
 }
 
