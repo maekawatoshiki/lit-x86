@@ -14,7 +14,7 @@ void init() {
 		perror("mprotect");
 #endif
 	tok.pos = ntvCount = 0; tok.size = 0xfff;
-	mem.mem = (mm *)calloc(0x7ff, sizeof(mm));
+	mem.mem = (mem_info *)calloc(0x7ff, sizeof(mem_info));
 	set_xor128();
 	tok.tok = (Token *)calloc(sizeof(Token), tok.size);
 	brks.addr = (uint32_t *)calloc(sizeof(uint32_t), 1);
@@ -46,7 +46,7 @@ void ssleep(uint32_t t) {
 }
 
 void appendAddr(uint32_t addr) {
-	// mem.mem = realloc(mem.mem, sizeof(mm) * (1 + mem.count));
+	// mem.mem = realloc(mem.mem, sizeof(mem_info) * (1 + mem.count));
 	mem.mem[mem.count].addr = addr;
 	mem.mem[mem.count++].isfree = 0;
 }

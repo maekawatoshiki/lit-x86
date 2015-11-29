@@ -41,11 +41,6 @@ enum {
 };
 
 enum {
-	IN_FUNC = 1,
-	IN_GLOBAL = 0
-};
-
-enum {
 	FALSE = 0,
 	TRUE = 1
 };
@@ -101,10 +96,10 @@ void lit_run();
 typedef struct {
 	uint32_t addr;
 	int isfree;
-} mm;
+} mem_info;
 
 struct {
-	mm *mem;
+	mem_info *mem;
 	int count;
 } mem;
 
