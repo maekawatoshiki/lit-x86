@@ -14,7 +14,7 @@ typedef struct {
 
 struct {
 	func_t func[0xff];
-	int count;
+	int count, now, inside;
 } undef_funcs, funcs;
 
 // The strings embedded in native code

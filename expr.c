@@ -119,7 +119,7 @@ int expr_primary() {
 				genas("mov ecx eax");
 
 				if(v->loctype == V_LOCAL) {
-					gencode(0x8b); gencode(0x55); gencode(256 - sizeof(int32_t) * v->id); // mov edx, [ebp - v*4]
+					gencode(0x8b); gencode(0x55); gencode(256 - ADDR_SIZE * v->id); // mov edx, [ebp - v*4]
 				} else if(v->loctype == V_GLOBAL) {
 					gencode(0x8b); gencode(0x15); gencode_int32(v->id); // mov edx, GLOBAL_ADDR
 				}

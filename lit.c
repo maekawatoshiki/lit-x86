@@ -144,7 +144,7 @@ void lit_interpret() {
 	}
 
 	clock_t bgn = clock();
-	execute(src);
+		execute(src);
 	clock_t end = clock();
 	printf("time: %.3lf\n", (double)(end - bgn) / CLOCKS_PER_SEC);
 }
@@ -162,7 +162,7 @@ void lit_run(char *file) {
 	}
 
 	clock_t bgn = clock();
-	execute(src);
+		execute(src);
 	clock_t end = clock();
 	printf("time: %.3lf\n", (double)(end - bgn) / CLOCKS_PER_SEC);
 }

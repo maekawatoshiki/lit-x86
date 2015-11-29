@@ -23,6 +23,7 @@
 #include "expr.h"
 #include "parse.h"
 #include "stdfunc.h"
+#include "option.h"
 
 #if defined(WIN32) || defined(WINDOWS)
 	#include <windows.h>
