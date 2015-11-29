@@ -137,10 +137,11 @@ void lit_interpret() {
 	src = (char*)calloc(sizeof(char), 0xFFFF);
 	char line[0xFF] = "";
 
-	while(strcmp(line, "run\n") != 0) {
-		printf(">> "); strcat(src, line);
+	printf(">> ");
+	while(fgets(line, 0xFF, stdin) != 0) {
+		strcat(src, line);
 		memset(line, 0, 0xFF);
-		fgets(line, 0xFF, stdin);
+		printf(">> ");
 	}
 
 	clock_t bgn = clock();
