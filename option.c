@@ -20,6 +20,6 @@ int show_option(int argc, char **argv) {
 }
 
 void show_version() {
-	puts(_LIT_VERSION_ "(C) 2015 maekawatoshiki");
+	puts("Lit " _LIT_VERSION_ " (C) 2015 maekawatoshiki");
 	puts("Build( " __TIME__ " " __DATE__ " )");
 }
