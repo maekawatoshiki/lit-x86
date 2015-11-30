@@ -141,7 +141,7 @@ int expr_primary() {
 					if(function == NULL) 
 						function = get_func(name, module);
 			
-					if(function == NULL) { // undef
+					if(function == NULL) { // undefine
 						size_t params = 0;
 						if(is_number_tok() || is_ident_tok() || 
 								is_string_tok() || streql(tok.tok[tok.pos].val, "(")) { // has arg?
@@ -177,7 +177,7 @@ int expr_primary() {
 					error("var: error: %d: '%s' was not declare", tok.tok[tok.pos].nline, name);
 				if(v->loctype == V_LOCAL) {
 					gencode(0x8b); gencode(0x45);
-					gencode(256 - sizeof(uint32_t) * v->id); // mov eax variable
+					gencode(256 - ADDR_SIZE * v->id); // mov eax variable
 				} else if(v->loctype == V_GLOBAL) {
 					gencode(0xa1); gencode_int32(v->id); // mov eax GLOBAL_ADDR
 				}
