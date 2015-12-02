@@ -24,7 +24,7 @@ module String
 		end
 	end
 
-	def compare(a:string, b:string)
+	def cmp(a:string, b:string)
 		diff = 0
 		a_len = length(a)
 		for i = 0, i < a_len, i++
@@ -129,32 +129,33 @@ end
 
 module SecureRandom
 	def hex(str:string, len)
-		stdin = fopen("/dev/urandom", "rb")
+		gen = File.open("/dev/urandom", "rb")
 
 		bytes = 128
 		data:string = Array(bytes)
 
-		fgets(data, bytes, stdin)
+		File.read(data, bytes, gen)
 		chars = 0
 		for i = 0, i < bytes and chars < len, i++
 			if String.ishex(data[i])
 				str[chars++] = data[i]
-		else
-			fgets(data, bytes, stdin)
-			i--
-		end
+			else
+				File.read(data, bytes, gen)
+				i--
+			end
 		end
 		str[chars] = 0
+		File.close(gen)
 		str
 	end
 end
 # I/O
 
 module IO
-	def input(str:string)
-		f = fopen("/dev/stdin", "w+")
-		fgets(str, 100, f)
-		fclose(f)
+	def input(str:string, len)
+		f = File.open("/dev/stdin", "w+")
+		File.gets(str, len, f)
+		File.close(f)
 		str
 	end
 end
@@ -167,43 +168,16 @@ module Time
 	end
 end
 
-# File module
-
-module File
-	$fp = 0
-
-	def open(name:string, mode:string)
-		if fp != 0
-			close(fp)
-		end
-		fp = fopen(name, mode)
-	end
-	def close
-		fclose(fp)
-	end
-
-	def write(str:string)
-		fprintf(fp, str)
-	end
-	def read(buf:string, size)
-		pos:string = buf
-		while fgets(pos, size, fp) != NULL
-			pos = buf + String.length(buf)
-		end
-		buf
-	end
-end
-
 # Main 
 
-buf:string = Array(32)
+buf:string = Array(256)
 
-if File.open("includes.rb.test", "r+") == NULL
+if (fp = File.open("includes.rb.test", "r+")) == NULL
 	puts "Error: not found file"
 else 
-	File.read(buf, 32)
-	printf "%s", buf
-	File.close()
+	File.read(buf, 256, fp)
+	printf "%s\n", buf
+	File.close(fp)
 end
 
 puts "Test: SecureRandom module"

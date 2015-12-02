@@ -1,21 +1,23 @@
 #include "stdfunc.h"
 
 std_function stdfunc[] = {
-	{"Array", 1, 12},
-	{"rand", 0, 16},
-	{"printf", -1, 20},
-	{"sleep", 1, 28},
-	{"fopen", 2, 32},
-	{"fprintf", -1, 36},
-	{"fclose", 1, 40},
-	{"fgets", 3, 44},
-	{"free", 1, 48},
-	{"freeLocal", 0, 52}
+	{"Array", "", 1, 12},
+	{"rand", "Math", 0, 16},
+	{"printf", "", -1, 20},
+	{"sleep", "Time", 1, 28},
+	{"open", "File", 2, 32},
+	{"write", "File", -1, 36},
+	{"read", "File", 3, 44},
+	{"close", "File", 1, 40},
+	{"gets", "File", 3, 56},
+	{"free", "Sys", 1, 48},
+	{"freeLocal", "XXX", 0, 52}
 }; // len = sizeof(stdf) / sizeof(stdf[0])
 
-int make_stdfunc(char *name) {
+int make_stdfunc(char *name, char *mod_name) {
 	for(int i = 0; i < sizeof(stdfunc) / sizeof(stdfunc[0]); i++) {
-		if(strcmp(stdfunc[i].name, name) == 0) {
+		if(streql(stdfunc[i].name, name) && 
+				streql(stdfunc[i].mod_name, mod_name)) {
 			if(strcmp(name, "Array") == 0) {
 				expr_compare(); // get array size
 				genas("shl eax 2");

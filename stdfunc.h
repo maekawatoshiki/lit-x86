@@ -8,10 +8,10 @@
 #include "parse.h"
 
 typedef struct {
-	char *name;
+	char *name, *mod_name;
 	int args, addr;
 } std_function;
 
-int make_stdfunc(char *);
+int make_stdfunc(char *, char *); // func name, module namee
 
 #endif

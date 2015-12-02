@@ -21,9 +21,9 @@ end
 a = Array(size)
 
 for i = 0, i < size, i = i + 1
-	k = rand() % (size * 3)
+	k = Math.rand() % (size * 3)
 	for j = 0, j < size, j = j + 1
-		a[j] = rand() % size
+		a[j] = Math.rand() % size
 		output a[j], " "
 	end 
 	puts " sum = ", k

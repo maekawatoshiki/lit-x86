@@ -126,10 +126,10 @@ module calc
 end
 
 def input(str:string)
-	f = fopen("/dev/stdin", "w+")
-	fgets(str, 100, f)
+	f = File.open("/dev/stdin", "w+")
+	File.gets(str, 100, f)
 	str[ calc.strlen(str) - 1 ] = 0
-	fclose(f)
+	File.close(f)
 	str
 end
 
@@ -139,5 +139,5 @@ output "expression => "; input(a)
 
 printf "expr => %s\n", a
 
-puts calc.calc(a) # => 9
+puts calc.calc(a) 
 

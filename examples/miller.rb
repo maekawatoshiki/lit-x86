@@ -23,7 +23,7 @@ def prime(n)
 	while d % 2 == 0; d = d / 2; end
 
 	for q = 0, q < 30, q++
-		a = (rand() % (n - 2)) + 1
+		a = (Math.rand() % (n - 2)) + 1
 		t = d
 		y = modPow(a, t, n)
 		while t != n - 1 & y != 1 & y != n - 1
@@ -39,9 +39,10 @@ end
 
 isp = 0
 while isp < 100
-	r = rand() % 65536
+	r = Math.rand() % 65536
 	if prime(r)
 		puts r, " is prime"
 		isp++
 	end
 end
+

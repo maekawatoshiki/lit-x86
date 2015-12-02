@@ -93,5 +93,5 @@ init()
 for i = 0, i < 20000, i++
 	gen()
 	show()
-	sleep(70)
+	Time.sleep(70)
 end

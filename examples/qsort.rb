@@ -20,7 +20,7 @@ max = 20
 a = Array(max)
 
 for i = 0, i < max, i++
-	printf "%c ", a[i] = 'A' + rand() % ('Z' - 'A')
+	printf "%c ", a[i] = 'A' + Math.rand() % ('Z' - 'A')
 end; puts ""
 
 qsort(a, 0, max - 1)

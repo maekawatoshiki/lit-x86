@@ -29,6 +29,14 @@ void dispose() {
 	freeAddr();
 }
 
+
+// ---- for native code --- //
+
+char *File_read(char *s, int len, FILE *fp) {
+	fread(s, 1, len, fp);
+	return s;
+}
+
 void putNumber(int32_t n) {
 	printf("%d", n);
 }
@@ -103,9 +111,10 @@ void *funcTable[] = {
 	(void *) fopen, 		// 32
 	(void *) fprintf, 	// 36
 	(void *) fclose,		// 40
-	(void *) fgets,			// 44
+	(void *) File_read,			// 44
 	(void *) freeInProgram,// 48
-	(void *) freeAddr,	// 52
+	(void *) freeAddr,	// 52,
+	(void *) fgets, 		// 566
 };
 
 int run() {

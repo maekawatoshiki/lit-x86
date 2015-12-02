@@ -133,7 +133,7 @@ int expr_primary() {
 				if(!skip("]"))
 					error("error: %d: expected expression ']'", tok.tok[tok.pos].nline);
 			} else if(skip("(")) { // Function?
-				int is_stdfunc = make_stdfunc(name); // make standard function
+				int is_stdfunc = make_stdfunc(name, mod_name); // make standard function
 				
 				if(!is_stdfunc) {	// user function
 					func_t *function = get_func(name, mod_name);
