@@ -89,7 +89,7 @@ int error(char *, ...);
 int execute(char *);
 
 void lit_interpret();
-void lit_run();
+void lit_run(char *);
 
 /* for native(JIT) code. */
 
@@ -104,7 +104,7 @@ struct {
 } mem;
 
 void freeAddr();
-void freeInProgram();
+void freeInProgram(uint32_t);
 void putNumber(int);
 void putString(int *);
 void putln();

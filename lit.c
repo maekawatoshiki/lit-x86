@@ -85,7 +85,9 @@ void set_xor128() {
 #if defined(WIN32) || defined(WINDOWS)
 #else
 	w = 1234 + getpid() ^ 0xFFBA9285;
-	puts("set_xor128()");
+	#ifdef DEBUG
+		puts("set_xor128()");
+	#endif
 #endif
 }
 
@@ -118,7 +120,9 @@ void *funcTable[] = {
 };
 
 int run() {
+#ifdef DEBUG
 	printf("size: %dbyte, %.2lf%%\n", ntvCount, ((double)ntvCount / 0xFFFF) * 100.0);
+#endif
 	return ((int (*)(int *, void**))ntvCode)(0, funcTable);
 }
 
@@ -146,17 +150,17 @@ void lit_interpret() {
 	src = (char*)calloc(sizeof(char), 0xFFFF);
 	char line[0xFF] = "";
 
-	printf(">> ");
 	while(fgets(line, 0xFF, stdin) != 0) {
 		strcat(src, line);
 		memset(line, 0, 0xFF);
-		printf(">> ");
 	}
 
 	clock_t bgn = clock();
 		execute(src);
 	clock_t end = clock();
+#ifdef DEBUG
 	printf("time: %.3lf\n", (double)(end - bgn) / CLOCKS_PER_SEC);
+#endif
 }
 
 void lit_run(char *file) {
@@ -174,5 +178,7 @@ void lit_run(char *file) {
 	clock_t bgn = clock();
 		execute(src);
 	clock_t end = clock();
+#ifdef DEBUG
 	printf("time: %.3lf\n", (double)(end - bgn) / CLOCKS_PER_SEC);
+#endif
 }

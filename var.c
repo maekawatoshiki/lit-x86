@@ -62,7 +62,9 @@ re:
 		}
 		t = 1;
 		if(streql(tok.tok[i].val, "[")) { i++; goto re; }
+#ifdef DEBUG
 		printf(">%s\n", tok.tok[i].val);
+#endif
 		if(streql(tok.tok[i].val, "=")) return 1;
 	} else if(streql(tok.tok[tok.pos + 1].val, ".") /* module */ || 
 			streql(tok.tok[tok.pos + 1].val, ":") /* var:type */) {

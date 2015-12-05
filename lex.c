@@ -61,8 +61,7 @@ int lex(char *code) {
 		}
   }
   tok.tok[tok.pos].nline = line;
-#ifdef NDEBUG
-#else
+#ifdef DEBUG
 	for(int32_t i = 0; i < tok.pos; i++) {
 		printf("tk: %d > %s\n", i, tok.tok[i].val);
 	}

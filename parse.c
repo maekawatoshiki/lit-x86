@@ -22,7 +22,9 @@ int get_string() {
 
 func_t *get_func(char *name, char *mod_name) {
 	for(int i = 0; i < funcs.count; i++) {
+	#ifdef DEBUG
 		printf("%s : %s >> %s : %s\n", mod_name, name, funcs.func[i].mod_name, funcs.func[i].name);
+	#endif
 		if(streql(funcs.func[i].name, name) && streql(funcs.func[i].mod_name, mod_name)) {
 			return &funcs.func[i];
 		}
@@ -34,7 +36,9 @@ func_t *append_func(char *name, int address, int params) {
 	funcs.func[funcs.count].address = address;
 	funcs.func[funcs.count].params = params;
 	strcpy(funcs.func[funcs.count].mod_name, module);
+#ifdef DEBUG
 	printf("%s:%s\n", funcs.func[funcs.count].mod_name, name);
+#endif
 	strcpy(funcs.func[funcs.count].name, name);
 	return &funcs.func[funcs.count++];
 }
@@ -245,7 +249,9 @@ int32_t parser() {
 
 	blocksCount = 0;
 	eval(0, BLOCK_NORMAL);
+#ifdef DEBUG
 	printf("blocks: %d\n", blocksCount);
+#endif
 	if(blocksCount != 0) error("error: 'end' is not enough");
 
 	uint32_t addr = get_func("main", "")->address;
@@ -258,14 +264,12 @@ int32_t parser() {
 			gencode(strings.text[strings.count][i]);
 		} gencode(0); // '\0'
 	}
-#ifdef NDEBUG
-	// Nothing
-#else
+#ifdef DEBUG
 	for(int i = 0; i < ntvCount; i++)
 		printf("%02x", ntvCode[i]);
 	puts("");
-#endif
 	printf("memsz: %d\n", locVar.size[funcs.now]);
+#endif
 
 	return 1;
 }
@@ -355,8 +359,9 @@ int make_func() {
 		ntvCode[pos_save[i - 1]] = 
 			256 - ADDR_SIZE * i + (((locVar.size[funcs.now] + 6) * ADDR_SIZE) - 4);
 	}
-
+#ifdef DEBUG
 	printf("%s() has %u funcs or vars\n", funcName, locVar.size[funcs.now]);
+#endif
 
 	return 0;
 }
