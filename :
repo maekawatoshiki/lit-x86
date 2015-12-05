@@ -1,6 +1,6 @@
 #include "lit.h"
 
-extern unsigned char *ntvCode;
+extern static unsigned char *ntvCode;
 extern int ntvCount;
 
 void init() {
@@ -120,11 +120,11 @@ void *funcTable[] = {
 };
 
 int run() {
-	printf("%s","");
+	printf("size: %dbyte, %.2lf%%\n", ntvCount, ((double)ntvCount / 0xFFFF) * 100.0);
 	return ((int (*)(int *, void**))ntvCode)(0, funcTable);
 }
 
-static int execute(char *source) {
+int execute(char *source) {
 	init();
 	lex(source);
 	parser();

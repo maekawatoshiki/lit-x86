@@ -86,7 +86,7 @@ void dispose();
 int skip(char *);
 int error(char *, ...);
 
-int execute(char *);
+static int execute(char *);
 
 void lit_interpret();
 void lit_run(char *);
