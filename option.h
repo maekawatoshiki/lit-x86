@@ -7,6 +7,7 @@
 #include "expr.h"
 #include "parse.h"
 #include "var.h"
+#include "util.h"
 
 int show_option(int, char **);
 void show_version();

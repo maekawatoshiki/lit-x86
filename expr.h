@@ -6,6 +6,7 @@
 #include "lex.h"
 #include "parse.h"
 #include "stdfunc.h"
+#include "util.h"
 
 int is_string_tok();
 int is_number_tok();
@@ -18,7 +19,7 @@ int expr_add_sub();
 int expr_mul_div();
 int expr_primary();
 
-int isIndex();
+int is_index();
 int make_index();
 
 #endif

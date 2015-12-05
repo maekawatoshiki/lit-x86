@@ -6,6 +6,7 @@
 #include "lex.h"
 #include "expr.h"
 #include "var.h"
+#include "util.h"
 
 typedef struct {
 	int address, params;
@@ -23,10 +24,6 @@ struct {
 	int *addr;
 	int count;
 } strings;
-
-void skip_tok();
-
-int streql(char *, char *);
 
 int make_if();
 int make_while();

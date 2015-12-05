@@ -6,6 +6,7 @@
 #include "expr.h"
 #include "parse.h"
 #include "stdfunc.h"
+#include "util.h"
 
 enum {
 	TOK_SYMBOL,

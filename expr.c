@@ -189,12 +189,12 @@ int expr_primary() {
 		 error("error: %d: expected expression ')'", tok.tok[tok.pos].nline);
   } else if(skip(";") || 1) error("error: %d: invalid expression", tok.tok[tok.pos].nline);
 	
-	while(isIndex()) make_index();
+	while(is_index()) make_index();
 
 	return 0;
 }
 
-int32_t isIndex() {
+int is_index() {
 	if(!strcmp(tok.tok[tok.pos].val, "[")) {
 		return 1;
 	}

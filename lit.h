@@ -23,6 +23,7 @@
 #include "expr.h"
 #include "parse.h"
 #include "stdfunc.h"
+#include "util.h"
 #include "option.h"
 
 #if defined(WIN32) || defined(WINDOWS)
@@ -82,9 +83,6 @@ struct {
 
 void init();
 void dispose();
-
-int skip(char *);
-int error(char *, ...);
 
 static int execute(char *);
 

@@ -6,6 +6,7 @@
 #include "lex.h"
 #include "expr.h"
 #include "parse.h"
+#include "util.h"
 
 typedef struct {
 	char *name, *mod_name;

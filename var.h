@@ -3,6 +3,7 @@
 
 #include "lit.h"
 #include "expr.h"
+#include "util.h"
 
 typedef struct {
 	char name[32], mod_name[32];

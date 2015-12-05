@@ -155,7 +155,7 @@ int asgmt_array(Variable *v) {
 		expr_entry();
 		genas("push eax");
 		if(!skip("]")) error("error: %d: ']' except", tok.tok[tok.pos].nline);
-		while(isIndex()) make_index();
+		while(is_index()) make_index();
 
 		if(skip("=")) {
 			expr_entry();
