@@ -2,9 +2,9 @@
 
 function check() {
 	if [[ $($1) = $($2) ]] ; then
-		echo -e "$1 ... \e[32mOK\e[00m"
+		printf "$1 ... \e[32mOK\e[00m\n"
 	else
-		echo -e "$1 ... \e[31mNO\e[00m"
+		printf "$1 ... \e[31mNO\e[00m\n"
 	fi
 }
 
