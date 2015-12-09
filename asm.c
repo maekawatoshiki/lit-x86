@@ -45,6 +45,7 @@ int mk_modrm(char *r32, char *rm32) {
 
 int genas(char *s, ...) {
 	char *src = (char *)calloc(sizeof(char), strlen(s) + 0xff);
+	char *s_p = src;
 	va_list args;
 	char nem[4][16] = { 0 };
 	int i, n;
@@ -57,7 +58,8 @@ int genas(char *s, ...) {
 				strncat(nem[n], src, 1);
 			src--; n++;
 		}
-	}// 0 3
+	}
+	free(s_p);
 
 	if(strcmp(nem[0], "mov") == 0) { // mov?
 		if(isalpha(*nem[2])) { // register?
