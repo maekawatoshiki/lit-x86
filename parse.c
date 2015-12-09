@@ -89,8 +89,8 @@ int expression(int pos, int status) {
 		module = tok.tok[tok.pos++].val;
 		eval(0, NON);
 		module = "";
-	} else if(funcs.inside == FALSE && !streql("def", tok.tok[tok.pos+1].val) && 
-			!streql("module", tok.tok[tok.pos+1].val) && !streql("$", tok.tok[tok.pos+1].val) && 
+	} else if(funcs.inside == FALSE && !streql("def", tok.tok[tok.pos+1].val) &&
+			!streql("module", tok.tok[tok.pos+1].val) && !streql("$", tok.tok[tok.pos+1].val) &&
 			!streql(";", tok.tok[tok.pos+1].val)) {	// main func entry
 
 		funcs.inside = TRUE;
@@ -108,13 +108,13 @@ int expression(int pos, int status) {
 		gencode(0xc3);// ret
 		gencode_int32_insert(ADDR_SIZE * (locVar.size[funcs.now] + 6), espBgn);
 		funcs.inside = FALSE;
-	
+
 	} else if(is_asgmt()) {
-	
+
 		asgmt();
-	
+
 	} else if((isputs=skip("puts")) || skip("output")) {
-	
+
 		do {
 			int isstring = 0;
 			if((isstring = is_string_tok())) {
@@ -137,7 +137,7 @@ int expression(int pos, int status) {
 		}
 
 	} else if(skip("printf")) {
-	
+
 		if(is_string_tok()) {
 			gencode(0xb8); get_string();
 			gencode_int32(0x00); // mov eax string_address
@@ -152,27 +152,27 @@ int expression(int pos, int status) {
 			} while(skip(","));
 		}
 		gencode(0xff); gencode(0x56); gencode(12 + 8); // call printf
-	
+
 	} else if(skip("for")) { blocksCount++;
-	
-		asgmt(); 
+
+		asgmt();
 		if(!skip(",")) error("error: %d: expected ','", tok.tok[tok.pos].nline);
 		make_while();
-	
+
 	} else if(skip("while")) { blocksCount++;
-	
+
 		make_while();
-	
+
 	} else if(skip("return")) {
-	
+
 		make_return();
-	
+
 	} else if(skip("if")) { blocksCount++;
-	
+
 		make_if();
 
 	} else if(skip("else")) {
-	
+
 		int32_t end;
 		gencode(0xe9); end = ntvCount; gencode_int32(0);// jmp while end
 		gencode_int32_insert(ntvCount - pos - 4, pos);
@@ -180,7 +180,7 @@ int expression(int pos, int status) {
 		return 1;
 
 	} else if(skip("elsif")) {
-	
+
 		int32_t endif, end;
 		gencode(0xe9); endif = ntvCount; gencode_int32(0);// jmp while end
 		gencode_int32_insert(ntvCount - pos - 4, pos);
@@ -193,17 +193,17 @@ int expression(int pos, int status) {
 		return 1;
 
 	} else if(skip("break")) {
-	
+
 		make_break();
-	
+
 	} else if(skip("end")) { blocksCount--;
-	
+
 		if(status == NON) return 1;
 		if(status == BLOCK_NORMAL) {
 			gencode_int32_insert(ntvCount - pos - 4, pos);
 		} else if(status == BLOCK_FUNC) funcs.inside = FALSE;
 		return 1;
-	
+
 	} else if(!skip(";")) {
 		expr_entry();
 	}
@@ -265,7 +265,7 @@ int make_if() {
 
 int make_while() {
 	uint32_t loopBgn = ntvCount, end, stepBgn[2], stepOn = 0;
-	
+
 	expr_entry(); // condition
 	if(skip(",")) {
 		stepOn = 1;
@@ -276,7 +276,7 @@ int make_while() {
 	gencode(0x83); gencode(0xf8); gencode(0x00);// cmp eax, 0
 	gencode(0x75); gencode(0x05); // jne 5
 	gencode(0xe9); end = ntvCount; gencode_int32(0);// jmp while end
-	
+
 	eval(0, BLOCK_LOOP);
 
 	if(stepOn) {
@@ -308,15 +308,15 @@ int make_func() {
 	}
 	append_func(funcName, ntvCount, params); // append funcs
 	is_undef_func(funcName, ntvCount);
-	
+
 	genas("push ebp");
 	genas("mov ebp esp");
 	espBgn = ntvCount + 2; genas("sub esp 0"); // align
-	
-	uint32_t pos_save[128], i; 
-	
+
+	uint32_t pos_save[128], i;
+
 	for(i = 0; i < params; i++) {
-		gencode(0x8b); gencode(0x45); 
+		gencode(0x8b); gencode(0x45);
 		gencode(0x08 + (params - i - 1) * ADDR_SIZE);
 		gencode(0x89); gencode(0x44); gencode(0x24);
 		pos_save[i] = ntvCount; gencode(0x00);
@@ -334,7 +334,7 @@ int make_func() {
 
 	gencode_int32_insert(ADDR_SIZE * (locVar.size[funcs.now] + 6), espBgn);
 	for(i = 1; i <= params; i++) {
-		ntvCode[pos_save[i - 1]] = 
+		ntvCode[pos_save[i - 1]] =
 			256 - ADDR_SIZE * i + (((locVar.size[funcs.now] + 6) * ADDR_SIZE) - 4);
 	}
 #ifdef DEBUG
@@ -345,7 +345,7 @@ int make_func() {
 }
 
 char *replaceEscape(char *str) {
-	int32_t i;
+	int i;
 	char *pos;
 	char escape[12][3] = {
 		"\\a", "\a",

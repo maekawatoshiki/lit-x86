@@ -29,13 +29,9 @@ void dispose() {
 	freeAddr();
 }
 
-
 // ---- for native code --- //
 
-char *File_read(char *s, int len, FILE *fp) {
-	fread(s, 1, len, fp);
-	return s;
-}
+char *File_read(char *s, int len, FILE *fp) { fread(s, 1, len, fp); return s; }
 
 void putNumber(int32_t n) {
 	printf("%d", n);
@@ -101,7 +97,7 @@ int xor128() {
   return ((int32_t)w < 0) ? -(int32_t)w : (int32_t)w;
 }
 
-void *funcTable[] = { 
+void *funcTable[] = {
 	(void *) putNumber, // 0
 	(void *) putString, // 4
 	(void *) putln,			// 8

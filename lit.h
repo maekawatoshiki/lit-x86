@@ -35,7 +35,7 @@
 	#include <sys/wait.h>
 #endif
 
-#define _LIT_VERSION_ "0.9.2"
+#define _LIT_VERSION_ "0.9.3"
 
 enum {
 	ADDR_SIZE = 4
@@ -58,7 +58,7 @@ typedef struct {
   char val[32];
 	int type;
 	int nline;
-} Token; 
+} Token;
 
 struct {
 	Token *tok;

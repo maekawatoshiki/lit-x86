@@ -15,7 +15,7 @@ int show_option(int argc, char **argv) {
 	} else {
 		lit_run(argv[1]);
 	}
-	
+
 	return 0;
 }
 
