@@ -33,6 +33,9 @@ option.o: option.h option.c
 util.o: util.h util.c
 	$(CC) -c util.c
 
+test: lit
+	./test/test.sh
+
 install: lit
 	mkdir ~/.lit
 	cp -p lit ~/.lit
