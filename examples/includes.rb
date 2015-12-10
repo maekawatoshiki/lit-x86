@@ -88,7 +88,7 @@ end
 
 # Math
 
-module Math 
+module Math
 	def pow(a, b)
 		c = a; b--
 		while b-- > 0
@@ -160,21 +160,13 @@ module IO
 	end
 end
 
-# Time, Thread
-
-module Time
-	def sleep(sec)
-		sleep(sec)
-	end
-end
-
-# Main 
+# Main
 
 buf:string = Array(256)
 
 if (fp = File.open("includes.rb.test", "r+")) == NULL
 	puts "Error: not found file"
-else 
+else
 	File.read(buf, 256, fp)
 	printf "%s\n", buf
 	File.close(fp)
@@ -184,4 +176,3 @@ puts "Test: SecureRandom module"
 for i = 0, i < 8, i++
 	printf "%s\n",  SecureRandom.hex(buf, 16)
 end
-

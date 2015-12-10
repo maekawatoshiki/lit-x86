@@ -11,4 +11,5 @@ function check() {
 check './lit ./examples/fibo.rb' 'echo 1346269'
 check './lit ./examples/pi.rb' 'cat test/pi'
 check './lit ./examples/factlong.rb' 'cat test/long_factorial'
+check './lit ./examples/primetable.rb' 'echo 664579'
 
