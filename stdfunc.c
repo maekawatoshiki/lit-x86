@@ -35,7 +35,7 @@ int make_stdfunc(char *name, char *mod_name) {
 						gencode(0x89); gencode(0x44); gencode(0x24); gencode(a); // mov [esp+a], eax
 						a += 4;
 					} while(skip(","));
-				} else {
+			} else { // normal function
 					for(int arg = 0; arg < stdfunc[i].args; arg++) {
 						expr_compare();
 						gencode(0x89); gencode(0x44); gencode(0x24); gencode(arg * 4); // mov [esp+arg*4], eax
