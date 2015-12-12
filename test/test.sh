@@ -8,7 +8,7 @@ function check() {
 	fi
 }
 
-check './lit ./examples/io.rb' 'cat io'
+check './lit ./test/io.rb' 'cat test/io'
 check './lit ./examples/fibo.rb' 'echo 1346269'
 check './lit ./examples/pi.rb' 'cat test/pi'
 check './lit ./examples/factlong.rb' 'cat test/long_factorial'
