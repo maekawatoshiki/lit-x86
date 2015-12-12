@@ -8,7 +8,6 @@
 #include "parse.h"
 #include "var.h"
 
-void skip_tok();
 int streql(char *, char *);
 int skip(char *);
 int error(char *, ...);

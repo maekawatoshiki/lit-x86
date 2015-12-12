@@ -85,7 +85,7 @@ int asgmt() {
 	Variable *v = get_var(name, mod_name);
 	if(v == NULL) v = get_var(name, module);
 	if(v == NULL) { declare = 1; v = declare_var(); }
-	skip_tok();
+	SKIP_TOK;
 	
 	if(v->loctype == V_LOCAL) {
 		if(streql(tok.tok[tok.pos].val, "[")) { // Array?

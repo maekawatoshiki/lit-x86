@@ -1,7 +1,5 @@
 #include "util.h"
 
-void skip_tok() { tok.pos++; }
-
 int streql(char *s1, char *s2) {
 	return (strcmp(s1, s2) == 0) ? 1 : 0;
 }

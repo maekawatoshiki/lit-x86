@@ -8,6 +8,8 @@
 #include "stdfunc.h"
 #include "util.h"
 
+#define SKIP_TOK tok.pos++;
+
 enum {
 	TOK_SYMBOL,
 	TOK_IDENT,

@@ -109,7 +109,7 @@ int expr_primary() {
 		if(is_asgmt()) {
 			asgmt();
 		} else {
-			skip_tok();
+			SKIP_TOK;
 			if(skip("[")) { // Array?
 				v = get_var(name , mod_name);
 				if(v == NULL) v = get_var(name, module);
