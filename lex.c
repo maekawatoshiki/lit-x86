@@ -24,7 +24,7 @@ int lex(char *code) {
       i--; SKIP_TOK;
 		} else if(code[i] == ' ' || code[i] == '\t') { // space char?
     } else if(code[i] == '#') { // comment?
-			for(i++; code[i] != '\n'; i++) { } line++;
+			for(i++; code[i] != '\n'; i++) { ; } line++;
 		} else if(code[i] == '"') { // string?
 			str = tok.tok[tok.pos].val;
 			for(i++; code[i] != '"' && code[i] != '\0'; i++)
