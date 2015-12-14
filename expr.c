@@ -85,7 +85,8 @@ int expr_mul_div() {
 }
 
 int expr_primary() {
-	int is_get_addr = 0;
+	int is_get_addr = 0, ispare = 0;
+
 	if(skip("&")) is_get_addr = 1;
 	
   if(is_number_tok()) { // number?
@@ -132,16 +133,14 @@ int expr_primary() {
 			
 				if(!skip("]"))
 					error("error: %d: expected expression ']'", tok.tok[tok.pos].nline);
-			} else if(skip("(")) { // Function?
-				int is_stdfunc = make_stdfunc(name, mod_name); // make standard function
-				
+			} else if((ispare = skip("(")) || make_stdfunc(name, mod_name) || get_func(name, mod_name)) { // Function?
+				int is_stdfunc = make_stdfunc(name, mod_name);
 				if(!is_stdfunc) {	// user function
 					func_t *function = get_func(name, mod_name);
-
 					if(function == NULL) 
 						function = get_func(name, module);
 			
-					if(function == NULL) { // undefine
+					if(function == NULL) { // undefined
 						size_t params = 0;
 						if(is_number_tok() || is_ident_tok() || 
 								is_string_tok() || streql(tok.tok[tok.pos].val, "(")) { // has arg?
@@ -168,7 +167,7 @@ int expr_primary() {
 						genas("add esp %d", function->params * ADDR_SIZE);
 					}
 				}
-				if(!skip(")")) error("func: error: %d: expected expression ')'", tok.tok[tok.pos].nline);
+				if(ispare && !skip(")")) error("func: error: %d: expected expression ')'", tok.tok[tok.pos].nline);
 			} else { // single variable
 				v = get_var(name, mod_name);
 				if(v == NULL) 
