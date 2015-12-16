@@ -15,4 +15,4 @@ check './lit ./examples/factlong.rb' 'cat test/long_factorial'
 check './lit ./examples/primetable.rb' 'echo 664579'
 check './lit ./examples/vararg.rb' 'echo 31'
 check './lit ./examples/funccall.rb' 'echo -1'
-
+check './lit ./examples/math.rb' 'cat test/math'

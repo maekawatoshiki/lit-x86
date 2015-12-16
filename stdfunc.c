@@ -3,6 +3,8 @@
 std_function stdfunc[] = {
 	{"Array", "", 1, 12},
 	{"rand", "Math", 0, 16},
+	{"gcd", "Math", 2, 60},
+	{"lcm", "Math", 2, 64},
 	{"printf", "", -1, 20},
 	{"sleep", "Time", 1, 28},
 	{"open", "File", 2, 32},
@@ -46,6 +48,16 @@ int make_stdfunc(char *name, char *mod_name) {
 			}
 			return 1;
 		}
+	}
+
+	return 0;
+}
+
+int is_stdfunc(char *name, char *mod_name) {
+	for(int i = 0; i < sizeof(stdfunc) / sizeof(stdfunc[0]); i++) {
+		if(streql(stdfunc[i].name, name) && 
+				streql(stdfunc[i].mod_name, mod_name)) 
+			return 1;
 	}
 
 	return 0;

@@ -133,8 +133,9 @@ int expr_primary() {
 			
 				if(!skip("]"))
 					error("error: %d: expected expression ']'", tok.tok[tok.pos].nline);
-			} else if((ispare = skip("(")) || make_stdfunc(name, mod_name) || get_func(name, mod_name)) { // Function?
+			} else if((ispare = skip("(")) || is_stdfunc(name, mod_name) || get_func(name, mod_name)) { // Function?
 				int is_stdfunc = make_stdfunc(name, mod_name);
+
 				if(!is_stdfunc) {	// user function
 					func_t *function = get_func(name, mod_name);
 					if(function == NULL) 

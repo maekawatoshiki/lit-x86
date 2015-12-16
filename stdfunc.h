@@ -13,6 +13,7 @@ typedef struct {
 	int args, addr;
 } std_function;
 
-int make_stdfunc(char *, char *); // func name, module namee
+int make_stdfunc(char *, char *); // func name, module name
+int is_stdfunc(char *, char *);
 
 #endif

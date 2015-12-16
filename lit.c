@@ -97,6 +97,21 @@ int xor128() {
   return ((int32_t)w < 0) ? -(int32_t)w : (int32_t)w;
 }
 
+void swap(int *a, int *b) { int t = *a; *a = *b; *b = t; }
+
+int gcd(int a, int b) {
+	if(a < b) swap(&a, &b);
+	while(b) {
+		int t = a % b;
+		a = b; b = t;
+	}
+	return a;
+}
+
+int lcm(int a, int b) {
+	return a / gcd(a, b) * b;
+}
+
 void *funcTable[] = {
 	(void *) putNumber, // 0
 	(void *) putString, // 4
@@ -112,7 +127,9 @@ void *funcTable[] = {
 	(void *) File_read,			// 44
 	(void *) freeInProgram,// 48
 	(void *) freeAddr,	// 52,
-	(void *) fgets, 		// 566
+	(void *) fgets, 		// 56
+	(void *) gcd, 			// 60
+	(void *) lcm				// 64
 };
 
 int run() {
