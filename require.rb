@@ -1,7 +1,4 @@
-require L
+require M
 
-puts "Entry Main"
-
-L.say("hello!!")
-
-puts L.add(1, 2)
+puts M.add(2, 3)
+puts M.sub(10, 2)

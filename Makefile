@@ -1,7 +1,8 @@
-CFLAGS = -O0 -m32 -std=c99 -Wno-strict-aliasing -Wno-strict-aliasing -ldl
+CFLAGS = -O0 -m32 -std=c99 -Wno-strict-aliasing -Wno-strict-aliasing
 CC = clang $(CFLAGS) 
 
 lit: main.o lit.o asm.o lex.o var.o expr.o parse.o stdfunc.o option.o util.o
+	$(CC) -o lit -rdynamic -ldl main.o lit.o asm.o lex.o var.o expr.o parse.o stdfunc.o option.o util.o
 
 main.o: main.c
 	$(CC) -c main.c

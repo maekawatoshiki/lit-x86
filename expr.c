@@ -136,20 +136,23 @@ int expr_primary() {
 					error("error: %d: expected expression ']'", tok.tok[tok.pos].nline);
 			} else if((ispare = skip("(")) || is_stdfunc(name, mod_name) || get_func(name, mod_name)) { // Function?
 				int is_stdfunc = make_stdfunc(name, mod_name);
-				int is_lib = is_lib_module(mod_name);
+				int is_lib = is_lib_module(mod_name) != -1;
 
-				if(is_lib) {
+				if(is_lib) { // library function
 					size_t params = 0;
 					if(is_number_tok() || is_ident_tok() || 
 							is_string_tok() || streql(tok.tok[tok.pos].val, "(")) { // has arg?
-						for(params = 0; !streql(tok.tok[tok.pos].val, ")"); params++) {
+						for(int i = tok.pos; !streql(tok.tok[i].val, ")"); i++) 
+							params += streql(tok.tok[i].val, ","); // count params
+						params++;
+						for(int i = 0; i < params; i++) {
 							expr_entry();
-							genas("push eax");
-							skip(",");
-						}
+							gencode(0x89); gencode(0x44); gencode(0x24); gencode(i * ADDR_SIZE);
+							if(i < params - 1 && !skip(","))
+								error("error: %d: expected ','", tok.tok[tok.pos].nline);
+						} 
 					}
 					gencode(0xe8); gencode_int32(call_lib_func(name, mod_name) - (uint32_t)&ntvCode[ntvCount] - 4); // call func
-					genas("add esp %d", params * ADDR_SIZE);
 				} else if(!is_stdfunc) {	// user function
 					func_t *function = get_func(name, mod_name);
 					if(function == NULL) 
@@ -223,20 +226,10 @@ int make_index() {
 }
 
 uint32_t call_lib_func(char *name, char *mod_name) {
-	char lib_name[64], lib_func_name[64];
-	void *handle;
+	char lib_func_name[64];
 
-	sprintf(lib_name, "./%s.so", mod_name);
 	sprintf(lib_func_name, "%s_%s", mod_name, name);
-
-	handle = dlopen(lib_name, RTLD_LAZY);
-
-	if(!handle) {
-		fprintf(stderr, "%s\n", dlerror());
-		return 1;
-	}
-
-	return (uint32_t)dlsym(handle, lib_func_name);
+	return (uint32_t)dlsym(lib_list.lib[is_lib_module(mod_name)].handle, lib_func_name);
 
 	/* if (dlclose(handle) != 0) { */
 	/* 	fprintf(stderr, "%s\n", dlerror()); */

@@ -254,20 +254,31 @@ int32_t parser() {
 	return 1;
 }
 
-int using_require() {
-	return append_lib(tok.tok[tok.pos++].val);
+void using_require() {
+	append_lib(tok.tok[tok.pos++].val);
 }
 
 int append_lib(char *name) {
+	char lib_name[64];
+
+	sprintf(lib_name, "./lib/%s.so", name);
+
 	strcpy(lib_list.lib[lib_list.count].name, name);
+	lib_list.lib[lib_list.count].handle = dlopen(lib_name, RTLD_LAZY);
 	return lib_list.count++;
 }
 
 int is_lib_module(char *name) {
 	for(int i = 0; i < lib_list.count; i++) {
-		if(streql(lib_list.lib[i].name, name)) return 1;
+		if(streql(lib_list.lib[i].name, name)) return i;
 	}
-	return 0;
+	return -1;
+}
+
+void free_lib() {
+	for(int i = 0; i < lib_list.count; i++) {
+		dlclose(lib_list.lib[i].handle);
+	}
 }
 
 int make_if() {

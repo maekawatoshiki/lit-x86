@@ -27,6 +27,7 @@ void dispose() {
 	free(rets.addr);
 	free(tok.tok);
 	freeAddr();
+	free_lib();
 }
 
 // ---- for native code --- //

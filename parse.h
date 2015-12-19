@@ -20,6 +20,7 @@ struct {
 
 typedef struct {
 	char name[64];
+	void *handle;
 } library;
 
 struct {
@@ -34,9 +35,11 @@ struct {
 	int count;
 } strings;
 
-int using_require();
+void using_require();
 int append_lib(char *);
 int is_lib_module(char *);
+void free_lib();
+
 int make_if();
 int make_while();
 int make_func();
