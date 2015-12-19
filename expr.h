@@ -22,4 +22,6 @@ int expr_primary();
 int is_index();
 int make_index();
 
+uint32_t call_lib_func(char *, char *);
+
 #endif

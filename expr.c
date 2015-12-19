@@ -2,6 +2,7 @@
 
 extern char *module;
 extern int ntvCount;
+extern unsigned char *ntvCode;
 
 int is_string_tok() { return tok.tok[tok.pos].type == TOK_STRING; }
 int is_number_tok() { return tok.tok[tok.pos].type == TOK_NUMBER; }
@@ -63,24 +64,24 @@ int expr_add_sub() {
 }
 
 int expr_mul_div() {
-  int mul, div;
-  expr_primary();
-  while((mul = skip("*")) || (div=skip("/")) || skip("%")) {
+	int mul, div;
+	expr_primary();
+	while((mul = skip("*")) || (div=skip("/")) || skip("%")) {
 		genas("push eax");
-    expr_primary();
-    genas("mov ebx eax"); // mov %ebx %eax
-    genas("pop eax");
-    if(mul) {
+		expr_primary();
+		genas("mov ebx eax"); // mov %ebx %eax
+		genas("pop eax");
+		if(mul) {
 			genas("mul ebx");
-    } else if(div) {
+		} else if(div) {
 			genas("mov edx 0");
 			genas("div ebx");
-    } else { //mod
+		} else { //mod
 			genas("mov edx 0");
 			genas("div ebx");
 			genas("mov eax edx");
 		}
-  }
+	}
 	return 0;
 }
 
@@ -88,19 +89,19 @@ int expr_primary() {
 	int is_get_addr = 0, ispare = 0;
 
 	if(skip("&")) is_get_addr = 1;
-	
-  if(is_number_tok()) { // number?
-    genas("mov eax %d", atoi(tok.tok[tok.pos++].val));
+
+	if(is_number_tok()) { // number?
+		genas("mov eax %d", atoi(tok.tok[tok.pos++].val));
 	} else if(skip("'")) { // char?
 		genas("mov eax %d", tok.tok[tok.pos++].val[0]);
 		skip("'");
 	} else if(is_string_tok()) { // string?
 		gencode(0xb8); get_string();
 		gencode_int32(0x00); // mov eax string_address
-  } else if(is_ident_tok()) { // variable or inc or dec
+	} else if(is_ident_tok()) { // variable or inc or dec
 		char *name = tok.tok[tok.pos].val, *mod_name = "";
 		Variable *v; 
-		
+
 		if(streql(tok.tok[tok.pos + 1].val, ".")) { // module?
 			mod_name = tok.tok[tok.pos++].val; 
 			skip(".");
@@ -130,17 +131,30 @@ int expr_primary() {
 				} else {
 					gencode(0x0f); gencode(0xb6); gencode(0x04); gencode(0x0a);// movzx eax, [edx + ecx]
 				}
-			
+
 				if(!skip("]"))
 					error("error: %d: expected expression ']'", tok.tok[tok.pos].nline);
 			} else if((ispare = skip("(")) || is_stdfunc(name, mod_name) || get_func(name, mod_name)) { // Function?
 				int is_stdfunc = make_stdfunc(name, mod_name);
+				int is_lib = is_lib_module(mod_name);
 
-				if(!is_stdfunc) {	// user function
+				if(is_lib) {
+					size_t params = 0;
+					if(is_number_tok() || is_ident_tok() || 
+							is_string_tok() || streql(tok.tok[tok.pos].val, "(")) { // has arg?
+						for(params = 0; !streql(tok.tok[tok.pos].val, ")"); params++) {
+							expr_entry();
+							genas("push eax");
+							skip(",");
+						}
+					}
+					gencode(0xe8); gencode_int32(call_lib_func(name, mod_name) - (uint32_t)&ntvCode[ntvCount] - 4); // call func
+					genas("add esp %d", params * ADDR_SIZE);
+				} else if(!is_stdfunc) {	// user function
 					func_t *function = get_func(name, mod_name);
 					if(function == NULL) 
 						function = get_func(name, module);
-			
+
 					if(function == NULL) { // undefined
 						size_t params = 0;
 						if(is_number_tok() || is_ident_tok() || 
@@ -184,11 +198,11 @@ int expr_primary() {
 			}
 		}
 	} else if(skip("(")) {
-    if(is_asgmt()) asgmt(); else expr_compare();
+		if(is_asgmt()) asgmt(); else expr_compare();
 		if(!skip(")"))
-		 error("error: %d: expected expression ')'", tok.tok[tok.pos].nline);
-  } else if(skip(";") || 1) error("error: %d: invalid expression", tok.tok[tok.pos].nline);
-	
+			error("error: %d: expected expression ')'", tok.tok[tok.pos].nline);
+	} else if(skip(";") || 1) error("error: %d: invalid expression", tok.tok[tok.pos].nline);
+
 	while(is_index()) make_index();
 
 	return 0;
@@ -208,3 +222,25 @@ int make_index() {
 	return 0;
 }
 
+uint32_t call_lib_func(char *name, char *mod_name) {
+	char lib_name[64], lib_func_name[64];
+	void *handle;
+
+	sprintf(lib_name, "./%s.so", mod_name);
+	sprintf(lib_func_name, "%s_%s", mod_name, name);
+
+	handle = dlopen(lib_name, RTLD_LAZY);
+
+	if(!handle) {
+		fprintf(stderr, "%s\n", dlerror());
+		return 1;
+	}
+
+	return (uint32_t)dlsym(handle, lib_func_name);
+
+	/* if (dlclose(handle) != 0) { */
+	/* 	fprintf(stderr, "%s\n", dlerror()); */
+	/* 	return 1; */
+	/* } */
+
+}

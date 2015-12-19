@@ -18,6 +18,15 @@ struct {
 	int count, now, inside;
 } undef_funcs, funcs;
 
+typedef struct {
+	char name[64];
+} library;
+
+struct {
+	library lib[64];
+	int count;
+} lib_list;
+
 // The strings embedded in native code
 struct {
 	char *text[0xff];
@@ -25,6 +34,9 @@ struct {
 	int count;
 } strings;
 
+int using_require();
+int append_lib(char *);
+int is_lib_module(char *);
 int make_if();
 int make_while();
 int make_func();

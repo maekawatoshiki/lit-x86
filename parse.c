@@ -81,6 +81,8 @@ int expression(int pos, int status) {
 
 		if(is_asgmt()) asgmt();
 
+	} else if(skip("require")) {
+		using_require();
 	} else if(skip("def")) { blocksCount++;
 
 		make_func();
@@ -252,7 +254,21 @@ int32_t parser() {
 	return 1;
 }
 
+int using_require() {
+	return append_lib(tok.tok[tok.pos++].val);
+}
 
+int append_lib(char *name) {
+	strcpy(lib_list.lib[lib_list.count].name, name);
+	return lib_list.count++;
+}
+
+int is_lib_module(char *name) {
+	for(int i = 0; i < lib_list.count; i++) {
+		if(streql(lib_list.lib[i].name, name)) return 1;
+	}
+	return 0;
+}
 
 int make_if() {
 	uint32_t end;
