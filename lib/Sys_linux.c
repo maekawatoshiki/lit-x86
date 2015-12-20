@@ -2,6 +2,10 @@
 #include <stdlib.h>
 #include <math.h>
 
+void Sys_system(char *cmd) {
+	system(cmd);
+}
+
 void Sys_exit() {
 	exit(0);
 }
