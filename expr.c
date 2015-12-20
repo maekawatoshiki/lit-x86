@@ -136,9 +136,8 @@ int expr_primary() {
 					error("error: %d: expected expression ']'", tok.tok[tok.pos].nline);
 			} else if((ispare = skip("(")) || is_stdfunc(name, mod_name) || get_func(name, mod_name)) { // Function?
 				int is_stdfunc = make_stdfunc(name, mod_name);
-				int is_lib = is_lib_module(mod_name);
 
-				if(is_lib) { // library function
+				if(is_lib_module(mod_name)) { // library function
 					size_t params = 0;
 					if(is_number_tok() || is_ident_tok() || 
 							is_string_tok() || streql(tok.tok[tok.pos].val, "(")) { // has arg?
