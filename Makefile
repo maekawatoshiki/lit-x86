@@ -36,8 +36,9 @@ util.o: util.h util.c
 	$(CC) -c util.c
 
 lib: lit
-	clang -shared -m32 -lm -o $(LIB_PATH)/Sys.so $(LIB_PATH)/Sys_linux.c
-	clang -shared -m32 -lm -o $(LIB_PATH)/M.so $(LIB_PATH)/M.c
+	clang -shared -m32 -lm -O3 -o $(LIB_PATH)/Sys.so $(LIB_PATH)/Sys_linux.c
+	clang -shared -m32 -lm -O3 -o $(LIB_PATH)/Prime.so $(LIB_PATH)/Prime.c
+	clang -shared -m32 -lm -O3 -o $(LIB_PATH)/M.so $(LIB_PATH)/M.c
 
 test: lit lib
 	./test/test.sh
