@@ -269,10 +269,14 @@ int append_lib(char *name) {
 }
 
 int is_lib_module(char *name) {
+	return get_lib_module(name) == NULL ? 0 : 1;
+}
+
+lib_t *get_lib_module(char *name) {
 	for(int i = 0; i < lib_list.count; i++) {
-		if(streql(lib_list.lib[i].name, name)) return i;
+		if(streql(lib_list.lib[i].name, name)) return &lib_list.lib[i];
 	}
-	return -1;
+	return NULL;
 }
 
 void free_lib() {

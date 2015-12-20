@@ -136,7 +136,7 @@ int expr_primary() {
 					error("error: %d: expected expression ']'", tok.tok[tok.pos].nline);
 			} else if((ispare = skip("(")) || is_stdfunc(name, mod_name) || get_func(name, mod_name)) { // Function?
 				int is_stdfunc = make_stdfunc(name, mod_name);
-				int is_lib = is_lib_module(mod_name) != -1;
+				int is_lib = is_lib_module(mod_name);
 
 				if(is_lib) { // library function
 					size_t params = 0;
@@ -229,11 +229,5 @@ uint32_t call_lib_func(char *name, char *mod_name) {
 	char lib_func_name[64];
 
 	sprintf(lib_func_name, "%s_%s", mod_name, name);
-	return (uint32_t)dlsym(lib_list.lib[is_lib_module(mod_name)].handle, lib_func_name);
-
-	/* if (dlclose(handle) != 0) { */
-	/* 	fprintf(stderr, "%s\n", dlerror()); */
-	/* 	return 1; */
-	/* } */
-
+	return (uint32_t)dlsym(lib_list.lib[get_lib_module(mod_name)->no].handle, lib_func_name);
 }
