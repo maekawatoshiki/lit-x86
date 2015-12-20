@@ -1,5 +1,6 @@
 CFLAGS = -O0 -m32 -std=c99 -Wno-strict-aliasing -Wno-strict-aliasing
 CC = clang $(CFLAGS) 
+LIB_PATH = lib
 
 lit: main.o lit.o asm.o lex.o var.o expr.o parse.o stdfunc.o option.o util.o
 	$(CC) -o lit -rdynamic -ldl main.o lit.o asm.o lex.o var.o expr.o parse.o stdfunc.o option.o util.o
@@ -34,7 +35,11 @@ option.o: option.h option.c
 util.o: util.h util.c
 	$(CC) -c util.c
 
-test: lit
+lib: lit
+	clang -shared -m32 -lm -o $(LIB_PATH)/Sys.so $(LIB_PATH)/Sys_linux.c
+	clang -shared -m32 -lm -o $(LIB_PATH)/M.so $(LIB_PATH)/M.c
+
+test: lit lib
 	./test/test.sh
 
 install: lit
@@ -42,5 +47,5 @@ install: lit
 	cp -p lit ~/.lit
 
 clean:
-	$(RM) a.out lit *.o
+	$(RM) a.out lit *.o lib/*.so
 
