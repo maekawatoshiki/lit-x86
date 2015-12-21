@@ -36,7 +36,7 @@
 	#include <sys/wait.h>
 #endif
 
-#define _LIT_VERSION_ "0.9.3"
+#define _LIT_VERSION_ "0.9.4"
 
 enum {
 	ADDR_SIZE = 4
