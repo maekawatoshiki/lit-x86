@@ -58,7 +58,7 @@ func_t *get_func(char *, char *);
 func_t *append_func(char *, int, int);
 
 int append_undef_func(char *, char *, int);
-int is_undef_func(char *, int);
+int rep_undef_func(char *, int);
 
 char *replaceEscape(char *);
 

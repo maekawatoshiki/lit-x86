@@ -44,9 +44,10 @@ int append_undef_func(char *name, char *mod_name, int ntvc) {
 	return 0;
 }
 
-int is_undef_func(char *name, int ntvc) {
+int rep_undef_func(char *name, int ntvc) {
 	int count = undef_funcs.count;
 	func_t *f = undef_funcs.func;
+
 	for(int i = 0; i < undef_funcs.count; i++) {
 		if(streql(f[i].name, name) && streql(f[i].mod_name, module)) {
 			gencode_int32_insert(ntvc - f[i].address - 4, f[i].address);
@@ -221,7 +222,7 @@ int eval(int pos, int status) {
 	return 0;
 }
 
-int32_t parser() {
+int parser() {
 	tok.pos = ntvCount = 0;
 	strings.addr = (int32_t*)calloc(0xFF, sizeof(int32_t));
 	uint32_t main_address;
@@ -337,8 +338,8 @@ int make_func() {
 		do { declare_var(); tok.pos++; params++; } while(skip(","));
 		skip(")");
 	}
-	append_func(funcName, ntvCount, params); // append funcs
-	is_undef_func(funcName, ntvCount);
+	append_func(funcName, ntvCount, params);
+	rep_undef_func(funcName, ntvCount);
 
 	genas("push ebp");
 	genas("mov ebp esp");

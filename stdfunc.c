@@ -20,7 +20,7 @@ int make_stdfunc(char *name, char *mod_name) {
 	for(int i = 0; i < sizeof(stdfunc) / sizeof(stdfunc[0]); i++) {
 		if(streql(stdfunc[i].name, name) && 
 				streql(stdfunc[i].mod_name, mod_name)) {
-			if(strcmp(name, "Array") == 0) {
+			if(streql(name, "Array")) {
 				expr_compare(); // get array size
 				genas("shl eax 2");
 				gencode(0x89); gencode(0x04); gencode(0x24); // mov [esp], eax
@@ -37,7 +37,7 @@ int make_stdfunc(char *name, char *mod_name) {
 						gencode(0x89); gencode(0x44); gencode(0x24); gencode(a); // mov [esp+a], eax
 						a += 4;
 					} while(skip(","));
-			} else { // normal function
+				} else { // normal function
 					for(int arg = 0; arg < stdfunc[i].args; arg++) {
 						expr_compare();
 						gencode(0x89); gencode(0x44); gencode(0x24); gencode(arg * 4); // mov [esp+arg*4], eax
