@@ -265,7 +265,7 @@ int append_lib(char *name) {
 	sprintf(lib_name, "./lib/%s.so", name);
 
 	strcpy(lib_list.lib[lib_list.count].name, name);
-	lib_list.lib[lib_list.count].handle = dlopen(lib_name, RTLD_LAZY);
+	lib_list.lib[lib_list.count].handle = dlopen(lib_name, RTLD_LAZY | RTLD_NOW);
 	return lib_list.count++;
 }
 
