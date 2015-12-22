@@ -16,7 +16,7 @@ void init() {
 	tok.pos = ntvCount = 0; tok.size = 0xfff;
 	mem.mem = (mem_info *)calloc(0x7ff, sizeof(mem_info));
 	set_xor128();
-	tok.tok = (Token *)calloc(sizeof(Token), tok.size);
+	tok.tok = (token_t *)calloc(sizeof(token_t), tok.size);
 	brks.addr = (uint32_t *)calloc(sizeof(uint32_t), 1);
 	rets.addr = (uint32_t *)calloc(sizeof(uint32_t), 1);
 }
@@ -56,7 +56,7 @@ void appendAddr(uint32_t addr) {
 	mem.mem[mem.count++].isfree = 0;
 }
 
-void freeInProgram(uint32_t addr) {
+void free_addr(uint32_t addr) {
 	for(int i = 0; i < mem.count; i++) {
 		if(mem.mem[i].addr == addr) {
 			free((int *)mem.mem[i].addr);
@@ -126,7 +126,7 @@ void *funcTable[] = {
 	(void *) fprintf, 	// 36
 	(void *) fclose,		// 40
 	(void *) File_read,			// 44
-	(void *) freeInProgram,// 48
+	(void *) free_addr,// 48
 	(void *) freeAddr,	// 52,
 	(void *) fgets, 		// 56
 	(void *) gcd, 			// 60

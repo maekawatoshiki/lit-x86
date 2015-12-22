@@ -14,11 +14,15 @@ int get_string() {
 	return strings.count++;
 }
 
+int is_func(char *name, char *mod_name) {
+	return get_func(name, mod_name) == NULL ? 0 : 1;
+}
+
 func_t *get_func(char *name, char *mod_name) {
 	for(int i = 0; i < funcs.count; i++) {
-	#ifdef DEBUG
+#ifdef DEBUG
 		printf("%s : %s >> %s : %s\n", mod_name, name, funcs.func[i].mod_name, funcs.func[i].name);
-	#endif
+#endif
 		if(streql(funcs.func[i].name, name) && streql(funcs.func[i].mod_name, mod_name)) {
 			return &funcs.func[i];
 		}
@@ -121,8 +125,7 @@ int expression(int pos, int status) {
 		do {
 			int isstring = 0;
 			if((isstring = is_string_tok())) {
-				gencode(0xb8); get_string();
-				gencode_int32(0x00); // mov eax string_address
+				gencode(0xb8); get_string(); gencode_int32(0x00); // mov eax string_address
 			} else {
 				expr_entry();
 			}
@@ -138,23 +141,6 @@ int expression(int pos, int status) {
 		if(isputs) {
 			gencode(0xff); gencode(0x56); gencode(8);// call *0x08(esi) putLN
 		}
-
-	} else if(skip("printf")) {
-
-		if(is_string_tok()) {
-			gencode(0xb8); get_string();
-			gencode_int32(0x00); // mov eax string_address
-			gencode(0x89); gencode(0x44); gencode(0x24); gencode(0x00); // mov [esp+0], eax
-		}
-		if(skip(",")) {
-			uint32_t params = 1;
-			do {
-				expr_entry();
-				gencode(0x89); gencode(0x44); gencode(0x24); gencode(params * ADDR_SIZE); // mov [esp+params], eax
-				params++;
-			} while(skip(","));
-		}
-		gencode(0xff); gencode(0x56); gencode(12 + 8); // call printf
 
 	} else if(skip("for")) { blocksCount++;
 
@@ -176,7 +162,7 @@ int expression(int pos, int status) {
 
 	} else if(skip("else")) {
 
-		int32_t end;
+		uint32_t end;
 		gencode(0xe9); end = ntvCount; gencode_int32(0);// jmp while end
 		gencode_int32_insert(ntvCount - pos - 4, pos);
 		eval(end, BLOCK_NORMAL);
@@ -184,12 +170,13 @@ int expression(int pos, int status) {
 
 	} else if(skip("elsif")) {
 
-		int32_t endif, end;
+		uint32_t endif, end;
 		gencode(0xe9); endif = ntvCount; gencode_int32(0);// jmp while end
 		gencode_int32_insert(ntvCount - pos - 4, pos);
 		expr_entry(); // if condition
 		gencode(0x83); gencode(0xf8); gencode(0x00);// cmp eax, 0
 		gencode(0x75); gencode(0x05); // jne 5
+		skip(";");
 		gencode(0xe9); end = ntvCount; gencode_int32(0);// jmp while end
 		eval(end, BLOCK_NORMAL);
 		gencode_int32_insert(ntvCount - endif - 4, endif);
@@ -265,6 +252,7 @@ int append_lib(char *name) {
 	sprintf(lib_name, "./lib/%s.so", name);
 
 	strcpy(lib_list.lib[lib_list.count].name, name);
+	lib_list.lib[lib_list.count].no = lib_list.count;
 	lib_list.lib[lib_list.count].handle = dlopen(lib_name, RTLD_LAZY | RTLD_NOW);
 	return lib_list.count++;
 }

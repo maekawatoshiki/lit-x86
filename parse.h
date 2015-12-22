@@ -54,6 +54,7 @@ int expression(int, int);
 int parser();
 int get_string();
 
+int is_func(char *, char *);
 func_t *get_func(char *, char *);
 func_t *append_func(char *, int, int);
 

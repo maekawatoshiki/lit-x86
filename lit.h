@@ -59,10 +59,10 @@ typedef struct {
   char val[32];
 	int type;
 	int nline;
-} Token;
+} token_t;
 
 struct {
-	Token *tok;
+	token_t *tok;
 	int size, pos;
 } tok;
 

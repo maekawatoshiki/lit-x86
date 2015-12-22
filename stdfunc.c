@@ -12,8 +12,7 @@ std_function stdfunc[] = {
 	{"read", "File", 3, 44},
 	{"close", "File", 1, 40},
 	{"gets", "File", 3, 56},
-	{"free", "Sys", 1, 48},
-	{"freeLocal", "XXX", 0, 52}
+	{"free", "Sys", 1, 48}
 }; // len = sizeof(stdf) / sizeof(stdf[0])
 
 int make_stdfunc(char *name, char *mod_name) {

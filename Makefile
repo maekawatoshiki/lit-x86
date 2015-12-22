@@ -39,6 +39,7 @@ lib: lit
 	clang -shared -m32 -lm -O0 -o $(LIB_PATH)/Sys.so $(LIB_PATH)/Sys_linux.c
 	clang -shared -m32 -lm -O0 -o $(LIB_PATH)/Prime.so $(LIB_PATH)/Prime.c
 	clang -shared -m32 -lm -O0 -o $(LIB_PATH)/M.so $(LIB_PATH)/M.c
+	clang -shared -m32 -lm -O0 -o $(LIB_PATH)/Math.so $(LIB_PATH)/Math.c
 
 test: lit lib
 	./test/test.sh

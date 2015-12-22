@@ -6,7 +6,7 @@ int lex(char *code) {
 	char *str;
 
 	for(size_t i = 0; i < code_sz; i++) {
- 		if(tok.size <= i) tok.tok = (Token *)realloc(tok.tok, (tok.size += 512 * sizeof(Token)));
+ 		if(tok.size <= i) tok.tok = (token_t *)realloc(tok.tok, (tok.size += 512 * sizeof(token_t)));
 		
 		if(isdigit(code[i])) { // number?
 			str = tok.tok[tok.pos].val;

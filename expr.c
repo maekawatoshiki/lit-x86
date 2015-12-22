@@ -91,14 +91,20 @@ int expr_primary() {
 	if(skip("&")) is_get_addr = 1;
 
 	if(is_number_tok()) { // number?
+	
 		genas("mov eax %d", atoi(tok.tok[tok.pos++].val));
+	
 	} else if(skip("'")) { // char?
 		genas("mov eax %d", tok.tok[tok.pos++].val[0]);
 		skip("'");
+	
 	} else if(is_string_tok()) { // string?
+
 		gencode(0xb8); get_string();
 		gencode_int32(0x00); // mov eax string_address
+
 	} else if(is_ident_tok()) { // variable or inc or dec
+	
 		char *name = tok.tok[tok.pos].val, *mod_name = "";
 		Variable *v; 
 
@@ -108,11 +114,69 @@ int expr_primary() {
 			name = tok.tok[tok.pos].val; 
 		}
 
+		
 		if(is_asgmt()) {
+	
 			asgmt();
+	
 		} else {
+		
 			SKIP_TOK;
-			if(skip("[")) { // Array?
+
+			if((ispare = skip("(")) || is_stdfunc(name, mod_name) || 
+					is_func(name, mod_name) || is_lib_module(mod_name)) { // Function?
+
+				if(is_lib_module(mod_name)) { // library function
+				
+					if(HAS_PARAMS_FUNC) {
+						for(int i = 0; !streql(tok.tok[tok.pos].val, ")") && !skip(";"); i++) {
+							expr_entry();
+							gencode(0x89); gencode(0x44); gencode(0x24); gencode(i * ADDR_SIZE); // mov [esp+ADDR*i], eax
+							skip(",");
+						} 
+					}
+					gencode(0xe8); gencode_int32(call_lib_func(name, mod_name) - (uint32_t)&ntvCode[ntvCount] - 4); // call func
+				
+				} else if(get_func(name, mod_name)) {	// user function
+				
+					func_t *function = get_func(name, mod_name);
+
+					if(function == NULL) 
+						function = get_func(name, module);
+
+					if(function == NULL) { // undefined
+						size_t params = 0;
+						if(HAS_PARAMS_FUNC) { // has arg?
+							for(params = 0; !streql(tok.tok[tok.pos].val, ")") && !skip(";"); params++) {
+								expr_entry();
+								genas("push eax");
+								skip(",");
+							}
+						}
+						gencode(0xe8); append_undef_func(name, streql(module, "") ? mod_name : module, ntvCount);
+						gencode_int32(0x00000000); // call func
+						genas("add esp %d", params * ADDR_SIZE);
+
+					} else { // defined
+						if(HAS_PARAMS_FUNC) {
+							for(size_t i = 0; i < function->params; i++) {
+								expr_entry();
+								genas("push eax");
+								if(!skip(",") && function->params - 1 != i) 
+									error("error: %d: expected ','", tok.tok[tok.pos].nline);
+							}
+						}
+						gencode(0xe8); gencode_int32(0xFFFFFFFF - (ntvCount - function->address) - 3); // call func
+						genas("add esp %d", function->params * ADDR_SIZE);
+					}
+				} else { // standard function
+					make_stdfunc(name, mod_name);
+				}
+			
+				if(ispare && !skip(")")) error("func: error: %d: expected expression ')'", tok.tok[tok.pos].nline);
+
+			} else if(skip("[")) { // Array?
+			
 				v = get_var(name , mod_name);
 				if(v == NULL) v = get_var(name, module);
 				if(v == NULL)
@@ -134,58 +198,9 @@ int expr_primary() {
 
 				if(!skip("]"))
 					error("error: %d: expected expression ']'", tok.tok[tok.pos].nline);
-			} else if((ispare = skip("(")) || is_stdfunc(name, mod_name) || get_func(name, mod_name)) { // Function?
-				int is_stdfunc = make_stdfunc(name, mod_name);
-
-				if(is_lib_module(mod_name)) { // library function
-					size_t params = 0;
-					if(is_number_tok() || is_ident_tok() || 
-							is_string_tok() || streql(tok.tok[tok.pos].val, "(")) { // has arg?
-						for(int i = tok.pos; !streql(tok.tok[i].val, ")"); i++) 
-							params += streql(tok.tok[i].val, ","); // count params
-						params++;
-						for(int i = 0; i < params; i++) {
-							expr_entry();
-							gencode(0x89); gencode(0x44); gencode(0x24); gencode(i * ADDR_SIZE);
-							if(i < params - 1 && !skip(","))
-								error("error: %d: expected ','", tok.tok[tok.pos].nline);
-						} 
-					}
-					gencode(0xe8); gencode_int32(call_lib_func(name, mod_name) - (uint32_t)&ntvCode[ntvCount] - 4); // call func
-				} else if(!is_stdfunc) {	// user function
-					func_t *function = get_func(name, mod_name);
-					if(function == NULL) 
-						function = get_func(name, module);
-
-					if(function == NULL) { // undefined
-						size_t params = 0;
-						if(is_number_tok() || is_ident_tok() || 
-								is_string_tok() || streql(tok.tok[tok.pos].val, "(")) { // has arg?
-							for(params = 0; !streql(tok.tok[tok.pos].val, ")"); params++) {
-								expr_entry();
-								genas("push eax");
-								skip(",");
-							}
-						}
-						gencode(0xe8); append_undef_func(name, streql(module, "") ? mod_name : module, ntvCount);
-						gencode_int32(0x00000000); // call func
-						genas("add esp %d", params * ADDR_SIZE);
-					} else { // defined
-						if(is_number_tok() || is_ident_tok() || 
-								is_string_tok() || streql(tok.tok[tok.pos].val, "(")) { // has arg?
-							for(size_t i = 0; i < function->params; i++) {
-								expr_entry();
-								genas("push eax");
-								if(!skip(",") && function->params - 1 != i) 
-									error("error: %d: expected ','", tok.tok[tok.pos].nline);
-							}
-						}
-						gencode(0xe8); gencode_int32(0xFFFFFFFF - (ntvCount - function->address) - 3); // call func
-						genas("add esp %d", function->params * ADDR_SIZE);
-					}
-				}
-				if(ispare && !skip(")")) error("func: error: %d: expected expression ')'", tok.tok[tok.pos].nline);
+			
 			} else { // single variable
+				
 				v = get_var(name, mod_name);
 				if(v == NULL) 
 					v = get_var(name, module);
@@ -197,6 +212,7 @@ int expr_primary() {
 				} else if(v->loctype == V_GLOBAL) {
 					gencode(0xa1); gencode_int32(v->id); // mov eax GLOBAL_ADDR
 				}
+
 			}
 		}
 	} else if(skip("(")) {
@@ -219,7 +235,7 @@ int is_index() {
 
 int make_index() {
 	genas("mov ecx eax");
-	skip("["); expr_compare(); skip("]");
+	skip("["); expr_entry(); skip("]");
 	gencode(0x8b); gencode(0x04); gencode(0x81); // mov eax [eax * 4 + ecx]
 	return 0;
 }
