@@ -18,7 +18,12 @@ int Math_lcm(int a, int b) {
 	return a / Math_gcd(a, b) * b;
 }
 
+int Math_fact(int n) {
+	int r = n;
+	while(--n) r *= n;
+	return r;
+}
+
 int Math_even(int n) { return n & 1; }
 int Math_odd(int n) { return !Math_even(n); }
-
 int Math_abs(int n) { return n < 0 ? -n : n; }
