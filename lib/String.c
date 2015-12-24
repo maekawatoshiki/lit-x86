@@ -23,6 +23,6 @@ int String_eql(char *s1, char *s2) { return strcmp(s1, s2) == 0 ? 1 : 0; }
 int String_len(char *str) { return strlen(str); }
 char *String_concat(char *str, char *s) { return strcat(str, s); }
 char *String_copy(char *str, char *s) { return strcpy(str, s); }
-int String_isdigit(char *s) { return isdigit(s); }
-int String_isalpha(char *s) { return isalpha(s); }
+int String_isdigit(int ch) { return isdigit(ch); }
+int String_isalpha(int ch) { return isalpha(ch); }
 int String_to_i(char *s) { return atoi(s); }
