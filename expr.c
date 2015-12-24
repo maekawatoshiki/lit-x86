@@ -124,7 +124,7 @@ int expr_primary() {
 			SKIP_TOK;
 
 			if((ispare = skip("(")) || is_stdfunc(name, mod_name) || 
-					is_func(name, mod_name) || is_lib_module(mod_name)) { // Function?
+					is_func(name, mod_name) || is_func(name, module) || is_lib_module(mod_name)) { // Function?
 
 				if(is_lib_module(mod_name)) { // library function
 				
@@ -137,13 +137,15 @@ int expr_primary() {
 					}
 					gencode(0xe8); gencode_int32(call_lib_func(name, mod_name) - (uint32_t)&ntvCode[ntvCount] - 4); // call func
 				
-				} else if(get_func(name, mod_name)) {	// user function
+				} else if(is_stdfunc(name, mod_name)) {
+					
+					make_stdfunc(name, mod_name);
+				
+				} else if(get_func(name, mod_name) || get_func(name, module) || ispare) {	// user function
 				
 					func_t *function = get_func(name, mod_name);
-
 					if(function == NULL) 
 						function = get_func(name, module);
-
 					if(function == NULL) { // undefined
 						size_t params = 0;
 						if(HAS_PARAMS_FUNC) { // has arg?
@@ -169,11 +171,10 @@ int expr_primary() {
 						gencode(0xe8); gencode_int32(0xFFFFFFFF - (ntvCount - function->address) - 3); // call func
 						genas("add esp %d", function->params * ADDR_SIZE);
 					}
-				} else { // standard function
-					make_stdfunc(name, mod_name);
 				}
-			
-				if(ispare && !skip(")")) error("func: error: %d: expected expression ')'", tok.tok[tok.pos].nline);
+		
+				if(ispare) 
+					if(!skip(")")) error("func: error: %d: expected expression ')'", tok.tok[tok.pos].nline);
 
 			} else if(skip("[")) { // Array?
 			

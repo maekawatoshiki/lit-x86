@@ -5,7 +5,11 @@ module Calc
 end
 
 def calc(x, y)
-	x + y
+	x + y + one()
+end
+
+def one
+	1
 end
 
 a = calc 1, 2

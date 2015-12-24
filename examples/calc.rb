@@ -16,7 +16,7 @@ module calc
 
 	def strcat(d:string, s:string)
 		i = 0
-		len = strlen(d)
+		len = strlen d 
 		j = len
 		while s[i] != 0
 			d[j++] = s[i++]
@@ -97,6 +97,7 @@ module calc
 
 	def calc(a:string)
 		out:string = Array(100)
+		for i = 0, i < 100, i++; out[i] = 0; end
 		srcLen = strlen(a)
 		addsub(a, out)
 		printf "parse=> %s\n", out

@@ -49,7 +49,6 @@ int append_undef_func(char *name, char *mod_name, int ntvc) {
 }
 
 int rep_undef_func(char *name, int ntvc) {
-	int count = undef_funcs.count;
 	func_t *f = undef_funcs.func;
 
 	for(int i = 0; i < undef_funcs.count; i++) {
