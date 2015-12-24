@@ -2,6 +2,7 @@
 #include <stdlib.h>
 #include <math.h>
 #include <string.h>
+#include <ctype.h>
 
 char *String_replace(char *str, char *s1, char *s2) {
 	char *p = str;
@@ -17,23 +18,11 @@ char *String_replace(char *str, char *s1, char *s2) {
 	return str;
 }
 
-char *String_find(char *str, char *s) {
-	return strstr(str, s);
-}
-
-int String_eql(char *s1, char *s2) {
-	return strcmp(s1, s2) == 0 ? 1 : 0;
-}
-
-int String_len(char *str) {
-	return strlen(str);
-}
-
-char *String_concat(char *str, char *s) {
-	return strcat(str, s);
-}
-
-char *String_copy(char *str, char *s) {
-	return strcpy(str, s);
-}
-
+char *String_find(char *str, char *s) { return strstr(str, s); }
+int String_eql(char *s1, char *s2) { return strcmp(s1, s2) == 0 ? 1 : 0; }
+int String_len(char *str) { return strlen(str); }
+char *String_concat(char *str, char *s) { return strcat(str, s); }
+char *String_copy(char *str, char *s) { return strcpy(str, s); }
+int String_isdigit(char *s) { return isdigit(s); }
+int String_isalpha(char *s) { return isalpha(s); }
+int String_to_i(char *s) { return atoi(s); }
