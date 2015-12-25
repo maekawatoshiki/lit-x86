@@ -41,6 +41,7 @@ lib: lit
 	clang -shared -m32 -lm -O0 -o $(LIB_PATH)/M.so $(LIB_PATH)/M.c
 	clang -shared -m32 -lm -O0 -o $(LIB_PATH)/Math.so $(LIB_PATH)/Math.c
 	clang -shared -m32 -lm -O0 -o $(LIB_PATH)/String.so $(LIB_PATH)/String.c
+	clang -shared -m32 -lm -O0 -o $(LIB_PATH)/Time.so $(LIB_PATH)/Time.c
 
 test: lit lib
 	./test/test.sh
