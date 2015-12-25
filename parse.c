@@ -24,7 +24,7 @@ func_t *get_func(char *name, char *mod_name) {
 		printf("%s : %s >> %s : %s\n", mod_name, name, funcs.func[i].mod_name, funcs.func[i].name);
 #endif
 		if(streql(funcs.func[i].name, name) && streql(funcs.func[i].mod_name, mod_name)) {
-			return &funcs.func[i];
+			return &(funcs.func[i]);
 		}
 	}
 	return NULL;
@@ -86,7 +86,9 @@ int expression(int pos, int status) {
 		if(is_asgmt()) asgmt();
 
 	} else if(skip("require")) {
+	
 		using_require();
+	
 	} else if(skip("def")) { blocksCount++;
 
 		make_func();
@@ -98,7 +100,7 @@ int expression(int pos, int status) {
 	} else if(funcs.inside == FALSE && !streql("def", tok.tok[tok.pos+1].val) &&
 			!streql("module", tok.tok[tok.pos+1].val) && !streql("$", tok.tok[tok.pos+1].val) &&
 			!streql(";", tok.tok[tok.pos+1].val)) {	// main func entry
-
+		
 		funcs.inside = TRUE;
 		funcs.now++;
 		append_func("main", ntvCount, 0); // append func

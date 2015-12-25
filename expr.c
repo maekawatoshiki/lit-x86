@@ -7,13 +7,15 @@ extern unsigned char *ntvCode;
 int is_string_tok() { return tok.tok[tok.pos].type == TOK_STRING; }
 int is_number_tok() { return tok.tok[tok.pos].type == TOK_NUMBER; }
 int is_ident_tok()  { return tok.tok[tok.pos].type == TOK_IDENT;  }
+int is_char_tok() { return tok.tok[tok.pos].type == TOK_CHAR; } 
 
 int expr_entry() { return expr_compare(); }
 
 int32_t expr_compare() {
 	int andop=0, orop=0;
 	expr_logic();
-	while((andop=skip("and") || skip("&")) || (orop=skip("or") || skip("|")) || skip("xor") || skip("^")) {
+	while((andop=skip("and") || skip("&")) || (orop=skip("or") || 
+				skip("|")) || skip("xor") || skip("^")) {
 		genas("push eax");
 		expr_logic();
 		genas("mov ebx eax");
@@ -90,18 +92,18 @@ int expr_primary() {
 
 	if(skip("&")) is_get_addr = 1;
 
-	if(is_number_tok()) { // number?
+	if(is_number_tok()) {
 	
 		genas("mov eax %d", atoi(tok.tok[tok.pos++].val));
 	
-	} else if(skip("'")) { // char?
-		genas("mov eax %d", tok.tok[tok.pos++].val[0]);
-		skip("'");
+	} else if(is_char_tok()) { 
+		
+		genas("mov eax %d", (int)tok.tok[tok.pos++].val[0]);
 	
-	} else if(is_string_tok()) { // string?
+	} else if(is_string_tok()) { 
 
 		gencode(0xb8); get_string();
-		gencode_int32(0x00); // mov eax string_address
+		gencode_int32(0x00000000); // mov eax string_address
 
 	} else if(is_ident_tok()) { // variable or inc or dec
 	
@@ -113,7 +115,6 @@ int expr_primary() {
 			skip(".");
 			name = tok.tok[tok.pos].val; 
 		}
-
 		
 		if(is_asgmt()) {
 	
@@ -127,7 +128,7 @@ int expr_primary() {
 					is_func(name, mod_name) || is_func(name, module) || is_lib_module(mod_name)) { // Function?
 
 				if(is_lib_module(mod_name)) { // library function
-				
+
 					if(HAS_PARAMS_FUNC) {
 						for(int i = 0; !streql(tok.tok[tok.pos].val, ")") && !skip(";"); i++) {
 							expr_entry();
@@ -135,7 +136,7 @@ int expr_primary() {
 							skip(",");
 						} 
 					}
-					gencode(0xe8); gencode_int32(call_lib_func(name, mod_name) - (uint32_t)&ntvCode[ntvCount] - 4); // call func
+					gencode(0xe8); gencode_int32(call_lib_func(name, mod_name) - (uint32_t)&ntvCode[ntvCount] - ADDR_SIZE); // call func
 				
 				} else if(is_stdfunc(name, mod_name)) {
 					
@@ -174,7 +175,8 @@ int expr_primary() {
 				}
 		
 				if(ispare) 
-					if(!skip(")")) error("func: error: %d: expected expression ')'", tok.tok[tok.pos].nline);
+					if(!skip(")")) 
+						error("func: error: %d: expected expression ')'", tok.tok[tok.pos].nline);
 
 			} else if(skip("[")) { // Array?
 			

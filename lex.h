@@ -15,6 +15,7 @@ enum {
 	TOK_IDENT,
 	TOK_NUMBER,
 	TOK_STRING,
+	TOK_CHAR,
 	TOK_END
 };
 

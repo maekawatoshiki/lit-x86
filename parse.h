@@ -9,7 +9,7 @@
 #include "util.h"
 
 typedef struct {
-	int address, params;
+	uint32_t address, params;
 	char name[0xFF], mod_name[0xff];
 } func_t;
 

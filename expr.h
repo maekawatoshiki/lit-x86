@@ -9,11 +9,12 @@
 #include "util.h"
 
 #define HAS_PARAMS_FUNC is_number_tok() || is_ident_tok() || \
-							is_string_tok() || streql(tok.tok[tok.pos].val, "(") 
+							is_string_tok() || is_char_tok() || streql(tok.tok[tok.pos].val, "(") 
 
 int is_string_tok();
 int is_number_tok();
 int is_ident_tok();
+int is_char_tok();
 
 int expr_entry();
 int expr_compare();

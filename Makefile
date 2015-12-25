@@ -1,4 +1,4 @@
-CFLAGS = -O0 -m32 -std=c99 -Wno-strict-aliasing 
+CFLAGS = -O0 -m32 -std=c99 -Wno-strict-aliasing
 CC = clang $(CFLAGS) 
 LIB_PATH = lib
 
