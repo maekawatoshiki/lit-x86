@@ -1,6 +1,5 @@
 #include "var.h"
 
-extern char *module;
 extern int blocksCount;
 extern unsigned char *ntvCode;
 extern int ntvCount;
@@ -8,15 +7,15 @@ extern int ntvCount;
 locvar_t locVar;
 gblvar_t gblVar;
 
-Variable *get_var(char *name, char *mod_name) {
+Variable *get_var(std::string name, std::string mod_name) {
 	// loval var
 	for(int i = 0; i < locVar.count; i++) {
-		if(streql(name, locVar.var[funcs.now][i].name))
+		if(name == locVar.var[funcs.now][i].name)
 			return &locVar.var[funcs.now][i];
 	}
 	// global var
 	for(int i = 0; i < gblVar.count; i++) {
-		if(streql(name, gblVar.var[i].name) && streql(mod_name, gblVar.var[i].mod_name)) {
+		if(name == gblVar.var[i].name && mod_name == gblVar.var[i].mod_name) {
 			return &gblVar.var[i];
 		}
 	}
@@ -24,11 +23,11 @@ Variable *get_var(char *name, char *mod_name) {
 	return NULL;
 }
 
-Variable *append_var(char *name, int type) {
+Variable *append_var(std::string name, int type) {
 	if(funcs.inside == TRUE) {
 		// local var
 		uint32_t sz = 1 + ++locVar.size[funcs.now];
-		strcpy(locVar.var[funcs.now][locVar.count].name, name);
+		locVar.var[funcs.now][locVar.count].name = name;
 		locVar.var[funcs.now][locVar.count].type = type;
 		locVar.var[funcs.now][locVar.count].id = sz;
 		locVar.var[funcs.now][locVar.count].loctype = V_LOCAL;
@@ -36,8 +35,8 @@ Variable *append_var(char *name, int type) {
 		return &locVar.var[funcs.now][locVar.count++];
 	} else if(funcs.inside == FALSE) {
 		// global varibale
-		strcpy(gblVar.var[gblVar.count].name, name);
-		strcpy(gblVar.var[gblVar.count].mod_name, module);
+		gblVar.var[gblVar.count].name = name;
+		gblVar.var[gblVar.count].mod_name = module;
 		gblVar.var[gblVar.count].type = type;
 		gblVar.var[gblVar.count].loctype = V_GLOBAL;
 		gblVar.var[gblVar.count].id = (uint32_t)&ntvCode[ntvCount];
@@ -50,35 +49,35 @@ Variable *append_var(char *name, int type) {
 }
 
 int is_asgmt() {
-	if(streql(tok.tok[tok.pos+1].val, "=")) return 1;
-	else if(streql(tok.tok[tok.pos+1].val, "++")) return 1;
-	else if(streql(tok.tok[tok.pos+1].val, "--")) return 1;
-	else if(streql(tok.tok[tok.pos+1].val, "[")) {
+	if(tok.tok[tok.pos+1].val == "=") return 1;
+	else if(tok.tok[tok.pos+1].val == "++") return 1;
+	else if(tok.tok[tok.pos+1].val == "--") return 1;
+	else if(tok.tok[tok.pos+1].val == "[") {
 		int i = tok.pos + 2, t = 1;
 re:
 		while(t) {
-			if(streql(tok.tok[i].val, "[")) t++;
-			if(streql(tok.tok[i].val, "]")) t--;
-			if(streql(tok.tok[i].val, ";"))
+			if(tok.tok[i].val == "[") t++;
+			if(tok.tok[i].val == "]") t--;
+			if(tok.tok[i].val == ";")
 				error("index: error: %d: invalid expression", tok.tok[tok.pos].nline);
 			i++;
 		}
 		t = 1;
-		if(streql(tok.tok[i].val, "[")) { i++; goto re; }
+		if(tok.tok[i].val == "[") { i++; goto re; }
 #ifdef DEBUG
-		printf(">%s\n", tok.tok[i].val);
+		std::cout << "> " << tok.tok[i].val << std::endl;
 #endif
-		if(streql(tok.tok[i].val, "=")) return 1;
-	} else if(streql(tok.tok[tok.pos + 1].val, ".") /* module */ || 
-			streql(tok.tok[tok.pos + 1].val, ":") /* var:type */) {
-		if(streql(tok.tok[tok.pos + 3].val, "=")) return 1;
+		if(tok.tok[i].val == "=") return 1;
+	} else if(tok.tok[tok.pos + 1].val =="." /* module */ || 
+			tok.tok[tok.pos + 1].val == ":" /* var:type */) {
+		if(tok.tok[tok.pos + 3].val == "=") return 1;
 	}
 	return 0;
 }
 
 int asgmt() {
-	char *name = tok.tok[tok.pos].val, *mod_name = "";
-	if(streql(tok.tok[tok.pos+1].val, ".")) { // module's func or var?
+	std::string name = tok.tok[tok.pos].val, mod_name = "";
+	if(tok.tok[tok.pos+1].val == ".") { // module's func or var?
 		mod_name = tok.tok[tok.pos].val;
 		tok.pos += 2;
 		name = tok.tok[tok.pos].val;
@@ -91,7 +90,7 @@ int asgmt() {
 	SKIP_TOK;
 	
 	if(v->loctype == V_LOCAL) {
-		if(streql(tok.tok[tok.pos].val, "[")) { // Array?
+		if(tok.tok[tok.pos].val == "[") { // Array?
 			asgmt_array(v);
 		} else { // Scalar?
 			asgmt_single(v);
@@ -101,10 +100,10 @@ int asgmt() {
 			// asgmt only int32_terger
 			if(skip("=")) {
 				unsigned *m = (unsigned *)v->id; // v->id is gloval var's address
-				*m = atoi(tok.tok[tok.pos++].val);
+				*m = atoi(tok.tok[tok.pos++].val.c_str());
 			}
 		} else {
-			if(streql(tok.tok[tok.pos].val, "[")) { // Array?
+			if(tok.tok[tok.pos].val == "[") { // Array?
 				asgmt_array(v);
 			} else asgmt_single(v);
 		}
@@ -202,7 +201,8 @@ int asgmt_array(Variable *v) {
 }
 
 Variable *declare_var() {
-	int32_t npos = tok.pos;
+	int npos = tok.pos;
+	
 	if(isalpha(tok.tok[tok.pos].val[0])) {
 		tok.pos++;
 		if(skip(":")) {

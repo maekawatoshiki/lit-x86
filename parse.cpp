@@ -1,7 +1,7 @@
 #include "parse.h"
 
-char *module = "";
 int blocksCount;
+std::string module = "";
 funclist_t undef_funcs, funcs;
 liblist_t lib_list;
 string_t strings;
@@ -11,52 +11,52 @@ extern int ntvCount;
 
 int get_string() {
 	strings.text[ strings.count ] = (char *)
-		calloc(sizeof(char), strlen(tok.tok[tok.pos].val) + 1);
-	strcpy(strings.text[strings.count], tok.tok[tok.pos++].val);
+		calloc(sizeof(char), tok.tok[tok.pos].val.length() + 1);
+	strcpy(strings.text[strings.count], tok.tok[tok.pos++].val.c_str());
 
 	*strings.addr++ = ntvCount;
 	return strings.count++;
 }
 
-int is_func(char *name, char *mod_name) {
+int is_func(std::string name, std::string mod_name) {
 	return get_func(name, mod_name) == NULL ? 0 : 1;
 }
 
-func_t *get_func(char *name, char *mod_name) {
+func_t *get_func(std::string name, std::string mod_name) {
 	for(int i = 0; i < funcs.count; i++) {
 #ifdef DEBUG
-		printf("%s : %s >> %s : %s\n", mod_name, name, funcs.func[i].mod_name, funcs.func[i].name);
+		printf("%s : %s >> %s : %s\n", mod_name.c_str(), name.c_str(), funcs.func[i].mod_name.c_str(), funcs.func[i].name.c_str());
 #endif
-		if(streql(funcs.func[i].name, name) && streql(funcs.func[i].mod_name, mod_name)) {
+		if(funcs.func[i].name == name && funcs.func[i].mod_name == mod_name) {
 			return &(funcs.func[i]);
 		}
 	}
 	return NULL;
 }
 
-func_t *append_func(char *name, int address, int params) {
+func_t *append_func(std::string name, int address, int params) {
 	funcs.func[funcs.count].address = address;
 	funcs.func[funcs.count].params = params;
-	strcpy(funcs.func[funcs.count].mod_name, module);
+	funcs.func[funcs.count].mod_name = module;
 #ifdef DEBUG
-	printf("%s:%s\n", funcs.func[funcs.count].mod_name, name);
+	std::cout << funcs.func[funcs.count].mod_name << " : " << name << std::endl;
 #endif
-	strcpy(funcs.func[funcs.count].name, name);
-	return &funcs.func[funcs.count++];
+	funcs.func[funcs.count].name = name;
+	return &(funcs.func[funcs.count++]);
 }
 
-int append_undef_func(char *name, char *mod_name, int ntvc) {
+int append_undef_func(std::string name, std::string mod_name, int ntvc) {
 	undef_funcs.func[undef_funcs.count].address = ntvc;
-	strcpy(undef_funcs.func[undef_funcs.count].mod_name, mod_name);
-	strcpy(undef_funcs.func[undef_funcs.count++].name, name);
+	undef_funcs.func[undef_funcs.count].mod_name = mod_name;
+	undef_funcs.func[undef_funcs.count++].name = name;
 	return 0;
 }
 
-int rep_undef_func(char *name, int ntvc) {
+int rep_undef_func(std::string name, int ntvc) {
 	func_t *f = undef_funcs.func;
 
 	for(int i = 0; i < undef_funcs.count; i++) {
-		if(streql(f[i].name, name) && streql(f[i].mod_name, module)) {
+		if(f[i].name == name && f[i].mod_name == module) {
 			gencode_int32_insert(ntvc - f[i].address - 4, f[i].address);
 		}
 	}
@@ -101,20 +101,20 @@ int expression(int pos, int status) {
 		module = tok.tok[tok.pos++].val;
 		eval(0, NON);
 		module = "";
-	} else if(funcs.inside == FALSE && !streql("def", tok.tok[tok.pos+1].val) &&
-			!streql("module", tok.tok[tok.pos+1].val) && !streql("$", tok.tok[tok.pos+1].val) &&
-			!streql(";", tok.tok[tok.pos+1].val)) {	// main func entry
-		
+	} else if(funcs.inside == FALSE && tok.tok[tok.pos+1].val != "def" &&
+			tok.tok[tok.pos+1].val != "module" && tok.tok[tok.pos+1].val != "$" &&
+			tok.tok[tok.pos+1].val != ";" && module == "") {	// main func entry
+
 		funcs.inside = TRUE;
 		funcs.now++;
-		append_func("main", ntvCount, 0); // append func
+		append_func("main", ntvCount, 0); // append funcs
 		genas("push ebp");
 		genas("mov ebp esp");
 		uint32_t espBgn = ntvCount + 2; genas("sub esp 0");
 		gencode(0x8b); gencode(0x75); gencode(0x0c); // mov esi, 0xc(%ebp)
-
+		
 		eval(0, BLOCK_NORMAL);
-
+		
 		gencode(0x81); gencode(0xc4); gencode_int32(ADDR_SIZE * (locVar.size[funcs.now] + 6)); // add %esp nn
 		gencode(0xc9);// leave
 		gencode(0xc3);// ret
@@ -164,7 +164,7 @@ int expression(int pos, int status) {
 	} else if(skip("if")) { blocksCount++;
 
 		make_if();
-
+	
 	} else if(skip("else")) {
 
 		uint32_t end;
@@ -202,15 +202,13 @@ int expression(int pos, int status) {
 	} else if(!skip(";")) {
 		expr_entry();
 	}
-
+	
 	return 0;
 }
 
 int eval(int pos, int status) {
-	while(tok.pos < tok.size) {
-		skip(";");
+	while(tok.pos < tok.size) 
 		if(expression(pos, status)) return 1;
-	}
 	return 0;
 }
 
@@ -226,7 +224,6 @@ int parser() {
 	printf("blocks: %d\n", blocksCount);
 #endif
 	if(blocksCount != 0) error("error: 'end' is not enough");
-
 	uint32_t addr = get_func("main", "")->address;
 	gencode_int32_insert(addr - 5, main_address);
 
@@ -251,24 +248,24 @@ void using_require() {
 	append_lib(tok.tok[tok.pos++].val);
 }
 
-int append_lib(char *name) {
-	char lib_name[64];
+int append_lib(std::string name) {
+	std::string lib_name;
 
-	sprintf(lib_name, "./lib/%s.so", name);
+	lib_name = "./lib/" + name + ".so";
 
-	strcpy(lib_list.lib[lib_list.count].name, name);
+	lib_list.lib[lib_list.count].name = name;
 	lib_list.lib[lib_list.count].no = lib_list.count;
-	lib_list.lib[lib_list.count].handle = dlopen(lib_name, RTLD_LAZY | RTLD_NOW);
+	lib_list.lib[lib_list.count].handle = dlopen(lib_name.c_str(), RTLD_LAZY | RTLD_NOW);
 	return lib_list.count++;
 }
 
-int is_lib_module(char *name) {
+int is_lib_module(std::string name) {
 	return get_lib_module(name) == NULL ? 0 : 1;
 }
 
-lib_t *get_lib_module(char *name) {
+lib_t *get_lib_module(std::string name) {
 	for(int i = 0; i < lib_list.count; i++) {
-		if(streql(lib_list.lib[i].name, name)) return &lib_list.lib[i];
+		if(lib_list.lib[i].name == name) return &lib_list.lib[i];
 	}
 	return NULL;
 }
@@ -324,7 +321,7 @@ int make_while() {
 
 int make_func() {
 	uint32_t espBgn, params = 0;
-	char *funcName = tok.tok[tok.pos++].val;
+	std::string funcName = tok.tok[tok.pos++].val;
 
 	funcs.now++; funcs.inside = TRUE;
 	if(skip("(")) { // get params
@@ -363,13 +360,13 @@ int make_func() {
 			256 - ADDR_SIZE * i + (((locVar.size[funcs.now] + 6) * ADDR_SIZE) - 4);
 	}
 #ifdef DEBUG
-	printf("%s() has %u funcs or vars\n", funcName, locVar.size[funcs.now]);
+	printf("%s() has %u funcs or vars\n", funcName.c_str(), locVar.size[funcs.now]);
 #endif
 
 	return 0;
 }
 
-char *replaceEscape(char *str) {
+void replaceEscape(char *str) {
 	int i;
 	char *pos;
 	char escape[12][3] = {
@@ -380,13 +377,10 @@ char *replaceEscape(char *str) {
 		"\\t", "\t",
 		"\\b", "\b"
 	};
-	for (i = 0; i < 12; i += 2)
-	{
-		while ((pos = strstr(str, escape[i])) != NULL)
-		{
+	for (i = 0; i < 12; i += 2) {
+		while ((pos = strstr(str, escape[i])) != NULL) {
 			*pos = escape[i + 1][0];
 			memmove(pos + 1, pos + 2, strlen(str) - 2 + 1);
 		}
 	}
-	return str;
 }

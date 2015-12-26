@@ -10,7 +10,7 @@
 
 typedef struct {
 	uint32_t address, params;
-	char name[0xFF], mod_name[0xff];
+	std::string name, mod_name;
 } func_t;
 
 typedef struct {
@@ -21,7 +21,7 @@ typedef struct {
 extern funclist_t undef_funcs, funcs;
 
 typedef struct {
-	char name[64];
+	std::string name;
 	void *handle;
 	int no;
 } lib_t;
@@ -41,11 +41,12 @@ typedef struct {
 } string_t;
 
 extern string_t strings;
+extern std::string module;
 
 void using_require();
-int append_lib(char *);
-int is_lib_module(char *);
-lib_t *get_lib_module(char *);
+int append_lib(std::string);
+int is_lib_module(std::string);
+lib_t *get_lib_module(std::string);
 void free_lib();
 
 int make_if();
@@ -60,13 +61,13 @@ int expression(int, int);
 int parser();
 int get_string();
 
-int is_func(char *, char *);
-func_t *get_func(char *, char *);
-func_t *append_func(char *, int, int);
+int is_func(std::string, std::string);
+func_t *get_func(std::string, std::string);
+func_t *append_func(std::string, int, int);
 
-int append_undef_func(char *, char *, int);
-int rep_undef_func(char *, int);
+int append_undef_func(std::string, std::string, int);
+int rep_undef_func(std::string, int);
 
-char *replaceEscape(char *);
+void replaceEscape(char *);
 
 #endif

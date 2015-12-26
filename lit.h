@@ -1,6 +1,7 @@
 #ifndef _LIT_MAIN_HEAD_
 #define _LIT_MAIN_HEAD_
 
+// C
 #include <assert.h>
 #include <ctype.h>
 #include <errno.h>
@@ -17,7 +18,42 @@
 #include <stdlib.h>
 #include <string.h>
 #include <time.h>
+
 #include <dlfcn.h>
+
+// C++ 
+#include <algorithm>
+#include <bitset>
+#include <complex>
+#include <deque>
+#include <exception>
+#include <fstream>
+#include <functional>
+#include <iomanip>
+#include <ios>
+#include <iosfwd>
+#include <iostream>
+#include <istream>
+#include <iterator>
+#include <limits>
+#include <list>
+#include <locale>
+#include <map>
+#include <memory>
+#include <new>
+#include <numeric>
+#include <ostream>
+#include <queue>
+#include <set>
+#include <sstream>
+#include <stack>
+#include <stdexcept>
+#include <streambuf>
+#include <string>
+#include <typeinfo>
+#include <utility>
+#include <valarray>
+#include <vector>
 
 #include "asm.h"
 #include "lex.h"
@@ -55,18 +91,20 @@ enum {
 	NON
 };
 
+
 typedef struct {
-  char val[32];
+	std::string val;
 	int type;
 	int nline;
 } token_t;
 
-typedef struct {
-	token_t *tok;
+class Token {
+public:
+	std::vector<token_t> tok;
 	int size, pos;
-} tok_t;
+};
 
-extern tok_t tok;
+extern Token tok;
 
 enum {
 	V_LOCAL,

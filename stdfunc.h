@@ -9,11 +9,11 @@
 #include "util.h"
 
 typedef struct {
-	char *name, *mod_name;
+	std::string name, mod_name;
 	int args, addr;
 } std_function;
 
-int make_stdfunc(char *, char *); // func name, module name
-int is_stdfunc(char *, char *);
+int make_stdfunc(std::string , std::string ); // func name, module name
+int is_stdfunc(std::string , std::string );
 
 #endif

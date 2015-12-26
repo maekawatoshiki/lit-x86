@@ -1,6 +1,5 @@
 #include "expr.h"
 
-extern char *module;
 extern int ntvCount;
 extern unsigned char *ntvCode;
 
@@ -94,7 +93,7 @@ int expr_primary() {
 
 	if(is_number_tok()) {
 	
-		genas("mov eax %d", atoi(tok.tok[tok.pos++].val));
+		genas("mov eax %d", atoi(tok.tok[tok.pos++].val.c_str()));
 	
 	} else if(is_char_tok()) { 
 		
@@ -107,10 +106,10 @@ int expr_primary() {
 
 	} else if(is_ident_tok()) { // variable or inc or dec
 	
-		char *name = tok.tok[tok.pos].val, *mod_name = "";
+		std::string name = tok.tok[tok.pos].val, mod_name = "";
 		Variable *v; 
 
-		if(streql(tok.tok[tok.pos + 1].val, ".")) { // module?
+		if(tok.tok[tok.pos + 1].val == ".") { // module?
 			mod_name = tok.tok[tok.pos++].val; 
 			skip(".");
 			name = tok.tok[tok.pos].val; 
@@ -128,16 +127,15 @@ int expr_primary() {
 					is_func(name, mod_name) || is_func(name, module) || is_lib_module(mod_name)) { // Function?
 
 				if(is_lib_module(mod_name)) { // library function
-
 					if(HAS_PARAMS_FUNC) {
-						for(int i = 0; !streql(tok.tok[tok.pos].val, ")") && !skip(";"); i++) {
+						for(int i = 0; tok.tok[tok.pos].val != ")" && !skip(";"); i++) {
 							expr_entry();
 							gencode(0x89); gencode(0x44); gencode(0x24); gencode(i * ADDR_SIZE); // mov [esp+ADDR*i], eax
 							skip(",");
 						} 
 					}
 					gencode(0xe8); gencode_int32(call_lib_func(name, mod_name) - (uint32_t)&ntvCode[ntvCount] - ADDR_SIZE); // call func
-				
+
 				} else if(is_stdfunc(name, mod_name)) {
 					
 					make_stdfunc(name, mod_name);
@@ -150,13 +148,13 @@ int expr_primary() {
 					if(function == NULL) { // undefined
 						size_t params = 0;
 						if(HAS_PARAMS_FUNC) { // has arg?
-							for(params = 0; !streql(tok.tok[tok.pos].val, ")") && !skip(";"); params++) {
+							for(params = 0; tok.tok[tok.pos].val != ")" && !skip(";"); params++) {
 								expr_entry();
 								genas("push eax");
 								skip(",");
 							}
 						}
-						gencode(0xe8); append_undef_func(name, streql(module, "") ? mod_name : module, ntvCount);
+						gencode(0xe8); append_undef_func(name, module == "" ? mod_name : module, ntvCount);
 						gencode_int32(0x00000000); // call func
 						genas("add esp %d", params * ADDR_SIZE);
 
@@ -183,7 +181,7 @@ int expr_primary() {
 				v = get_var(name , mod_name);
 				if(v == NULL) v = get_var(name, module);
 				if(v == NULL)
-					error("error: %d: '%s' was not declare", tok.tok[tok.pos].nline, name);
+					error("error: %d: '%s' was not declare", tok.tok[tok.pos].nline, name.c_str());
 				expr_entry();
 				genas("mov ecx eax");
 
@@ -208,7 +206,7 @@ int expr_primary() {
 				if(v == NULL) 
 					v = get_var(name, module);
 				if(v == NULL)
-					error("var: error: %d: '%s' was not declare", tok.tok[tok.pos].nline, name);
+					error("var: error: %d: '%s' was not declare", tok.tok[tok.pos].nline, name.c_str());
 				if(v->loctype == V_LOCAL) {
 					gencode(0x8b); gencode(0x45);
 					gencode(256 - ADDR_SIZE * v->id); // mov eax variable
@@ -222,7 +220,7 @@ int expr_primary() {
 		if(is_asgmt()) asgmt(); else expr_compare();
 		if(!skip(")"))
 			error("error: %d: expected expression ')'", tok.tok[tok.pos].nline);
-	} else if(skip(";") || 1) error("error: %d: invalid expression", tok.tok[tok.pos].nline);
+	} else if(skip(";") || true) error("error: %d: invalid expression", tok.tok[tok.pos].nline);
 
 	while(is_index()) make_index();
 
@@ -230,7 +228,7 @@ int expr_primary() {
 }
 
 int is_index() {
-	if(!strcmp(tok.tok[tok.pos].val, "[")) {
+	if(tok.tok[tok.pos].val == "[") {
 		return 1;
 	}
 	return 0;
@@ -243,9 +241,10 @@ int make_index() {
 	return 0;
 }
 
-uint32_t call_lib_func(char *name, char *mod_name) {
+uint32_t call_lib_func(std::string name, std::string mod_name) {
 	char lib_func_name[64];
 
-	sprintf(lib_func_name, "%s_%s", mod_name, name);
+	sprintf(lib_func_name, "%s_%s", mod_name.c_str(), name.c_str());
+	puts(lib_func_name);
 	return (uint32_t)dlsym(lib_list.lib[get_lib_module(mod_name)->no].handle, lib_func_name);
 }

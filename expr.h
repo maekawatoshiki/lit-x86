@@ -9,7 +9,7 @@
 #include "util.h"
 
 #define HAS_PARAMS_FUNC is_number_tok() || is_ident_tok() || \
-							is_string_tok() || is_char_tok() || streql(tok.tok[tok.pos].val, "(") 
+							is_string_tok() || is_char_tok() || tok.tok[tok.pos].val == "(" 
 
 int is_string_tok();
 int is_number_tok();
@@ -26,6 +26,6 @@ int expr_primary();
 int is_index();
 int make_index();
 
-uint32_t call_lib_func(char *, char *);
+uint32_t call_lib_func(std::string, std::string);
 
 #endif

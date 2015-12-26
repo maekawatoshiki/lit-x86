@@ -6,7 +6,7 @@
 #include "util.h"
 
 typedef struct {
-	char name[32], mod_name[32];
+	std::string name, mod_name;
 	unsigned int id;
 	int type;
 	int loctype;
@@ -25,8 +25,8 @@ typedef struct {
 extern gblvar_t gblVar;
 extern locvar_t locVar;
 
-Variable *get_var(char *, char *);
-Variable *append_var(char *, int);
+Variable *get_var(std::string , std::string );
+Variable *append_var(std::string , int);
 Variable *declare_var();
 
 int is_asgmt();

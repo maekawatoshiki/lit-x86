@@ -15,11 +15,10 @@ std_function stdfunc[] = {
 	{"free", "Sys", 1, 48}
 };
 
-int make_stdfunc(char *name, char *mod_name) {
+int make_stdfunc(std::string name, std::string mod_name) {
 	for(int i = 0; i < sizeof(stdfunc) / sizeof(stdfunc[0]); i++) {
-		if(streql(stdfunc[i].name, name) && 
-				streql(stdfunc[i].mod_name, mod_name)) {
-			if(streql(name, "Array")) {
+		if(stdfunc[i].name == name && stdfunc[i].mod_name == mod_name) {
+			if(name == "Array") {
 				expr_compare(); // get array size
 				genas("shl eax 2");
 				gencode(0x89); gencode(0x04); gencode(0x24); // mov [esp], eax
@@ -52,10 +51,9 @@ int make_stdfunc(char *name, char *mod_name) {
 	return 0;
 }
 
-int is_stdfunc(char *name, char *mod_name) {
+int is_stdfunc(std::string name, std::string mod_name) {
 	for(int i = 0; i < sizeof(stdfunc) / sizeof(stdfunc[0]); i++) {
-		if(streql(stdfunc[i].name, name) && 
-				streql(stdfunc[i].mod_name, mod_name)) 
+		if(stdfunc[i].name == name && stdfunc[i].mod_name == mod_name)
 			return 1;
 	}
 

@@ -3,7 +3,7 @@
 extern unsigned char *ntvCode;
 extern int ntvCount;
 
-tok_t tok;
+Token tok;
 mem_t mem;
 ctrl_t brks, rets;
 
@@ -20,7 +20,6 @@ void init() {
 	tok.pos = ntvCount = 0; tok.size = 0xfff;
 	mem.mem = (mem_info *)calloc(0x7ff, sizeof(mem_info));
 	set_xor128();
-	tok.tok = (token_t *)calloc(sizeof(token_t), tok.size);
 	brks.addr = (uint32_t *)calloc(sizeof(uint32_t), 1);
 	rets.addr = (uint32_t *)calloc(sizeof(uint32_t), 1);
 }
@@ -29,7 +28,6 @@ void dispose() {
 	free(ntvCode);
 	free(brks.addr);
 	free(rets.addr);
-	free(tok.tok);
 	freeAddr();
 	free_lib();
 }

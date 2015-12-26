@@ -9,7 +9,7 @@
 #include "var.h"
 
 int streql(char *, char *);
-int skip(char *);
+bool skip(std::string);
 int error(char *, ...);
 
 #endif // _UTIL_LIT_
