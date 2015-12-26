@@ -249,13 +249,13 @@ void using_require() {
 }
 
 int append_lib(std::string name) {
-	std::string lib_name;
+	lib_t lib;
 
-	lib_name = "./lib/" + name + ".so";
-
-	lib_list.lib[lib_list.count].name = name;
-	lib_list.lib[lib_list.count].no = lib_list.count;
-	lib_list.lib[lib_list.count].handle = dlopen(lib_name.c_str(), RTLD_LAZY | RTLD_NOW);
+	lib.name = name;
+	lib.no = lib_list.count;
+	lib.handle = dlopen(("./lib/" + name + ".so").c_str(), RTLD_LAZY | RTLD_NOW);
+	if(lib.handle == NULL) error("LitSystemError: cannot load library (%s)", name.c_str());
+	lib_list.lib.push_back(lib);
 	return lib_list.count++;
 }
 

@@ -27,7 +27,7 @@ typedef struct {
 } lib_t;
 
 typedef struct {
-	lib_t lib[64];
+	std::vector<lib_t> lib;
 	int count;
 } liblist_t;
 
