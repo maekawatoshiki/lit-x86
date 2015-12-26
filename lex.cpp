@@ -81,6 +81,11 @@ int lex(char *code) {
 		printf("tk: %d:%d > %s\n", i, tok.tok[i].nline, tok.tok[i].val.c_str());
 	}
 #endif
+	tmp_tok.val = ";";
+	tmp_tok.nline = line++;
+	tmp_tok.type = TOK_END;
+	tok.tok.push_back(tmp_tok);
+	SKIP_TOK; 
 	tok.size = tok.tok.size() - 1;
 
 	return 0;

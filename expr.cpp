@@ -135,7 +135,6 @@ int expr_primary() {
 						} 
 					}
 					gencode(0xe8); gencode_int32(call_lib_func(name, mod_name) - (uint32_t)&ntvCode[ntvCount] - ADDR_SIZE); // call func
-
 				} else if(is_stdfunc(name, mod_name)) {
 					
 					make_stdfunc(name, mod_name);
@@ -245,6 +244,5 @@ uint32_t call_lib_func(std::string name, std::string mod_name) {
 	char lib_func_name[64];
 
 	sprintf(lib_func_name, "%s_%s", mod_name.c_str(), name.c_str());
-	puts(lib_func_name);
 	return (uint32_t)dlsym(lib_list.lib[get_lib_module(mod_name)->no].handle, lib_func_name);
 }

@@ -25,11 +25,11 @@ void init() {
 }
 
 void dispose() {
+	freeAddr();
+	free_lib();
 	free(ntvCode);
 	free(brks.addr);
 	free(rets.addr);
-	freeAddr();
-	free_lib();
 }
 
 // ---- for native code --- //

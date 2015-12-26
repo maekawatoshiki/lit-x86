@@ -100,7 +100,6 @@ module calc
 		for i = 0, i < 100, i++; out[i] = 0; end
 		srcLen = strlen(a)
 		addsub(a, out)
-		printf "parse=> %s\n", out
 		strcpy(a, out)
 
 		num = Array(128); sp = 0
