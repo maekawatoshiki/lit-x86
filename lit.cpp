@@ -1,8 +1,5 @@
 #include "lit.h"
 
-extern unsigned char *ntvCode;
-extern int ntvCount;
-
 Token tok;
 mem_t mem;
 ctrl_t brks, rets;

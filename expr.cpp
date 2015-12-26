@@ -1,8 +1,5 @@
 #include "expr.h"
 
-extern int ntvCount;
-extern unsigned char *ntvCode;
-
 int is_string_tok() { return tok.tok[tok.pos].type == TOK_STRING; }
 int is_number_tok() { return tok.tok[tok.pos].type == TOK_NUMBER; }
 int is_ident_tok()  { return tok.tok[tok.pos].type == TOK_IDENT;  }

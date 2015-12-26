@@ -10,7 +10,7 @@ bool skip(std::string s) {
   } else return false;
 }
 
-int error(char *errs, ...) {
+int error(const char *errs, ...) {
 	va_list args;
 	va_start(args, errs);
 		vprintf(errs, args); puts("");

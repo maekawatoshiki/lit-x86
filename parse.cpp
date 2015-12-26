@@ -6,9 +6,6 @@ funclist_t undef_funcs, funcs;
 liblist_t lib_list;
 string_t strings;
 
-extern unsigned char *ntvCode;
-extern int ntvCount;
-
 int get_string() {
 	strings.text[ strings.count ] = (char *)
 		calloc(sizeof(char), tok.tok[tok.pos].val.length() + 1);

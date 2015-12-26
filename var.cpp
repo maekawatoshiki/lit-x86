@@ -1,14 +1,11 @@
 #include "var.h"
 
 extern int blocksCount;
-extern unsigned char *ntvCode;
-extern int ntvCount;
-
 locvar_t locVar;
 gblvar_t gblVar;
 
 Variable *get_var(std::string name, std::string mod_name) {
-	// loval var
+	// local var
 	for(int i = 0; i < locVar.count; i++) {
 		if(name == locVar.var[funcs.now][i].name)
 			return &locVar.var[funcs.now][i];

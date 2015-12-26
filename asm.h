@@ -8,12 +8,15 @@ enum {
 	ESP, EBP, ESI, EDI
 };
 
+extern unsigned char *ntvCode;
+extern int ntvCount;
+
 void gencode(unsigned char);
 void gencode_int32(unsigned int);
 void gencode_int32_insert(unsigned int, int);
 
 int regBit(char *reg);
 int mk_modrm(char *, char *);
-int genas(char *, ...);
+int genas(const char *, ...);
 
 #endif

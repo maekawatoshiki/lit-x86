@@ -22,8 +22,8 @@ typedef struct {
 	int count, size[0xFF];
 } locvar_t;
 
-extern gblvar_t gblVar;
 extern locvar_t locVar;
+extern gblvar_t gblVar;
 
 Variable *get_var(std::string , std::string );
 Variable *append_var(std::string , int);
