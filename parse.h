@@ -8,6 +8,9 @@
 #include "var.h"
 #include "util.h"
 
+extern char *module;
+extern int blocksCount;
+
 typedef struct {
 	uint32_t address, params;
 	char name[0xFF], mod_name[0xff];

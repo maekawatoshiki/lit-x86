@@ -8,6 +8,9 @@ enum {
 	ESP, EBP, ESI, EDI
 };
 
+extern unsigned char *ntvCode;
+extern int ntvCount; 
+
 void gencode(unsigned char);
 void gencode_int32(unsigned int);
 void gencode_int32_insert(unsigned int, int);

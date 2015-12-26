@@ -2,8 +2,6 @@
 
 char *module = "";
 int blocksCount;
-extern unsigned char *ntvCode;
-extern int ntvCount;
 
 int get_string() {
 	strings.text[ strings.count ] = (char *)

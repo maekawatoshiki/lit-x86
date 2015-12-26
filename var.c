@@ -1,10 +1,5 @@
 #include "var.h"
 
-extern char *module;
-extern int blocksCount;
-extern unsigned char *ntvCode;
-extern int ntvCount;
-
 Variable *get_var(char *name, char *mod_name) {
 	// loval var
 	for(int i = 0; i < locVar.count; i++) {
