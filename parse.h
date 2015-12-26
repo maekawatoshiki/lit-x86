@@ -13,10 +13,12 @@ typedef struct {
 	char name[0xFF], mod_name[0xff];
 } func_t;
 
-struct {
+typedef struct {
 	func_t func[0xff];
 	int count, now, inside;
-} undef_funcs, funcs;
+} funclist_t;
+
+extern funclist_t undef_funcs, funcs;
 
 typedef struct {
 	char name[64];
@@ -24,17 +26,21 @@ typedef struct {
 	int no;
 } lib_t;
 
-struct {
+typedef struct {
 	lib_t lib[64];
 	int count;
-} lib_list;
+} liblist_t;
+
+extern liblist_t lib_list;
 
 // The strings embedded in native code
-struct {
+typedef struct {
 	char *text[0xff];
 	int *addr;
 	int count;
-} strings;
+} string_t;
+
+extern string_t strings;
 
 void using_require();
 int append_lib(char *);

@@ -3,6 +3,10 @@
 extern unsigned char *ntvCode;
 extern int ntvCount;
 
+tok_t tok;
+mem_t mem;
+ctrl_t brks, rets;
+
 void init() {
 #if defined(WIN32) || defined(WINDOWS)
 	ntvCode = VirtualAlloc(NULL, 0xFFF, MEMORY_COMMIT, PAGE_EXECUTE_READWRITE);
@@ -138,7 +142,7 @@ int run() {
 	return ((int (*)(int *, void**))ntvCode)(0, funcTable);
 }
 
-static int execute(char *source) {
+int execute(char *source) {
 	init();
 	lex(source);
 	parser();

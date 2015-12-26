@@ -2,6 +2,10 @@
 
 char *module = "";
 int blocksCount;
+funclist_t undef_funcs, funcs;
+liblist_t lib_list;
+string_t strings;
+
 extern unsigned char *ntvCode;
 extern int ntvCount;
 

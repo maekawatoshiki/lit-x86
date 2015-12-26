@@ -141,4 +141,3 @@ output "expression => "; input(a)
 printf "expr => %s\n", a
 
 puts calc.calc(a) 
-

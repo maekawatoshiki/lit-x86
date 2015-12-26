@@ -5,6 +5,9 @@ extern int blocksCount;
 extern unsigned char *ntvCode;
 extern int ntvCount;
 
+locvar_t locVar;
+gblvar_t gblVar;
+
 Variable *get_var(char *name, char *mod_name) {
 	// loval var
 	for(int i = 0; i < locVar.count; i++) {

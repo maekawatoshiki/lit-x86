@@ -12,15 +12,18 @@ typedef struct {
 	int loctype;
 } Variable;
 
-struct {
+typedef struct {
 	Variable var[0xFF];
 	int count;
-} gblVar;
+} gblvar_t;
 
-struct {
+typedef struct {
 	Variable var[0xFF][0xFF]; // var[ "funcs.now" ] [ each var ]
 	int count, size[0xFF];
-} locVar;
+} locvar_t;
+
+extern gblvar_t gblVar;
+extern locvar_t locVar;
 
 Variable *get_var(char *, char *);
 Variable *append_var(char *, int);

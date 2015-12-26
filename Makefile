@@ -1,5 +1,5 @@
-CFLAGS = -O0 -m32 -std=c99 -Wno-strict-aliasing
-CC = clang $(CFLAGS) 
+CFLAGS = -O0 -m32 -Wno-strict-aliasing -Wall
+CC = clang++ $(CFLAGS) 
 LIB_PATH = lib
 
 lit: main.o lit.o asm.o lex.o var.o expr.o parse.o stdfunc.o option.o util.o

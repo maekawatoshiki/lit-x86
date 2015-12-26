@@ -61,10 +61,12 @@ typedef struct {
 	int nline;
 } token_t;
 
-struct {
+typedef struct {
 	token_t *tok;
 	int size, pos;
-} tok;
+} tok_t;
+
+extern tok_t tok;
 
 enum {
 	V_LOCAL,
@@ -77,15 +79,17 @@ enum {
 	T_DOUBLE
 };
 
-struct {
+typedef struct {
 	unsigned int *addr;
 	int count;
-} brks, rets;
+} ctrl_t;
+
+extern ctrl_t brks, rets;
 
 void init();
 void dispose();
 
-static int execute(char *);
+int execute(char *);
 
 void lit_interpret();
 void lit_run(char *);
@@ -97,10 +101,12 @@ typedef struct {
 	int isfree;
 } mem_info;
 
-struct {
+typedef struct {
 	mem_info *mem;
 	int count;
-} mem;
+} mem_t;
+
+extern mem_t mem;
 
 void freeAddr();
 void freeInProgram(uint32_t);
