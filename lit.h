@@ -92,7 +92,6 @@ enum {
 	NON
 };
 
-
 enum {
 	V_LOCAL,
 	V_GLOBAL

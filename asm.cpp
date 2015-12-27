@@ -1,25 +1,41 @@
 #include "asm.h"
 
-unsigned char *ntvCode;
-int ntvCount;
+NativeCode_x86 ntv;
 
-void gencode(unsigned char val) { ntvCode[ntvCount++] = (val); }
-void gencode_int32(unsigned int val) {
+NativeCode_x86::NativeCode_x86() {
+#if defined(WIN32) || defined(WINDOWS)
+	code = VirtualAlloc(NULL, 0xFFF, MEMORY_COMMIT, PAGE_EXECUTE_READWRITE);
+#else
+	long memsize = 0xFFFF + 1;
+	if(posix_memalign((void **)&code, memsize, memsize))
+		perror("posix_memalign");
+	if(mprotect(code, memsize, PROT_READ | PROT_WRITE | PROT_EXEC))
+		perror("mprotect");
+#endif
+	count = 0;
+}
+
+NativeCode_x86::~NativeCode_x86() {
+	free(code);
+}
+
+void NativeCode_x86::gencode(unsigned char val) { code[count++] = (val); }
+void NativeCode_x86::gencode_int32(unsigned int val) {
 	// for little endian
 	gencode(val << 24 >> 24);
 	gencode(val << 16 >> 24);
 	gencode(val << 8 >> 24);
 	gencode(val << 0 >> 24);
 }
-void gencode_int32_insert(unsigned int val, int pos) {
+void NativeCode_x86::gencode_int32_insert(unsigned int val, int pos) {
 	// for little endian
-	ntvCode[pos] = (val << 24 >> 24);
-	ntvCode[pos+1] = (val << 16 >> 24);
-	ntvCode[pos+2] = (val << 8 >> 24);
-	ntvCode[pos+3] = (val << 0 >> 24);
+	code[pos] = (val << 24 >> 24);
+	code[pos+1] = (val << 16 >> 24);
+	code[pos+2] = (val << 8 >> 24);
+	code[pos+3] = (val << 0 >> 24);
 }
 
-int regBit(char *reg) {
+int NativeCode_x86::regBit(char *reg) {
 	if(strcmp("eax", reg) == 0) return EAX;
 	if(strcmp("ebx", reg) == 0) return EBX;
 	if(strcmp("ecx", reg) == 0) return ECX;
@@ -31,7 +47,7 @@ int regBit(char *reg) {
 	return -1;
 }
 
-int mk_modrm(char *r32, char *rm32) {
+int NativeCode_x86::mk_modrm(char *r32, char *rm32) {
 	int tmp = regBit(r32) * 8;
 
 	if(isalpha(rm32[0])) { // register?
@@ -43,7 +59,7 @@ int mk_modrm(char *r32, char *rm32) {
 	return tmp;
 }
 
-int genas(const char *s, ...) {
+int NativeCode_x86::genas(const char *s, ...) {
 	char *src = (char *)calloc(strlen(s) + 0xff, sizeof(char));
 	char nem[4][16] = { 0 };
 	int i, n;

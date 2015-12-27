@@ -5,16 +5,7 @@ mem_t mem;
 ctrl_t brks, rets;
 
 void init() {
-#if defined(WIN32) || defined(WINDOWS)
-	ntvCode = VirtualAlloc(NULL, 0xFFF, MEMORY_COMMIT, PAGE_EXECUTE_READWRITE);
-#else
-	long memsize = 0xFFFF + 1;
-	if(posix_memalign((void **)&ntvCode, memsize, memsize))
-		perror("posix_memalign");
-	if(mprotect(ntvCode, memsize, PROT_READ | PROT_WRITE | PROT_EXEC))
-		perror("mprotect");
-#endif
-	tok.pos = ntvCount = 0; tok.size = 0xfff;
+	tok.pos = 0; tok.size = 0xfff;
 	mem.mem = (mem_info *)calloc(0x7ff, sizeof(mem_info));
 	set_xor128();
 	brks.addr = (uint32_t *)calloc(sizeof(uint32_t), 1);
@@ -24,7 +15,6 @@ void init() {
 void dispose() {
 	freeAddr();
 	free_lib();
-	free(ntvCode);
 	free(brks.addr);
 	free(rets.addr);
 }
@@ -134,7 +124,7 @@ void *funcTable[] = {
 
 int run() {
 	printf("%s","");
-	return ((int (*)(int *, void**))ntvCode)(0, funcTable);
+	return ((int (*)(int *, void**))ntv.code)(0, funcTable);
 }
 
 int execute(char *source) {

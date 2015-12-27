@@ -11,7 +11,7 @@ int get_string() {
 		calloc(sizeof(char), tok.tok[tok.pos].val.length() + 1);
 	strcpy(strings.text[strings.count], tok.tok[tok.pos++].val.c_str());
 
-	*strings.addr++ = ntvCount;
+	*strings.addr++ = ntv.count;
 	return strings.count++;
 }
 
@@ -20,7 +20,7 @@ int is_func(std::string name, std::string mod_name) {
 }
 
 func_t *get_func(std::string name, std::string mod_name) {
-	for(int i = 0; i < funcs.count; i++) {
+	for(int i = 0; i < funcs.func.size(); i++) {
 #ifdef DEBUG
 		printf("%s : %s >> %s : %s\n", mod_name.c_str(), name.c_str(), funcs.func[i].mod_name.c_str(), funcs.func[i].name.c_str());
 #endif
@@ -32,50 +32,56 @@ func_t *get_func(std::string name, std::string mod_name) {
 }
 
 func_t *append_func(std::string name, int address, int params) {
-	funcs.func[funcs.count].address = address;
-	funcs.func[funcs.count].params = params;
-	funcs.func[funcs.count].mod_name = module;
+	func_t f = {
+		.address = address,
+		.params = params,
+		.mod_name = module,
+		.name = name
+	};
+	funcs.func.push_back(f);
 #ifdef DEBUG
-	std::cout << funcs.func[funcs.count].mod_name << " : " << name << std::endl;
+	std::cout << funcs.func[funcs.func.size() - 1].mod_name << " : " << name << std::endl;
 #endif
-	funcs.func[funcs.count].name = name;
-	return &(funcs.func[funcs.count++]);
+	return &(funcs.func[funcs.func.size() - 1]);
 }
 
 int append_undef_func(std::string name, std::string mod_name, int ntvc) {
-	undef_funcs.func[undef_funcs.count].address = ntvc;
-	undef_funcs.func[undef_funcs.count].mod_name = mod_name;
-	undef_funcs.func[undef_funcs.count++].name = name;
+	func_t f = {
+		.address = ntvc,
+		.mod_name = module,
+		.name = name
+	};
+	undef_funcs.func.push_back(f);
 	return 0;
 }
 
 int rep_undef_func(std::string name, int ntvc) {
-	func_t *f = undef_funcs.func;
+	std::vector<func_t> &f = undef_funcs.func;
 
-	for(int i = 0; i < undef_funcs.count; i++) {
+	for(int i = 0; i < f.size(); i++) {
 		if(f[i].name == name && f[i].mod_name == module) {
-			gencode_int32_insert(ntvc - f[i].address - 4, f[i].address);
+			ntv.gencode_int32_insert(ntvc - f[i].address - 4, f[i].address);
 		}
 	}
 	return 0;
 }
 
 int make_break() {
-	gencode(0xe9); // jmp
+	ntv.gencode(0xe9); // jmp
 	brks.addr = (uint32_t*)realloc(brks.addr, ADDR_SIZE * (brks.count + 1));
 	if(brks.addr == NULL) error("LitSystemError: no enough memory");
-	brks.addr[brks.count] = ntvCount;
-	gencode_int32(0);
+	brks.addr[brks.count] = ntv.count;
+	ntv.gencode_int32(0);
 	return brks.count++;
 }
 
 int make_return() {
 	expr_entry(); // get argument
-	gencode(0xe9); // jmp
+	ntv.gencode(0xe9); // jmp
 	rets.addr = (uint32_t*)realloc(rets.addr, ADDR_SIZE * (rets.count + 1));
 	if(rets.addr == NULL) error("LitSystemError: no enough memory");
-	rets.addr[rets.count] = ntvCount;
-	gencode_int32(0);
+	rets.addr[rets.count] = ntv.count;
+	ntv.gencode_int32(0);
 	return rets.count++;
 }
 
@@ -104,18 +110,18 @@ int expression(int pos, int status) {
 
 		funcs.inside = TRUE;
 		funcs.now++;
-		append_func("main", ntvCount, 0); // append funcs
-		genas("push ebp");
-		genas("mov ebp esp");
-		uint32_t espBgn = ntvCount + 2; genas("sub esp 0");
-		gencode(0x8b); gencode(0x75); gencode(0x0c); // mov esi, 0xc(%ebp)
+		append_func("main", ntv.count, 0); // append funcs
+		ntv.genas("push ebp");
+		ntv.genas("mov ebp esp");
+		uint32_t espBgn = ntv.count + 2; ntv.genas("sub esp 0");
+		ntv.gencode(0x8b); ntv.gencode(0x75); ntv.gencode(0x0c); // mov esi, 0xc(%ebp)
 		
 		eval(0, BLOCK_NORMAL);
 		
-		gencode(0x81); gencode(0xc4); gencode_int32(ADDR_SIZE * (locVar.size[funcs.now] + 6)); // add %esp nn
-		gencode(0xc9);// leave
-		gencode(0xc3);// ret
-		gencode_int32_insert(ADDR_SIZE * (locVar.size[funcs.now] + 6), espBgn);
+		ntv.gencode(0x81); ntv.gencode(0xc4); ntv.gencode_int32(ADDR_SIZE * (locVar.size[funcs.now] + 6)); // add %esp nn
+		ntv.gencode(0xc9);// leave
+		ntv.gencode(0xc3);// ret
+		ntv.gencode_int32_insert(ADDR_SIZE * (locVar.size[funcs.now] + 6), espBgn);
 		funcs.inside = FALSE;
 
 	} else if(is_asgmt()) {
@@ -127,21 +133,21 @@ int expression(int pos, int status) {
 		do {
 			int isstring = 0;
 			if((isstring = is_string_tok())) {
-				gencode(0xb8); get_string(); gencode_int32(0x00); // mov eax string_address
+				ntv.gencode(0xb8); get_string(); ntv.gencode_int32(0x00); // mov eax string_address
 			} else {
 				expr_entry();
 			}
-			genas("push eax");
+			ntv.genas("push eax");
 			if(isstring) {
-				gencode(0xff); gencode(0x56); gencode(4);// call *0x04(esi) putString
+				ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(4);// call *0x04(esi) putString
 			} else {
-				gencode(0xff); gencode(0x16); // call (esi) putNumber
+				ntv.gencode(0xff); ntv.gencode(0x16); // call (esi) putNumber
 			}
-			genas("add esp 4");
+			ntv.genas("add esp 4");
 		} while(tok.skip(","));
 		// for new line
 		if(isputs) {
-			gencode(0xff); gencode(0x56); gencode(8);// call *0x08(esi) putLN
+			ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(8);// call *0x08(esi) putLN
 		}
 
 	} else if(tok.skip("for")) { blocksCount++;
@@ -165,23 +171,23 @@ int expression(int pos, int status) {
 	} else if(tok.skip("else")) {
 
 		uint32_t end;
-		gencode(0xe9); end = ntvCount; gencode_int32(0);// jmp while end
-		gencode_int32_insert(ntvCount - pos - 4, pos);
+		ntv.gencode(0xe9); end = ntv.count; ntv.gencode_int32(0);// jmp while end
+		ntv.gencode_int32_insert(ntv.count - pos - 4, pos);
 		eval(end, BLOCK_NORMAL);
 		return 1;
 
 	} else if(tok.skip("elsif")) {
 
 		uint32_t endif, end;
-		gencode(0xe9); endif = ntvCount; gencode_int32(0);// jmp while end
-		gencode_int32_insert(ntvCount - pos - 4, pos);
+		ntv.gencode(0xe9); endif = ntv.count; ntv.gencode_int32(0);// jmp while end
+		ntv.gencode_int32_insert(ntv.count - pos - 4, pos);
 		expr_entry(); // if condition
-		gencode(0x83); gencode(0xf8); gencode(0x00);// cmp eax, 0
-		gencode(0x75); gencode(0x05); // jne 5
+		ntv.gencode(0x83); ntv.gencode(0xf8); ntv.gencode(0x00);// cmp eax, 0
+		ntv.gencode(0x75); ntv.gencode(0x05); // jne 5
 		tok.skip(";");
-		gencode(0xe9); end = ntvCount; gencode_int32(0);// jmp while end
+		ntv.gencode(0xe9); end = ntv.count; ntv.gencode_int32(0);// jmp while end
 		eval(end, BLOCK_NORMAL);
-		gencode_int32_insert(ntvCount - endif - 4, endif);
+		ntv.gencode_int32_insert(ntv.count - endif - 4, endif);
 		return 1;
 
 	} else if(tok.skip("break")) {
@@ -192,7 +198,7 @@ int expression(int pos, int status) {
 
 		if(status == NON) return 1;
 		if(status == BLOCK_NORMAL) {
-			gencode_int32_insert(ntvCount - pos - 4, pos);
+			ntv.gencode_int32_insert(ntv.count - pos - 4, pos);
 		} else if(status == BLOCK_FUNC) funcs.inside = FALSE;
 		return 1;
 
@@ -210,10 +216,10 @@ int eval(int pos, int status) {
 }
 
 int parser() {
-	tok.pos = ntvCount = 0;
+	tok.pos = ntv.count = 0;
 	strings.addr = (int32_t*)calloc(0xFF, sizeof(int32_t));
 	uint32_t main_address;
-	gencode(0xe9); main_address = ntvCount; gencode_int32(0);
+	ntv.gencode(0xe9); main_address = ntv.count; ntv.gencode_int32(0);
 
 	blocksCount = 0;
 	eval(0, BLOCK_NORMAL);
@@ -222,18 +228,18 @@ int parser() {
 #endif
 	if(blocksCount != 0) error("error: 'end' is not enough");
 	uint32_t addr = get_func("main", "")->address;
-	gencode_int32_insert(addr - 5, main_address);
+	ntv.gencode_int32_insert(addr - 5, main_address);
 
 	for(strings.addr--; strings.count; strings.addr--) {
-		gencode_int32_insert((uint32_t)&ntvCode[ntvCount], *strings.addr);
+		ntv.gencode_int32_insert((uint32_t)&ntv.code[ntv.count], *strings.addr);
 		replaceEscape(strings.text[--strings.count]);
 		for(int i = 0; strings.text[strings.count][i]; i++) {
-			gencode(strings.text[strings.count][i]);
-		} gencode(0); // '\0'
+			ntv.gencode(strings.text[strings.count][i]);
+		} ntv.gencode(0); // '\0'
 	}
 #ifdef DEBUG
-	for(int i = 0; i < ntvCount; i++)
-		printf("%02x", ntvCode[i]);
+	for(int i = 0; i < ntv.count; i++)
+		printf("%02x", ntv.code[i]);
 	puts("");
 	printf("memsz: %d\n", locVar.size[funcs.now]);
 #endif
@@ -276,14 +282,14 @@ void free_lib() {
 int make_if() {
 	uint32_t end;
 	expr_entry(); // if condition
-	gencode(0x83); gencode(0xf8); gencode(0x00);// cmp eax, 0
-	gencode(0x75); gencode(0x05); // jne 5
-	gencode(0xe9); end = ntvCount; gencode_int32(0);// jmp
+	ntv.gencode(0x83); ntv.gencode(0xf8); ntv.gencode(0x00);// cmp eax, 0
+	ntv.gencode(0x75); ntv.gencode(0x05); // jne 5
+	ntv.gencode(0xe9); end = ntv.count; ntv.gencode_int32(0);// jmp
 	return eval(end, BLOCK_NORMAL);
 }
 
 int make_while() {
-	uint32_t loopBgn = ntvCount, end, stepBgn[2], stepOn = 0;
+	uint32_t loopBgn = ntv.count, end, stepBgn[2], stepOn = 0;
 
 	expr_entry(); // condition
 	if(tok.skip(",")) {
@@ -292,9 +298,9 @@ int make_while() {
 		for(; tok.tok[tok.pos].val[0] != ';'; tok.pos++);
 	}
 	if(!tok.skip(";")) error("error");
-	gencode(0x83); gencode(0xf8); gencode(0x00);// cmp eax, 0
-	gencode(0x75); gencode(0x05); // jne 5
-	gencode(0xe9); end = ntvCount; gencode_int32(0);// jmp while end
+	ntv.gencode(0x83); ntv.gencode(0xf8); ntv.gencode(0x00);// cmp eax, 0
+	ntv.gencode(0x75); ntv.gencode(0x05); // jne 5
+	ntv.gencode(0xe9); end = ntv.count; ntv.gencode_int32(0);// jmp while end
 
 	eval(0, BLOCK_LOOP);
 
@@ -305,12 +311,12 @@ int make_while() {
 		tok.pos = stepBgn[1];
 	}
 
-	uint32_t n = 0xFFFFFFFF - ntvCount + loopBgn - 4;
-	gencode(0xe9); gencode_int32(n); // jmp n
-	gencode_int32_insert(ntvCount - end - 4, end);
+	uint32_t n = 0xFFFFFFFF - ntv.count + loopBgn - 4;
+	ntv.gencode(0xe9); ntv.gencode_int32(n); // jmp n
+	ntv.gencode_int32_insert(ntv.count - end - 4, end);
 
 	for(--brks.count; brks.count >= 0; brks.count--) {
-		gencode_int32_insert(ntvCount - brks.addr[brks.count] - 4, brks.addr[brks.count]);
+		ntv.gencode_int32_insert(ntv.count - brks.addr[brks.count] - 4, brks.addr[brks.count]);
 	} brks.count = 0;
 
 	return 0;
@@ -325,35 +331,35 @@ int make_func() {
 		do { declare_var(); tok.pos++; params++; } while(tok.skip(","));
 		tok.skip(")");
 	}
-	append_func(funcName, ntvCount, params);
-	rep_undef_func(funcName, ntvCount);
+	append_func(funcName, ntv.count, params);
+	rep_undef_func(funcName, ntv.count);
 
-	genas("push ebp");
-	genas("mov ebp esp");
-	espBgn = ntvCount + 2; genas("sub esp 0"); // align
+	ntv.genas("push ebp");
+	ntv.genas("mov ebp esp");
+	espBgn = ntv.count + 2; ntv.genas("sub esp 0"); // align
 
 	uint32_t pos_save[128], i;
 
 	for(i = 0; i < params; i++) {
-		gencode(0x8b); gencode(0x45);
-		gencode(0x08 + (params - i - 1) * ADDR_SIZE);
-		gencode(0x89); gencode(0x44); gencode(0x24);
-		pos_save[i] = ntvCount; gencode(0x00);
+		ntv.gencode(0x8b); ntv.gencode(0x45);
+		ntv.gencode(0x08 + (params - i - 1) * ADDR_SIZE);
+		ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24);
+		pos_save[i] = ntv.count; ntv.gencode(0x00);
 	}
 
 	eval(0, BLOCK_FUNC);
 
 	for(--rets.count; rets.count >= 0; --rets.count) {
-		gencode_int32_insert(ntvCount - rets.addr[rets.count] - 4, rets.addr[rets.count]);
+		ntv.gencode_int32_insert(ntv.count - rets.addr[rets.count] - 4, rets.addr[rets.count]);
 	} rets.count = 0;
 
-	genas("add esp %u", ADDR_SIZE * (locVar.size[funcs.now] + 6)); // add esp nn
-	gencode(0xc9);// leave
-	gencode(0xc3);// ret
+	ntv.genas("add esp %u", ADDR_SIZE * (locVar.size[funcs.now] + 6)); // add esp nn
+	ntv.gencode(0xc9);// leave
+	ntv.gencode(0xc3);// ret
 
-	gencode_int32_insert(ADDR_SIZE * (locVar.size[funcs.now] + 6), espBgn);
+	ntv.gencode_int32_insert(ADDR_SIZE * (locVar.size[funcs.now] + 6), espBgn);
 	for(i = 1; i <= params; i++) {
-		ntvCode[pos_save[i - 1]] =
+		ntv.code[pos_save[i - 1]] =
 			256 - ADDR_SIZE * i + (((locVar.size[funcs.now] + 6) * ADDR_SIZE) - 4);
 	}
 #ifdef DEBUG

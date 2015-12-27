@@ -36,8 +36,8 @@ Variable *append_var(std::string name, int type) {
 		gblVar.var[gblVar.count].mod_name = module;
 		gblVar.var[gblVar.count].type = type;
 		gblVar.var[gblVar.count].loctype = V_GLOBAL;
-		gblVar.var[gblVar.count].id = (uint32_t)&ntvCode[ntvCount];
-		ntvCount += ADDR_SIZE;
+		gblVar.var[gblVar.count].id = (uint32_t)&ntv.code[ntv.count];
+		ntv.count += ADDR_SIZE;
 
 		return &gblVar.var[gblVar.count++];
 	}
@@ -115,32 +115,32 @@ int asgmt_single(Variable *v) {
 		if(tok.skip("=")) {
 			expr_entry();
 		} else if((inc=tok.skip("++")) || (dec=tok.skip("--"))) {
-			gencode(0x8b); gencode(0x45);
-			gencode(256 -
+			ntv.gencode(0x8b); ntv.gencode(0x45);
+			ntv.gencode(256 -
 					(v->type == T_INT ? ADDR_SIZE :
 					 v->type == T_STRING ? ADDR_SIZE :
 					 v->type == T_DOUBLE ? sizeof(double) : 4) * v->id); // mov eax varaible
-			genas("push eax");
-			if(inc) gencode(0x40); // inc eax
-			else if(dec) gencode(0x48); // dec eax
+			ntv.genas("push eax");
+			if(inc) ntv.gencode(0x40); // inc eax
+			else if(dec) ntv.gencode(0x48); // dec eax
 		}
-		gencode(0x89); gencode(0x45);
-		gencode(256 -
+		ntv.gencode(0x89); ntv.gencode(0x45);
+		ntv.gencode(256 -
 				(v->type == T_INT ? ADDR_SIZE :
 				 v->type == T_STRING ? ADDR_SIZE :
 				 v->type == T_DOUBLE ? sizeof(double) : 4) * v->id); // mov var eax
-		if(inc || dec) genas("pop eax");
+		if(inc || dec) ntv.genas("pop eax");
 	} else if(v->loctype == V_GLOBAL) { // global single
 		if(tok.skip("=")) {
 			expr_entry();
-			gencode(0xa3); gencode_int32(v->id); // mov GLOBAL_ADDR eax
+			ntv.gencode(0xa3); ntv.gencode_int32(v->id); // mov GLOBAL_ADDR eax
 		} else if((inc=tok.skip("++")) || (dec=tok.skip("--"))) {
-			gencode(0xa1); gencode_int32(v->id);// mov eax GLOBAL_ADDR
-			genas("push eax");
-			if(inc) gencode(0x40); // inc eax
-			else if(dec) gencode(0x48); // dec eax
-			gencode(0xa3); gencode_int32(v->id); // mov GLOBAL_ADDR eax
-			genas("pop eax");
+			ntv.gencode(0xa1); ntv.gencode_int32(v->id);// mov eax GLOBAL_ADDR
+			ntv.genas("push eax");
+			if(inc) ntv.gencode(0x40); // inc eax
+			else if(dec) ntv.gencode(0x48); // dec eax
+			ntv.gencode(0xa3); ntv.gencode_int32(v->id); // mov GLOBAL_ADDR eax
+			ntv.genas("pop eax");
 		}
 	}
 	return 0;
@@ -152,22 +152,22 @@ int asgmt_array(Variable *v) {
 	if(!tok.skip("[")) error("error: %d: expected '['", tok.tok[tok.pos].nline);
 	if(v->loctype == V_LOCAL) {
 		expr_entry();
-		genas("push eax");
+		ntv.genas("push eax");
 		if(!tok.skip("]")) error("error: %d: ']' except", tok.tok[tok.pos].nline);
 		while(is_index()) make_index();
 
 		if(tok.skip("=")) {
 			expr_entry();
-			gencode(0x8b); gencode(0x4d);
-			gencode(256 -
+			ntv.gencode(0x8b); ntv.gencode(0x4d);
+			ntv.gencode(256 -
 					(v->type == T_INT ? ADDR_SIZE :
 					 v->type == T_STRING ? ADDR_SIZE :
 					 v->type == T_DOUBLE ? sizeof(double) : 4) * v->id); // mov ecx [ebp-n]
-			genas("pop edx");
+			ntv.genas("pop edx");
 			if(v->type == T_INT) {
-				gencode(0x89); gencode(0x04); gencode(0x91); // mov [ecx+edx*4], eax
+				ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x91); // mov [ecx+edx*4], eax
 			} else {
-				gencode(0x89); gencode(0x04); gencode(0x11); // mov [ecx+edx], eax
+				ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x11); // mov [ecx+edx], eax
 			}
 		} else if((inc=tok.skip("++")) || (dec=tok.skip("--"))) {
 
@@ -175,17 +175,17 @@ int asgmt_array(Variable *v) {
 			error("error: %d: invalid asgmt", tok.tok[tok.pos].nline);
 	} else if(v->loctype == V_GLOBAL) {
 		expr_entry();
-		genas("push eax");
+		ntv.genas("push eax");
 		tok.skip("]");
 		if(tok.skip("=")) {
 
 			expr_entry();
-			gencode(0x8b); gencode(0x0d); gencode_int32(v->id); // mov ecx GLOBAL_ADDR
-			genas("pop edx");
+			ntv.gencode(0x8b); ntv.gencode(0x0d); ntv.gencode_int32(v->id); // mov ecx GLOBAL_ADDR
+			ntv.genas("pop edx");
 			if(v->type == T_INT) {
-				gencode(0x89); gencode(0x04); gencode(0x91); // mov [ecx+edx*4], eax
+				ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x91); // mov [ecx+edx*4], eax
 			} else {
-				gencode(0x89); gencode(0x04); gencode(0x11); // mov [ecx+edx], eax
+				ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x11); // mov [ecx+edx], eax
 			}
 		
 		} else if((inc=tok.skip("++")) || (dec=tok.skip("--"))) {

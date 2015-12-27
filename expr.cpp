@@ -12,11 +12,11 @@ int32_t expr_compare() {
 	expr_logic();
 	while((andop=tok.skip("and") || tok.skip("&")) || (orop=tok.skip("or") || 
 				tok.skip("|")) || tok.skip("xor") || tok.skip("^")) {
-		genas("push eax");
+		ntv.genas("push eax");
 		expr_logic();
-		genas("mov ebx eax");
-		genas("pop eax");
-		gencode(andop ? 0x21 : orop ? 0x09 : 0x31); gencode(0xd8); // and eax ebx
+		ntv.genas("mov ebx eax");
+		ntv.genas("pop eax");
+		ntv.gencode(andop ? 0x21 : orop ? 0x09 : 0x31); ntv.gencode(0xd8); // and eax ebx
 	}
 
 	return 0;
@@ -27,11 +27,11 @@ int expr_logic() {
 	expr_add_sub();
 	if((lt=tok.skip("<")) || (gt=tok.skip(">")) || (ne=tok.skip("!=")) ||
 			(eql=tok.skip("==")) || (fle=tok.skip("<=")) || tok.skip(">=")) {
-		genas("push eax");
+		ntv.genas("push eax");
 		expr_add_sub();
-		genas("mov ebx eax");
-		genas("pop eax");
-		gencode(0x39); gencode(0xd8); // cmp %eax, %ebx
+		ntv.genas("mov ebx eax");
+		ntv.genas("pop eax");
+		ntv.gencode(0x39); ntv.gencode(0xd8); // cmp %eax, %ebx
 		/*
 		 * < setl 0x9c
 		 * > setg 0x9f
@@ -40,8 +40,8 @@ int expr_logic() {
 		 * == sete 0x94
 		 * != setne 0x95
 		 */
-		gencode(0x0f); gencode(lt ? 0x9c : gt ? 0x9f : ne ? 0x95 : eql ? 0x94 : fle ? 0x9e : 0x9d); gencode(0xc0); // setX al
-		gencode(0x0f); gencode(0xb6); gencode(0xc0); // movzx eax al
+		ntv.gencode(0x0f); ntv.gencode(lt ? 0x9c : gt ? 0x9f : ne ? 0x95 : eql ? 0x94 : fle ? 0x9e : 0x9d); ntv.gencode(0xc0); // setX al
+		ntv.gencode(0x0f); ntv.gencode(0xb6); ntv.gencode(0xc0); // movzx eax al
 	}
 
 	return 0;
@@ -51,12 +51,12 @@ int expr_add_sub() {
 	int add;
 	expr_mul_div();
 	while((add = tok.skip("+")) || tok.skip("-")) {
-		genas("push eax");
+		ntv.genas("push eax");
 		expr_mul_div();
-		genas("mov ebx eax");  // mov %ebx %eax
-		genas("pop eax");
-		if(add) { genas("add eax ebx"); }// add %eax %ebx
-		else { genas("sub eax ebx"); } // sub %eax %ebx
+		ntv.genas("mov ebx eax");  // mov %ebx %eax
+		ntv.genas("pop eax");
+		if(add) { ntv.genas("add eax ebx"); }// add %eax %ebx
+		else { ntv.genas("sub eax ebx"); } // sub %eax %ebx
 	}
 	return 0;
 }
@@ -65,19 +65,19 @@ int expr_mul_div() {
 	int mul, div;
 	expr_primary();
 	while((mul = tok.skip("*")) || (div=tok.skip("/")) || tok.skip("%")) {
-		genas("push eax");
+		ntv.genas("push eax");
 		expr_primary();
-		genas("mov ebx eax"); // mov %ebx %eax
-		genas("pop eax");
+		ntv.genas("mov ebx eax"); // mov %ebx %eax
+		ntv.genas("pop eax");
 		if(mul) {
-			genas("mul ebx");
+			ntv.genas("mul ebx");
 		} else if(div) {
-			genas("mov edx 0");
-			genas("div ebx");
+			ntv.genas("mov edx 0");
+			ntv.genas("div ebx");
 		} else { //mod
-			genas("mov edx 0");
-			genas("div ebx");
-			genas("mov eax edx");
+			ntv.genas("mov edx 0");
+			ntv.genas("div ebx");
+			ntv.genas("mov eax edx");
 		}
 	}
 	return 0;
@@ -90,16 +90,16 @@ int expr_primary() {
 
 	if(is_number_tok()) {
 	
-		genas("mov eax %d", atoi(tok.next().val.c_str()));
+		ntv.genas("mov eax %d", atoi(tok.next().val.c_str()));
 	
 	} else if(is_char_tok()) { 
 		
-		genas("mov eax %d", (int)tok.next().val[0]);
+		ntv.genas("mov eax %d", (int)tok.next().val[0]);
 	
 	} else if(is_string_tok()) { 
 
-		gencode(0xb8); get_string();
-		gencode_int32(0x00000000); // mov eax string_address
+		ntv.gencode(0xb8); get_string();
+		ntv.gencode_int32(0x00000000); // mov eax string_address
 
 	} else if(is_ident_tok()) { // variable or inc or dec
 	
@@ -127,11 +127,11 @@ int expr_primary() {
 					if(HAS_PARAMS_FUNC) {
 						for(int i = 0; !tok.is(")") && !tok.skip(";"); i++) {
 							expr_entry();
-							gencode(0x89); gencode(0x44); gencode(0x24); gencode(i * ADDR_SIZE); // mov [esp+ADDR*i], eax
+							ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(i * ADDR_SIZE); // mov [esp+ADDR*i], eax
 							tok.skip(",");
 						} 
 					}
-					gencode(0xe8); gencode_int32(call_lib_func(name, mod_name) - (uint32_t)&ntvCode[ntvCount] - ADDR_SIZE); // call func
+					ntv.gencode(0xe8); ntv.gencode_int32(call_lib_func(name, mod_name) - (uint32_t)&ntv.code[ntv.count] - ADDR_SIZE); // call func
 				} else if(is_stdfunc(name, mod_name)) {
 					
 					make_stdfunc(name, mod_name);
@@ -146,25 +146,25 @@ int expr_primary() {
 						if(HAS_PARAMS_FUNC) { // has arg?
 							for(params = 0; !tok.is(")") && !tok.skip(";"); params++) {
 								expr_entry();
-								genas("push eax");
+								ntv.genas("push eax");
 								tok.skip(",");
 							}
 						}
-						gencode(0xe8); append_undef_func(name, module == "" ? mod_name : module, ntvCount);
-						gencode_int32(0x00000000); // call func
-						genas("add esp %d", params * ADDR_SIZE);
+						ntv.gencode(0xe8); append_undef_func(name, module == "" ? mod_name : module, ntv.count);
+						ntv.gencode_int32(0x00000000); // call func
+						ntv.genas("add esp %d", params * ADDR_SIZE);
 
 					} else { // defined
 						if(HAS_PARAMS_FUNC) {
 							for(size_t i = 0; i < function->params; i++) {
 								expr_entry();
-								genas("push eax");
+								ntv.genas("push eax");
 								if(!tok.skip(",") && function->params - 1 != i) 
 									error("error: %d: expected ','", tok.get().nline);
 							}
 						}
-						gencode(0xe8); gencode_int32(0xFFFFFFFF - (ntvCount - function->address) - 3); // call func
-						genas("add esp %d", function->params * ADDR_SIZE);
+						ntv.gencode(0xe8); ntv.gencode_int32(0xFFFFFFFF - (ntv.count - function->address) - 3); // call func
+						ntv.genas("add esp %d", function->params * ADDR_SIZE);
 					}
 				}
 		
@@ -179,18 +179,18 @@ int expr_primary() {
 				if(v == NULL)
 					error("error: %d: '%s' was not declare", tok.tok[tok.pos].nline, name.c_str());
 				expr_entry();
-				genas("mov ecx eax");
+				ntv.genas("mov ecx eax");
 
 				if(v->loctype == V_LOCAL) {
-					gencode(0x8b); gencode(0x55); gencode(256 - ADDR_SIZE * v->id); // mov edx, [ebp - v*4]
+					ntv.gencode(0x8b); ntv.gencode(0x55); ntv.gencode(256 - ADDR_SIZE * v->id); // mov edx, [ebp - v*4]
 				} else if(v->loctype == V_GLOBAL) {
-					gencode(0x8b); gencode(0x15); gencode_int32(v->id); // mov edx, GLOBAL_ADDR
+					ntv.gencode(0x8b); ntv.gencode(0x15); ntv.gencode_int32(v->id); // mov edx, GLOBAL_ADDR
 				}
 
 				if(v->type == T_INT) {
-					gencode(0x8b); gencode(0x04); gencode(0x8a);// mov eax, [edx + ecx * 4]
+					ntv.gencode(0x8b); ntv.gencode(0x04); ntv.gencode(0x8a);// mov eax, [edx + ecx * 4]
 				} else {
-					gencode(0x0f); gencode(0xb6); gencode(0x04); gencode(0x0a);// movzx eax, [edx + ecx]
+					ntv.gencode(0x0f); ntv.gencode(0xb6); ntv.gencode(0x04); ntv.gencode(0x0a);// movzx eax, [edx + ecx]
 				}
 
 				if(!tok.skip("]"))
@@ -204,10 +204,10 @@ int expr_primary() {
 				if(v == NULL)
 					error("var: error: %d: '%s' was not declare", tok.tok[tok.pos].nline, name.c_str());
 				if(v->loctype == V_LOCAL) {
-					gencode(0x8b); gencode(0x45);
-					gencode(256 - ADDR_SIZE * v->id); // mov eax variable
+					ntv.gencode(0x8b); ntv.gencode(0x45);
+					ntv.gencode(256 - ADDR_SIZE * v->id); // mov eax variable
 				} else if(v->loctype == V_GLOBAL) {
-					gencode(0xa1); gencode_int32(v->id); // mov eax GLOBAL_ADDR
+					ntv.gencode(0xa1); ntv.gencode_int32(v->id); // mov eax GLOBAL_ADDR
 				}
 
 			}
@@ -231,9 +231,9 @@ int is_index() {
 }
 
 int make_index() {
-	genas("mov ecx eax");
+	ntv.genas("mov ecx eax");
 	tok.skip("["); expr_entry(); tok.skip("]");
-	gencode(0x8b); gencode(0x04); gencode(0x81); // mov eax [eax * 4 + ecx]
+	ntv.gencode(0x8b); ntv.gencode(0x04); ntv.gencode(0x81); // mov eax [eax * 4 + ecx]
 	return 0;
 }
 

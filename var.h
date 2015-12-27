@@ -2,6 +2,7 @@
 #define _VAR_LIT_
 
 #include "lit.h"
+#include "asm.h"
 #include "expr.h"
 #include "util.h"
 #include "token.h"

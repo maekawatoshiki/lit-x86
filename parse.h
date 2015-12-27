@@ -15,8 +15,8 @@ typedef struct {
 } func_t;
 
 typedef struct {
-	func_t func[0xff];
-	int count, now, inside;
+	std::vector<func_t> func;
+	int now, inside;
 } funclist_t;
 
 extern funclist_t undef_funcs, funcs;
