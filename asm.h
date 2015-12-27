@@ -2,6 +2,7 @@
 #define _LIT_ASM_
 
 #include "lit.h"
+#include "token.h"
 
 enum {
 	EAX = 0, ECX, EDX, EBX,

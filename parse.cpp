@@ -82,25 +82,25 @@ int make_return() {
 int expression(int pos, int status) {
 	int isputs = 0;
 
-	if(skip("$")) { // global varibale
+	if(tok.skip("$")) { // global varibale
 
 		if(is_asgmt()) asgmt();
 
-	} else if(skip("require")) {
+	} else if(tok.skip("require")) {
 	
 		using_require();
 	
-	} else if(skip("def")) { blocksCount++;
+	} else if(tok.skip("def")) { blocksCount++;
 
 		make_func();
 
-	} else if(skip("module")) { blocksCount++;
+	} else if(tok.skip("module")) { blocksCount++;
 		module = tok.tok[tok.pos++].val;
 		eval(0, NON);
 		module = "";
-	} else if(funcs.inside == FALSE && tok.tok[tok.pos+1].val != "def" &&
-			tok.tok[tok.pos+1].val != "module" && tok.tok[tok.pos+1].val != "$" &&
-			tok.tok[tok.pos+1].val != ";" && module == "") {	// main func entry
+	} else if(funcs.inside == FALSE && !tok.is("def", 1) &&
+			!tok.is("module", 1) && !tok.is("$", 1) &&
+			!tok.is(";", 1) && module == "") {	// main func entry
 
 		funcs.inside = TRUE;
 		funcs.now++;
@@ -122,7 +122,7 @@ int expression(int pos, int status) {
 
 		asgmt();
 
-	} else if((isputs=skip("puts")) || skip("output")) {
+	} else if((isputs=tok.skip("puts")) || tok.skip("output")) {
 
 		do {
 			int isstring = 0;
@@ -138,31 +138,31 @@ int expression(int pos, int status) {
 				gencode(0xff); gencode(0x16); // call (esi) putNumber
 			}
 			genas("add esp 4");
-		} while(skip(","));
+		} while(tok.skip(","));
 		// for new line
 		if(isputs) {
 			gencode(0xff); gencode(0x56); gencode(8);// call *0x08(esi) putLN
 		}
 
-	} else if(skip("for")) { blocksCount++;
+	} else if(tok.skip("for")) { blocksCount++;
 
 		asgmt();
-		if(!skip(",")) error("error: %d: expected ','", tok.tok[tok.pos].nline);
+		if(!tok.skip(",")) error("error: %d: expected ','", tok.tok[tok.pos].nline);
 		make_while();
 
-	} else if(skip("while")) { blocksCount++;
+	} else if(tok.skip("while")) { blocksCount++;
 
 		make_while();
 
-	} else if(skip("return")) {
+	} else if(tok.skip("return")) {
 
 		make_return();
 
-	} else if(skip("if")) { blocksCount++;
+	} else if(tok.skip("if")) { blocksCount++;
 
 		make_if();
 	
-	} else if(skip("else")) {
+	} else if(tok.skip("else")) {
 
 		uint32_t end;
 		gencode(0xe9); end = ntvCount; gencode_int32(0);// jmp while end
@@ -170,7 +170,7 @@ int expression(int pos, int status) {
 		eval(end, BLOCK_NORMAL);
 		return 1;
 
-	} else if(skip("elsif")) {
+	} else if(tok.skip("elsif")) {
 
 		uint32_t endif, end;
 		gencode(0xe9); endif = ntvCount; gencode_int32(0);// jmp while end
@@ -178,17 +178,17 @@ int expression(int pos, int status) {
 		expr_entry(); // if condition
 		gencode(0x83); gencode(0xf8); gencode(0x00);// cmp eax, 0
 		gencode(0x75); gencode(0x05); // jne 5
-		skip(";");
+		tok.skip(";");
 		gencode(0xe9); end = ntvCount; gencode_int32(0);// jmp while end
 		eval(end, BLOCK_NORMAL);
 		gencode_int32_insert(ntvCount - endif - 4, endif);
 		return 1;
 
-	} else if(skip("break")) {
+	} else if(tok.skip("break")) {
 
 		make_break();
 
-	} else if(skip("end")) { blocksCount--;
+	} else if(tok.skip("end")) { blocksCount--;
 
 		if(status == NON) return 1;
 		if(status == BLOCK_NORMAL) {
@@ -196,7 +196,7 @@ int expression(int pos, int status) {
 		} else if(status == BLOCK_FUNC) funcs.inside = FALSE;
 		return 1;
 
-	} else if(!skip(";")) {
+	} else if(!tok.skip(";")) {
 		expr_entry();
 	}
 	
@@ -286,12 +286,12 @@ int make_while() {
 	uint32_t loopBgn = ntvCount, end, stepBgn[2], stepOn = 0;
 
 	expr_entry(); // condition
-	if(skip(",")) {
+	if(tok.skip(",")) {
 		stepOn = 1;
 		stepBgn[0] = tok.pos;
 		for(; tok.tok[tok.pos].val[0] != ';'; tok.pos++);
 	}
-	if(!skip(";")) error("error");
+	if(!tok.skip(";")) error("error");
 	gencode(0x83); gencode(0xf8); gencode(0x00);// cmp eax, 0
 	gencode(0x75); gencode(0x05); // jne 5
 	gencode(0xe9); end = ntvCount; gencode_int32(0);// jmp while end
@@ -321,9 +321,9 @@ int make_func() {
 	std::string funcName = tok.tok[tok.pos++].val;
 
 	funcs.now++; funcs.inside = TRUE;
-	if(skip("(")) { // get params
-		do { declare_var(); tok.pos++; params++; } while(skip(","));
-		skip(")");
+	if(tok.skip("(")) { // get params
+		do { declare_var(); tok.pos++; params++; } while(tok.skip(","));
+		tok.skip(")");
 	}
 	append_func(funcName, ntvCount, params);
 	rep_undef_func(funcName, ntvCount);

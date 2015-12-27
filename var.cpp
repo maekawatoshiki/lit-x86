@@ -46,35 +46,35 @@ Variable *append_var(std::string name, int type) {
 }
 
 int is_asgmt() {
-	if(tok.tok[tok.pos+1].val == "=") return 1;
-	else if(tok.tok[tok.pos+1].val == "++") return 1;
-	else if(tok.tok[tok.pos+1].val == "--") return 1;
-	else if(tok.tok[tok.pos+1].val == "[") {
+	if(tok.is("=", 1)) return 1;
+	else if(tok.is("++", 1)) return 1;
+	else if(tok.is("--", 1)) return 1;
+	else if(tok.is("[", 1)) {
 		int i = tok.pos + 2, t = 1;
 re:
 		while(t) {
-			if(tok.tok[i].val == "[") t++;
-			if(tok.tok[i].val == "]") t--;
-			if(tok.tok[i].val == ";")
+			if(tok.at(i).val == "[") t++;
+			if(tok.at(i).val == "]") t--;
+			if(tok.at(i).val == ";")
 				error("index: error: %d: invalid expression", tok.tok[tok.pos].nline);
 			i++;
 		}
 		t = 1;
-		if(tok.tok[i].val == "[") { i++; goto re; }
+		if(tok.at(i).val == "[") { i++; goto re; }
 #ifdef DEBUG
 		std::cout << "> " << tok.tok[i].val << std::endl;
 #endif
-		if(tok.tok[i].val == "=") return 1;
-	} else if(tok.tok[tok.pos + 1].val =="." /* module */ || 
-			tok.tok[tok.pos + 1].val == ":" /* var:type */) {
-		if(tok.tok[tok.pos + 3].val == "=") return 1;
+		if(tok.at(i).val == "=") return 1;
+	} else if(tok.is(".", 1) /* module */ || 
+			tok.is(":", 1) /* var:type */) {
+		if(tok.is("=", 3)) return 1;
 	}
 	return 0;
 }
 
 int asgmt() {
 	std::string name = tok.tok[tok.pos].val, mod_name = "";
-	if(tok.tok[tok.pos+1].val == ".") { // module's func or var?
+	if(tok.is(".", 1)) { // module's func or var?
 		mod_name = tok.tok[tok.pos].val;
 		tok.pos += 2;
 		name = tok.tok[tok.pos].val;
@@ -87,7 +87,7 @@ int asgmt() {
 	SKIP_TOK;
 	
 	if(v->loctype == V_LOCAL) {
-		if(tok.tok[tok.pos].val == "[") { // Array?
+		if(tok.is("[")) { // Array?
 			asgmt_array(v);
 		} else { // Scalar?
 			asgmt_single(v);
@@ -95,12 +95,12 @@ int asgmt() {
 	} else if(v->loctype == V_GLOBAL) {
 		if(declare) { // declare for global var?
 			// asgmt only int32_terger
-			if(skip("=")) {
+			if(tok.skip("=")) {
 				unsigned *m = (unsigned *)v->id; // v->id is gloval var's address
 				*m = atoi(tok.tok[tok.pos++].val.c_str());
 			}
 		} else {
-			if(tok.tok[tok.pos].val == "[") { // Array?
+			if(tok.is("[")) { // Array?
 				asgmt_array(v);
 			} else asgmt_single(v);
 		}
@@ -112,9 +112,9 @@ int asgmt_single(Variable *v) {
 	int inc = 0, dec = 0;
 
 	if(v->loctype == V_LOCAL) { // local single
-		if(skip("=")) {
+		if(tok.skip("=")) {
 			expr_entry();
-		} else if((inc=skip("++")) || (dec=skip("--"))) {
+		} else if((inc=tok.skip("++")) || (dec=tok.skip("--"))) {
 			gencode(0x8b); gencode(0x45);
 			gencode(256 -
 					(v->type == T_INT ? ADDR_SIZE :
@@ -131,10 +131,10 @@ int asgmt_single(Variable *v) {
 				 v->type == T_DOUBLE ? sizeof(double) : 4) * v->id); // mov var eax
 		if(inc || dec) genas("pop eax");
 	} else if(v->loctype == V_GLOBAL) { // global single
-		if(skip("=")) {
+		if(tok.skip("=")) {
 			expr_entry();
 			gencode(0xa3); gencode_int32(v->id); // mov GLOBAL_ADDR eax
-		} else if((inc=skip("++")) || (dec=skip("--"))) {
+		} else if((inc=tok.skip("++")) || (dec=tok.skip("--"))) {
 			gencode(0xa1); gencode_int32(v->id);// mov eax GLOBAL_ADDR
 			genas("push eax");
 			if(inc) gencode(0x40); // inc eax
@@ -149,14 +149,14 @@ int asgmt_single(Variable *v) {
 int asgmt_array(Variable *v) {
 	int inc = 0, dec = 0;
 
-	if(!skip("[")) error("error: %d: expected '['", tok.tok[tok.pos].nline);
+	if(!tok.skip("[")) error("error: %d: expected '['", tok.tok[tok.pos].nline);
 	if(v->loctype == V_LOCAL) {
 		expr_entry();
 		genas("push eax");
-		if(!skip("]")) error("error: %d: ']' except", tok.tok[tok.pos].nline);
+		if(!tok.skip("]")) error("error: %d: ']' except", tok.tok[tok.pos].nline);
 		while(is_index()) make_index();
 
-		if(skip("=")) {
+		if(tok.skip("=")) {
 			expr_entry();
 			gencode(0x8b); gencode(0x4d);
 			gencode(256 -
@@ -169,15 +169,15 @@ int asgmt_array(Variable *v) {
 			} else {
 				gencode(0x89); gencode(0x04); gencode(0x11); // mov [ecx+edx], eax
 			}
-		} else if((inc=skip("++")) || (dec=skip("--"))) {
+		} else if((inc=tok.skip("++")) || (dec=tok.skip("--"))) {
 
 		} else 
 			error("error: %d: invalid asgmt", tok.tok[tok.pos].nline);
 	} else if(v->loctype == V_GLOBAL) {
 		expr_entry();
 		genas("push eax");
-		skip("]");
-		if(skip("=")) {
+		tok.skip("]");
+		if(tok.skip("=")) {
 
 			expr_entry();
 			gencode(0x8b); gencode(0x0d); gencode_int32(v->id); // mov ecx GLOBAL_ADDR
@@ -188,7 +188,7 @@ int asgmt_array(Variable *v) {
 				gencode(0x89); gencode(0x04); gencode(0x11); // mov [ecx+edx], eax
 			}
 		
-		} else if((inc=skip("++")) || (dec=skip("--"))) {
+		} else if((inc=tok.skip("++")) || (dec=tok.skip("--"))) {
 
 		} else
 			error("error: %d: invalid asgmt", tok.tok[tok.pos].nline);
@@ -202,10 +202,10 @@ Variable *declare_var() {
 	
 	if(isalpha(tok.tok[tok.pos].val[0])) {
 		tok.pos++;
-		if(skip(":")) {
-			if(skip("int")) { --tok.pos; return append_var(tok.tok[npos].val, T_INT); }
-			if(skip("string")) { --tok.pos; return append_var(tok.tok[npos].val, T_STRING); }
-			if(skip("double")) { --tok.pos; return append_var(tok.tok[npos].val, T_DOUBLE); }
+		if(tok.skip(":")) {
+			if(tok.skip("int")) { --tok.pos; return append_var(tok.tok[npos].val, T_INT); }
+			if(tok.skip("string")) { --tok.pos; return append_var(tok.tok[npos].val, T_STRING); }
+			if(tok.skip("double")) { --tok.pos; return append_var(tok.tok[npos].val, T_DOUBLE); }
 		} else { --tok.pos; return append_var(tok.tok[npos].val, T_INT); }
 	} else error("error: %d: can't declare var", tok.tok[tok.pos].nline);
 	return NULL;

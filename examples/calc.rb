@@ -133,10 +133,8 @@ def input(str:string)
 	str
 end
 
-a:string = Array(100)
+expr:string = Array(100)
 
-output "expression => "; input(a)
+input(expr)
 
-printf "expr => %s\n", a
-
-puts calc.calc(a) 
+puts calc.calc(expr) 

@@ -5,6 +5,7 @@
 #include "asm.h"
 #include "lex.h"
 #include "expr.h"
+#include "token.h"
 #include "var.h"
 #include "util.h"
 

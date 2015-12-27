@@ -4,6 +4,7 @@
 #include "lit.h"
 #include "expr.h"
 #include "util.h"
+#include "token.h"
 
 typedef struct {
 	std::string name, mod_name;

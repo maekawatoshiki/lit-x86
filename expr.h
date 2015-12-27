@@ -4,12 +4,13 @@
 #include "lit.h"
 #include "asm.h"
 #include "lex.h"
+#include "token.h"
 #include "parse.h"
 #include "stdfunc.h"
 #include "util.h"
 
 #define HAS_PARAMS_FUNC is_number_tok() || is_ident_tok() || \
-							is_string_tok() || is_char_tok() || tok.tok[tok.pos].val == "(" 
+							is_string_tok() || is_char_tok() || tok.is("(")
 
 int is_string_tok();
 int is_number_tok();

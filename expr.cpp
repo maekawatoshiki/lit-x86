@@ -10,8 +10,8 @@ int expr_entry() { return expr_compare(); }
 int32_t expr_compare() {
 	int andop=0, orop=0;
 	expr_logic();
-	while((andop=skip("and") || skip("&")) || (orop=skip("or") || 
-				skip("|")) || skip("xor") || skip("^")) {
+	while((andop=tok.skip("and") || tok.skip("&")) || (orop=tok.skip("or") || 
+				tok.skip("|")) || tok.skip("xor") || tok.skip("^")) {
 		genas("push eax");
 		expr_logic();
 		genas("mov ebx eax");
@@ -25,8 +25,8 @@ int32_t expr_compare() {
 int expr_logic() {
 	int32_t lt=0, gt=0, ne=0, eql=0, fle=0;
 	expr_add_sub();
-	if((lt=skip("<")) || (gt=skip(">")) || (ne=skip("!=")) ||
-			(eql=skip("==")) || (fle=skip("<=")) || skip(">=")) {
+	if((lt=tok.skip("<")) || (gt=tok.skip(">")) || (ne=tok.skip("!=")) ||
+			(eql=tok.skip("==")) || (fle=tok.skip("<=")) || tok.skip(">=")) {
 		genas("push eax");
 		expr_add_sub();
 		genas("mov ebx eax");
@@ -50,7 +50,7 @@ int expr_logic() {
 int expr_add_sub() {
 	int add;
 	expr_mul_div();
-	while((add = skip("+")) || skip("-")) {
+	while((add = tok.skip("+")) || tok.skip("-")) {
 		genas("push eax");
 		expr_mul_div();
 		genas("mov ebx eax");  // mov %ebx %eax
@@ -64,7 +64,7 @@ int expr_add_sub() {
 int expr_mul_div() {
 	int mul, div;
 	expr_primary();
-	while((mul = skip("*")) || (div=skip("/")) || skip("%")) {
+	while((mul = tok.skip("*")) || (div=tok.skip("/")) || tok.skip("%")) {
 		genas("push eax");
 		expr_primary();
 		genas("mov ebx eax"); // mov %ebx %eax
@@ -86,7 +86,7 @@ int expr_mul_div() {
 int expr_primary() {
 	int is_get_addr = 0, ispare = 0;
 
-	if(skip("&")) is_get_addr = 1;
+	if(tok.skip("&")) is_get_addr = 1;
 
 	if(is_number_tok()) {
 	
@@ -106,9 +106,9 @@ int expr_primary() {
 		std::string name = tok.tok[tok.pos].val, mod_name = "";
 		Variable *v; 
 
-		if(tok.tok[tok.pos + 1].val == ".") { // module?
+		if(tok.is(".", 1)) { // module?
 			mod_name = tok.tok[tok.pos++].val; 
-			skip(".");
+			tok.skip(".");
 			name = tok.tok[tok.pos].val; 
 		}
 		
@@ -120,15 +120,15 @@ int expr_primary() {
 		
 			SKIP_TOK;
 
-			if((ispare = skip("(")) || is_stdfunc(name, mod_name) || 
+			if((ispare = tok.skip("(")) || is_stdfunc(name, mod_name) || 
 					is_func(name, mod_name) || is_func(name, module) || is_lib_module(mod_name)) { // Function?
 
 				if(is_lib_module(mod_name)) { // library function
 					if(HAS_PARAMS_FUNC) {
-						for(int i = 0; tok.tok[tok.pos].val != ")" && !skip(";"); i++) {
+						for(int i = 0; tok.tok[tok.pos].val != ")" && !tok.skip(";"); i++) {
 							expr_entry();
 							gencode(0x89); gencode(0x44); gencode(0x24); gencode(i * ADDR_SIZE); // mov [esp+ADDR*i], eax
-							skip(",");
+							tok.skip(",");
 						} 
 					}
 					gencode(0xe8); gencode_int32(call_lib_func(name, mod_name) - (uint32_t)&ntvCode[ntvCount] - ADDR_SIZE); // call func
@@ -144,10 +144,10 @@ int expr_primary() {
 					if(function == NULL) { // undefined
 						size_t params = 0;
 						if(HAS_PARAMS_FUNC) { // has arg?
-							for(params = 0; tok.tok[tok.pos].val != ")" && !skip(";"); params++) {
+							for(params = 0; tok.tok[tok.pos].val != ")" && !tok.skip(";"); params++) {
 								expr_entry();
 								genas("push eax");
-								skip(",");
+								tok.skip(",");
 							}
 						}
 						gencode(0xe8); append_undef_func(name, module == "" ? mod_name : module, ntvCount);
@@ -159,7 +159,7 @@ int expr_primary() {
 							for(size_t i = 0; i < function->params; i++) {
 								expr_entry();
 								genas("push eax");
-								if(!skip(",") && function->params - 1 != i) 
+								if(!tok.skip(",") && function->params - 1 != i) 
 									error("error: %d: expected ','", tok.tok[tok.pos].nline);
 							}
 						}
@@ -169,10 +169,10 @@ int expr_primary() {
 				}
 		
 				if(ispare) 
-					if(!skip(")")) 
+					if(!tok.skip(")")) 
 						error("func: error: %d: expected expression ')'", tok.tok[tok.pos].nline);
 
-			} else if(skip("[")) { // Array?
+			} else if(tok.skip("[")) { // Array?
 			
 				v = get_var(name , mod_name);
 				if(v == NULL) v = get_var(name, module);
@@ -193,7 +193,7 @@ int expr_primary() {
 					gencode(0x0f); gencode(0xb6); gencode(0x04); gencode(0x0a);// movzx eax, [edx + ecx]
 				}
 
-				if(!skip("]"))
+				if(!tok.skip("]"))
 					error("error: %d: expected expression ']'", tok.tok[tok.pos].nline);
 			
 			} else { // single variable
@@ -212,11 +212,11 @@ int expr_primary() {
 
 			}
 		}
-	} else if(skip("(")) {
+	} else if(tok.skip("(")) {
 		if(is_asgmt()) asgmt(); else expr_compare();
-		if(!skip(")"))
+		if(!tok.skip(")"))
 			error("error: %d: expected expression ')'", tok.tok[tok.pos].nline);
-	} else if(skip(";") || true) error("error: %d: invalid expression", tok.tok[tok.pos].nline);
+	} else if(tok.skip(";") || true) error("error: %d: invalid expression", tok.tok[tok.pos].nline);
 
 	while(is_index()) make_index();
 
@@ -224,7 +224,7 @@ int expr_primary() {
 }
 
 int is_index() {
-	if(tok.tok[tok.pos].val == "[") {
+	if(tok.is("[")) {
 		return 1;
 	}
 	return 0;
@@ -232,7 +232,7 @@ int is_index() {
 
 int make_index() {
 	genas("mov ecx eax");
-	skip("["); expr_entry(); skip("]");
+	tok.skip("["); expr_entry(); tok.skip("]");
 	gencode(0x8b); gencode(0x04); gencode(0x81); // mov eax [eax * 4 + ecx]
 	return 0;
 }

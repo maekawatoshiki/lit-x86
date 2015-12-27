@@ -59,6 +59,7 @@
 #include "lex.h"
 #include "expr.h"
 #include "parse.h"
+#include "token.h"
 #include "stdfunc.h"
 #include "util.h"
 #include "option.h"
@@ -72,7 +73,7 @@
 	#include <sys/wait.h>
 #endif
 
-#define _LIT_VERSION_ "0.9.5"
+#define _LIT_VERSION_ "0.9.6"
 
 enum {
 	ADDR_SIZE = 4
@@ -91,20 +92,6 @@ enum {
 	NON
 };
 
-
-typedef struct {
-	std::string val;
-	int type;
-	int nline;
-} token_t;
-
-class Token {
-public:
-	std::vector<token_t> tok;
-	int size, pos;
-};
-
-extern Token tok;
 
 enum {
 	V_LOCAL,

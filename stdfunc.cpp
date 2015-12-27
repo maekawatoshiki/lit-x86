@@ -34,12 +34,12 @@ int make_stdfunc(std::string name, std::string mod_name) {
 						expr_compare();
 						gencode(0x89); gencode(0x44); gencode(0x24); gencode(a); // mov [esp+a], eax
 						a += 4;
-					} while(skip(","));
+					} while(tok.skip(","));
 				} else { // normal function
 					for(int arg = 0; arg < stdfunc[i].args; arg++) {
 						expr_compare();
 						gencode(0x89); gencode(0x44); gencode(0x24); gencode(arg * 4); // mov [esp+arg*4], eax
-						skip(",");
+						tok.skip(",");
 					}
 				}
 				gencode(0xff); gencode(0x56); gencode(stdfunc[i].addr); // call $function

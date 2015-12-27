@@ -2,8 +2,8 @@ CFLAGS = -O0 -m32 -Wno-strict-aliasing
 CC = clang++ $(CFLAGS) 
 LIB_PATH = lib
 
-lit: main.o lit.o asm.o lex.o var.o expr.o parse.o stdfunc.o option.o util.o
-	$(CC) -o lit -rdynamic -ldl main.o lit.o asm.o lex.o var.o expr.o parse.o stdfunc.o option.o util.o
+lit: main.o lit.o asm.o lex.o var.o expr.o parse.o stdfunc.o token.o option.o util.o
+	$(CC) -o lit -rdynamic -ldl main.o lit.o asm.o lex.o var.o expr.o parse.o token.o stdfunc.o option.o util.o
 
 main.o: main.cpp
 	$(CC) -c main.cpp
@@ -28,6 +28,9 @@ parse.o: parse.h parse.cpp
 
 stdfunc.o: stdfunc.h stdfunc.cpp
 	$(CC) -c stdfunc.cpp
+
+token.o: token.h token.cpp
+	$(CC) -c token.cpp
 
 option.o: option.h option.cpp
 	$(CC) -c option.cpp
