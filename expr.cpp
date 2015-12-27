@@ -1,9 +1,9 @@
 #include "expr.h"
 
-int is_string_tok() { return tok.tok[tok.pos].type == TOK_STRING; }
-int is_number_tok() { return tok.tok[tok.pos].type == TOK_NUMBER; }
-int is_ident_tok()  { return tok.tok[tok.pos].type == TOK_IDENT;  }
-int is_char_tok() { return tok.tok[tok.pos].type == TOK_CHAR; } 
+int is_string_tok() { return tok.get().type == TOK_STRING; }
+int is_number_tok() { return tok.get().type == TOK_NUMBER; }
+int is_ident_tok()  { return tok.get().type == TOK_IDENT;  }
+int is_char_tok() { return tok.get().type == TOK_CHAR; } 
 
 int expr_entry() { return expr_compare(); }
 
@@ -90,11 +90,11 @@ int expr_primary() {
 
 	if(is_number_tok()) {
 	
-		genas("mov eax %d", atoi(tok.tok[tok.pos++].val.c_str()));
+		genas("mov eax %d", atoi(tok.next().val.c_str()));
 	
 	} else if(is_char_tok()) { 
 		
-		genas("mov eax %d", (int)tok.tok[tok.pos++].val[0]);
+		genas("mov eax %d", (int)tok.next().val[0]);
 	
 	} else if(is_string_tok()) { 
 
@@ -103,13 +103,13 @@ int expr_primary() {
 
 	} else if(is_ident_tok()) { // variable or inc or dec
 	
-		std::string name = tok.tok[tok.pos].val, mod_name = "";
+		std::string name = tok.get().val, mod_name = "";
 		Variable *v; 
 
 		if(tok.is(".", 1)) { // module?
-			mod_name = tok.tok[tok.pos++].val; 
+			mod_name = tok.next().val; 
 			tok.skip(".");
-			name = tok.tok[tok.pos].val; 
+			name = tok.get().val; 
 		}
 		
 		if(is_asgmt()) {
@@ -125,7 +125,7 @@ int expr_primary() {
 
 				if(is_lib_module(mod_name)) { // library function
 					if(HAS_PARAMS_FUNC) {
-						for(int i = 0; tok.tok[tok.pos].val != ")" && !tok.skip(";"); i++) {
+						for(int i = 0; !tok.is(")") && !tok.skip(";"); i++) {
 							expr_entry();
 							gencode(0x89); gencode(0x44); gencode(0x24); gencode(i * ADDR_SIZE); // mov [esp+ADDR*i], eax
 							tok.skip(",");
@@ -144,7 +144,7 @@ int expr_primary() {
 					if(function == NULL) { // undefined
 						size_t params = 0;
 						if(HAS_PARAMS_FUNC) { // has arg?
-							for(params = 0; tok.tok[tok.pos].val != ")" && !tok.skip(";"); params++) {
+							for(params = 0; !tok.is(")") && !tok.skip(";"); params++) {
 								expr_entry();
 								genas("push eax");
 								tok.skip(",");
@@ -160,7 +160,7 @@ int expr_primary() {
 								expr_entry();
 								genas("push eax");
 								if(!tok.skip(",") && function->params - 1 != i) 
-									error("error: %d: expected ','", tok.tok[tok.pos].nline);
+									error("error: %d: expected ','", tok.get().nline);
 							}
 						}
 						gencode(0xe8); gencode_int32(0xFFFFFFFF - (ntvCount - function->address) - 3); // call func
