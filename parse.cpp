@@ -3,7 +3,6 @@
 int blocksCount;
 std::string module = "";
 funclist_t undef_funcs, funcs;
-liblist_t lib_list;
 string_t strings;
 
 int get_string() {
@@ -248,35 +247,7 @@ int parser() {
 }
 
 void using_require() {
-	append_lib(tok.tok[tok.pos++].val);
-}
-
-int append_lib(std::string name) {
-	lib_t lib;
-
-	lib.name = name;
-	lib.no = lib_list.count;
-	lib.handle = dlopen(("./lib/" + name + ".so").c_str(), RTLD_LAZY | RTLD_NOW);
-	if(lib.handle == NULL) error("LitSystemError: cannot load library (%s)", name.c_str());
-	lib_list.lib.push_back(lib);
-	return lib_list.count++;
-}
-
-int is_lib_module(std::string name) {
-	return get_lib_module(name) == NULL ? 0 : 1;
-}
-
-lib_t *get_lib_module(std::string name) {
-	for(int i = 0; i < lib_list.count; i++) {
-		if(lib_list.lib[i].name == name) return &lib_list.lib[i];
-	}
-	return NULL;
-}
-
-void free_lib() {
-	for(int i = 0; i < lib_list.count; i++) {
-		dlclose(lib_list.lib[i].handle);
-	}
+	lib_list.append(tok.next().val);
 }
 
 int make_if() {

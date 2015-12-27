@@ -6,6 +6,7 @@
 #include "expr.h"
 #include "util.h"
 #include "token.h"
+#include "library.h"
 
 typedef struct {
 	std::string name, mod_name;

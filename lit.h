@@ -63,6 +63,7 @@
 #include "stdfunc.h"
 #include "util.h"
 #include "option.h"
+#include "library.h"
 
 #if defined(WIN32) || defined(WINDOWS)
 	#include <windows.h>

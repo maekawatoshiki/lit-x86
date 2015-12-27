@@ -8,9 +8,7 @@
 #include "token.h"
 #include "var.h"
 #include "util.h"
-#include "library.h"
-
-typedef struct {
+hello world!! STRUCTu {
 	uint32_t address, params;
 	std::string name, mod_name;
 } func_t;
@@ -21,6 +19,19 @@ typedef struct {
 } funclist_t;
 
 extern funclist_t undef_funcs, funcs;
+
+typedef struct {
+	std::string name;
+	void *handle;
+	int no;
+} lib_t;
+
+typedef struct {
+	std::vector<lib_t> lib;
+	int count;
+} liblist_t;
+
+extern liblist_t lib_list;
 
 // The strings embedded in native code
 typedef struct {
@@ -33,6 +44,10 @@ extern string_t strings;
 extern std::string module;
 
 void using_require();
+int append_lib(std::string);
+int is_lib_module(std::string);
+lib_t *get_lib_module(std::string);
+void free_lib();
 
 int make_if();
 int make_while();

@@ -121,9 +121,9 @@ int expr_primary() {
 			SKIP_TOK;
 
 			if((ispare = tok.skip("(")) || is_stdfunc(name, mod_name) || 
-					is_func(name, mod_name) || is_func(name, module) || is_lib_module(mod_name)) { // Function?
+					is_func(name, mod_name) || is_func(name, module) || lib_list.is(mod_name)) { // Function?
 
-				if(is_lib_module(mod_name)) { // library function
+				if(lib_list.is(mod_name)) { // library function
 					if(HAS_PARAMS_FUNC) {
 						for(int i = 0; !tok.is(")") && !tok.skip(";"); i++) {
 							expr_entry();
@@ -131,7 +131,7 @@ int expr_primary() {
 							tok.skip(",");
 						} 
 					}
-					ntv.gencode(0xe8); ntv.gencode_int32(call_lib_func(name, mod_name) - (uint32_t)&ntv.code[ntv.count] - ADDR_SIZE); // call func
+					ntv.gencode(0xe8); ntv.gencode_int32(lib_list.call(name, mod_name) - (uint32_t)&ntv.code[ntv.count] - ADDR_SIZE); // call func
 				} else if(is_stdfunc(name, mod_name)) {
 					
 					make_stdfunc(name, mod_name);
@@ -235,11 +235,4 @@ int make_index() {
 	tok.skip("["); expr_entry(); tok.skip("]");
 	ntv.gencode(0x8b); ntv.gencode(0x04); ntv.gencode(0x81); // mov eax [eax * 4 + ecx]
 	return 0;
-}
-
-uint32_t call_lib_func(std::string name, std::string mod_name) {
-	char lib_func_name[64];
-
-	sprintf(lib_func_name, "%s_%s", mod_name.c_str(), name.c_str());
-	return (uint32_t)dlsym(lib_list.lib[get_lib_module(mod_name)->no].handle, lib_func_name);
 }

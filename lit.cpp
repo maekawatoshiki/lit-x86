@@ -14,7 +14,6 @@ void init() {
 
 void dispose() {
 	freeAddr();
-	free_lib();
 	free(brks.addr);
 	free(rets.addr);
 }
