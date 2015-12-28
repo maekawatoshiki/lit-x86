@@ -4,7 +4,7 @@ extern int blocksCount;
 locvar_t locVar;
 gblvar_t gblVar;
 
-Variable *get_var(std::string name, std::string mod_name) {
+var_t *get_var(std::string name, std::string mod_name) {
 	// local var
 	for(int i = 0; i < locVar.count; i++) {
 		if(name == locVar.var[funcs.now][i].name)
@@ -20,7 +20,7 @@ Variable *get_var(std::string name, std::string mod_name) {
 	return NULL;
 }
 
-Variable *append_var(std::string name, int type) {
+var_t *append_var(std::string name, int type) {
 	if(funcs.inside == TRUE) {
 		// local var
 		uint32_t sz = 1 + ++locVar.size[funcs.now];
@@ -81,7 +81,7 @@ int asgmt() {
 	}
 
 	int declare = 0;
-	Variable *v = get_var(name, mod_name);
+	var_t *v = get_var(name, mod_name);
 	if(v == NULL) v = get_var(name, module);
 	if(v == NULL) { declare = 1; v = declare_var(); }
 	SKIP_TOK;
@@ -108,7 +108,7 @@ int asgmt() {
 	return 0;
 }
 
-int asgmt_single(Variable *v) {
+int asgmt_single(var_t *v) {
 	int inc = 0, dec = 0;
 
 	if(v->loctype == V_LOCAL) { // local single
@@ -146,7 +146,7 @@ int asgmt_single(Variable *v) {
 	return 0;
 }
 
-int asgmt_array(Variable *v) {
+int asgmt_array(var_t *v) {
 	int inc = 0, dec = 0;
 
 	if(!tok.skip("[")) error("error: %d: expected '['", tok.tok[tok.pos].nline);
@@ -197,7 +197,7 @@ int asgmt_array(Variable *v) {
 	return 0;
 }
 
-Variable *declare_var() {
+var_t *declare_var() {
 	int npos = tok.pos;
 	
 	if(isalpha(tok.tok[tok.pos].val[0])) {

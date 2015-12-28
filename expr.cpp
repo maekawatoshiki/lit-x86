@@ -104,7 +104,7 @@ int expr_primary() {
 	} else if(is_ident_tok()) { // variable or inc or dec
 	
 		std::string name = tok.get().val, mod_name = "";
-		Variable *v; 
+		var_t *v; 
 
 		if(tok.is(".", 1)) { // module?
 			mod_name = tok.next().val; 

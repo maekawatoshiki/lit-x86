@@ -9,33 +9,33 @@
 #include "library.h"
 
 typedef struct {
-		std::string name, mod_name;
-			unsigned int id;
-				int type;
-					int loctype;
-} Variable;
+	std::string name, mod_name;
+	unsigned int id;
+	int type;
+	int loctype;
+} var_t;
 
 typedef struct {
-		Variable var[0xFF];
-			int count;
+	var_t var[0xFF];
+	int count;
 } gblvar_t;
 
 typedef struct {
-		Variable var[0xFF][0xFF]; // var[ "funcs.now" ] [ each var ]
-			int count, size[0xFF];
+	var_t var[0xFF][0xFF]; // var[ "funcs.now" ] [ each var ]
+	int count, size[0xFF];
 } locvar_t;
 
 extern locvar_t locVar;
 extern gblvar_t gblVar;
 
-Variable *get_var(std::string , std::string );
-Variable *append_var(std::string , int);
-Variable *declare_var();
+var_t *get_var(std::string , std::string );
+var_t *append_var(std::string , int);
+var_t *declare_var();
 
 int is_asgmt();
 int asgmt();
-int asgmt_single(Variable *);
-int asgmt_array(Variable *);
+int asgmt_single(var_t *);
+int asgmt_array(var_t *);
 
 #endif // _LIT_VAR_
 
