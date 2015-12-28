@@ -119,10 +119,10 @@ int expression(int pos, int status) {
 		
 		eval(0, BLOCK_NORMAL);
 
-		ntv.gencode(0x81); ntv.gencode(0xc4); ntv.gencode_int32(ADDR_SIZE * (var.local[funcs.now].size() + 6)); // add %esp nn
+		ntv.gencode(0x81); ntv.gencode(0xc4); ntv.gencode_int32(ADDR_SIZE * (var.focus().size() + 6)); // add %esp nn
 		ntv.gencode(0xc9);// leave
 		ntv.gencode(0xc3);// ret
-		ntv.gencode_int32_insert(ADDR_SIZE * (var.local[funcs.now].size() + 6), espBgn);
+		ntv.gencode_int32_insert(ADDR_SIZE * (var.focus().size() + 6), espBgn);
 		funcs.inside = false;
 
 	} else if(is_asgmt()) {
@@ -326,17 +326,18 @@ int make_func() {
 		ntv.gencode_int32_insert(ntv.count - rets.addr[rets.count] - 4, rets.addr[rets.count]);
 	} rets.count = 0;
 
-	ntv.genas("add esp %u", ADDR_SIZE * (var.local[funcs.now].size() + 6)); // add esp nn
+	ntv.genas("add esp %u", ADDR_SIZE * (var.focus().size() + 6)); // add esp nn
 	ntv.gencode(0xc9);// leave
 	ntv.gencode(0xc3);// ret
-	ntv.gencode_int32_insert(ADDR_SIZE * (var.local[funcs.now].size() + 6), espBgn);
+	ntv.gencode_int32_insert(ADDR_SIZE * (var.focus().size() + 6), espBgn);
+
 
 	for(i = 1; i <= params; i++) {
 		ntv.code[pos_save[i - 1]] =
-			256 - ADDR_SIZE * i + (((var.local[funcs.now].size() + 6) * ADDR_SIZE) - 4);
+			256 - ADDR_SIZE * i + (((var.focus().size() + 6) * ADDR_SIZE) - 4);
 	}
 #ifdef DEBUG
-	printf("%s() has %u funcs or vars\n", funcName.c_str(), var.local[funcs.now].size());
+	printf("%s() has %u funcs or vars\n", funcName.c_str(), var.focus().size());
 #endif
 	return 0;
 }

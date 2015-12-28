@@ -4,6 +4,8 @@
 extern int blocksCount;
 Variable var;
 
+std::vector<var_t> &Variable::focus() { return local[funcs.now]; }
+
 var_t *Variable::get(std::string name, std::string mod_name) {
 	// local var
 	for(int i = 0; i < local[funcs.now].size(); i++) {

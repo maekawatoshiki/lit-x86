@@ -17,6 +17,7 @@ public:
 	std::vector<var_t> global;
 	
 	Variable() { local.resize(100); }
+	std::vector<var_t> &focus();
 	var_t *get(std::string, std::string);
 	var_t *append(std::string, int);
 };
