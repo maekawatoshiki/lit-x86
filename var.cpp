@@ -1,47 +1,49 @@
 #include "var.h"
+#include "lit.h"
 
 extern int blocksCount;
-locvar_t locVar;
-gblvar_t gblVar;
+Variable var;
 
-var_t *get_var(std::string name, std::string mod_name) {
+var_t *Variable::get(std::string name, std::string mod_name) {
 	// local var
-	for(int i = 0; i < locVar.count; i++) {
-		if(name == locVar.var[funcs.now][i].name)
-			return &locVar.var[funcs.now][i];
+	for(int i = 0; i < local[funcs.now].size(); i++) {
+		if(name == local[funcs.now][i].name) {
+			return &(local[funcs.now][i]);
+		}
 	}
 	// global var
-	for(int i = 0; i < gblVar.count; i++) {
-		if(name == gblVar.var[i].name && mod_name == gblVar.var[i].mod_name) {
-			return &gblVar.var[i];
+	for(int i = 0; i < global.size(); i++) {
+		if(name == global[i].name && mod_name == global[i].mod_name) {
+			return &(global[i]);
 		}
 	}
 
 	return NULL;
 }
 
-var_t *append_var(std::string name, int type) {
-	if(funcs.inside == TRUE) {
-		// local var
-		uint32_t sz = 1 + ++locVar.size[funcs.now];
-		locVar.var[funcs.now][locVar.count].name = name;
-		locVar.var[funcs.now][locVar.count].type = type;
-		locVar.var[funcs.now][locVar.count].id = sz;
-		locVar.var[funcs.now][locVar.count].loctype = V_LOCAL;
-
-		return &locVar.var[funcs.now][locVar.count++];
-	} else if(funcs.inside == FALSE) {
-		// global varibale
-		gblVar.var[gblVar.count].name = name;
-		gblVar.var[gblVar.count].mod_name = module;
-		gblVar.var[gblVar.count].type = type;
-		gblVar.var[gblVar.count].loctype = V_GLOBAL;
-		gblVar.var[gblVar.count].id = (uint32_t)&ntv.code[ntv.count];
+var_t * Variable::append(std::string name, int type) {
+	if(funcs.inside == true) { // local
+		size_t sz = local[funcs.now].size();
+		var_t v = {
+			.name = name,
+			.type = type,
+			.id = sz + 2, 
+			.loctype = V_LOCAL
+		};
+		local[funcs.now].push_back(v);
+		return &local[funcs.now][sz];
+	} else if(funcs.inside == false) { // global
+		var_t v = {
+			.name = name,
+			.mod_name = module,
+			.type = type,
+			.id = (uint32_t)&ntv.code[ntv.count], 
+			.loctype = V_GLOBAL
+		};
 		ntv.count += ADDR_SIZE;
-
-		return &gblVar.var[gblVar.count++];
+		global.push_back(v);
+		return &global[global.size() - 1];
 	}
-
 	return NULL;
 }
 
@@ -75,17 +77,18 @@ re:
 int asgmt() {
 	std::string name = tok.tok[tok.pos].val, mod_name = "";
 	if(tok.is(".", 1)) { // module's func or var?
-		mod_name = tok.tok[tok.pos].val;
+		mod_name = tok.get().val;
 		tok.pos += 2;
-		name = tok.tok[tok.pos].val;
+		name = tok.get().val;
 	}
 
 	int declare = 0;
-	var_t *v = get_var(name, mod_name);
-	if(v == NULL) v = get_var(name, module);
+	var_t *v = var.get(name, mod_name);
+
+	if(v == NULL) v = var.get(name, module);
 	if(v == NULL) { declare = 1; v = declare_var(); }
 	SKIP_TOK;
-	
+
 	if(v->loctype == V_LOCAL) {
 		if(tok.is("[")) { // Array?
 			asgmt_array(v);
@@ -199,14 +202,14 @@ int asgmt_array(var_t *v) {
 
 var_t *declare_var() {
 	int npos = tok.pos;
-	
+
 	if(isalpha(tok.tok[tok.pos].val[0])) {
 		tok.pos++;
 		if(tok.skip(":")) {
-			if(tok.skip("int")) { --tok.pos; return append_var(tok.tok[npos].val, T_INT); }
-			if(tok.skip("string")) { --tok.pos; return append_var(tok.tok[npos].val, T_STRING); }
-			if(tok.skip("double")) { --tok.pos; return append_var(tok.tok[npos].val, T_DOUBLE); }
-		} else { --tok.pos; return append_var(tok.tok[npos].val, T_INT); }
+			if(tok.skip("int")) { --tok.pos; return var.append(tok.tok[npos].val, T_INT); }
+			if(tok.skip("string")) { --tok.pos; return var.append(tok.tok[npos].val, T_STRING); }
+			if(tok.skip("double")) { --tok.pos; return var.append(tok.tok[npos].val, T_DOUBLE); }
+		} else { --tok.pos; return var.append(tok.tok[npos].val, T_INT); }
 	} else error("error: %d: can't declare var", tok.tok[tok.pos].nline);
 	return NULL;
 }

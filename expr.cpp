@@ -174,8 +174,8 @@ int expr_primary() {
 
 			} else if(tok.skip("[")) { // Array?
 			
-				v = get_var(name , mod_name);
-				if(v == NULL) v = get_var(name, module);
+				v = var.get(name , mod_name);
+				if(v == NULL) v = var.get(name, module);
 				if(v == NULL)
 					error("error: %d: '%s' was not declare", tok.tok[tok.pos].nline, name.c_str());
 				expr_entry();
@@ -198,9 +198,9 @@ int expr_primary() {
 			
 			} else { // single variable
 				
-				v = get_var(name, mod_name);
+				v = var.get(name, mod_name);
 				if(v == NULL) 
-					v = get_var(name, module);
+					v = var.get(name, module);
 				if(v == NULL)
 					error("var: error: %d: '%s' was not declare", tok.tok[tok.pos].nline, name.c_str());
 				if(v->loctype == V_LOCAL) {

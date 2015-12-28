@@ -75,7 +75,6 @@ int NativeCode_x86::genas(const char *s, ...) {
 		}
 	}
 
-
 	if(strcmp(nem[0], "mov") == 0) { // mov?
 		if(isalpha(*nem[2])) { // register?
 			gencode(0x89);

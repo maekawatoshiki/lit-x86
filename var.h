@@ -1,12 +1,8 @@
 #ifndef _VAR_LIT_
 #define _VAR_LIT_
 
-#include "lit.h"
-#include "asm.h"
-#include "expr.h"
-#include "util.h"
-#include "token.h"
-#include "library.h"
+#include <string>
+#include <vector>
 
 typedef struct {
 	std::string name, mod_name;
@@ -15,21 +11,18 @@ typedef struct {
 	int loctype;
 } var_t;
 
-typedef struct {
-	var_t var[0xFF];
-	int count;
-} gblvar_t;
+class Variable {
+public:
+	std::vector< std::vector<var_t> > local;
+	std::vector<var_t> global;
+	
+	Variable() { local.resize(100); }
+	var_t *get(std::string, std::string);
+	var_t *append(std::string, int);
+};
 
-typedef struct {
-	var_t var[0xFF][0xFF]; // var[ "funcs.now" ] [ each var ]
-	int count, size[0xFF];
-} locvar_t;
+extern Variable var;
 
-extern locvar_t locVar;
-extern gblvar_t gblVar;
-
-var_t *get_var(std::string , std::string );
-var_t *append_var(std::string , int);
 var_t *declare_var();
 
 int is_asgmt();
