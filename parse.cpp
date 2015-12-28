@@ -2,7 +2,7 @@
 
 int blocksCount;
 std::string module = "";
-funclist_t undef_funcs, funcs;
+FunctionList undef_funcs, funcs;
 string_t strings;
 
 int get_string() {
@@ -14,55 +14,57 @@ int get_string() {
 	return strings.count++;
 }
 
-int is_func(std::string name, std::string mod_name) {
-	return get_func(name, mod_name) == NULL ? 0 : 1;
+bool FunctionList::is(std::string name, std::string mod_name) {
+	return get(name, mod_name) == NULL ? false : true;
 }
 
-func_t *get_func(std::string name, std::string mod_name) {
-	for(int i = 0; i < funcs.func.size(); i++) {
+func_t *FunctionList::get(std::string name, std::string mod_name) {
+	for(int i = 0; i < func.size(); i++) {
 #ifdef DEBUG
-		printf("%s : %s >> %s : %s\n", mod_name.c_str(), name.c_str(), funcs.func[i].mod_name.c_str(), funcs.func[i].name.c_str());
+		std::cout << mod_name.c_str() << " : " << name.c_str() << " <<< " << func[i].mod_name.c_str() << " : " func[i].name.c_str() << endl;
 #endif
-		if(funcs.func[i].name == name && funcs.func[i].mod_name == mod_name) {
-			return &(funcs.func[i]);
+		if(func[i].name == name && func[i].mod_name == mod_name) {
+			return &(func[i]);
 		}
 	}
 	return NULL;
 }
 
-func_t *append_func(std::string name, int address, int params) {
+func_t *FunctionList::focus() { return &func[now]; }
+
+func_t *FunctionList::append(std::string name, int address, int params) {
 	func_t f = {
 		.address = address,
 		.params = params,
 		.mod_name = module,
 		.name = name
 	};
-	funcs.func.push_back(f);
+	func.push_back(f);
 #ifdef DEBUG
-	std::cout << funcs.func[funcs.func.size() - 1].mod_name << " : " << name << std::endl;
+	std::cout << func[func.size() - 1].mod_name << " : " << name << std::endl;
 #endif
-	return &(funcs.func[funcs.func.size() - 1]);
+	return &(func[func.size() - 1]);
 }
 
-int append_undef_func(std::string name, std::string mod_name, int ntvc) {
+func_t *FunctionList::append_undef(std::string name, std::string mod_name, int ntvc_pos) {
 	func_t f = {
-		.address = ntvc,
+		.address = ntvc_pos,
 		.mod_name = module,
 		.name = name
 	};
-	undef_funcs.func.push_back(f);
+	func.push_back(f);
 	return 0;
 }
 
-int rep_undef_func(std::string name, int ntvc) {
-	std::vector<func_t> &f = undef_funcs.func;
+bool FunctionList::rep_undef(std::string name, int ntvc) {
+	std::vector<func_t> &f = func;
 
 	for(int i = 0; i < f.size(); i++) {
 		if(f[i].name == name && f[i].mod_name == module) {
 			ntv.gencode_int32_insert(ntvc - f[i].address - 4, f[i].address);
 		}
 	}
-	return 0;
+	return true;
 }
 
 int make_break() {
@@ -103,25 +105,25 @@ int expression(int pos, int status) {
 		module = tok.tok[tok.pos++].val;
 		eval(0, NON);
 		module = "";
-	} else if(funcs.inside == FALSE && !tok.is("def", 1) &&
+	} else if(funcs.inside == false && !tok.is("def", 1) &&
 			!tok.is("module", 1) && !tok.is("$", 1) &&
 			!tok.is(";", 1) && module == "") {	// main func entry
 
-		funcs.inside = TRUE;
+		funcs.inside = true;
 		funcs.now++;
-		append_func("main", ntv.count, 0); // append funcs
+		funcs.append("main", ntv.count, 0); // append funcs
 		ntv.genas("push ebp");
 		ntv.genas("mov ebp esp");
 		uint32_t espBgn = ntv.count + 2; ntv.genas("sub esp 0");
 		ntv.gencode(0x8b); ntv.gencode(0x75); ntv.gencode(0x0c); // mov esi, 0xc(%ebp)
 		
 		eval(0, BLOCK_NORMAL);
-		
+
 		ntv.gencode(0x81); ntv.gencode(0xc4); ntv.gencode_int32(ADDR_SIZE * (locVar.size[funcs.now] + 6)); // add %esp nn
 		ntv.gencode(0xc9);// leave
 		ntv.gencode(0xc3);// ret
 		ntv.gencode_int32_insert(ADDR_SIZE * (locVar.size[funcs.now] + 6), espBgn);
-		funcs.inside = FALSE;
+		funcs.inside = false;
 
 	} else if(is_asgmt()) {
 
@@ -198,7 +200,7 @@ int expression(int pos, int status) {
 		if(status == NON) return 1;
 		if(status == BLOCK_NORMAL) {
 			ntv.gencode_int32_insert(ntv.count - pos - 4, pos);
-		} else if(status == BLOCK_FUNC) funcs.inside = FALSE;
+		} else if(status == BLOCK_FUNC) funcs.inside = false;
 		return 1;
 
 	} else if(!tok.skip(";")) {
@@ -226,7 +228,7 @@ int parser() {
 	printf("blocks: %d\n", blocksCount);
 #endif
 	if(blocksCount != 0) error("error: 'end' is not enough");
-	uint32_t addr = get_func("main", "")->address;
+	uint32_t addr = funcs.get("main", "")->address;
 	ntv.gencode_int32_insert(addr - 5, main_address);
 
 	for(strings.addr--; strings.count; strings.addr--) {
@@ -240,7 +242,7 @@ int parser() {
 	for(int i = 0; i < ntv.count; i++)
 		printf("%02x", ntv.code[i]);
 	puts("");
-	printf("memsz: %d\n", locVar.size[funcs.now]);
+	printf("memsz: %d\n", funcs.focus()->var.size[funcs.now]);
 #endif
 
 	return 1;
@@ -297,13 +299,13 @@ int make_func() {
 	uint32_t espBgn, params = 0;
 	std::string funcName = tok.tok[tok.pos++].val;
 
-	funcs.now++; funcs.inside = TRUE;
+	funcs.now++; funcs.inside = true;
 	if(tok.skip("(")) { // get params
 		do { declare_var(); tok.pos++; params++; } while(tok.skip(","));
 		tok.skip(")");
 	}
-	append_func(funcName, ntv.count, params);
-	rep_undef_func(funcName, ntv.count);
+	funcs.append(funcName, ntv.count, params);
+	undef_funcs.rep_undef(funcName, ntv.count);
 
 	ntv.genas("push ebp");
 	ntv.genas("mov ebp esp");
@@ -327,8 +329,8 @@ int make_func() {
 	ntv.genas("add esp %u", ADDR_SIZE * (locVar.size[funcs.now] + 6)); // add esp nn
 	ntv.gencode(0xc9);// leave
 	ntv.gencode(0xc3);// ret
-
 	ntv.gencode_int32_insert(ADDR_SIZE * (locVar.size[funcs.now] + 6), espBgn);
+
 	for(i = 1; i <= params; i++) {
 		ntv.code[pos_save[i - 1]] =
 			256 - ADDR_SIZE * i + (((locVar.size[funcs.now] + 6) * ADDR_SIZE) - 4);
@@ -336,7 +338,6 @@ int make_func() {
 #ifdef DEBUG
 	printf("%s() has %u funcs or vars\n", funcName.c_str(), locVar.size[funcs.now]);
 #endif
-
 	return 0;
 }
 

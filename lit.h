@@ -111,6 +111,9 @@ typedef struct {
 
 extern ctrl_t brks, rets;
 
+class Lit {
+};
+
 void init();
 void dispose();
 

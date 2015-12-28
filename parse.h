@@ -6,21 +6,30 @@
 #include "lex.h"
 #include "expr.h"
 #include "token.h"
-#include "var.h"
 #include "util.h"
 #include "library.h"
+#include "var.h"
 
 typedef struct {
 	uint32_t address, params;
 	std::string name, mod_name;
 } func_t;
 
-typedef struct {
+class FunctionList {
+public:
 	std::vector<func_t> func;
-	int now, inside;
-} funclist_t;
+	int now;
+	bool inside;
 
-extern funclist_t undef_funcs, funcs;
+	bool is(std::string, std::string);
+	func_t *focus();
+	func_t *get(std::string, std::string);
+	func_t *append(std::string, int, int);
+	func_t *append_undef(std::string, std::string, int);
+	bool rep_undef(std::string, int);	
+};
+
+extern FunctionList undef_funcs, funcs;
 
 // The strings embedded in native code
 typedef struct {
@@ -45,13 +54,6 @@ int expression(int, int);
 
 int parser();
 int get_string();
-
-int is_func(std::string, std::string);
-func_t *get_func(std::string, std::string);
-func_t *append_func(std::string, int, int);
-
-int append_undef_func(std::string, std::string, int);
-int rep_undef_func(std::string, int);
 
 void replaceEscape(char *);
 

@@ -9,6 +9,7 @@
 #include "stdfunc.h"
 #include "util.h"
 #include "library.h"
+#include "var.h"
 
 #define HAS_PARAMS_FUNC is_number_tok() || is_ident_tok() || \
 							is_string_tok() || is_char_tok() || tok.is("(")

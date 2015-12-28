@@ -121,7 +121,7 @@ int expr_primary() {
 			SKIP_TOK;
 
 			if((ispare = tok.skip("(")) || is_stdfunc(name, mod_name) || 
-					is_func(name, mod_name) || is_func(name, module) || lib_list.is(mod_name)) { // Function?
+					funcs.is(name, mod_name) || funcs.is(name, module) || lib_list.is(mod_name)) { // Function?
 
 				if(lib_list.is(mod_name)) { // library function
 					if(HAS_PARAMS_FUNC) {
@@ -136,11 +136,11 @@ int expr_primary() {
 					
 					make_stdfunc(name, mod_name);
 				
-				} else if(get_func(name, mod_name) || get_func(name, module) || ispare) {	// user function
+				} else if(funcs.get(name, mod_name) || funcs.get(name, module) || ispare) {	// user function
 				
-					func_t *function = get_func(name, mod_name);
+					func_t *function = funcs.get(name, mod_name);
 					if(function == NULL) 
-						function = get_func(name, module);
+						function = funcs.get(name, module);
 					if(function == NULL) { // undefined
 						size_t params = 0;
 						if(HAS_PARAMS_FUNC) { // has arg?
@@ -150,7 +150,7 @@ int expr_primary() {
 								tok.skip(",");
 							}
 						}
-						ntv.gencode(0xe8); append_undef_func(name, module == "" ? mod_name : module, ntv.count);
+						ntv.gencode(0xe8); undef_funcs.append_undef(name, module == "" ? mod_name : module, ntv.count);
 						ntv.gencode_int32(0x00000000); // call func
 						ntv.genas("add esp %d", params * ADDR_SIZE);
 

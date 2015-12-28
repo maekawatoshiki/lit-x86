@@ -9,20 +9,20 @@
 #include "library.h"
 
 typedef struct {
-	std::string name, mod_name;
-	unsigned int id;
-	int type;
-	int loctype;
+		std::string name, mod_name;
+			unsigned int id;
+				int type;
+					int loctype;
 } Variable;
 
 typedef struct {
-	Variable var[0xFF];
-	int count;
+		Variable var[0xFF];
+			int count;
 } gblvar_t;
 
 typedef struct {
-	Variable var[0xFF][0xFF]; // var[ "funcs.now" ] [ each var ]
-	int count, size[0xFF];
+		Variable var[0xFF][0xFF]; // var[ "funcs.now" ] [ each var ]
+			int count, size[0xFF];
 } locvar_t;
 
 extern locvar_t locVar;
@@ -38,3 +38,4 @@ int asgmt_single(Variable *);
 int asgmt_array(Variable *);
 
 #endif // _LIT_VAR_
+
