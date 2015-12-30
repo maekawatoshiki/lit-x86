@@ -17,8 +17,14 @@ module calc
 	end
 
 	def prim(a:string, out:string)
-		while String.isdigit(a[pos])
-			out[String.len(out)] = a[pos++]
+		if a[pos] == '('
+			pos++
+				addsub(a, out)
+			pos++ # ')'
+		else
+			while String.isdigit(a[pos])
+				out[String.len(out)] = a[pos++]
+			end
 		end
 		String.concat(out, ",")
 	end

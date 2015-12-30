@@ -69,7 +69,9 @@ bool FunctionList::rep_undef(std::string name, int ntvc) {
 
 int make_break() {
 	ntv.gencode(0xe9); // jmp
-	break_list.addr_list.push_back(ntv.count);
+	break_list.addr_list = (uint32_t*)realloc(break_list.addr_list, ADDR_SIZE * (break_list.count + 1));
+	if(break_list.addr_list == NULL) error("LitSystemError: no enough memory");
+	break_list.addr_list[break_list.count] = ntv.count;
 	ntv.gencode_int32(0);
 	return break_list.count++;
 }
@@ -77,7 +79,9 @@ int make_break() {
 int make_return() {
 	expr_entry(); // get argument
 	ntv.gencode(0xe9); // jmp
-	return_list.addr_list.push_back(ntv.count);
+	return_list.addr_list = (uint32_t*)realloc(return_list.addr_list, ADDR_SIZE * (return_list.count + 1));
+	if(return_list.addr_list == NULL) error("LitSystemError: no enough memory");
+	return_list.addr_list[return_list.count] = ntv.count;
 	ntv.gencode_int32(0);
 	return return_list.count++;
 }

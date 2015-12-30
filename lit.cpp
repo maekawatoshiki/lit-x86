@@ -74,6 +74,8 @@ void *funcTable[] = {
 Lit::Lit() {
 	tok.pos = 0; tok.size = 0xfff;
 	mem.mem = (mem_info *)calloc(0x7ff, sizeof(mem_info));
+	return_list.addr_list = (uint32_t *)calloc(sizeof(uint32_t), 1);
+	break_list.addr_list = (uint32_t *)calloc(sizeof(uint32_t), 1);
 }
 
 Lit::~Lit() {

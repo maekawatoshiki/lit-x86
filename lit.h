@@ -90,10 +90,8 @@ enum {
 
 class ctrl_t {
 public:
-	std::vector<uint32_t> addr_list;
+	uint32_t *addr_list;
 	int count;
-
-	ctrl_t() { addr_list.reserve(0xff); }
 };
 
 extern ctrl_t break_list, return_list;
