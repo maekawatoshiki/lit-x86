@@ -318,8 +318,8 @@ int make_func() {
 
 	eval(0, BLOCK_FUNC);
 
-	for(--return_list.count; return_list.count >= 0; --return_list.count) {
-		ntv.gencode_int32_insert(ntv.count - return_list.addr_list[return_list.count] - 4, return_list.addr_list[return_list.count]);
+	for(int i = 0; i < return_list.count; i++) {
+		ntv.gencode_int32_insert(ntv.count - return_list.addr_list[i] - 4, return_list.addr_list[i]);
 	} return_list.count = 0;
 
 	ntv.genas("add esp %u", ADDR_SIZE * (var.focus().size() + 6)); // add esp nn
