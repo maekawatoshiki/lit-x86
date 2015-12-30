@@ -74,15 +74,10 @@
 	#include <sys/wait.h>
 #endif
 
-#define _LIT_VERSION_ "0.9.6"
+#define _LIT_VERSION_ "0.9.7"
 
 enum {
 	ADDR_SIZE = 4
-};
-
-enum {
-	FALSE = 0,
-	TRUE = 1
 };
 
 enum {
@@ -93,34 +88,27 @@ enum {
 	NON
 };
 
-enum {
-	V_LOCAL,
-	V_GLOBAL
-};
-
-enum {
-	T_INT,
-	T_STRING,
-	T_DOUBLE
-};
-
-typedef struct {
-	unsigned int *addr;
+class ctrl_t {
+public:
+	std::vector<uint32_t> addr_list;
 	int count;
-} ctrl_t;
 
-extern ctrl_t brks, rets;
+	ctrl_t() { addr_list.reserve(0xff); }
+};
+
+extern ctrl_t break_list, return_list;
 
 class Lit {
+public:
+	Lit();
+	~Lit();
+
+	int execute(char *); // execute(<source code>)
+	int run();
+	
+	void interpret();
+	void run_from_file(char *);
 };
-
-void init();
-void dispose();
-
-int execute(char *);
-
-void lit_interpret();
-void lit_run(char *);
 
 /* for native(JIT) code. */
 
@@ -136,14 +124,11 @@ typedef struct {
 
 extern mem_t mem;
 
+
 void freeAddr();
 void freeInProgram(uint32_t);
 void putNumber(int);
 void putString(int *);
 void putln();
 void appendAddr(uint32_t);
-
-void set_xor128();
-int  xor128();
-
 #endif

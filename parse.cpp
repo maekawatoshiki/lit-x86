@@ -69,21 +69,17 @@ bool FunctionList::rep_undef(std::string name, int ntvc) {
 
 int make_break() {
 	ntv.gencode(0xe9); // jmp
-	brks.addr = (uint32_t*)realloc(brks.addr, ADDR_SIZE * (brks.count + 1));
-	if(brks.addr == NULL) error("LitSystemError: no enough memory");
-	brks.addr[brks.count] = ntv.count;
+	break_list.addr_list.push_back(ntv.count);
 	ntv.gencode_int32(0);
-	return brks.count++;
+	return break_list.count++;
 }
 
 int make_return() {
 	expr_entry(); // get argument
 	ntv.gencode(0xe9); // jmp
-	rets.addr = (uint32_t*)realloc(rets.addr, ADDR_SIZE * (rets.count + 1));
-	if(rets.addr == NULL) error("LitSystemError: no enough memory");
-	rets.addr[rets.count] = ntv.count;
+	return_list.addr_list.push_back(ntv.count);
 	ntv.gencode_int32(0);
-	return rets.count++;
+	return return_list.count++;
 }
 
 int expression(int pos, int status) {
@@ -288,9 +284,9 @@ int make_while() {
 	ntv.gencode(0xe9); ntv.gencode_int32(n); // jmp n
 	ntv.gencode_int32_insert(ntv.count - end - 4, end);
 
-	for(--brks.count; brks.count >= 0; brks.count--) {
-		ntv.gencode_int32_insert(ntv.count - brks.addr[brks.count] - 4, brks.addr[brks.count]);
-	} brks.count = 0;
+	for(--break_list.count; break_list.count >= 0; break_list.count--) {
+		ntv.gencode_int32_insert(ntv.count - break_list.addr_list[break_list.count] - 4, break_list.addr_list[break_list.count]);
+	} break_list.count = 0;
 
 	return 0;
 }
@@ -322,9 +318,9 @@ int make_func() {
 
 	eval(0, BLOCK_FUNC);
 
-	for(--rets.count; rets.count >= 0; --rets.count) {
-		ntv.gencode_int32_insert(ntv.count - rets.addr[rets.count] - 4, rets.addr[rets.count]);
-	} rets.count = 0;
+	for(--return_list.count; return_list.count >= 0; --return_list.count) {
+		ntv.gencode_int32_insert(ntv.count - return_list.addr_list[return_list.count] - 4, return_list.addr_list[return_list.count]);
+	} return_list.count = 0;
 
 	ntv.genas("add esp %u", ADDR_SIZE * (var.focus().size() + 6)); // add esp nn
 	ntv.gencode(0xc9);// leave

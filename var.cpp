@@ -1,7 +1,6 @@
 #include "var.h"
 #include "lit.h"
 
-extern int blocksCount;
 Variable var;
 
 std::vector<var_t> &Variable::focus() { return local[funcs.now]; }

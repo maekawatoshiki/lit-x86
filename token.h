@@ -19,7 +19,8 @@ class Token {
 public:
 	std::vector<token_t> tok;
 	int size, pos;
-
+	
+	Token() { tok.reserve(0xffff); }
 	bool skip(std::string);
 	bool skip();
 	bool is(std::string);

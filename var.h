@@ -11,11 +11,21 @@ typedef struct {
 	int loctype;
 } var_t;
 
+enum {
+	V_LOCAL,
+	V_GLOBAL
+};
+enum {
+	T_INT,
+	T_STRING,
+	T_DOUBLE
+};
+
 class Variable {
 public:
 	std::vector< std::vector<var_t> > local;
 	std::vector<var_t> global;
-	
+
 	Variable() { local.resize(100); }
 	std::vector<var_t> &focus();
 	var_t *get(std::string, std::string);

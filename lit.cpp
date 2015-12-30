@@ -2,21 +2,7 @@
 
 Token tok;
 mem_t mem;
-ctrl_t brks, rets;
-
-void init() {
-	tok.pos = 0; tok.size = 0xfff;
-	mem.mem = (mem_info *)calloc(0x7ff, sizeof(mem_info));
-	set_xor128();
-	brks.addr = (uint32_t *)calloc(sizeof(uint32_t), 1);
-	rets.addr = (uint32_t *)calloc(sizeof(uint32_t), 1);
-}
-
-void dispose() {
-	freeAddr();
-	free(brks.addr);
-	free(rets.addr);
-}
+ctrl_t break_list, return_list;
 
 // ---- for native code --- //
 
@@ -65,120 +51,69 @@ void freeAddr() {
 	}
 }
 
-unsigned int w;
-void set_xor128() {
-#if defined(WIN32) || defined(WINDOWS)
-#else
-	w = 1234 + getpid() ^ 0xFFBA9285;
-	#ifdef DEBUG
-		puts("set_xor128()");
-	#endif
-#endif
-}
-
-int xor128() {
-  static uint32_t x = 123456789;
-  static uint32_t y = 362436069;
-  static uint32_t z = 521288629;
-  uint32_t t;
-  t = x ^ (x << 11); x = y; y = z; z = w;
-  w = (w ^ (w >> 19)) ^ (t ^ (t >> 8));
-  return ((int32_t)w < 0) ? -(int32_t)w : (int32_t)w;
-}
-
-void swap(int *a, int *b) { int t = *a; *a = *b; *b = t; }
-
-int gcd(int a, int b) {
-	if(a < b) swap(&a, &b);
-	while(b) {
-		int t = a % b;
-		a = b; b = t;
-	}
-	return a;
-}
-
-int lcm(int a, int b) {
-	return a / gcd(a, b) * b;
-}
-
 void *funcTable[] = {
 	(void *) putNumber, // 0
 	(void *) putString, // 4
 	(void *) putln,			// 8
 	(void *) malloc, 		// 12
-	(void *) xor128, 		// 16
-	(void *) printf, 		// 20
-	(void *) appendAddr,// 24
-	(void *) ssleep, 		// 28
-	(void *) fopen, 		// 32
-	(void *) fprintf, 	// 36
-	(void *) fclose,		// 40
-	(void *) File_read,			// 44
-	(void *) free_addr,// 48
-	(void *) freeAddr,	// 52,
-	(void *) fgets, 		// 56
-	(void *) gcd, 			// 60
-	(void *) lcm				// 64
+	(void *) printf, 		// 16
+	(void *) appendAddr,// 20
+	(void *) ssleep, 		// 24
+	(void *) fopen, 		// 28
+	(void *) fprintf, 	// 32
+	(void *) fclose,		// 36
+	(void *) File_read,	// 40
+	(void *) free_addr,	// 44
+	(void *) freeAddr,	// 48
+	(void *) fgets, 		// 52
 };
 
-int run() {
-	printf("%s","");
-	return ((int (*)(int *, void**))ntv.code)(0, funcTable);
+
+// Lit class is from here
+
+Lit::Lit() {
+	tok.pos = 0; tok.size = 0xfff;
+	mem.mem = (mem_info *)calloc(0x7ff, sizeof(mem_info));
 }
 
-int execute(char *source) {
-	init();
+Lit::~Lit() {
+	freeAddr();
+}
+
+int Lit::execute(char *source) {
 	lex(source);
 	parser();
 	run();
-	dispose();
 	return 0;
 }
 
-size_t get_file_size(FILE *fp) {
-	size_t sz;
-
-	fseek(fp, 0, SEEK_END);
-	sz = ftell(fp);
-	fseek(fp, 0, SEEK_SET);
-
-	return sz;
+int Lit::run() {
+	return ((int (*)(int *, void**))ntv.code)(0, funcTable);
 }
 
-void lit_interpret() {
-	char *src;
-	src = (char*)calloc(sizeof(char), 0xFFFF);
-	char line[0xFF] = "";
+void Lit::interpret() {
+	std::string line, all;
 
-	while(fgets(line, 0xFF, stdin) != 0) {
-		strcat(src, line);
-		memset(line, 0, 0xFF);
+	while(std::getline(std::cin, line)) {
+		all += line + " ; ";
+		line.clear();
 	}
 
 	clock_t bgn = clock();
-		execute(src);
+		execute((char *)all.c_str());
 	clock_t end = clock();
 #ifdef DEBUG
 	printf("time: %.3lf\n", (double)(end - bgn) / CLOCKS_PER_SEC);
 #endif
 }
 
-void lit_run(char *file) {
-	char *src;
-	FILE *srcfp = fopen(file, "rb");
-
-	{
-		if(!srcfp) { perror("file not found"); exit(0); }
-		size_t size = get_file_size(srcfp);
-		src = (char*)calloc(sizeof(char), size + 2);
-		fread(src, sizeof(char), size, srcfp);
-		fclose(srcfp);
-	}
-
-	clock_t bgn = clock();
-		execute(src);
-	clock_t end = clock();
-#ifdef DEBUG
-	printf("time: %.3lf\n", (double)(end - bgn) / CLOCKS_PER_SEC);
-#endif
+void Lit::run_from_file(char *source) {
+	std::ifstream ifs_src(source);
+	if(!ifs_src) ::error("LitSystemError: cannot open file '%s'", source);
+	std::istreambuf_iterator<char> it(ifs_src);
+	std::istreambuf_iterator<char> last;
+	std::string src_all(it, last);
+	
+	execute((char *)src_all.c_str());
 }
+

@@ -2,17 +2,14 @@
 
 std_function stdfunc[] = {
 	{"Array", "", 1, 12},
-	{"rand", "Math", 0, 16},
-	{"gcd", "Math", 2, 60},
-	{"lcm", "Math", 2, 64},
-	{"printf", "", -1, 20},
-	{"sleep", "Time", 1, 28},
-	{"open", "File", 2, 32},
-	{"write", "File", -1, 36},
-	{"read", "File", 3, 44},
-	{"close", "File", 1, 40},
-	{"gets", "File", 3, 56},
-	{"free", "Sys", 1, 48}
+	{"printf", "", -1, 16},
+	{"sleep", "Time", 1, 24},
+	{"open", "File", 2, 28},
+	{"write", "File", -1, 32},
+	{"read", "File", 3, 40},
+	{"close", "File", 1, 36},
+	{"gets", "File", 3, 52},
+	{"free", "Sys", 1, 44}
 };
 
 int make_stdfunc(std::string name, std::string mod_name) {
@@ -25,7 +22,7 @@ int make_stdfunc(std::string name, std::string mod_name) {
 				ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(12); // call malloc
 				ntv.genas("push eax");
 				ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x24); // mov [esp], eax
-				ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(24); // call appendAddr
+				ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(20); // call append_addr
 				ntv.genas("pop eax");
 			} else {
 				if(stdfunc[i].args == -1) { // vector
