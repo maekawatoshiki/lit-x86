@@ -88,6 +88,7 @@ int Lit::execute(char *source) {
 }
 
 int Lit::run() {
+	printf("");
 	return ((int (*)(int *, void**))ntv.code)(0, funcTable);
 }
 
