@@ -1,4 +1,5 @@
 #include "library.h"
+#include "lit.h"
 
 LibraryList lib_list;
 

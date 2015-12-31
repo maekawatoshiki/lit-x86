@@ -1,13 +1,7 @@
 #ifndef _PARSE_LIT_
 #define _PARSE_LIT_
 
-#include "lit.h"
-#include "asm.h"
-#include "lex.h"
-#include "expr.h"
-#include "token.h"
-#include "util.h"
-#include "library.h"
+#include "common.h"
 #include "var.h"
 
 typedef struct {

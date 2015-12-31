@@ -1,4 +1,12 @@
 #include "parse.h"
+#include "lit.h"
+#include "asm.h"
+#include "lex.h"
+#include "expr.h"
+#include "token.h"
+#include "util.h"
+#include "library.h"
+#include "var.h"
 
 int blocksCount;
 std::string module = "";

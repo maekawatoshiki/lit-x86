@@ -1,6 +1,7 @@
 #include "var.h"
 #include "lit.h"
 #include "parse.h"
+#include "token.h"
 
 Variable var;
 

@@ -1,7 +1,7 @@
 #ifndef _LIBRARY_LIT_
 #define _LIBRARY_LIT_
 
-#include "lit.h"
+#include "common.h"
 
 typedef struct {
 	std::string name;
