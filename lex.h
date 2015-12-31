@@ -1,6 +1,8 @@
 #ifndef _LEXER_LIT_
 #define _LEXER_LIT_
 
+#include "token.h"
+
 #define SKIP_TOK tok.pos++;
 
 enum {
@@ -14,6 +16,11 @@ enum {
 
 class Lexer {
 public:
+	Token &tok;
+
+	Lexer(Token &token)
+		:tok(token) { }
+
 	int lex(char *);
 };
 

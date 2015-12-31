@@ -12,7 +12,6 @@ int blocksCount;
 std::string module = "";
 FunctionList undef_funcs, funcs;
 string_t strings;
-Parser parse;
 
 int Parser::get_string() {
 	strings.text[ strings.count ] = (char *)

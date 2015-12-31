@@ -1,7 +1,9 @@
 #include "var.h"
-#include "lit.h"
 #include "parse.h"
 #include "token.h"
+#include "asm.h"
+#include "util.h"
+#include "lit.h"
 
 Variable var;
 
@@ -119,7 +121,7 @@ int Parser::asgmt_single(var_t *v) {
 
 	if(v->loctype == V_LOCAL) { // local single
 		if(tok.skip("=")) {
-			parse.expr_entry();
+			expr_entry();
 		} else if((inc=tok.skip("++")) || (dec=tok.skip("--"))) {
 			ntv.gencode(0x8b); ntv.gencode(0x45);
 			ntv.gencode(256 -
@@ -138,7 +140,7 @@ int Parser::asgmt_single(var_t *v) {
 		if(inc || dec) ntv.genas("pop eax");
 	} else if(v->loctype == V_GLOBAL) { // global single
 		if(tok.skip("=")) {
-			parse.expr_entry();
+			expr_entry();
 			ntv.gencode(0xa3); ntv.gencode_int32(v->id); // mov GLOBAL_ADDR eax
 		} else if((inc=tok.skip("++")) || (dec=tok.skip("--"))) {
 			ntv.gencode(0xa1); ntv.gencode_int32(v->id);// mov eax GLOBAL_ADDR
@@ -157,13 +159,13 @@ int Parser::asgmt_array(var_t *v) {
 
 	if(!tok.skip("[")) error("error: %d: expected '['", tok.tok[tok.pos].nline);
 	if(v->loctype == V_LOCAL) {
-		parse.expr_entry();
+		expr_entry();
 		ntv.genas("push eax");
 		if(!tok.skip("]")) error("error: %d: ']' except", tok.tok[tok.pos].nline);
-		while(parse.is_index()) parse.make_index();
+		while(is_index()) make_index();
 
 		if(tok.skip("=")) {
-			parse.expr_entry();
+			expr_entry();
 			ntv.gencode(0x8b); ntv.gencode(0x4d);
 			ntv.gencode(256 -
 					(v->type == T_INT ? ADDR_SIZE :
@@ -180,12 +182,12 @@ int Parser::asgmt_array(var_t *v) {
 		} else 
 			error("error: %d: invalid asgmt", tok.tok[tok.pos].nline);
 	} else if(v->loctype == V_GLOBAL) {
-		parse.expr_entry();
+		expr_entry();
 		ntv.genas("push eax");
 		tok.skip("]");
 		if(tok.skip("=")) {
 
-			parse.expr_entry();
+			expr_entry();
 			ntv.gencode(0x8b); ntv.gencode(0x0d); ntv.gencode_int32(v->id); // mov ecx GLOBAL_ADDR
 			ntv.genas("pop edx");
 			if(v->type == T_INT) {

@@ -1,5 +1,11 @@
 #include "token.h"
-
+#include "lit.h"
+#include "asm.h"
+#include "lex.h"
+#include "expr.h"
+#include "parse.h"
+#include "stdfunc.h"
+#include "util.h"
 
 bool Token::skip(std::string s) {
 	if(s == tok[pos].val) {

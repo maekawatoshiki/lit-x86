@@ -3,6 +3,8 @@
 
 #include "lex.h"
 #include "common.h"
+#include "parse.h"
+#include "token.h"
 
 #if defined(WIN32) || defined(WINDOWS)
 	#include <windows.h>
@@ -37,7 +39,10 @@ extern ctrl_t break_list, return_list;
 
 class Lit {
 public:
+	Token tok;
+
 	Lexer lex;
+	Parser parser;
 
 	Lit();
 	~Lit();

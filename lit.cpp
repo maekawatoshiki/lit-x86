@@ -9,7 +9,6 @@
 #include "option.h"
 #include "library.h"
 
-Token tok;
 MemoryList mem;
 ctrl_t break_list, return_list;
 
@@ -81,7 +80,8 @@ void *funcTable[] = {
 
 // Lit class is from here
 
-Lit::Lit() {
+Lit::Lit()
+	:lex(tok), parser(tok) {
 	tok.pos = 0; tok.size = 0xfff;
 	return_list.addr_list = (uint32_t *)calloc(sizeof(uint32_t), 1);
 	break_list.addr_list = (uint32_t *)calloc(sizeof(uint32_t), 1);
@@ -93,7 +93,7 @@ Lit::~Lit() {
 
 int Lit::execute(char *source) {
 	lex.lex(source);
-	parse.parser();
+	parser.parser();
 	run();
 	return 0;
 }

@@ -1,13 +1,7 @@
 #ifndef _TOKEN_LIT_
 #define _TOKEN_LIT_
 
-#include "lit.h"
-#include "asm.h"
-#include "lex.h"
-#include "expr.h"
-#include "parse.h"
-#include "stdfunc.h"
-#include "util.h"
+#include "common.h"
 
 typedef struct {
 	std::string val;
@@ -31,7 +25,5 @@ public:
 	token_t next();
 	token_t at(int);
 };
-
-extern Token tok;
 
 #endif // _TOKEN_LIT_

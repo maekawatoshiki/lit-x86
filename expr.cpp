@@ -1,4 +1,13 @@
 #include "expr.h"
+#include "lit.h"
+#include "asm.h"
+#include "lex.h"
+#include "token.h"
+#include "parse.h"
+#include "stdfunc.h"
+#include "util.h"
+#include "library.h"
+#include "var.h"
 
 int Parser::is_string_tok() { return tok.get().type == TOK_STRING; }
 int Parser::is_number_tok() { return tok.get().type == TOK_NUMBER; }
@@ -98,7 +107,7 @@ int Parser::expr_primary() {
 	
 	} else if(is_string_tok()) { 
 
-		ntv.gencode(0xb8); parse.get_string();
+		ntv.gencode(0xb8); get_string();
 		ntv.gencode_int32(0x00000000); // mov eax string_address
 
 	} else if(is_ident_tok()) { // variable or inc or dec

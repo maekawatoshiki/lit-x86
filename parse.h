@@ -3,6 +3,7 @@
 
 #include "common.h"
 #include "var.h"
+#include "token.h"
 
 typedef struct {
 	uint32_t address, params;
@@ -38,6 +39,11 @@ extern std::string module;
 
 class Parser {
 public:
+	Token &tok;
+
+	Parser(Token &token)
+		:tok(token) { }
+
 // var.h
 	var_t *declare_var();
 
@@ -77,23 +83,10 @@ public:
 	int get_string();
 
 	void replaceEscape(char *);
+
+// stdfunc.h
+	int make_stdfunc(std::string , std::string ); // func name, module name
+	int is_stdfunc(std::string , std::string );
 };
-
-extern Parser parse;
-
-// void make_require();
-// int make_if();
-// int make_while();
-// int make_func();
-// int make_break();
-// int make_return();
-//
-// int eval(int, int);
-// int expression(int, int);
-//
-// int parser();
-// int get_string();
-//
-// void replaceEscape(char *);
 
 #endif

@@ -1,4 +1,6 @@
 #include "asm.h"
+#include "lit.h"
+#include "token.h"
 
 NativeCode_x86 ntv;
 

@@ -1,8 +1,7 @@
 #ifndef _LIT_ASM_
 #define _LIT_ASM_
 
-#include "lit.h"
-#include "token.h"
+#include "common.h"
 
 class NativeCode_x86 {
 private:
