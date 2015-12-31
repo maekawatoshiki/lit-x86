@@ -1,4 +1,13 @@
 #include "lit.h"
+#include "asm.h"
+#include "lex.h"
+#include "expr.h"
+#include "parse.h"
+#include "token.h"
+#include "stdfunc.h"
+#include "util.h"
+#include "option.h"
+#include "library.h"
 
 Token tok;
 MemoryList mem;
@@ -83,7 +92,7 @@ Lit::~Lit() {
 }
 
 int Lit::execute(char *source) {
-	lex(source);
+	lex.lex(source);
 	parse.parser();
 	run();
 	return 0;

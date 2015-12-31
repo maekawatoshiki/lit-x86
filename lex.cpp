@@ -1,6 +1,12 @@
 #include "lex.h"
+#include "lit.h"
+#include "asm.h"
+#include "expr.h"
+#include "parse.h"
+#include "stdfunc.h"
+#include "util.h"
 
-int lex(char *code) {
+int Lexer::lex(char *code) {
 	size_t code_sz = strlen(code), line = 1;
 	int iswindows = 0;
 	std::string str;

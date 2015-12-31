@@ -3,6 +3,7 @@
 
 #include <string>
 #include <vector>
+#include "common.h"
 
 typedef struct {
 	std::string name, mod_name;

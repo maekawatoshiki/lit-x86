@@ -1,5 +1,6 @@
 #include "var.h"
 #include "lit.h"
+#include "parse.h"
 
 Variable var;
 

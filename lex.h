@@ -1,13 +1,6 @@
 #ifndef _LEXER_LIT_
 #define _LEXER_LIT_
 
-#include "lit.h"
-#include "asm.h"
-#include "expr.h"
-#include "parse.h"
-#include "stdfunc.h"
-#include "util.h"
-
 #define SKIP_TOK tok.pos++;
 
 enum {
@@ -19,6 +12,9 @@ enum {
 	TOK_END
 };
 
-int lex(char *);
+class Lexer {
+public:
+	int lex(char *);
+};
 
 #endif
