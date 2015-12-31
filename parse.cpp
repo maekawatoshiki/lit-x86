@@ -4,8 +4,9 @@ int blocksCount;
 std::string module = "";
 FunctionList undef_funcs, funcs;
 string_t strings;
+Parser parse;
 
-int get_string() {
+int Parser::get_string() {
 	strings.text[ strings.count ] = (char *)
 		calloc(sizeof(char), tok.tok[tok.pos].val.length() + 1);
 	strcpy(strings.text[strings.count], tok.tok[tok.pos++].val.c_str());
@@ -67,7 +68,7 @@ bool FunctionList::rep_undef(std::string name, int ntvc) {
 	return true;
 }
 
-int make_break() {
+int Parser::make_break() {
 	ntv.gencode(0xe9); // jmp
 	break_list.addr_list = (uint32_t*)realloc(break_list.addr_list, ADDR_SIZE * (break_list.count + 1));
 	if(break_list.addr_list == NULL) error("LitSystemError: no enough memory");
@@ -76,7 +77,7 @@ int make_break() {
 	return break_list.count++;
 }
 
-int make_return() {
+int Parser::make_return() {
 	expr_entry(); // get argument
 	ntv.gencode(0xe9); // jmp
 	return_list.addr_list = (uint32_t*)realloc(return_list.addr_list, ADDR_SIZE * (return_list.count + 1));
@@ -86,7 +87,7 @@ int make_return() {
 	return return_list.count++;
 }
 
-int expression(int pos, int status) {
+int Parser::expression(int pos, int status) {
 	int isputs = 0;
 
 	if(tok.skip("$")) { // global varibale
@@ -95,7 +96,7 @@ int expression(int pos, int status) {
 
 	} else if(tok.skip("require")) {
 	
-		using_require();
+		make_require();
 	
 	} else if(tok.skip("def")) { blocksCount++;
 
@@ -210,13 +211,13 @@ int expression(int pos, int status) {
 	return 0;
 }
 
-int eval(int pos, int status) {
+int Parser::eval(int pos, int status) {
 	while(tok.pos < tok.size) 
 		if(expression(pos, status)) return 1;
 	return 0;
 }
 
-int parser() {
+int Parser::parser() {
 	tok.pos = ntv.count = 0;
 	strings.addr = (int32_t*)calloc(0xFF, sizeof(int32_t));
 	uint32_t main_address;
@@ -248,11 +249,11 @@ int parser() {
 	return 1;
 }
 
-void using_require() {
+void Parser::make_require() {
 	lib_list.append(tok.next().val);
 }
 
-int make_if() {
+int Parser::make_if() {
 	uint32_t end;
 	expr_entry(); // if condition
 	ntv.gencode(0x83); ntv.gencode(0xf8); ntv.gencode(0x00);// cmp eax, 0
@@ -261,7 +262,7 @@ int make_if() {
 	return eval(end, BLOCK_NORMAL);
 }
 
-int make_while() {
+int Parser::make_while() {
 	uint32_t loopBgn = ntv.count, end, stepBgn[2], stepOn = 0;
 
 	expr_entry(); // condition
@@ -295,7 +296,7 @@ int make_while() {
 	return 0;
 }
 
-int make_func() {
+int Parser::make_func() {
 	uint32_t espBgn, params = 0;
 	std::string funcName = tok.next().val;
 
@@ -342,7 +343,7 @@ int make_func() {
 	return 0;
 }
 
-void replaceEscape(char *str) {
+void Parser::replaceEscape(char *str) {
 	int i;
 	char *pos;
 	char escape[12][3] = {

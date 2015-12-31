@@ -48,7 +48,7 @@ var_t * Variable::append(std::string name, int type) {
 	return NULL;
 }
 
-int is_asgmt() {
+int Parser::is_asgmt() {
 	if(tok.is("=", 1)) return 1;
 	else if(tok.is("++", 1)) return 1;
 	else if(tok.is("--", 1)) return 1;
@@ -75,7 +75,7 @@ re:
 	return 0;
 }
 
-int asgmt() {
+int Parser::asgmt() {
 	std::string name = tok.tok[tok.pos].val, mod_name = "";
 	if(tok.is(".", 1)) { // module's func or var?
 		mod_name = tok.get().val;
@@ -112,12 +112,12 @@ int asgmt() {
 	return 0;
 }
 
-int asgmt_single(var_t *v) {
+int Parser::asgmt_single(var_t *v) {
 	int inc = 0, dec = 0;
 
 	if(v->loctype == V_LOCAL) { // local single
 		if(tok.skip("=")) {
-			expr_entry();
+			parse.expr_entry();
 		} else if((inc=tok.skip("++")) || (dec=tok.skip("--"))) {
 			ntv.gencode(0x8b); ntv.gencode(0x45);
 			ntv.gencode(256 -
@@ -136,7 +136,7 @@ int asgmt_single(var_t *v) {
 		if(inc || dec) ntv.genas("pop eax");
 	} else if(v->loctype == V_GLOBAL) { // global single
 		if(tok.skip("=")) {
-			expr_entry();
+			parse.expr_entry();
 			ntv.gencode(0xa3); ntv.gencode_int32(v->id); // mov GLOBAL_ADDR eax
 		} else if((inc=tok.skip("++")) || (dec=tok.skip("--"))) {
 			ntv.gencode(0xa1); ntv.gencode_int32(v->id);// mov eax GLOBAL_ADDR
@@ -150,18 +150,18 @@ int asgmt_single(var_t *v) {
 	return 0;
 }
 
-int asgmt_array(var_t *v) {
+int Parser::asgmt_array(var_t *v) {
 	int inc = 0, dec = 0;
 
 	if(!tok.skip("[")) error("error: %d: expected '['", tok.tok[tok.pos].nline);
 	if(v->loctype == V_LOCAL) {
-		expr_entry();
+		parse.expr_entry();
 		ntv.genas("push eax");
 		if(!tok.skip("]")) error("error: %d: ']' except", tok.tok[tok.pos].nline);
-		while(is_index()) make_index();
+		while(parse.is_index()) parse.make_index();
 
 		if(tok.skip("=")) {
-			expr_entry();
+			parse.expr_entry();
 			ntv.gencode(0x8b); ntv.gencode(0x4d);
 			ntv.gencode(256 -
 					(v->type == T_INT ? ADDR_SIZE :
@@ -178,12 +178,12 @@ int asgmt_array(var_t *v) {
 		} else 
 			error("error: %d: invalid asgmt", tok.tok[tok.pos].nline);
 	} else if(v->loctype == V_GLOBAL) {
-		expr_entry();
+		parse.expr_entry();
 		ntv.genas("push eax");
 		tok.skip("]");
 		if(tok.skip("=")) {
 
-			expr_entry();
+			parse.expr_entry();
 			ntv.gencode(0x8b); ntv.gencode(0x0d); ntv.gencode_int32(v->id); // mov ecx GLOBAL_ADDR
 			ntv.genas("pop edx");
 			if(v->type == T_INT) {
@@ -201,7 +201,7 @@ int asgmt_array(var_t *v) {
 	return 0;
 }
 
-var_t *declare_var() {
+var_t *Parser::declare_var() {
 	int npos = tok.pos;
 
 	if(isalpha(tok.tok[tok.pos].val[0])) {

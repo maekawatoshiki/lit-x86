@@ -34,12 +34,12 @@ public:
 
 extern Variable var;
 
-var_t *declare_var();
-
-int is_asgmt();
-int asgmt();
-int asgmt_single(var_t *);
-int asgmt_array(var_t *);
+// var_t *declare_var();
+//
+// int is_asgmt();
+// int asgmt();
+// int asgmt_single(var_t *);
+// int asgmt_array(var_t *);
 
 #endif // _LIT_VAR_
 

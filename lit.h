@@ -110,18 +110,19 @@ public:
 
 /* for native(JIT) code. */
 
-typedef struct {
+struct mem_info {
 	uint32_t addr;
-	int isfree;
-} mem_info;
+	bool isfree;
+};
 
-typedef struct {
-	mem_info *mem;
-	int count;
-} mem_t;
+class MemoryList {
+public:
+	std::vector<mem_info> mem;
 
-extern mem_t mem;
+	size_t count() { return mem.size(); }
+};
 
+extern MemoryList mem;
 
 void freeAddr();
 void freeInProgram(uint32_t);

@@ -1,7 +1,7 @@
 #include "lit.h"
 
 Token tok;
-mem_t mem;
+MemoryList mem;
 ctrl_t break_list, return_list;
 
 // ---- for native code --- //
@@ -25,29 +25,30 @@ void ssleep(uint32_t t) {
 }
 
 void appendAddr(uint32_t addr) {
-	// mem.mem = realloc(mem.mem, sizeof(mem_info) * (1 + mem.count));
-	mem.mem[mem.count].addr = addr;
-	mem.mem[mem.count++].isfree = 0;
+	mem_info mi = {
+		.addr = addr,
+		.isfree = false
+	};
+	mem.mem.push_back(mi);
 }
 
 void free_addr(uint32_t addr) {
-	for(int i = 0; i < mem.count; i++) {
+	for(int i = 0; i < mem.mem.size(); i++) {
 		if(mem.mem[i].addr == addr) {
-			free((int *)mem.mem[i].addr);
-			mem.mem[i].addr = 0;
-			mem.mem[i].isfree = 1;
+			free((void *)mem.mem[i].addr);
+			mem.mem[i].isfree = false;
 		}
 	}
 }
 
 void freeAddr() {
-	if(mem.count > 0) {
-		for(--mem.count; mem.count >= 0; --mem.count) {
-			if(mem.mem[mem.count].isfree == 0) {
-				free((void *)mem.mem[mem.count].addr);
+	if(mem.count() > 0) {
+		for(size_t i = 0; i < mem.count(); i++) {
+			if(mem.mem[i].isfree == 0) {
+				free((void *)mem.mem[i].addr);
+				mem.mem.pop_back();
 			}
 		}
-		mem.count = 0;
 	}
 }
 
@@ -73,7 +74,6 @@ void *funcTable[] = {
 
 Lit::Lit() {
 	tok.pos = 0; tok.size = 0xfff;
-	mem.mem = (mem_info *)calloc(0x7ff, sizeof(mem_info));
 	return_list.addr_list = (uint32_t *)calloc(sizeof(uint32_t), 1);
 	break_list.addr_list = (uint32_t *)calloc(sizeof(uint32_t), 1);
 }
@@ -84,7 +84,7 @@ Lit::~Lit() {
 
 int Lit::execute(char *source) {
 	lex(source);
-	parser();
+	parse.parser();
 	run();
 	return 0;
 }

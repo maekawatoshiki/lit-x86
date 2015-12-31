@@ -1,13 +1,13 @@
 #include "expr.h"
 
-int is_string_tok() { return tok.get().type == TOK_STRING; }
-int is_number_tok() { return tok.get().type == TOK_NUMBER; }
-int is_ident_tok()  { return tok.get().type == TOK_IDENT;  }
-int is_char_tok() { return tok.get().type == TOK_CHAR; } 
+int Parser::is_string_tok() { return tok.get().type == TOK_STRING; }
+int Parser::is_number_tok() { return tok.get().type == TOK_NUMBER; }
+int Parser::is_ident_tok()  { return tok.get().type == TOK_IDENT;  }
+int Parser::is_char_tok() { return tok.get().type == TOK_CHAR; } 
 
-int expr_entry() { return expr_compare(); }
+int Parser::expr_entry() { return expr_compare(); }
 
-int32_t expr_compare() {
+int Parser::expr_compare() {
 	int andop=0, orop=0;
 	expr_logic();
 	while((andop=tok.skip("and") || tok.skip("&")) || (orop=tok.skip("or") || 
@@ -22,7 +22,7 @@ int32_t expr_compare() {
 	return 0;
 }
 
-int expr_logic() {
+int Parser::expr_logic() {
 	int32_t lt=0, gt=0, ne=0, eql=0, fle=0;
 	expr_add_sub();
 	if((lt=tok.skip("<")) || (gt=tok.skip(">")) || (ne=tok.skip("!=")) ||
@@ -47,7 +47,7 @@ int expr_logic() {
 	return 0;
 }
 
-int expr_add_sub() {
+int Parser::expr_add_sub() {
 	int add;
 	expr_mul_div();
 	while((add = tok.skip("+")) || tok.skip("-")) {
@@ -61,7 +61,7 @@ int expr_add_sub() {
 	return 0;
 }
 
-int expr_mul_div() {
+int Parser::expr_mul_div() {
 	int mul, div;
 	expr_primary();
 	while((mul = tok.skip("*")) || (div=tok.skip("/")) || tok.skip("%")) {
@@ -83,7 +83,7 @@ int expr_mul_div() {
 	return 0;
 }
 
-int expr_primary() {
+int Parser::expr_primary() {
 	int is_get_addr = 0, ispare = 0;
 
 	if(tok.skip("&")) is_get_addr = 1;
@@ -98,7 +98,7 @@ int expr_primary() {
 	
 	} else if(is_string_tok()) { 
 
-		ntv.gencode(0xb8); get_string();
+		ntv.gencode(0xb8); parse.get_string();
 		ntv.gencode_int32(0x00000000); // mov eax string_address
 
 	} else if(is_ident_tok()) { // variable or inc or dec
@@ -223,14 +223,14 @@ int expr_primary() {
 	return 0;
 }
 
-int is_index() {
+int Parser::is_index() {
 	if(tok.is("[")) {
 		return 1;
 	}
 	return 0;
 }
 
-int make_index() {
+int Parser::make_index() {
 	ntv.genas("mov ecx eax");
 	tok.skip("["); expr_entry(); tok.skip("]");
 	ntv.gencode(0x8b); ntv.gencode(0x04); ntv.gencode(0x81); // mov eax [eax * 4 + ecx]

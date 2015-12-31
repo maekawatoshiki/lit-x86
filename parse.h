@@ -42,20 +42,64 @@ typedef struct {
 extern string_t strings;
 extern std::string module;
 
-void using_require();
+class Parser {
+public:
+// var.h
+	var_t *declare_var();
 
-int make_if();
-int make_while();
-int make_func();
-int make_break();
-int make_return();
+	int is_asgmt();
+	int asgmt();
+	int asgmt_single(var_t *);
+	int asgmt_array(var_t *);
 
-int eval(int, int);
-int expression(int, int);
+// expr.h
+	int is_string_tok();
+	int is_number_tok();
+	int is_ident_tok();
+	int is_char_tok();
 
-int parser();
-int get_string();
+	int expr_entry();
+	int expr_compare();
+	int expr_logic();
+	int expr_add_sub();
+	int expr_mul_div();
+	int expr_primary();
 
-void replaceEscape(char *);
+	int is_index();
+	int make_index();
+
+// parse.h
+	void make_require();
+	int make_if();
+	int make_while();
+	int make_func();
+	int make_break();
+	int make_return();
+
+	int eval(int, int);
+	int expression(int, int);
+
+	int parser();
+	int get_string();
+
+	void replaceEscape(char *);
+};
+
+extern Parser parse;
+
+// void make_require();
+// int make_if();
+// int make_while();
+// int make_func();
+// int make_break();
+// int make_return();
+//
+// int eval(int, int);
+// int expression(int, int);
+//
+// int parser();
+// int get_string();
+//
+// void replaceEscape(char *);
 
 #endif
