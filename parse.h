@@ -28,18 +28,26 @@ public:
 extern FunctionList undef_funcs, funcs;
 
 // The strings embedded in native code
-typedef struct {
-	char *text[0xff];
-	int *addr;
-	int count;
-} string_t;
+struct embed_string_t {
+	std::string text;
+	int addr;
+};
 
-extern string_t strings;
+class EmbedString {
+public:
+	std::vector<embed_string_t> text;
+	int count;
+	
+	EmbedString()
+		:count(0) { }
+};
+
 extern std::string module;
 
 class Parser {
 public:
 	Token &tok;
+	EmbedString embed_str;
 
 	Parser(Token &token)
 		:tok(token) { }

@@ -11,15 +11,14 @@
 int blocksCount;
 std::string module = "";
 FunctionList undef_funcs, funcs;
-string_t strings;
 
 int Parser::get_string() {
-	strings.text[ strings.count ] = (char *)
-		calloc(sizeof(char), tok.tok[tok.pos].val.length() + 1);
-	strcpy(strings.text[strings.count], tok.tok[tok.pos++].val.c_str());
-
-	*strings.addr++ = ntv.count;
-	return strings.count++;
+	embed_string_t e = {
+		.text = tok.next().val,
+		.addr = ntv.count
+	};
+	embed_str.text.push_back(e);
+	return embed_str.count++;
 }
 
 bool FunctionList::is(std::string name, std::string mod_name) {
@@ -226,7 +225,6 @@ int Parser::eval(int pos, int status) {
 
 int Parser::parser() {
 	tok.pos = ntv.count = 0;
-	strings.addr = (int32_t*)calloc(0xFF, sizeof(int32_t));
 	uint32_t main_address;
 	ntv.gencode(0xe9); main_address = ntv.count; ntv.gencode_int32(0);
 
@@ -238,12 +236,14 @@ int Parser::parser() {
 	if(blocksCount != 0) error("error: 'end' is not enough");
 	uint32_t addr = funcs.get("main", "")->address;
 	ntv.gencode_int32_insert(addr - 5, main_address);
-
-	for(strings.addr--; strings.count; strings.addr--) {
-		ntv.gencode_int32_insert((uint32_t)&ntv.code[ntv.count], *strings.addr);
-		replaceEscape(strings.text[--strings.count]);
-		for(int i = 0; strings.text[strings.count][i]; i++) {
-			ntv.gencode(strings.text[strings.count][i]);
+	
+	for(size_t n = 0; n < embed_str.count; n++) {
+		ntv.gencode_int32_insert((uint32_t)&ntv.code[ntv.count], 
+				embed_str.text[n].addr);
+		char *s = (char *) embed_str.text[n].text.c_str();
+		replaceEscape(s);
+		for(int i = 0; embed_str.text[n].text[i]; i++) {
+			ntv.gencode(embed_str.text[n].text[i]);
 		} ntv.gencode(0); // '\0'
 	}
 #ifdef DEBUG

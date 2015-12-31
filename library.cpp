@@ -1,5 +1,6 @@
 #include "library.h"
 #include "lit.h"
+#include "util.h"
 
 LibraryList lib_list;
 
@@ -15,7 +16,7 @@ int LibraryList::append(std::string name) {
 		.no = lib.size(),
 		.handle = dlopen(("./lib/" + name + ".so").c_str(), RTLD_LAZY | RTLD_NOW)
 	};
-
+	if(l.handle == NULL) error("LitSystemError: cannot load library '%s'", name.c_str());
 	lib.push_back(l);
 	return lib.size() - 1;
 }
@@ -34,5 +35,7 @@ lib_t *LibraryList::get(std::string name) {
 }
 
 uint32_t LibraryList::call(std::string name, std::string mod_name) {
-	return (uint32_t)dlsym(get(mod_name)->handle, (mod_name + "_" + name).c_str());
+	void *function = dlsym(get(mod_name)->handle, (mod_name + "_" + name).c_str());
+	if(function == NULL) error("LitSystemError: cannot load function '%s'", (mod_name + "_" + name).c_str());
+	return (uint32_t)function;
 }

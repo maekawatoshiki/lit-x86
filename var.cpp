@@ -36,7 +36,7 @@ var_t * Variable::append(std::string name, int type) {
 			.loctype = V_LOCAL
 		};
 		local[funcs.now].push_back(v);
-		return &local[funcs.now][sz];
+		return &local[funcs.now].back();
 	} else if(funcs.inside == false) { // global
 		var_t v = {
 			.name = name,
@@ -47,7 +47,7 @@ var_t * Variable::append(std::string name, int type) {
 		};
 		ntv.count += ADDR_SIZE;
 		global.push_back(v);
-		return &global[global.size() - 1];
+		return &global.back();
 	}
 	return NULL;
 }
