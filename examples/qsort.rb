@@ -1,3 +1,5 @@
+require Math
+
 def qsort(a, left, right)
 	l = left; r = right
 	pv = l

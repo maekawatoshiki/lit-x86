@@ -21,3 +21,5 @@ for i = 2, i < 100, i++
 		puts i, " is prime"
 	end
 end
+
+

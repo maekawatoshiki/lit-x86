@@ -1,34 +1,46 @@
 #ifndef _VAR_LIT_
 #define _VAR_LIT_
 
-#include "lit.h"
-#include "expr.h"
-#include "util.h"
+#include <string>
+#include <vector>
+#include "common.h"
 
 typedef struct {
-	char name[32], mod_name[32];
+	std::string name, mod_name;
 	unsigned int id;
 	int type;
 	int loctype;
-} Variable;
+} var_t;
 
-struct {
-	Variable var[0xFF];
-	int count;
-} gblVar;
+enum {
+	V_LOCAL,
+	V_GLOBAL
+};
+enum {
+	T_INT,
+	T_STRING,
+	T_DOUBLE
+};
 
-struct {
-	Variable var[0xFF][0xFF]; // var[ "funcs.now" ] [ each var ]
-	int count, size[0xFF];
-} locVar;
+class Variable {
+public:
+	std::vector< std::vector<var_t> > local;
+	std::vector<var_t> global;
 
-Variable *get_var(char *, char *);
-Variable *append_var(char *, int);
-Variable *declare_var();
+	Variable() { local.resize(100); }
+	std::vector<var_t> &focus();
+	var_t *get(std::string, std::string);
+	var_t *append(std::string, int);
+};
 
-int is_asgmt();
-int asgmt();
-int asgmt_single(Variable *);
-int asgmt_array(Variable *);
+extern Variable var;
+
+// var_t *declare_var();
+//
+// int is_asgmt();
+// int asgmt();
+// int asgmt_single(var_t *);
+// int asgmt_array(var_t *);
 
 #endif // _LIT_VAR_
+

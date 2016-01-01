@@ -1,47 +1,47 @@
-CFLAGS = -O0 -m32 -std=c99 -Wno-strict-aliasing
-CC = clang $(CFLAGS) 
-LIB_PATH = lib
+CFLAGS = -O0 -m32 -Wno-strict-aliasing
+CC = clang++ $(CFLAGS) 
 
-lit: main.o lit.o asm.o lex.o var.o expr.o parse.o stdfunc.o option.o util.o
-	$(CC) -o lit -rdynamic -ldl main.o lit.o asm.o lex.o var.o expr.o parse.o stdfunc.o option.o util.o
+lit: main.o lit.o asm.o lex.o var.o expr.o parse.o stdfunc.o token.o option.o util.o library.o
+	$(CC) -o lit -rdynamic -ldl main.o lit.o asm.o lex.o var.o expr.o parse.o token.o stdfunc.o option.o util.o library.o
 
-main.o: main.c
-	$(CC) -c main.c
+main.o: main.cpp common.h
+	$(CC) -c main.cpp
 
-lit.o: lit.h lit.c
-	$(CC) -c lit.c
+lit.o: lit.h lit.cpp
+	$(CC) -c lit.cpp
 
-asm.o: asm.h asm.c
-	$(CC) -c asm.c
+asm.o: asm.h asm.cpp
+	$(CC) -c asm.cpp
 
-lex.o: lex.h lex.c
-	$(CC) -c lex.c
+lex.o: lex.h lex.cpp
+	$(CC) -c lex.cpp
 
-var.o: var.h var.c
-	$(CC) -c var.c
+var.o: var.h var.cpp
+	$(CC) -c var.cpp
 
-expr.o: expr.h expr.c
-	$(CC) -c expr.c
+expr.o: expr.h expr.cpp
+	$(CC) -c expr.cpp
 
-parse.o: parse.h parse.c
-	$(CC) -c parse.c
+parse.o: parse.h parse.cpp
+	$(CC) -c parse.cpp
 
-stdfunc.o: stdfunc.h stdfunc.c
-	$(CC) -c stdfunc.c
+stdfunc.o: stdfunc.h stdfunc.cpp
+	$(CC) -c stdfunc.cpp
 
-option.o: option.h option.c
-	$(CC) -c option.c
+token.o: token.h token.cpp
+	$(CC) -c token.cpp
 
-util.o: util.h util.c
-	$(CC) -c util.c
+option.o: option.h option.cpp
+	$(CC) -c option.cpp
+
+util.o: util.h util.cpp
+	$(CC) -c util.cpp
+
+library.o: library.h library.cpp
+	$(CC) -c library.cpp
 
 lib: lit
-	clang -shared -m32 -lm -O0 -o $(LIB_PATH)/Sys.so $(LIB_PATH)/Sys_linux.c
-	clang -shared -m32 -lm -O0 -o $(LIB_PATH)/Prime.so $(LIB_PATH)/Prime.c
-	clang -shared -m32 -lm -O0 -o $(LIB_PATH)/M.so $(LIB_PATH)/M.c
-	clang -shared -m32 -lm -O0 -o $(LIB_PATH)/Math.so $(LIB_PATH)/Math.c
-	clang -shared -m32 -lm -O0 -o $(LIB_PATH)/String.so $(LIB_PATH)/String.c
-	clang -shared -m32 -lm -O0 -o $(LIB_PATH)/Time.so $(LIB_PATH)/Time.c
+	./lib/build.sh
 
 test: lit lib
 	./test/test.sh

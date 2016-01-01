@@ -1,69 +1,104 @@
 #ifndef _PARSE_LIT_
 #define _PARSE_LIT_
 
-#include "lit.h"
-#include "asm.h"
-#include "lex.h"
-#include "expr.h"
+#include "common.h"
 #include "var.h"
-#include "util.h"
+#include "token.h"
 
-extern char *module;
 extern int blocksCount;
 
 typedef struct {
 	uint32_t address, params;
-	char name[0xFF], mod_name[0xff];
+	std::string name, mod_name;
 } func_t;
 
-struct {
-	func_t func[0xff];
-	int count, now, inside;
-} undef_funcs, funcs;
+class FunctionList {
+public:
+	std::vector<func_t> func;
+	int now;
+	bool inside;
+	
+	FunctionList() { func.reserve(128); }
+	bool is(std::string, std::string);
+	func_t *focus();
+	func_t *get(std::string, std::string);
+	func_t *append(std::string, int, int);
+	func_t *append_undef(std::string, std::string, int);
+	bool rep_undef(std::string, int);	
+};
 
-typedef struct {
-	char name[64];
-	void *handle;
-	int no;
-} lib_t;
-
-struct {
-	lib_t lib[64];
-	int count;
-} lib_list;
+extern FunctionList undef_funcs, funcs;
 
 // The strings embedded in native code
-struct {
-	char *text[0xff];
-	int *addr;
+struct embed_string_t {
+	std::string text;
+	int addr;
+};
+
+class EmbedString {
+public:
+	std::vector<embed_string_t> text;
 	int count;
-} strings;
+	
+	EmbedString()
+		:count(0) { }
+};
 
-void using_require();
-int append_lib(char *);
-int is_lib_module(char *);
-lib_t *get_lib_module(char *);
-void free_lib();
+extern std::string module;
 
-int make_if();
-int make_while();
-int make_func();
-int make_break();
-int make_return();
+class Parser {
+public:
+	Token &tok;
+	EmbedString embed_str;
 
-int eval(int, int);
-int expression(int, int);
+	Parser(Token &token)
+		:tok(token) { }
 
-int parser();
-int get_string();
+// var.h
+	var_t *declare_var();
 
-int is_func(char *, char *);
-func_t *get_func(char *, char *);
-func_t *append_func(char *, int, int);
+	int is_asgmt();
+	int asgmt();
+	int asgmt_single(var_t *);
+	int asgmt_array(var_t *);
 
-int append_undef_func(char *, char *, int);
-int rep_undef_func(char *, int);
+// expr.h
+	int is_string_tok();
+	int is_number_tok();
+	int is_ident_tok();
+	int is_char_tok();
 
-char *replaceEscape(char *);
+	int expr_entry();
+	int expr_compare();
+	int expr_logic();
+	int expr_add_sub();
+	int expr_mul_div();
+	int expr_primary();
+
+	int is_index();
+	int make_index();
+
+	int make_array();
+
+// parse.h
+	void make_require();
+	int make_if();
+	int make_while();
+	int make_func();
+	int make_break();
+	int make_return();
+
+	int eval(int, int);
+	int expression(int, int);
+
+	int parser();
+	int get_string();
+
+	void replaceEscape(char *);
+
+// stdfunc.h
+	int make_stdfunc(std::string , std::string ); // func name, module name
+	int is_stdfunc(std::string , std::string );
+};
 
 #endif

@@ -1,31 +1,10 @@
 #ifndef _LIT_MAIN_HEAD_
 #define _LIT_MAIN_HEAD_
 
-#include <assert.h>
-#include <ctype.h>
-#include <errno.h>
-#include <float.h>
-#include <limits.h>
-#include <locale.h>
-#include <math.h>
-#include <setjmp.h>
-#include <signal.h>
-#include <stdarg.h>
-#include <stddef.h>
-#include <stdint.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <time.h>
-#include <dlfcn.h>
-
-#include "asm.h"
 #include "lex.h"
-#include "expr.h"
+#include "common.h"
 #include "parse.h"
-#include "stdfunc.h"
-#include "util.h"
-#include "option.h"
+#include "token.h"
 
 #if defined(WIN32) || defined(WINDOWS)
 	#include <windows.h>
@@ -36,15 +15,10 @@
 	#include <sys/wait.h>
 #endif
 
-#define _LIT_VERSION_ "0.9.5"
+#define _LIT_VERSION_ "0.9.7"
 
 enum {
 	ADDR_SIZE = 4
-};
-
-enum {
-	FALSE = 0,
-	TRUE = 1
 };
 
 enum {
@@ -55,52 +29,46 @@ enum {
 	NON
 };
 
-typedef struct {
-  char val[32];
-	int type;
-	int nline;
-} token_t;
-
-struct {
-	token_t *tok;
-	int size, pos;
-} tok;
-
-enum {
-	V_LOCAL,
-	V_GLOBAL
-};
-
-enum {
-	T_INT,
-	T_STRING,
-	T_DOUBLE
-};
-
-struct {
-	unsigned int *addr;
+class ctrl_t {
+public:
+	uint32_t *addr_list;
 	int count;
-} brks, rets;
+};
 
-void init();
-void dispose();
+extern ctrl_t break_list, return_list;
 
-static int execute(char *);
+class Lit {
+public:
+	Token tok;
 
-void lit_interpret();
-void lit_run(char *);
+	Lexer lex;
+	Parser parser;
+
+	Lit();
+	~Lit();
+
+	int execute(char *); // execute(<source code>)
+	int run();
+	
+	void interpret();
+	void run_from_file(char *);
+};
 
 /* for native(JIT) code. */
 
-typedef struct {
+struct mem_info {
 	uint32_t addr;
-	int isfree;
-} mem_info;
+	bool isfree;
+};
 
-struct {
-	mem_info *mem;
-	int count;
-} mem;
+class MemoryList {
+public:
+	std::vector<mem_info> mem;
+
+	size_t count() { return mem.size(); }
+};
+
+extern MemoryList mem;
 
 void freeAddr();
 void freeInProgram(uint32_t);
@@ -108,8 +76,4 @@ void putNumber(int);
 void putString(int *);
 void putln();
 void appendAddr(uint32_t);
-
-void set_xor128();
-int  xor128();
-
 #endif
