@@ -1,6 +1,5 @@
 CFLAGS = -O0 -m32 -Wno-strict-aliasing
 CC = clang++ $(CFLAGS) 
-LIB_PATH = lib
 
 lit: main.o lit.o asm.o lex.o var.o expr.o parse.o stdfunc.o token.o option.o util.o library.o
 	$(CC) -o lit -rdynamic -ldl main.o lit.o asm.o lex.o var.o expr.o parse.o token.o stdfunc.o option.o util.o library.o
@@ -42,12 +41,7 @@ library.o: library.h library.cpp
 	$(CC) -c library.cpp
 
 lib: lit
-	clang -shared -m32 -lm -O0 -o $(LIB_PATH)/Sys.so $(LIB_PATH)/Sys_linux.c
-	clang -shared -m32 -lm -O0 -o $(LIB_PATH)/Prime.so $(LIB_PATH)/Prime.c
-	clang -shared -m32 -lm -O0 -o $(LIB_PATH)/M.so $(LIB_PATH)/M.c
-	clang -shared -m32 -lm -O0 -o $(LIB_PATH)/Math.so $(LIB_PATH)/Math.c
-	clang -shared -m32 -lm -O0 -o $(LIB_PATH)/String.so $(LIB_PATH)/String.c
-	clang -shared -m32 -lm -O0 -o $(LIB_PATH)/Time.so $(LIB_PATH)/Time.c
+	./lib/build.sh
 
 test: lit lib
 	./test/test.sh
