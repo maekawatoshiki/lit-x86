@@ -38,7 +38,7 @@ int Lexer::lex(char *code) {
 		} else if(code[i] == ' ' || code[i] == '\t') { // space char?
 		} else if(code[i] == '#') { // comment?
 			for(i++; code[i] != '\n'; i++) { ; } line++;
-		} else if(code[i] == '"') { // string?
+		} else if(code[i] == '\"') { // string?
 
 			for(i++; code[i] != '"' && code[i] != '\0'; i++)
 				str += code[i];
