@@ -76,6 +76,8 @@ public:
 	int is_index();
 	int make_index();
 
+	int make_array();
+
 // parse.h
 	void make_require();
 	int make_if();

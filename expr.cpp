@@ -225,10 +225,10 @@ int Parser::expr_primary() {
 		if(is_asgmt()) asgmt(); else expr_compare();
 		if(!tok.skip(")"))
 			error("error: %d: expected expression ')'", tok.tok[tok.pos].nline);
+	} else if(make_array()) {
 	} else if(tok.skip(";") || true) error("error: %d: invalid expression", tok.tok[tok.pos].nline);
 
 	while(is_index()) make_index();
-
 	return 0;
 }
 
@@ -245,3 +245,37 @@ int Parser::make_index() {
 	ntv.gencode(0x8b); ntv.gencode(0x04); ntv.gencode(0x81); // mov eax [eax * 4 + ecx]
 	return 0;
 }
+
+int Parser::make_array() {
+	if(tok.skip("[")) {
+		int elems = 0, pos = tok.pos;
+		{ // count elements
+			while(tok.at(pos).val != "]") {
+				if(tok.at(pos++).val == ",") elems++;
+			} elems++;
+		}
+		{ // allocate memory
+			ntv.genas("mov eax %d", elems * ADDR_SIZE + ADDR_SIZE);
+			ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x24); // mov [esp], eax
+			ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(12); // call malloc
+			ntv.genas("push eax");
+			ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x24); // mov [esp], eax
+			ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(20); // call append_addr
+		} // stack top is allocated address
+		
+		for(int elem = 0; elem < elems; elem++)  {
+			expr_entry();
+			ntv.genas("pop ecx"); // mem address 
+			ntv.genas("mov edx %d", elem);
+			ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x91); // mov [ecx+edx*4], eax
+			ntv.genas("push ecx");
+			if(elem < elems - 1) tok.skip(",");
+		} 
+		ntv.genas("pop eax");
+		tok.skip("]");
+		return 1;
+	} else return 0;
+}
+
+
+

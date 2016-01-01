@@ -5,7 +5,7 @@ LIB_PATH = lib
 lit: main.o lit.o asm.o lex.o var.o expr.o parse.o stdfunc.o token.o option.o util.o library.o
 	$(CC) -o lit -rdynamic -ldl main.o lit.o asm.o lex.o var.o expr.o parse.o token.o stdfunc.o option.o util.o library.o
 
-main.o: main.cpp
+main.o: main.cpp common.h
 	$(CC) -c main.cpp
 
 lit.o: lit.h lit.cpp
