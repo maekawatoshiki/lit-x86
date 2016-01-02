@@ -224,9 +224,8 @@ int Parser::expr_primary() {
 	} else if(tok.skip("(")) {
 		if(is_asgmt()) asgmt(); else expr_compare();
 		if(!tok.skip(")"))
-			error("error: %d: expected expression ')'", tok.tok[tok.pos].nline);
-	} else if(make_array()) {
-	} else if(tok.skip(";") || true) error("error: %d: invalid expression", tok.tok[tok.pos].nline);
+			error("error: %d: expected expression ')'", tok.get().nline);
+	} else if(!make_array()) error("error: %d: invalid expression", tok.tok[tok.pos].nline);
 
 	while(is_index()) make_index();
 	return 0;
@@ -250,8 +249,11 @@ int Parser::make_array() {
 	if(tok.skip("[")) {
 		int elems = 0, pos = tok.pos;
 		{ // count elements
-			while(tok.at(pos).val != "]") {
-				if(tok.at(pos++).val == ",") elems++;
+			int pare = 1;
+			while(pare) {
+				if(tok.at(pos).val == "[") pare++;
+				if(tok.at(pos).val == "]") pare--;
+				if(tok.at(pos++).val == "," && pare == 1) elems++;
 			} elems++;
 		}
 		{ // allocate memory
@@ -276,6 +278,4 @@ int Parser::make_array() {
 		return 1;
 	} else return 0;
 }
-
-
 
