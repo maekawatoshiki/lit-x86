@@ -94,6 +94,7 @@ int Parser::expr_mul_div() {
 
 int Parser::expr_primary() {
 	int is_get_addr = 0, ispare = 0;
+	std::string name, mod_name = "";
 
 	if(tok.skip("&")) is_get_addr = 1;
 
@@ -112,7 +113,7 @@ int Parser::expr_primary() {
 
 	} else if(is_ident_tok()) { // variable or inc or dec
 	
-		std::string name = tok.get().val, mod_name = "";
+		name = tok.get().val; mod_name = "";
 		var_t *v; 
 
 		if(tok.is(".", 1)) { // module?
@@ -218,14 +219,32 @@ int Parser::expr_primary() {
 				} else if(v->loctype == V_GLOBAL) {
 					ntv.gencode(0xa1); ntv.gencode_int32(v->id); // mov eax GLOBAL_ADDR
 				}
-
 			}
 		}
 	} else if(tok.skip("(")) {
 		if(is_asgmt()) asgmt(); else expr_compare();
 		if(!tok.skip(")"))
 			error("error: %d: expected expression ')'", tok.get().nline);
-	} else if(!make_array()) error("error: %d: invalid expression", tok.tok[tok.pos].nline);
+	} else error("error: %d: invaild expression", tok.get().nline);
+	
+	if(tok.skip(".")) {
+		name = tok.next().val;
+		func_t *function = funcs.get(name, mod_name);
+		if(function == NULL) 
+			function = funcs.get(name, module);
+		if(function == NULL) error("function not found");
+		ntv.genas("push eax");
+		if(HAS_PARAMS_FUNC) {
+			for(size_t i = 0; i < function->params - 1; i++) {
+				expr_entry();
+				ntv.genas("push eax");
+				if(!tok.skip(",") && function->params - 1 != i) 
+					error("error: %d: expected ','", tok.get().nline);
+			}
+		}
+		ntv.gencode(0xe8); ntv.gencode_int32(0xFFFFFFFF - (ntv.count - function->address) - 3); // call func
+		ntv.genas("add esp %d", function->params * ADDR_SIZE);
+	} 
 
 	while(is_index()) make_index();
 	return 0;
