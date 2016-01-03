@@ -41,7 +41,7 @@ library.o: library.h library.cpp
 	$(CC) -c library.cpp
 
 lib: lit
-	./lib/build.sh
+	make -j -f lib/Makefile
 
 test: lit lib
 	./test/test.sh
