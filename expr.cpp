@@ -225,7 +225,7 @@ int Parser::expr_primary() {
 		if(is_asgmt()) asgmt(); else expr_compare();
 		if(!tok.skip(")"))
 			error("error: %d: expected expression ')'", tok.get().nline);
-	} else error("error: %d: invaild expression", tok.get().nline);
+	} else if(!make_array()) error("error: %d: invaild expression", tok.get().nline);
 	
 	if(tok.skip(".")) {
 		name = tok.next().val;
