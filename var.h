@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 #include "common.h"
+#include "func.h"
 
 typedef struct {
 	std::string name, mod_name;
@@ -26,21 +27,14 @@ class Variable {
 public:
 	std::vector< std::vector<var_t> > local;
 	std::vector<var_t> global;
+	FunctionList &funcs;
+	std::string &module;
 
-	Variable() { local.resize(100); }
+	Variable(FunctionList &f, std::string &mod): funcs(f), module(mod) { local.resize(100); }
 	std::vector<var_t> &focus();
 	var_t *get(std::string, std::string);
 	var_t *append(std::string, int);
 };
-
-extern Variable var;
-
-// var_t *declare_var();
-//
-// int is_asgmt();
-// int asgmt();
-// int asgmt_single(var_t *);
-// int asgmt_array(var_t *);
 
 #endif // _LIT_VAR_
 

@@ -21,6 +21,4 @@ public:
 	uint32_t call(std::string, std::string);
 };
 
-extern LibraryList lib_list;
-
 #endif // _LIBRARY_LIT_

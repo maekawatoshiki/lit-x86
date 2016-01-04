@@ -1,7 +1,6 @@
 #include "library.h"
 #include "util.h"
 
-LibraryList lib_list;
 
 LibraryList::~LibraryList() {
 	for(int i = 0; i < lib.size(); i++) 

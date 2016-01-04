@@ -13,8 +13,9 @@ public:
 	std::vector<func_t> func;
 	int now;
 	bool inside;
+	std::string &module;
 	
-	FunctionList() { func.reserve(128); }
+	FunctionList(std::string &mod): module(mod), now(0), inside(false) { func.reserve(128); }
 	bool is(std::string, std::string);
 	func_t *focus();
 	func_t *get(std::string, std::string);
@@ -23,6 +24,5 @@ public:
 	bool rep_undef(std::string, int);	
 };
 
-extern FunctionList undef_funcs, funcs;
 
 #endif // _FUNC_LIT_

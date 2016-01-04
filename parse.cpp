@@ -9,9 +9,6 @@
 #include "var.h"
 #include "func.h"
 
-int blocksCount;
-std::string module = "";
-
 int Parser::get_string() {
 	embed_string_t e = {
 		.text = tok.next().val,

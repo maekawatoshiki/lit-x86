@@ -4,8 +4,9 @@
 #include "common.h"
 #include "var.h"
 #include "token.h"
-
-extern int blocksCount;
+#include "func.h"
+#include "var.h"
+#include "library.h"
 
 // The strings embedded in native code
 struct embed_string_t {
@@ -22,15 +23,18 @@ public:
 		:count(0) { }
 };
 
-extern std::string module;
-
 class Parser {
 public:
 	Token &tok;
 	EmbedString embed_str;
+	LibraryList lib_list;
+	FunctionList undef_funcs, funcs;
+	Variable var;
+	int blocksCount;
+	std::string module;
 
 	Parser(Token &token)
-		:tok(token) { }
+		:tok(token), var(funcs, module), undef_funcs(module), funcs(module) { }
 
 // var.h
 	var_t *declare_var();

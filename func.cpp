@@ -2,8 +2,6 @@
 #include "parse.h"
 #include "asm.h"
 
-FunctionList undef_funcs, funcs;
-
 bool FunctionList::is(std::string name, std::string mod_name) {
 	return get(name, mod_name) == NULL ? false : true;
 }

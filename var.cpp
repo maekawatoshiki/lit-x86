@@ -6,7 +6,6 @@
 #include "lit.h"
 #include "func.h"
 
-Variable var;
 
 std::vector<var_t> &Variable::focus() { return local[funcs.now]; }
 
