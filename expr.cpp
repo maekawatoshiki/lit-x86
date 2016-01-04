@@ -227,24 +227,24 @@ int Parser::expr_primary() {
 			error("error: %d: expected expression ')'", tok.get().nline);
 	} else if(!make_array()) error("error: %d: invaild expression", tok.get().nline);
 	
-	if(tok.skip(".")) {
-		name = tok.next().val;
-		func_t *function = funcs.get(name, mod_name);
-		if(function == NULL) 
-			function = funcs.get(name, module);
-		if(function == NULL) error("function not found");
-		ntv.genas("push eax");
-		if(HAS_PARAMS_FUNC) {
-			for(size_t i = 0; i < function->params - 1; i++) {
-				expr_entry();
-				ntv.genas("push eax");
-				if(!tok.skip(",") && function->params - 1 != i) 
-					error("error: %d: expected ','", tok.get().nline);
-			}
-		}
-		ntv.gencode(0xe8); ntv.gencode_int32(0xFFFFFFFF - (ntv.count - function->address) - 3); // call func
-		ntv.genas("add esp %d", function->params * ADDR_SIZE);
-	} 
+	// if(tok.skip(".")) {
+	// 	name = tok.next().val;
+	// 	func_t *function = funcs.get(name, mod_name);
+	// 	if(function == NULL) 
+	// 		function = funcs.get(name, module);
+	// 	if(function == NULL) error("function not found");
+	// 	ntv.genas("push eax");
+	// 	if(HAS_PARAMS_FUNC) {
+	// 		for(size_t i = 0; i < function->params - 1; i++) {
+	// 			expr_entry();
+	// 			ntv.genas("push eax");
+	// 			if(!tok.skip(",") && function->params - 1 != i) 
+	// 				error("error: %d: expected ','", tok.get().nline);
+	// 		}
+	// 	}
+	// 	ntv.gencode(0xe8); ntv.gencode_int32(0xFFFFFFFF - (ntv.count - function->address) - 3); // call func
+	// 	ntv.genas("add esp %d", function->params * ADDR_SIZE);
+	// } 
 
 	while(is_index()) make_index();
 	return 0;
