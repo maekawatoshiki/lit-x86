@@ -1,74 +1,14 @@
+require String
 $NULL = 0
 
-# String functions
-
-module String
-	def length(d:string)
-		for len = 0, d[len] != 0, len++; end
-		len
+def ishex(c)
+	if 'A' <= c and c <= 'F'
+		return 1
 	end
-
-	def copy(d:string, s:string)
-		i = 0
-		while s[i]
-			d[i] = s[i++]
-		end
+	if 'a' <= c and c <= 'f'
+		return 1
 	end
-
-	def cat(d:string, s:string)
-		i = 0
-		len = length(d)
-		j = len
-		while s[i]
-			d[j++] = s[i++]
-		end
-	end
-
-	def cmp(a:string, b:string)
-		diff = 0
-		a_len = length(a)
-		for i = 0, i < a_len, i++
-			diff = diff + a[i] - b[i]
-		end
-		diff
-	end
-
-	def isdigit(n)
-		if '0' <= n and n <= '9'
-			return 1
-		end
-		0
-	end
-
-	def isalpha(c)
-		if 'A' <= c and c <= 'Z'
-			return 1
-		end
-		if 'a' <= c and c <= 'z'
-			return 1
-		end
-		0
-	end
-
-	def ishex(c)
-		if 'A' <= c and c <= 'F'
-			return 1
-		end
-		if 'a' <= c and c <= 'f'
-			return 1
-		end
-		isdigit(c)
-	end
-
-	def atoi(s:string)
-		sum = 0; n = 1
-		for l = 0, isdigit(s[l]) == 1, l++; n = n * 10; end
-		for i = 0, i < l, i++
-			n = n / 10
-			sum = sum + n * (s[i] - '0')
-		end
-		sum
-	end
+	String.isdigit(c)
 end
 
 # Memory
@@ -137,7 +77,7 @@ module SecureRandom
 		File.read(data, bytes, gen)
 		chars = 0
 		for i = 0, i < bytes and chars < len, i++
-			if String.ishex(data[i])
+			if ishex(data[i])
 				str[chars++] = data[i]
 			else
 				File.read(data, bytes, gen)
@@ -164,15 +104,8 @@ end
 
 buf:string = Array(256)
 
-if (fp = File.open("includes.rb.test", "r+")) == NULL
-	puts "Error: not found file"
-else
-	File.read(buf, 256, fp)
-	printf "%s\n", buf
-	File.close(fp)
-end
+print "input password length: "; length = String.to_i IO.input buf, 256
 
-puts "Test: SecureRandom module"
 for i = 0, i < 8, i++
-	printf "%s\n",  SecureRandom.hex(buf, 16)
+	printf "%s\n",  SecureRandom.hex(buf, length)
 end

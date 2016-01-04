@@ -136,7 +136,7 @@ int Parser::expression(int pos, int status) {
 
 		asgmt();
 
-	} else if((isputs=tok.skip("puts")) || tok.skip("output")) {
+	} else if((isputs=tok.skip("puts")) || tok.skip("print")) {
 
 		do {
 			int isstring = 0;

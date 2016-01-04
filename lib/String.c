@@ -4,6 +4,9 @@
 #include <string.h>
 #include <ctype.h>
 
+char *String_new(char *s) {
+}
+
 char *String_replace(char *str, char *s1, char *s2) {
 	char *p = str;
 	size_t s1_len = strlen(s1), s2_len = strlen(s2);
