@@ -8,6 +8,7 @@
 #include "util.h"
 #include "library.h"
 #include "var.h"
+#include "func.h"
 
 int Parser::is_string_tok() { return tok.get().type == TOK_STRING; }
 int Parser::is_number_tok() { return tok.get().type == TOK_NUMBER; }

@@ -4,6 +4,7 @@
 #include "asm.h"
 #include "util.h"
 #include "lit.h"
+#include "func.h"
 
 Variable var;
 

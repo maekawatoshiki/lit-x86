@@ -7,28 +7,6 @@
 
 extern int blocksCount;
 
-typedef struct {
-	uint32_t address, params;
-	std::string name, mod_name;
-} func_t;
-
-class FunctionList {
-public:
-	std::vector<func_t> func;
-	int now;
-	bool inside;
-	
-	FunctionList() { func.reserve(128); }
-	bool is(std::string, std::string);
-	func_t *focus();
-	func_t *get(std::string, std::string);
-	func_t *append(std::string, int, int);
-	func_t *append_undef(std::string, std::string, int);
-	bool rep_undef(std::string, int);	
-};
-
-extern FunctionList undef_funcs, funcs;
-
 // The strings embedded in native code
 struct embed_string_t {
 	std::string text;
