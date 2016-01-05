@@ -80,8 +80,8 @@ void *funcTable[] = {
 
 // Lit class is from here
 
-Lit::Lit()
-	:lex(tok), parser(tok) {
+Lit::Lit(int ac, char **av)
+	:lex(tok), parser(tok), argc(ac), argv(av) {
 	tok.pos = 0; tok.size = 0xfff;
 	return_list.addr_list = (uint32_t *)calloc(sizeof(uint32_t), 1);
 	break_list.addr_list = (uint32_t *)calloc(sizeof(uint32_t), 1);
@@ -129,3 +129,7 @@ void Lit::run_from_file(char *source) {
 	execute((char *)src_all.c_str());
 }
 
+int Lit::start() {
+	show_option();
+	return 0;
+}

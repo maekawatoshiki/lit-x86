@@ -7,15 +7,14 @@
 #include "var.h"
 #include "util.h"
 
-int show_option(int argc, char **argv) {
-	Lit lit;
+void Lit::show_option() {
 	bool opt_version = false, 
 			opt_help = false,
 			opt_interpret = false,
 			opt_eval = false;
 
 	if(argc < 2) {
-		lit.interpret();
+		interpret();
 	} else {
 		std::string argv_bgn = argv[1];
 		std::vector<std::string> args(&argv[0], &argv[argc]);
@@ -37,14 +36,13 @@ int show_option(int argc, char **argv) {
 					" -i		interpret mode\n"
 					" -e 'command'	one line of script"
 					);
-		} else if(opt_interpret) lit.interpret();
-		else if(opt_eval) lit.execute((char *)args[2].c_str());
-		else lit.run_from_file((char *)args[1].c_str());
+		} else if(opt_interpret) interpret();
+		else if(opt_eval) execute((char *)args[2].c_str());
+		else run_from_file((char *)args[1].c_str());
 	}
-	return 0;
 }
 
-void show_version() {
+void Lit::show_version() {
 	puts("Lit " _LIT_VERSION_ " (C) 2015 maekawatoshiki");
 	puts("Build( " __TIME__ " " __DATE__ " )");
 }

@@ -38,20 +38,27 @@ public:
 extern ctrl_t break_list, return_list;
 
 class Lit {
-public:
 	Token tok;
-
 	Lexer lex;
 	Parser parser;
-
-	Lit();
-	~Lit();
+	int argc;
+	char **argv;
 
 	int execute(char *); // execute(<source code>)
 	int run();
 	
 	void interpret();
 	void run_from_file(char *);
+
+	void show_option();
+	void show_version();
+
+public:
+
+	Lit(int, char**);
+	~Lit();
+
+	int start();
 };
 
 /* for native(JIT) code. */
