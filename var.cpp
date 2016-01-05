@@ -17,9 +17,9 @@ var_t *Variable::get(std::string name, std::string mod_name) {
 		}
 	}
 	// global var
-	for(int i = 0; i < global.size(); i++) {
-		if(name == global[i].name && mod_name == global[i].mod_name) {
-			return &(global[i]);
+	for(std::vector<var_t>::iterator it = global.begin(); it != global.end(); it++) {
+		if(name == it->name && mod_name == it->mod_name) {
+			return &(*it);
 		}
 	}
 

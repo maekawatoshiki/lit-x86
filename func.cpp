@@ -7,12 +7,12 @@ bool FunctionList::is(std::string name, std::string mod_name) {
 }
 
 func_t *FunctionList::get(std::string name, std::string mod_name) {
-	for(int i = 0; i < func.size(); i++) {
+	for(std::vector<func_t>::iterator it = func.begin(); it != func.end(); it++) {
 #ifdef DEBUG
 		std::cout << mod_name.c_str() << " : " << name.c_str() << " <<< " << func[i].mod_name.c_str() << " : " func[i].name.c_str() << endl;
 #endif
-		if(func[i].name == name && func[i].mod_name == mod_name) {
-			return &(func[i]);
+		if(it->name == name && it->mod_name == mod_name) {
+			return &(*it);
 		}
 	}
 	return NULL;
@@ -31,7 +31,7 @@ func_t *FunctionList::append(std::string name, int address, int params) {
 #ifdef DEBUG
 	std::cout << func[func.size() - 1].mod_name << " : " << name << std::endl;
 #endif
-	return &(func[func.size() - 1]);
+	return &func.back();
 }
 
 func_t *FunctionList::append_undef(std::string name, std::string mod_name, int ntvc_pos) {
@@ -47,9 +47,9 @@ func_t *FunctionList::append_undef(std::string name, std::string mod_name, int n
 bool FunctionList::rep_undef(std::string name, int ntvc) {
 	std::vector<func_t> &f = func;
 
-	for(int i = 0; i < f.size(); i++) {
-		if(f[i].name == name && f[i].mod_name == module) {
-			ntv.gencode_int32_insert(ntvc - f[i].address - 4, f[i].address);
+	for(std::vector<func_t>::iterator it = func.begin(); it != func.end(); it++) {
+		if(it->name == name && it->mod_name == module) {
+			ntv.gencode_int32_insert(ntvc - it->address - 4, it->address);
 		}
 	}
 	return true;
