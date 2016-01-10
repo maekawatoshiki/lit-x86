@@ -58,7 +58,7 @@ public:
 	int expr_primary();
 
 	int is_index();
-	int make_index();
+	int make_index(var_t *);
 
 	int make_array();
 

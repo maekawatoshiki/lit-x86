@@ -162,7 +162,7 @@ int Parser::asgmt_array(var_t *v) {
 		expr_entry();
 		ntv.genas("push eax");
 		if(!tok.skip("]")) error("error: %d: ']' except", tok.tok[tok.pos].nline);
-		while(is_index()) make_index();
+		while(is_index()) make_index(v);
 
 		if(tok.skip("=")) {
 			expr_entry();

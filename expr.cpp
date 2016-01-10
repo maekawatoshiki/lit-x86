@@ -96,6 +96,7 @@ int Parser::expr_mul_div() {
 int Parser::expr_primary() {
 	int is_get_addr = 0, ispare = 0;
 	std::string name, mod_name = "";
+	var_t *v; 
 
 	if(tok.skip("&")) is_get_addr = 1;
 
@@ -115,7 +116,6 @@ int Parser::expr_primary() {
 	} else if(is_ident_tok()) { // variable or inc or dec
 	
 		name = tok.get().val; mod_name = "";
-		var_t *v; 
 
 		if(tok.is(".", 1)) { // module?
 			mod_name = tok.next().val; 
@@ -183,30 +183,6 @@ int Parser::expr_primary() {
 					if(!tok.skip(")")) 
 						error("func: error: %d: expected expression ')'", tok.tok[tok.pos].nline);
 
-			} else if(tok.skip("[")) { // Array?
-			
-				v = var.get(name , mod_name);
-				if(v == NULL) v = var.get(name, module);
-				if(v == NULL)
-					error("error: %d: '%s' was not declare", tok.tok[tok.pos].nline, name.c_str());
-				expr_entry();
-				ntv.genas("mov ecx eax");
-
-				if(v->loctype == V_LOCAL) {
-					ntv.gencode(0x8b); ntv.gencode(0x55); ntv.gencode(256 - ADDR_SIZE * v->id); // mov edx, [ebp - v*4]
-				} else if(v->loctype == V_GLOBAL) {
-					ntv.gencode(0x8b); ntv.gencode(0x15); ntv.gencode_int32(v->id); // mov edx, GLOBAL_ADDR
-				}
-
-				if(v->type == T_INT) {
-					ntv.gencode(0x8b); ntv.gencode(0x04); ntv.gencode(0x8a);// mov eax, [edx + ecx * 4]
-				} else {
-					ntv.gencode(0x0f); ntv.gencode(0xb6); ntv.gencode(0x04); ntv.gencode(0x0a);// movzx eax, [edx + ecx]
-				}
-
-				if(!tok.skip("]"))
-					error("error: %d: expected expression ']'", tok.tok[tok.pos].nline);
-			
 			} else { // single variable
 				
 				v = var.get(name, mod_name);
@@ -247,7 +223,7 @@ int Parser::expr_primary() {
 	// 	ntv.genas("add esp %d", function->params * ADDR_SIZE);
 	// } 
 
-	while(is_index()) make_index();
+	while(is_index()) make_index(v);
 	return 0;
 }
 
@@ -258,10 +234,39 @@ int Parser::is_index() {
 	return 0;
 }
 
-int Parser::make_index() {
-	ntv.genas("mov ecx eax");
+int Parser::make_index(var_t *v) {
+	ntv.genas("mov edx eax");
 	tok.skip("["); expr_entry(); tok.skip("]");
-	ntv.gencode(0x8b); ntv.gencode(0x04); ntv.gencode(0x81); // mov eax [eax * 4 + ecx]
+	ntv.genas("mov ecx eax");
+	if(v->type == T_INT) {
+		ntv.gencode(0x8b); ntv.gencode(0x04); ntv.gencode(0x8a);// mov eax, [edx + ecx * 4]
+	} else {
+		ntv.gencode(0x0f); ntv.gencode(0xb6); ntv.gencode(0x04); ntv.gencode(0x0a);// movzx eax, [edx + ecx]
+	}
+	/*
+	 *
+				v = var.get(name , mod_name);
+				if(v == NULL) v = var.get(name, module);
+				if(v == NULL)
+					error("error: %d: '%s' was not declare", tok.tok[tok.pos].nline, name.c_str());
+				expr_entry();
+				ntv.genas("mov ecx eax");
+
+				if(v->loctype == V_LOCAL) {
+					ntv.gencode(0x8b); ntv.gencode(0x55); ntv.gencode(256 - ADDR_SIZE * v->id); // mov edx, [ebp - v*4]
+				} else if(v->loctype == V_GLOBAL) {
+					ntv.gencode(0x8b); ntv.gencode(0x15); ntv.gencode_int32(v->id); // mov edx, GLOBAL_ADDR
+				}
+
+				if(v->type == T_INT) {
+					ntv.gencode(0x8b); ntv.gencode(0x04); ntv.gencode(0x8a);// mov eax, [edx + ecx * 4]
+				} else {
+					ntv.gencode(0x0f); ntv.gencode(0xb6); ntv.gencode(0x04); ntv.gencode(0x0a);// movzx eax, [edx + ecx]
+				}
+
+				if(!tok.skip("]"))
+					error("error: %d: expected expression ']'", tok.tok[tok.pos].nline);
+	 * */
 	return 0;
 }
 
