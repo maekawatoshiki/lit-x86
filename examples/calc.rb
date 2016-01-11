@@ -26,7 +26,7 @@ module calc
 				out[String.len(out)] = a[pos++]
 			end
 		end
-		String.concat(out, ",")
+		out = out ~ ","
 	end
 
 	def muldiv(a:string, out:string)
@@ -35,11 +35,11 @@ module calc
 			if a[pos] == '*'
 				pos++
 					prim(a, out)
-				String.concat(out, "*")
+				out = out ~ "*"
 			elsif a[pos] == '/'
 				pos++
 					prim(a, out)
-				String.concat(out, "/")
+				out = out ~ "/"
 			elsif a[pos] == ' '
 				pos++
 			else
@@ -55,11 +55,11 @@ module calc
 			if a[pos] == '+'
 				pos++
 					muldiv(a, out)
-				String.concat out, "+"
+				out = out ~ "+"
 			elsif a[pos] == '-'
 				pos++
 					muldiv(a, out)
-				String.concat(out, "-")
+				out = out ~ "-"
 			elsif a[pos] == ' '
 				pos++
 			else

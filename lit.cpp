@@ -60,6 +60,11 @@ void freeAddr() {
 	}
 }
 
+char *rea_concat(char *a, char *b) {
+	a = (char *)realloc(a, strlen(a) + strlen(b) + 2);
+	return strcat(a, b);
+}
+
 void *funcTable[] = {
 	(void *) putNumber, // 0
 	(void *) putString, // 4
@@ -75,6 +80,7 @@ void *funcTable[] = {
 	(void *) free_addr,	// 44
 	(void *) freeAddr,	// 48
 	(void *) fgets, 		// 52
+	(void *) rea_concat // 56
 };
 
 

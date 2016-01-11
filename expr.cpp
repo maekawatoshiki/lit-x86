@@ -58,15 +58,20 @@ int Parser::expr_logic() {
 }
 
 int Parser::expr_add_sub() {
-	int add;
+	int add = 0, add_str = 0;
 	expr_mul_div();
-	while((add = tok.skip("+")) || tok.skip("-")) {
+	while((add = tok.skip("+")) || (add_str = tok.skip("~")) || tok.skip("-")) {
 		ntv.genas("push eax");
 		expr_mul_div();
 		ntv.genas("mov ebx eax");  // mov %ebx %eax
 		ntv.genas("pop eax");
 		if(add) { ntv.genas("add eax ebx"); }// add %eax %ebx
-		else { ntv.genas("sub eax ebx"); } // sub %eax %ebx
+		else if(add_str) {
+			ntv.genas("push ebx");
+			ntv.genas("push eax");
+			ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(56); // call rea_concat
+			ntv.genas("add esp 8");
+		} else { ntv.genas("sub eax ebx"); } // sub %eax %ebx
 	}
 	return 0;
 }
@@ -202,7 +207,7 @@ int Parser::expr_primary() {
 		if(is_asgmt()) asgmt(); else expr_compare();
 		if(!tok.skip(")"))
 			error("error: %d: expected expression ')'", tok.get().nline);
-	} else if(!make_array()) error("error: %d: invaild expression", tok.get().nline);
+	} else if(!make_array()) error("error: %d: invalid expression", tok.get().nline);
 	
 	// if(tok.skip(".")) {
 	// 	name = tok.next().val;

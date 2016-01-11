@@ -84,12 +84,8 @@ int Parser::expression(int pos, int status) {
 	} else if((isputs=tok.skip("puts")) || tok.skip("print")) {
 
 		do {
-			int isstring = 0;
-			if((isstring = is_string_tok())) {
-				ntv.gencode(0xb8); get_string(); ntv.gencode_int32(0x00); // mov eax string_address
-			} else {
-				expr_entry();
-			}
+			int isstring = is_string_tok();
+			expr_entry();
 			ntv.genas("push eax");
 			if(isstring) {
 				ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(4);// call *0x04(esi) putString
@@ -183,13 +179,11 @@ int Parser::parser() {
 	ntv.gencode_int32_insert(addr - 5, main_address);
 	
 	for(size_t n = 0; n < embed_str.count; n++) {
-		ntv.gencode_int32_insert((uint32_t)&ntv.code[ntv.count], 
-				embed_str.text[n].addr);
+		char *em = (char *)malloc(embed_str.text[n].text.size() + 2);
 		char *s = (char *) embed_str.text[n].text.c_str();
 		replaceEscape(s);
-		for(int i = 0; embed_str.text[n].text[i]; i++) {
-			ntv.gencode(embed_str.text[n].text[i]);
-		} ntv.gencode(0); // '\0'
+		strcpy(em, s);
+		ntv.gencode_int32_insert((uint32_t)em, embed_str.text[n].addr);
 	}
 #ifdef DEBUG
 	for(int i = 0; i < ntv.count; i++)
