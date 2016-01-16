@@ -33,4 +33,5 @@ _start:
 	or eax, ebx
 	movsd xmm0, xmm1
 	mov eax, 1000
+	mov [esp-0], ebx
 	mov [esp-4], eax

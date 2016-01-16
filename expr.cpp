@@ -58,15 +58,17 @@ int Parser::expr_logic() {
 }
 
 int Parser::expr_add_sub() {
-	int add = 0, add_str = 0;
+	int add = 0, concat = 0;
 	expr_mul_div();
-	while((add = tok.skip("+")) || (add_str = tok.skip("~")) || tok.skip("-")) {
+	while((add = tok.skip("+")) || (concat = tok.skip("~")) || tok.skip("-")) {
 		ntv.genas("push eax");
 		expr_mul_div();
 		ntv.genas("mov ebx eax");  // mov %ebx %eax
 		ntv.genas("pop eax");
 		if(add) { ntv.genas("add eax ebx"); }// add %eax %ebx
-		else if(add_str) {
+		else if(concat) {
+			// ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x24);
+			// ntv.gencode(0x89); ntv.gencode(0x5c); ntv.gencode(0x24); ntv.gencode(0xfc);
 			ntv.genas("push ebx");
 			ntv.genas("push eax");
 			ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(56); // call rea_concat

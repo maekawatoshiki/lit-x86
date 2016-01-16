@@ -211,10 +211,16 @@ var_t *Parser::declare_var() {
 	if(isalpha(tok.tok[tok.pos].val[0])) {
 		tok.pos++;
 		if(tok.skip(":")) {
-			if(tok.skip("int")) { --tok.pos; return var.append(tok.tok[npos].val, T_INT); }
-			if(tok.skip("string")) { --tok.pos; return var.append(tok.tok[npos].val, T_STRING); }
-			if(tok.skip("double")) { --tok.pos; return var.append(tok.tok[npos].val, T_DOUBLE); }
-		} else { --tok.pos; return var.append(tok.tok[npos].val, T_INT); }
+			if(tok.is("int")) { 
+				return var.append(tok.tok[npos].val, T_INT); 
+			} else if(tok.is("string")) { 
+				return var.append(tok.tok[npos].val, T_STRING); 
+			} else if(tok.is("double")) { 
+				return var.append(tok.tok[npos].val, T_DOUBLE); 
+			}
+		} else { 
+			return var.append(tok.tok[npos].val, T_INT); 
+		}
 	} else error("error: %d: can't declare var", tok.tok[tok.pos].nline);
 	return NULL;
 }
