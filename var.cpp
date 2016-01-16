@@ -219,6 +219,7 @@ var_t *Parser::declare_var() {
 				return var.append(tok.tok[npos].val, T_DOUBLE); 
 			}
 		} else { 
+			tok.pos--;
 			return var.append(tok.tok[npos].val, T_INT); 
 		}
 	} else error("error: %d: can't declare var", tok.tok[tok.pos].nline);
