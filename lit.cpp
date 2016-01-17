@@ -61,10 +61,8 @@ void freeAddr() {
 }
 
 char *rea_concat(char *a, char *b) {
-	char *t = (char *)malloc(strlen(a) + strlen(b) + 2);
-	std::cout << "a = " << a << " b = " << b << std::endl;
-	strcpy(t, a);
-	return strcat(t, b);
+	a = (char *)realloc(a, strlen(a) + strlen(b) + 2);
+	return strcat(a, b);
 }
 
 void *funcTable[] = {
