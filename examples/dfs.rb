@@ -1,3 +1,4 @@
+require Math
 $size = 10
 
 def max(a, b)
@@ -18,13 +19,13 @@ def dfs(a, sum, k, i)
 	end
 end
 
-a = Array(size)
+a = Array size
 
 for i = 0, i < size, i = i + 1
-	k = Math.rand() % (size * 3)
+	k = Math.rand % (size * 3)
 	for j = 0, j < size, j = j + 1
-		a[j] = Math.rand() % size
-		output a[j], " "
+		a[j] = Math.rand % size
+		print a[j], " "
 	end 
 	puts " sum = ", k
 	if dfs(a, 0, k, 0) == k

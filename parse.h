@@ -8,25 +8,9 @@
 #include "var.h"
 #include "library.h"
 
-// The strings embedded in native code
-struct embed_string_t {
-	std::string text;
-	int addr;
-};
-
-class EmbedString {
-public:
-	std::vector<embed_string_t> text;
-	int count;
-	
-	EmbedString()
-		:count(0) { }
-};
-
 class Parser {
 public:
 	Token &tok;
-	EmbedString embed_str;
 	LibraryList lib_list;
 	FunctionList undef_funcs, funcs;
 	Variable var;

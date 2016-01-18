@@ -117,8 +117,11 @@ int Parser::expr_primary() {
 	
 	} else if(is_string_tok()) { 
 
-		ntv.gencode(0xb8); get_string();
-		ntv.gencode_int32(0x00000000); // mov eax string_address
+		ntv.gencode(0xb8);
+		char *embed = (char *)malloc(tok.get().val.length() + 1);
+		strcpy(embed, tok.next().val.c_str());
+		replaceEscape(embed);
+		ntv.gencode_int32((uint32_t)embed); // mov eax string_address
 
 	} else if(is_ident_tok()) { // variable or inc or dec
 	

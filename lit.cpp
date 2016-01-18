@@ -61,8 +61,9 @@ void freeAddr() {
 }
 
 char *rea_concat(char *a, char *b) {
-	a = (char *)realloc(a, strlen(a) + strlen(b) + 2);
-	return strcat(a, b);
+	char *t = (char *)malloc(strlen(a) + strlen(b) + 2);
+	strcpy(t, a);
+	return strcat(t, b);
 }
 
 void *funcTable[] = {

@@ -19,7 +19,7 @@ module calc
 	def prim(a:string, out:string)
 		if a[pos] == '('
 			pos++
-				addsub(a, out)
+				out = addsub(a, out)
 			pos++ # ')'
 		else
 			while String.isdigit(a[pos])
@@ -30,15 +30,15 @@ module calc
 	end
 
 	def muldiv(a:string, out:string)
-		prim(a, out)
+		out = prim(a, out)
 		while 1
 			if a[pos] == '*'
 				pos++
-					prim(a, out)
+					out = prim(a, out)
 				out = out ~ "*"
 			elsif a[pos] == '/'
 				pos++
-					prim(a, out)
+					out = prim(a, out)
 				out = out ~ "/"
 			elsif a[pos] == ' '
 				pos++
@@ -46,19 +46,20 @@ module calc
 				break
 			end
 		end
+		out
 	end
 
 
 	def addsub(a:string, out:string) 
-		muldiv(a, out)
+		out = muldiv(a, out)
 		while pos < srcLen
 			if a[pos] == '+'
 				pos++
-					muldiv(a, out)
+					out = muldiv(a, out)
 				out = out ~ "+"
 			elsif a[pos] == '-'
 				pos++
-					muldiv(a, out)
+					out = muldiv(a, out)
 				out = out ~ "-"
 			elsif a[pos] == ' '
 				pos++
@@ -66,13 +67,14 @@ module calc
 				break
 			end
 		end
+		out
 	end
 
 	def calc(a:string)
 		out:string = Array(100)
 		for i = 0, i < 100, i++; out[i] = 0; end
 		srcLen = String.len(a)
-		addsub(a, out)
+		out = addsub(a, out)
 		String.copy(a, out)
 
 		num = Array(128); sp = 0

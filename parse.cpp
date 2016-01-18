@@ -9,16 +9,6 @@
 #include "var.h"
 #include "func.h"
 
-int Parser::get_string() {
-	embed_string_t e = {
-		.text = tok.next().val,
-		.addr = ntv.count
-	};
-	embed_str.text.push_back(e);
-	return embed_str.count++;
-}
-
-
 int Parser::make_break() {
 	ntv.gencode(0xe9); // jmp
 	break_list.addr_list = (uint32_t*)realloc(break_list.addr_list, ADDR_SIZE * (break_list.count + 1));
@@ -175,16 +165,11 @@ int Parser::parser() {
 	printf("blocks: %d\n", blocksCount);
 #endif
 	if(blocksCount != 0) error("error: 'end' is not enough");
-	uint32_t addr = funcs.get("main", "")->address;
-	ntv.gencode_int32_insert(addr - 5, main_address);
-	
-	for(size_t n = 0; n < embed_str.count; n++) {
-		char *em = (char *)malloc(embed_str.text[n].text.size() + 2);
-		char *s = (char *) embed_str.text[n].text.c_str();
-		replaceEscape(s);
-		strcpy(em, s);
-		ntv.gencode_int32_insert((uint32_t)em, embed_str.text[n].addr);
-	}
+	uint32_t addr = 0;
+	func_t *func_main = funcs.get("main", "");
+	if(func_main == NULL) error("LitSystemError: not found function 'main'");
+	else addr = func_main->address;
+	ntv.gencode_int32_insert(addr - ADDR_SIZE - 1, main_address);
 #ifdef DEBUG
 	for(int i = 0; i < ntv.count; i++)
 		printf("%02x", ntv.code[i]);
