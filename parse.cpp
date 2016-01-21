@@ -9,6 +9,21 @@
 #include "var.h"
 #include "func.h"
 
+expr_type_t &ExprType::get() {
+	return type;
+}
+
+bool ExprType::change(int ty) {
+	type.type = ty;
+	return true;
+}
+
+bool ExprType::change(std::string ty) {
+	type.type = T_USER_TYPE;
+	type.user_type = ty;
+	return true;
+}
+
 int Parser::make_break() {
 	ntv.gencode(0xe9); // jmp
 	break_list.addr_list = (uint32_t*)realloc(break_list.addr_list, ADDR_SIZE * (break_list.count + 1));
@@ -74,10 +89,9 @@ int Parser::expression(int pos, int status) {
 	} else if((isputs=tok.skip("puts")) || tok.skip("print")) {
 
 		do {
-			int isstring = is_string_tok();
-			expr_entry();
+			ExprType et = expr_entry();
 			ntv.genas("push eax");
-			if(isstring) {
+			if(et.type.type == T_STRING) {
 				ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(4);// call *0x04(esi) putString
 			} else {
 				ntv.gencode(0xff); ntv.gencode(0x16); // call (esi) putNumber

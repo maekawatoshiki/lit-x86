@@ -77,7 +77,7 @@ module calc
 		out = addsub(a, out)
 		String.copy(a, out)
 
-		num = Array(128); sp = 0
+		num:int[] = Array(128); sp = 0
 		len = String.len(a)
 		for pos = 0, pos < len, pos++
 			if a[pos] == '+'
@@ -111,5 +111,5 @@ end
 expr:string = Array(100)
 
 input(expr)
-
+printf "%s\n", expr
 puts calc.calc(expr) 

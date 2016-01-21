@@ -1,4 +1,4 @@
-$prime_list = 0
+$prime_list:int[] = 0
 
 def table(max)
 	count = max - 2

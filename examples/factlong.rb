@@ -1,7 +1,7 @@
 $LEN = 10000
 $MAX = 10000
 
-def bigPrint(a)
+def bigPrint(a:int[])
 	for i = LEN - 1, i >= 0, i--
 		if a[i]
 			printf "%d", a[i]
@@ -10,7 +10,7 @@ def bigPrint(a)
 	puts ""
 end
 
-def bigSet(a, b)
+def bigSet(a:int[], b)
 	c = b
 	for i = 0, i < LEN, i++; a[i] = 0; end
 	for i = 0, c, i++
@@ -19,7 +19,7 @@ def bigSet(a, b)
 	end
 end
 
-def bigAdd(a, b)
+def bigAdd(a:int[], b)
 	c = 0 
 	for i = 0, i < LEN or c, i++
 		c = c + a[i] + b[i]
@@ -28,7 +28,7 @@ def bigAdd(a, b)
 	end
 end
 
-def bigMul(a, b)
+def bigMul(a:int[], b)
 	c = 0
 	for i = 0, i < LEN or c, i++
 		c = c + a[i] * b
@@ -38,7 +38,7 @@ def bigMul(a, b)
 end
 
 
-def bigFact(a, max)
+def bigFact(a:int[], max)
 	bigSet(a, 1)
 	for i = 1, i <= max, i++
 		bigMul(a, i)
@@ -46,6 +46,6 @@ def bigFact(a, max)
 	a
 end
 
-A = Array(LEN)
+A:int[] = Array(LEN)
 bigPrint( bigFact(A, 100) )
 

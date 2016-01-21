@@ -8,6 +8,21 @@
 #include "var.h"
 #include "library.h"
 
+struct expr_type_t {
+	expr_type_t():type(T_INT) {};
+	int type;
+	std::string user_type;
+};
+
+class ExprType {
+public:
+	expr_type_t type;
+
+	expr_type_t &get();
+	bool change(int);
+	bool change(std::string);
+};
+
 class Parser {
 public:
 	Token &tok;
@@ -34,17 +49,17 @@ public:
 	int is_ident_tok();
 	int is_char_tok();
 
-	int expr_entry();
-	int expr_compare();
-	int expr_logic();
-	int expr_add_sub();
-	int expr_mul_div();
-	int expr_primary();
+	ExprType expr_entry();
+	int expr_compare(ExprType &);
+	int expr_logic(ExprType &);
+	int expr_add_sub(ExprType &);
+	int expr_mul_div(ExprType &);
+	int expr_primary(ExprType &);
 
 	int is_index();
-	int make_index(var_t *);
+	int make_index(ExprType &);
 
-	int make_array();
+	int make_array(ExprType &);
 
 // parse.h
 	void make_require();

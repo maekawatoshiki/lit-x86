@@ -15,15 +15,19 @@ int Parser::is_number_tok() { return tok.get().type == TOK_NUMBER; }
 int Parser::is_ident_tok()  { return tok.get().type == TOK_IDENT;  }
 int Parser::is_char_tok() { return tok.get().type == TOK_CHAR; } 
 
-int Parser::expr_entry() { return expr_compare(); }
+ExprType Parser::expr_entry() { 
+	ExprType et;
+	expr_compare(et);
+	return et;
+}
 
-int Parser::expr_compare() {
+int Parser::expr_compare(ExprType &et) {
 	int andop=0, orop=0;
-	expr_logic();
+	expr_logic(et);
 	while((andop=tok.skip("and") || tok.skip("&")) || (orop=tok.skip("or") || 
 				tok.skip("|")) || tok.skip("xor") || tok.skip("^")) {
 		ntv.genas("push eax");
-		expr_logic();
+		expr_logic(et);
 		ntv.genas("mov ebx eax");
 		ntv.genas("pop eax");
 		ntv.gencode(andop ? 0x21 : orop ? 0x09 : 0x31); ntv.gencode(0xd8); // and eax ebx
@@ -32,13 +36,13 @@ int Parser::expr_compare() {
 	return 0;
 }
 
-int Parser::expr_logic() {
+int Parser::expr_logic(ExprType &et) {
 	int32_t lt=0, gt=0, ne=0, eql=0, fle=0;
-	expr_add_sub();
+	expr_add_sub(et);
 	if((lt=tok.skip("<")) || (gt=tok.skip(">")) || (ne=tok.skip("!=")) ||
 			(eql=tok.skip("==")) || (fle=tok.skip("<=")) || tok.skip(">=")) {
 		ntv.genas("push eax");
-		expr_add_sub();
+		expr_add_sub(et);
 		ntv.genas("mov ebx eax");
 		ntv.genas("pop eax");
 		ntv.gencode(0x39); ntv.gencode(0xd8); // cmp %eax, %ebx
@@ -57,12 +61,12 @@ int Parser::expr_logic() {
 	return 0;
 }
 
-int Parser::expr_add_sub() {
+int Parser::expr_add_sub(ExprType &et) {
 	int add = 0, concat = 0;
-	expr_mul_div();
+	expr_mul_div(et);
 	while((add = tok.skip("+")) || (concat = tok.skip("~")) || tok.skip("-")) {
 		ntv.genas("push eax");
-		expr_mul_div();
+		expr_mul_div(et);
 		ntv.genas("mov ebx eax");  // mov %ebx %eax
 		ntv.genas("pop eax");
 		if(add) { ntv.genas("add eax ebx"); }// add %eax %ebx
@@ -78,12 +82,12 @@ int Parser::expr_add_sub() {
 	return 0;
 }
 
-int Parser::expr_mul_div() {
+int Parser::expr_mul_div(ExprType &et) {
 	int mul, div;
-	expr_primary();
+	expr_primary(et);
 	while((mul = tok.skip("*")) || (div=tok.skip("/")) || tok.skip("%")) {
 		ntv.genas("push eax");
-		expr_primary();
+		expr_primary(et);
 		ntv.genas("mov ebx eax"); // mov %ebx %eax
 		ntv.genas("pop eax");
 		if(mul) {
@@ -100,7 +104,7 @@ int Parser::expr_mul_div() {
 	return 0;
 }
 
-int Parser::expr_primary() {
+int Parser::expr_primary(ExprType &et) {
 	int is_get_addr = 0, ispare = 0;
 	std::string name, mod_name = "";
 	var_t *v; 
@@ -110,10 +114,12 @@ int Parser::expr_primary() {
 	if(is_number_tok()) {
 	
 		ntv.genas("mov eax %d", atoi(tok.next().val.c_str()));
+		et.change(T_INT);	
 	
 	} else if(is_char_tok()) { 
 		
 		ntv.genas("mov eax %d", (int)tok.next().val[0]);
+		et.change(T_INT);	
 	
 	} else if(is_string_tok()) { 
 
@@ -122,6 +128,8 @@ int Parser::expr_primary() {
 		strcpy(embed, tok.next().val.c_str());
 		replaceEscape(embed);
 		ntv.gencode_int32((uint32_t)embed); // mov eax string_address
+
+		et.change(T_STRING);	
 
 	} else if(is_ident_tok()) { // variable or inc or dec
 	
@@ -192,7 +200,7 @@ int Parser::expr_primary() {
 				if(ispare) 
 					if(!tok.skip(")")) 
 						error("func: error: %d: expected expression ')'", tok.tok[tok.pos].nline);
-
+				et.change(T_INT);
 			} else { // single variable
 				
 				v = var.get(name, mod_name);
@@ -206,13 +214,14 @@ int Parser::expr_primary() {
 				} else if(v->loctype == V_GLOBAL) {
 					ntv.gencode(0xa1); ntv.gencode_int32(v->id); // mov eax GLOBAL_ADDR
 				}
+				et.change(v->type);
 			}
 		}
 	} else if(tok.skip("(")) {
-		if(is_asgmt()) asgmt(); else expr_compare();
+		if(is_asgmt()) asgmt(); else expr_entry();
 		if(!tok.skip(")"))
 			error("error: %d: expected expression ')'", tok.get().nline);
-	} else if(!make_array()) error("error: %d: invalid expression", tok.get().nline);
+	} else if(!make_array(et)) error("error: %d: invalid expression", tok.get().nline);
 	
 	// if(tok.skip(".")) {
 	// 	name = tok.next().val;
@@ -233,7 +242,7 @@ int Parser::expr_primary() {
 	// 	ntv.genas("add esp %d", function->params * ADDR_SIZE);
 	// } 
 
-	while(is_index()) make_index(v);
+	while(is_index()) make_index(et);
 	return 0;
 }
 
@@ -244,43 +253,22 @@ int Parser::is_index() {
 	return 0;
 }
 
-int Parser::make_index(var_t *v) {
+int Parser::make_index(ExprType &et) {
 	ntv.genas("mov edx eax");
 	tok.skip("["); expr_entry(); tok.skip("]");
 	ntv.genas("mov ecx eax");
-	if(v->type == T_INT) {
+	if(et.type.type == T_INT_ARY || et.type.type == T_USER_TYPE_ARY || et.type.type == T_STRING_ARY) { // TODO: create ExprType::is
 		ntv.gencode(0x8b); ntv.gencode(0x04); ntv.gencode(0x8a);// mov eax, [edx + ecx * 4]
-	} else {
+		if(et.type.type == T_INT_ARY) et.change(T_INT);
+		else if(et.type.type == T_STRING_ARY) et.change(T_STRING);
+	} else if(et.type.type == T_STRING) {
 		ntv.gencode(0x0f); ntv.gencode(0xb6); ntv.gencode(0x04); ntv.gencode(0x0a);// movzx eax, [edx + ecx]
+		et.change(T_INT);
 	}
-	/*
-	 *
-				v = var.get(name , mod_name);
-				if(v == NULL) v = var.get(name, module);
-				if(v == NULL)
-					error("error: %d: '%s' was not declare", tok.tok[tok.pos].nline, name.c_str());
-				expr_entry();
-				ntv.genas("mov ecx eax");
-
-				if(v->loctype == V_LOCAL) {
-					ntv.gencode(0x8b); ntv.gencode(0x55); ntv.gencode(256 - ADDR_SIZE * v->id); // mov edx, [ebp - v*4]
-				} else if(v->loctype == V_GLOBAL) {
-					ntv.gencode(0x8b); ntv.gencode(0x15); ntv.gencode_int32(v->id); // mov edx, GLOBAL_ADDR
-				}
-
-				if(v->type == T_INT) {
-					ntv.gencode(0x8b); ntv.gencode(0x04); ntv.gencode(0x8a);// mov eax, [edx + ecx * 4]
-				} else {
-					ntv.gencode(0x0f); ntv.gencode(0xb6); ntv.gencode(0x04); ntv.gencode(0x0a);// movzx eax, [edx + ecx]
-				}
-
-				if(!tok.skip("]"))
-					error("error: %d: expected expression ']'", tok.tok[tok.pos].nline);
-	 * */
 	return 0;
 }
 
-int Parser::make_array() {
+int Parser::make_array(ExprType &et) {
 	if(tok.skip("[")) {
 		int elems = 0, pos = tok.pos;
 		{ // count elements
@@ -299,15 +287,16 @@ int Parser::make_array() {
 			ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x24); // mov [esp], eax
 			ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(20); // call append_addr
 		} // stack top is allocated address
-		
+		ExprType elem_type;	
 		for(int elem = 0; elem < elems; elem++)  {
-			expr_entry();
+			elem_type = expr_entry();
 			ntv.genas("pop ecx"); // mem address 
 			ntv.genas("mov edx %d", elem);
 			ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x91); // mov [ecx+edx*4], eax
 			ntv.genas("push ecx");
 			if(elem < elems - 1) tok.skip(",");
 		} 
+		et.change(elem_type.get().type == T_INT ? T_INT_ARY : elem_type.get().type == T_STRING ? T_STRING_ARY : 0); // TODO: refactoring
 		ntv.genas("pop eax");
 		tok.skip("]");
 		return 1;

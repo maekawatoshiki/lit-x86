@@ -74,7 +74,7 @@ re:
 		if(tok.at(i).val == "=") return 1;
 	} else if(tok.is(".", 1) /* module */ || 
 			tok.is(":", 1) /* var:type */) {
-		if(tok.is("=", 3)) return 1;
+		if(tok.is("=", 3) || tok.is("=", 5)) return 1;
 	}
 	return 0;
 }
@@ -159,10 +159,10 @@ int Parser::asgmt_array(var_t *v) {
 
 	if(!tok.skip("[")) error("error: %d: expected '['", tok.tok[tok.pos].nline);
 	if(v->loctype == V_LOCAL) {
-		expr_entry();
+		ExprType et = expr_entry();
 		ntv.genas("push eax");
 		if(!tok.skip("]")) error("error: %d: ']' except", tok.tok[tok.pos].nline);
-		while(is_index()) make_index(v);
+		while(is_index()) make_index(et);
 
 		if(tok.skip("=")) {
 			expr_entry();
@@ -172,9 +172,9 @@ int Parser::asgmt_array(var_t *v) {
 					 v->type == T_STRING ? ADDR_SIZE :
 					 v->type == T_DOUBLE ? sizeof(double) : 4) * v->id); // mov ecx [ebp-n]
 			ntv.genas("pop edx");
-			if(v->type == T_INT) {
+			if(v->type == T_INT_ARY) {
 				ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x91); // mov [ecx+edx*4], eax
-			} else {
+			} else if(v->type == T_STRING) {
 				ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x11); // mov [ecx+edx], eax
 			}
 		} else if((inc=tok.skip("++")) || (dec=tok.skip("--"))) {
@@ -190,9 +190,9 @@ int Parser::asgmt_array(var_t *v) {
 			expr_entry();
 			ntv.gencode(0x8b); ntv.gencode(0x0d); ntv.gencode_int32(v->id); // mov ecx GLOBAL_ADDR
 			ntv.genas("pop edx");
-			if(v->type == T_INT) {
+			if(v->type == T_INT_ARY) {
 				ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x91); // mov [ecx+edx*4], eax
-			} else {
+			} else if(v->type == T_STRING || v->type == T_STRING_ARY) {
 				ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x11); // mov [ecx+edx], eax
 			}
 		
@@ -210,13 +210,17 @@ var_t *Parser::declare_var() {
 
 	if(isalpha(tok.tok[tok.pos].val[0])) {
 		tok.pos++;
+		bool is_ary = false;
 		if(tok.skip(":")) {
 			if(tok.is("int")) { 
-				return var.append(tok.tok[npos].val, T_INT); 
+				if(tok.is("[", 1) && tok.is("]", 2)) { tok.pos+=2; is_ary = true;}
+				return var.append(tok.tok[npos].val, is_ary ? T_INT_ARY : T_INT); 
 			} else if(tok.is("string")) { 
-				return var.append(tok.tok[npos].val, T_STRING); 
+				if(tok.is("[", 1) && tok.is("]", 2)) { tok.pos+=2; is_ary = true;}
+				return var.append(tok.tok[npos].val, is_ary ? T_STRING_ARY : T_STRING); 
 			} else if(tok.is("double")) { 
-				return var.append(tok.tok[npos].val, T_DOUBLE); 
+				if(tok.is("[", 1) && tok.is("]", 2)) { tok.pos+=2; is_ary = true;}
+				return var.append(tok.tok[npos].val, T_DOUBLE); // TODO: support array
 			}
 		} else { 
 			tok.pos--;

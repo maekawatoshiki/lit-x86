@@ -4,7 +4,7 @@
 def pi
   N = 14*5000
   NM = N - 14 # PI LONG
-  a = Array(N)
+  a:int[] = Array(N)
   d = 0; e = 0; g = 0; h = 0
   f = 10000; cnt = 1
   for c = NM, c, c = c - 14
