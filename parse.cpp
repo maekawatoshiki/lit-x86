@@ -24,6 +24,14 @@ bool ExprType::change(std::string ty) {
 	return true;
 }
 
+bool ExprType::is_array() {
+	return type.type & T_ARRAY;
+}
+
+bool ExprType::is_type(int ty) {
+	return type.type & ty;
+}
+
 int Parser::make_break() {
 	ntv.gencode(0xe9); // jmp
 	break_list.addr_list = (uint32_t*)realloc(break_list.addr_list, ADDR_SIZE * (break_list.count + 1));
@@ -91,7 +99,7 @@ int Parser::expression(int pos, int status) {
 		do {
 			ExprType et = expr_entry();
 			ntv.genas("push eax");
-			if(et.type.type == T_STRING) {
+			if(et.is_type(T_STRING)) {
 				ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(4);// call *0x04(esi) putString
 			} else {
 				ntv.gencode(0xff); ntv.gencode(0x16); // call (esi) putNumber

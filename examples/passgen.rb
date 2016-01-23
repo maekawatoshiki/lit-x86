@@ -109,3 +109,4 @@ print "input password length: "; length = String.to_i IO.input buf, 256
 for i = 0, i < 8, i++
 	printf "%s\n",  SecureRandom.hex(buf, length)
 end
+

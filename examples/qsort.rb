@@ -1,6 +1,6 @@
 require Math
 
-def qsort(a, left, right)
+def qsort(a:int[], left, right)
 	l = left; r = right
 	pv = l
 	while 1
@@ -19,7 +19,7 @@ def qsort(a, left, right)
 end
 
 max = 20
-a = Array(max)
+a:int[] = Array(max)
 
 for i = 0, i < max, i++
 	printf "%c ", a[i] = 'A' + Math.rand() % ('Z' - 'A')

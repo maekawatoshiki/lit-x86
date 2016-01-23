@@ -1,8 +1,8 @@
 $X = 50
 $Y = 40
 
-$map = 0
-$data = 0
+$map:int[] = 0
+$data:int[] = 0
 
 def init
 	map = Array((X+1)*(Y+1))
@@ -54,9 +54,9 @@ def show
 	for y = 1, y < Y, y++
 		for x = 1, x < X, x++
 			if map[y * Y + x] == 0
-				output "_"
+				print "_"
 			else
-				output "#"
+				print "#"
 			end
 		end
 		puts ""
@@ -89,9 +89,9 @@ end
 # Main
 
 init()
-
 for i = 0, i < 20000, i++
 	gen()
 	show()
-	Time.sleep(70)
 end
+
+

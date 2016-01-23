@@ -17,6 +17,7 @@ enum {
 	V_LOCAL,
 	V_GLOBAL
 };
+/*
 enum {
 	T_INT,
 	T_INT_ARY,
@@ -26,6 +27,14 @@ enum {
 	T_DOUBLE_ARY,
 	T_USER_TYPE,
 	T_USER_TYPE_ARY
+};
+*/
+enum {
+	T_INT 			 = 1 << 1,
+	T_STRING		 = 1 << 2,
+	T_DOUBLE		 = 1 << 3,
+	T_USER_TYPE	 = 1 << 4,
+	T_ARRAY			 = 1 << 5
 };
 
 class Variable {

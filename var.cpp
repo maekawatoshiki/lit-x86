@@ -125,18 +125,18 @@ int Parser::asgmt_single(var_t *v) {
 		} else if((inc=tok.skip("++")) || (dec=tok.skip("--"))) {
 			ntv.gencode(0x8b); ntv.gencode(0x45);
 			ntv.gencode(256 -
-					(v->type == T_INT ? ADDR_SIZE :
-					 v->type == T_STRING ? ADDR_SIZE :
-					 v->type == T_DOUBLE ? sizeof(double) : 4) * v->id); // mov eax varaible
+					(IS_TYPE(v->type, T_INT) ? ADDR_SIZE :
+					 IS_TYPE(v->type, T_STRING) ? ADDR_SIZE :
+					 IS_TYPE(v->type, T_DOUBLE) ? sizeof(double) : 4) * v->id); // mov eax varaible
 			ntv.genas("push eax");
 			if(inc) ntv.gencode(0x40); // inc eax
 			else if(dec) ntv.gencode(0x48); // dec eax
 		}
 		ntv.gencode(0x89); ntv.gencode(0x45);
 		ntv.gencode(256 -
-				(v->type == T_INT ? ADDR_SIZE :
-				 v->type == T_STRING ? ADDR_SIZE :
-				 v->type == T_DOUBLE ? sizeof(double) : 4) * v->id); // mov var eax
+				(IS_TYPE(v->type, T_INT) ? ADDR_SIZE :
+				 IS_TYPE(v->type, T_STRING) ? ADDR_SIZE :
+				 IS_TYPE(v->type, T_DOUBLE) ? sizeof(double) : 4) * v->id); // mov var eax
 		if(inc || dec) ntv.genas("pop eax");
 	} else if(v->loctype == V_GLOBAL) { // global single
 		if(tok.skip("=")) {
@@ -168,13 +168,13 @@ int Parser::asgmt_array(var_t *v) {
 			expr_entry();
 			ntv.gencode(0x8b); ntv.gencode(0x4d);
 			ntv.gencode(256 -
-					(v->type == T_INT ? ADDR_SIZE :
-					 v->type == T_STRING ? ADDR_SIZE :
-					 v->type == T_DOUBLE ? sizeof(double) : 4) * v->id); // mov ecx [ebp-n]
+					(IS_TYPE(v->type, T_INT) ? ADDR_SIZE :
+					 IS_TYPE(v->type, T_STRING) ? ADDR_SIZE :
+					 IS_TYPE(v->type, T_DOUBLE) ? sizeof(double) : 4) * v->id); // mov ecx [ebp-n]
 			ntv.genas("pop edx");
-			if(v->type == T_INT_ARY) {
+			if(IS_ARRAY(v->type)) {
 				ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x91); // mov [ecx+edx*4], eax
-			} else if(v->type == T_STRING) {
+			} else if(IS_TYPE(v->type, T_STRING)) {
 				ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x11); // mov [ecx+edx], eax
 			}
 		} else if((inc=tok.skip("++")) || (dec=tok.skip("--"))) {
@@ -190,9 +190,9 @@ int Parser::asgmt_array(var_t *v) {
 			expr_entry();
 			ntv.gencode(0x8b); ntv.gencode(0x0d); ntv.gencode_int32(v->id); // mov ecx GLOBAL_ADDR
 			ntv.genas("pop edx");
-			if(v->type == T_INT_ARY) {
+			if(IS_ARRAY(v->type)) {
 				ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x91); // mov [ecx+edx*4], eax
-			} else if(v->type == T_STRING || v->type == T_STRING_ARY) {
+			} else if(IS_TYPE(v->type, T_STRING)) {
 				ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x11); // mov [ecx+edx], eax
 			}
 		
@@ -208,19 +208,19 @@ int Parser::asgmt_array(var_t *v) {
 var_t *Parser::declare_var() {
 	int npos = tok.pos;
 
-	if(isalpha(tok.tok[tok.pos].val[0])) {
+	if(isalpha(tok.get().val[0])) {
 		tok.pos++;
-		bool is_ary = false;
+		int is_ary = 0;
 		if(tok.skip(":")) {
 			if(tok.is("int")) { 
-				if(tok.is("[", 1) && tok.is("]", 2)) { tok.pos+=2; is_ary = true;}
-				return var.append(tok.tok[npos].val, is_ary ? T_INT_ARY : T_INT); 
+				if(tok.is("[", 1) && tok.is("]", 2)) { tok.pos += 2; is_ary = T_ARRAY; }
+				return var.append(tok.tok[npos].val, is_ary | T_INT); 
 			} else if(tok.is("string")) { 
-				if(tok.is("[", 1) && tok.is("]", 2)) { tok.pos+=2; is_ary = true;}
-				return var.append(tok.tok[npos].val, is_ary ? T_STRING_ARY : T_STRING); 
+				if(tok.is("[", 1) && tok.is("]", 2)) { tok.pos += 2; is_ary = T_ARRAY; }
+				return var.append(tok.tok[npos].val, is_ary | T_STRING); 
 			} else if(tok.is("double")) { 
-				if(tok.is("[", 1) && tok.is("]", 2)) { tok.pos+=2; is_ary = true;}
-				return var.append(tok.tok[npos].val, T_DOUBLE); // TODO: support array
+				if(tok.is("[", 1) && tok.is("]", 2)) { tok.pos += 2; is_ary = T_ARRAY; }
+				return var.append(tok.tok[npos].val, is_ary | T_DOUBLE); // TODO: support array
 			}
 		} else { 
 			tok.pos--;

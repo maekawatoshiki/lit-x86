@@ -257,13 +257,13 @@ int Parser::make_index(ExprType &et) {
 	ntv.genas("mov edx eax");
 	tok.skip("["); expr_entry(); tok.skip("]");
 	ntv.genas("mov ecx eax");
-	if(et.type.type == T_INT_ARY || et.type.type == T_USER_TYPE_ARY || et.type.type == T_STRING_ARY) { // TODO: create ExprType::is
+	if(et.is_array()) { // TODO: create ExprType::is
 		ntv.gencode(0x8b); ntv.gencode(0x04); ntv.gencode(0x8a);// mov eax, [edx + ecx * 4]
-		if(et.type.type == T_INT_ARY) et.change(T_INT);
-		else if(et.type.type == T_STRING_ARY) et.change(T_STRING);
-	} else if(et.type.type == T_STRING) {
+		if(et.is_type(T_INT)) et.change(T_INT);
+		else if(et.is_type(T_STRING)) et.change(T_STRING);
+	} else if(et.is_type(T_STRING)) {
 		ntv.gencode(0x0f); ntv.gencode(0xb6); ntv.gencode(0x04); ntv.gencode(0x0a);// movzx eax, [edx + ecx]
-		et.change(T_INT);
+		et.change(T_INT); // TODO: create type "char"
 	}
 	return 0;
 }
@@ -296,7 +296,7 @@ int Parser::make_array(ExprType &et) {
 			ntv.genas("push ecx");
 			if(elem < elems - 1) tok.skip(",");
 		} 
-		et.change(elem_type.get().type == T_INT ? T_INT_ARY : elem_type.get().type == T_STRING ? T_STRING_ARY : 0); // TODO: refactoring
+		et.change(elem_type.get().type | T_ARRAY); // TODO: refactoring
 		ntv.genas("pop eax");
 		tok.skip("]");
 		return 1;
