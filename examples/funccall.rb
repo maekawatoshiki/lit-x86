@@ -18,4 +18,4 @@ end
 
 a = calc 1, 2
 a = a + calc 2, 3
-puts a - Calc.calc(2, 5) + 1
+puts a - Calc:calc(2, 5) + 1
