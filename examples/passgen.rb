@@ -8,7 +8,7 @@ def ishex(c)
 	if 'a' <= c and c <= 'f'
 		return 1
 	end
-	String.isdigit(c)
+	String:isdigit(c)
 end
 
 # Memory
@@ -69,23 +69,23 @@ end
 
 module SecureRandom
 	def hex(str:string, len)
-		gen = File.open("/dev/urandom", "rb")
+		gen = File:open("/dev/urandom", "rb")
 
 		bytes = 128
 		data:string = Array(bytes)
 
-		File.read(data, bytes, gen)
+		File:read(data, bytes, gen)
 		chars = 0
 		for i = 0, i < bytes and chars < len, i++
 			if ishex(data[i])
 				str[chars++] = data[i]
 			else
-				File.read(data, bytes, gen)
+				File:read(data, bytes, gen)
 				i--
 			end
 		end
 		str[chars] = 0
-		File.close(gen)
+		File:close(gen)
 		str
 	end
 end
@@ -93,9 +93,9 @@ end
 
 module IO
 	def input(str:string, len)
-		f = File.open("/dev/stdin", "w+")
-		File.gets(str, len, f)
-		File.close(f)
+		f = File:open("/dev/stdin", "w+")
+		File:gets(str, len, f)
+		File:close(f)
 		str
 	end
 end
@@ -104,9 +104,9 @@ end
 
 buf:string = Array(256)
 
-print "input password length: "; length = String.to_i IO.input buf, 256
+print "input password length: "; length = String:to_i IO:input buf, 256
 
 for i = 0, i < 8, i++
-	printf "%s\n",  SecureRandom.hex(buf, length)
+	printf "%s\n",  SecureRandom:hex(buf, length)
 end
 
