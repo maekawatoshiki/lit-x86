@@ -6,7 +6,7 @@ module calc
 
 	def atoi(s:string)
 		sum = 0; n = 1
-		for l = 0, String.isdigit(s[pos + l]) == 1, l++; 
+		for l = 0, String:isdigit(s[pos + l]) == 1, l++; 
 			n = n * 10
 		end
 		for i = 0, i < l, i++
@@ -22,8 +22,8 @@ module calc
 				out = addsub(a, out)
 			pos++ # ')'
 		else
-			while String.isdigit(a[pos])
-				out[String.len(out)] = a[pos++]
+			while String:isdigit(a[pos])
+				out[String:len(out)] = a[pos++]
 			end
 		end
 		out = out ~ ","
@@ -73,12 +73,12 @@ module calc
 	def calc(a:string)
 		out:string = Array(100)
 		for i = 0, i < 100, i++; out[i] = 0; end
-		srcLen = String.len(a)
+		srcLen = String:len(a)
 		out = addsub(a, out)
-		String.copy(a, out)
+		String:copy(a, out)
 
 		num:int[] = Array(128); sp = 0
-		len = String.len(a)
+		len = String:len(a)
 		for pos = 0, pos < len, pos++
 			if a[pos] == '+'
 				num[sp - 2] = num[sp - 2] + num[sp - 1]
@@ -92,7 +92,7 @@ module calc
 			elsif a[pos] == '/'
 				num[sp - 2] = num[sp - 2] / num[sp - 1]
 				sp--
-			elsif String.isdigit(a[pos])
+			elsif String:isdigit(a[pos])
 				num[sp++] = atoi a
 			end
 		end
@@ -101,10 +101,10 @@ module calc
 end
 
 def input(str:string)
-	f = File.open("/dev/stdin", "w+")
-	File.gets(str, 100, f)
-	str[ String.len(str) - 1 ] = 0
-	File.close(f)
+	f = File:open("/dev/stdin", "w+")
+	File:gets(str, 100, f)
+	str[ String:len(str) - 1 ] = 0
+	File:close(f)
 	str
 end
 
@@ -112,4 +112,4 @@ expr:string = Array(100)
 
 input(expr)
 printf "%s\n", expr
-puts calc.calc(expr) 
+puts calc:calc(expr) 
