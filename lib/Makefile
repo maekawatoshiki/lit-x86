@@ -1,7 +1,7 @@
 CFLAGS = -shared -m32 -lm -O0 
 CC = clang $(CFLAGS) 
 
-all: lib/M.so lib/Math.so lib/Prime.so lib/String.so lib/Sys.so lib/Time.so
+all: lib/M.so lib/Math.so lib/Prime.so lib/String.so lib/Sys.so lib/Time.so lib/File.so
 
 lib/M.so: lib/M.c
 	$(CC) -o lib/M.so lib/M.c
@@ -20,6 +20,9 @@ lib/Sys.so: lib/Sys_linux.c
 
 lib/Time.so: lib/Time.c
 	$(CC) -o lib/Time.so lib/Time.c
+
+lib/File.so: lib/File.c
+	$(CC) -o lib/File.so lib/File.c
 
 clean: all
 	$(RM) *.so
