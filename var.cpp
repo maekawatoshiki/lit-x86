@@ -26,12 +26,13 @@ var_t *Variable::get(std::string name, std::string mod_name) {
 	return NULL;
 }
 
-var_t * Variable::append(std::string name, int type) {
+var_t * Variable::append(std::string name, int type, std::string c_name) {
 	if(funcs.inside == true) { // local
 		size_t sz = local[funcs.now].size();
 		var_t v = {
 			.name = name,
 			.type = type,
+			.class_type = c_name,
 			.id = sz + 2, 
 			.loctype = V_LOCAL
 		};
@@ -42,6 +43,7 @@ var_t * Variable::append(std::string name, int type) {
 			.name = name,
 			.mod_name = module,
 			.type = type,
+			.class_type = c_name,
 			.id = (uint32_t)&ntv.code[ntv.count], 
 			.loctype = V_GLOBAL
 		};
@@ -221,6 +223,10 @@ var_t *Parser::declare_var() {
 			} else if(tok.is("double")) { 
 				if(tok.is("[", 1) && tok.is("]", 2)) { tok.pos += 2; is_ary = T_ARRAY; }
 				return var.append(tok.tok[npos].val, is_ary | T_DOUBLE); // TODO: support array
+			} else {
+				std::string class_name = tok.get().val;
+				if(tok.is("[", 1) && tok.is("]", 2)) { tok.pos += 2; is_ary = T_ARRAY; }
+				return var.append(tok.tok[npos].val, is_ary | T_USER_TYPE, class_name);
 			}
 		} else { 
 			tok.pos--;

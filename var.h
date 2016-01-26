@@ -10,6 +10,7 @@ typedef struct {
 	std::string name, mod_name;
 	unsigned int id;
 	int type;
+	std::string class_type;
 	int loctype;
 } var_t;
 
@@ -47,7 +48,7 @@ public:
 	Variable(FunctionList &f, std::string &mod): funcs(f), module(mod) { local.resize(100); }
 	std::vector<var_t> &focus();
 	var_t *get(std::string, std::string);
-	var_t *append(std::string, int);
+	var_t *append(std::string, int, std::string = "");
 };
 
 #endif // _LIT_VAR_

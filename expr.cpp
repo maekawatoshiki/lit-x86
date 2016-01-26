@@ -107,7 +107,7 @@ int Parser::expr_mul_div(ExprType &et) {
 int Parser::expr_primary(ExprType &et) {
 	int is_get_addr = 0, ispare = 0;
 	std::string name, mod_name = "";
-	var_t *v; 
+	var_t *v = NULL; 
 
 	if(tok.skip("&")) is_get_addr = 1;
 
@@ -225,12 +225,13 @@ int Parser::expr_primary(ExprType &et) {
 
 	while(tok.skip(".")) {
 		name = tok.next().val;
-		func_t *function = funcs.get(name, mod_name);
+		func_t *function = funcs.get(name, v == NULL ? mod_name : v->class_type);
 		if(function == NULL) 
 			function = funcs.get(name, module);
 		if(function == NULL) error("function not found");
 		if(function->params > 0) ntv.genas("push eax");
 		if(HAS_PARAMS_FUNC) {
+			tok.skip("(");
 			for(size_t i = 0; i < function->params - 1; i++) {
 				expr_entry();
 				ntv.genas("push eax");
