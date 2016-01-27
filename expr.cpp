@@ -225,21 +225,34 @@ int Parser::expr_primary(ExprType &et) {
 
 	while(tok.skip(".")) {
 		name = tok.next().val;
-		func_t *function = funcs.get(name, v == NULL ? mod_name : v->class_type);
-		if(function == NULL) 
-			function = funcs.get(name, module);
-		if(function == NULL) error("function not found");
-		if(function->params > 0) ntv.genas("push eax");
-		if(HAS_PARAMS_FUNC) {
-			tok.skip("(");
-			for(size_t i = 0; i < function->params - 1; i++) {
-				expr_entry();
-				ntv.genas("push eax");
-				tok.skip(",");
-			}
-		} tok.skip(")");
-		ntv.gencode(0xe8); ntv.gencode_int32(0xFFFFFFFF - (ntv.count - function->address) - 3); // call func
-		ntv.genas("add esp %d", function->params * ADDR_SIZE);
+		if(lib_list.is(v == NULL ? "" : v->class_type)) {
+			if(HAS_PARAMS_FUNC) {
+				ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(0x00); // mov [esp+ADDR*i], eax
+				tok.skip("(");
+				for(size_t i = 0; !tok.skip(")") && !tok.skip(";"); i++) {
+					expr_entry();
+					ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode((i + 1) * ADDR_SIZE); // mov [esp+ADDR*i], eax
+					tok.skip(",");
+				}
+			} 
+			ntv.gencode(0xe8); ntv.gencode_int32(lib_list.call(name, v->class_type) - (uint32_t)&ntv.code[ntv.count] - ADDR_SIZE); // call func
+		} else {
+			func_t *function = funcs.get(name, v == NULL ? mod_name : v->class_type);
+			if(function == NULL) 
+				function = funcs.get(name, module);
+			if(function == NULL) error("function not found");
+			if(function->params > 0) ntv.genas("push eax");
+			if(HAS_PARAMS_FUNC) {
+				tok.skip("(");
+				for(size_t i = 0; i < function->params - 1; i++) {
+					expr_entry();
+					ntv.genas("push eax");
+					tok.skip(",");
+				}
+			} tok.skip(")");
+			ntv.gencode(0xe8); ntv.gencode_int32(0xFFFFFFFF - (ntv.count - function->address) - 3); // call func
+			ntv.genas("add esp %d", function->params * ADDR_SIZE);
+		}
 	} 
 
 	while(is_index()) make_index(et);
