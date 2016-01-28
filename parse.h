@@ -55,7 +55,8 @@ public:
 	int is_ident_tok();
 	int is_char_tok();
 
-	ExprType expr_entry();
+	AST *expr_entry();
+	AST *expr_asgmt();
 	AST *expr_compare();
 	AST *expr_logic();
 	AST *expr_add_sub();

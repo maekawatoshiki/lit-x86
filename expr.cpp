@@ -42,11 +42,20 @@ int visit(AST *ast) {
 	return 0;
 }
 
-ExprType Parser::expr_entry() { 
-	ExprType et;
-	AST *node = expr_compare();
-	visit(node);
-	return et;
+AST *Parser::expr_entry() { 
+	AST *ast = expr_asgmt();
+	visit(ast);
+	return ast;
+}
+
+AST *Parser::expr_asgmt() {
+	AST *l, *r;
+	l = expr_primary();
+	while(tok.skip("=")) {
+		r = expr_compare();
+		l = new BinaryAST("=", l, r);
+	}
+	return l;
 }
 
 AST *Parser::expr_compare() {
@@ -126,13 +135,8 @@ AST *Parser::expr_primary() {
 			name = tok.get().val; 
 		}
 		
-		if(is_asgmt()) {
-	
-			asgmt();
-	
-		} else {
-		
-			SKIP_TOK;
+		{	
+			tok.skip();
 
 			if(tok.skip("(")) {
 				func_t f = {
@@ -248,7 +252,7 @@ int Parser::make_array(ExprType &et) {
 		} // stack top is allocated address
 		ExprType elem_type;	
 		for(int elem = 0; elem < elems; elem++)  {
-			elem_type = expr_entry();
+			elem_type;// = expr_entry();
 			ntv.genas("pop ecx"); // mem address 
 			ntv.genas("mov edx %d", elem);
 			ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x91); // mov [ecx+edx*4], eax

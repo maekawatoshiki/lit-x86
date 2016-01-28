@@ -90,14 +90,10 @@ int Parser::expression(int pos, int status) {
 		ntv.gencode_int32_insert(ADDR_SIZE * (var.focus().size() + 6), espBgn);
 		funcs.inside = false;
 
-	} else if(is_asgmt()) {
-
-		asgmt();
-
 	} else if((isputs=tok.skip("puts")) || tok.skip("print")) {
 
 		do {
-			ExprType et = expr_entry();
+			ExprType et; //TODO: fix
 			ntv.genas("push eax");
 			if(et.is_type(T_STRING)) {
 				ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(4);// call *0x04(esi) putString
