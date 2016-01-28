@@ -2,12 +2,15 @@
 #define _AST_LIT_
 
 #include "common.h"
+#include "var.h"
+#include "func.h"
 
 enum {
 	AST_NUMBER,
 	AST_STRING,
 	AST_BINARY,
-	AST_VARIABLE
+	AST_VARIABLE,
+	AST_FUNCTION_CALL
 };
 
 class AST {
@@ -40,7 +43,21 @@ public:
 
 class VariableAST : public AST {
 public:
-	
+	var_t info;
+	VariableAST(var_t v);
+	virtual int get_type() const { return AST_VARIABLE; }
+};
+
+class AssignmentAST : public AST {
+public:
+};
+
+class FunctionCallAST : public AST {
+public:
+	func_t info;
+	std::vector<AST *> args;
+	FunctionCallAST(func_t f, std::vector<AST *> a);
+	virtual int get_type() const { return AST_FUNCTION_CALL; }
 };
 
 #endif

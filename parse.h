@@ -56,11 +56,11 @@ public:
 	int is_char_tok();
 
 	ExprType expr_entry();
-	AST *expr_compare(ExprType &);
-	AST *expr_logic(ExprType &);
-	AST *expr_add_sub(ExprType &);
-	AST *expr_mul_div(ExprType &);
-	AST *expr_primary(ExprType &);
+	AST *expr_compare();
+	AST *expr_logic();
+	AST *expr_add_sub();
+	AST *expr_mul_div();
+	AST *expr_primary();
 
 	int is_index();
 	int make_index(ExprType &);

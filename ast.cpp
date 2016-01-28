@@ -11,3 +11,11 @@ BinaryAST::BinaryAST(std::string o, AST *le, AST *re) :
 StringAST::StringAST(std::string s) : 
 	str(s) {
 }
+
+VariableAST::VariableAST(var_t v) : 
+	info(v) {
+}
+
+FunctionCallAST::FunctionCallAST(func_t f, std::vector<AST *> a) : 
+	info(f), args(a) {
+}

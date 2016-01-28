@@ -26,66 +26,78 @@ int visit(AST *ast) {
 		std::cout << " " << ((NumberAST *)ast)->number << " ";
 	} else if(ast->get_type() == AST_STRING) {
 		std::cout << " " << ((StringAST *)ast)->str << " ";
+	} else if(ast->get_type() == AST_VARIABLE) {
+		std::cout << "(var " 
+			<< ((VariableAST *)ast)->info.mod_name << "::"
+			<< ((VariableAST *)ast)->info.name << ") ";
+	} else if(ast->get_type() == AST_FUNCTION_CALL) {
+		std::cout << "(call " 
+			<< ((FunctionCallAST *)ast)->info.mod_name << "::"
+			<< ((FunctionCallAST *)ast)->info.name << " ";
+		for(int i = 0; i < ((FunctionCallAST *)ast)->args.size(); i++) {
+			visit(((FunctionCallAST *)ast)->args[i]);
+		}
+		std::cout << ")";
 	}
 	return 0;
 }
 
 ExprType Parser::expr_entry() { 
 	ExprType et;
-	AST *node = expr_compare(et);
+	AST *node = expr_compare();
 	visit(node);
 	return et;
 }
 
-AST *Parser::expr_compare(ExprType &et) {
+AST *Parser::expr_compare() {
 	int andop=0, orop=0;
 	AST *l, *r;
-	l = expr_logic(et);
+	l = expr_logic();
 	while((andop=tok.skip("and") || tok.skip("&")) || (orop=tok.skip("or") || 
 				tok.skip("|")) || tok.skip("xor") || tok.skip("^")) {
-		r = expr_logic(et);
+		r = expr_logic();
 		l = new BinaryAST(andop ? "and" : orop ? "or" : "xor", l, r);
 	}
 
 	return l;
 }
 
-AST *Parser::expr_logic(ExprType &et) {
+AST *Parser::expr_logic() {
 	int32_t lt=0, gt=0, ne=0, eql=0, fle=0;
 	AST *l, *r;
-	l = expr_add_sub(et);
+	l = expr_add_sub();
 	if((lt=tok.skip("<")) || (gt=tok.skip(">")) || (ne=tok.skip("!=")) ||
 			(eql=tok.skip("==")) || (fle=tok.skip("<=")) || tok.skip(">=")) {
-		r = expr_add_sub(et);
+		r = expr_add_sub();
 		l = new BinaryAST(lt ? "<" : gt ? ">" : ne ? "!=" : eql ? "==" : fle ? "<=" : "!", l, r);
 	}
 
 	return l;
 }
 
-AST *Parser::expr_add_sub(ExprType &et) {
+AST *Parser::expr_add_sub() {
 	int add = 0, concat = 0;
 	AST *l, *r;
-	l = expr_mul_div(et);
+	l = expr_mul_div();
 	while((add = tok.skip("+")) || (concat = tok.skip("~")) || tok.skip("-")) {
-		r = expr_mul_div(et);
+		r = expr_mul_div();
 		l = new BinaryAST(add ? "+" : concat ? "~" : "-", l, r);
 	}
 	return l;
 }
 
-AST *Parser::expr_mul_div(ExprType &et) {
+AST *Parser::expr_mul_div() {
 	int mul, div;
 	AST *l, *r;
-	l = expr_primary(et);
+	l = expr_primary();
 	while((mul = tok.skip("*")) || (div=tok.skip("/")) || tok.skip("%")) {
-		r = expr_primary(et);
+		r = expr_primary();
 		l = new BinaryAST(mul ? "*" : div ? "/" : "%", l, r);
 	}
 	return l;
 }
 
-AST *Parser::expr_primary(ExprType &et) {
+AST *Parser::expr_primary() {
 	int is_get_addr = 0, ispare = 0;
 	std::string name, mod_name = "";
 	var_t *v = NULL; 
@@ -99,7 +111,6 @@ AST *Parser::expr_primary(ExprType &et) {
 	} else if(is_char_tok()) { 
 		
 		ntv.genas("mov eax %d", (int)tok.next().val[0]);
-		et.change(T_INT);	
 	
 	} else if(is_string_tok()) { 
 
@@ -123,122 +134,74 @@ AST *Parser::expr_primary(ExprType &et) {
 		
 			SKIP_TOK;
 
-			if((ispare = tok.skip("(")) || is_stdfunc(name, mod_name) || 
-					funcs.is(name, mod_name) || funcs.is(name, module) || lib_list.is(mod_name)) { // Function?
-
-				if(lib_list.is(mod_name)) { // library function
-					if(HAS_PARAMS_FUNC) {
-						for(int i = 0; !tok.is(")") && !tok.skip(";"); i++) {
-							expr_entry();
-							ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(i * ADDR_SIZE); // mov [esp+ADDR*i], eax
-							tok.skip(",");
-						} 
-					}
-					ntv.gencode(0xe8); ntv.gencode_int32(lib_list.call(name, mod_name) - (uint32_t)&ntv.code[ntv.count] - ADDR_SIZE); // call func
-				} else if(is_stdfunc(name, mod_name)) {
-					
-					make_stdfunc(name, mod_name);
-				
-				} else if(funcs.get(name, mod_name) || funcs.get(name, module) || ispare) {	// user function
-				
-					func_t *function = funcs.get(name, mod_name);
-					if(function == NULL) 
-						function = funcs.get(name, module);
-					if(function == NULL) { // undefined
-						size_t params = 0;
-						if(HAS_PARAMS_FUNC) { // has arg?
-							for(params = 0; !tok.is(")") && !tok.skip(";"); params++) {
-								expr_entry();
-								ntv.genas("push eax");
-								tok.skip(",");
-							}
-						}
-						ntv.gencode(0xe8); undef_funcs.append_undef(name, module == "" ? mod_name : module, ntv.count);
-						ntv.gencode_int32(0x00000000); // call func
-						ntv.genas("add esp %d", params * ADDR_SIZE);
-
-					} else { // defined
-						if(HAS_PARAMS_FUNC) {
-							for(size_t i = 0; i < function->params; i++) {
-								expr_entry();
-								ntv.genas("push eax");
-								if(!tok.skip(",") && function->params - 1 != i) 
-									error("error: %d: expected ','", tok.get().nline);
-							}
-						}
-						ntv.gencode(0xe8); ntv.gencode_int32(0xFFFFFFFF - (ntv.count - function->address) - 3); // call func
-						ntv.genas("add esp %d", function->params * ADDR_SIZE);
-					}
+			if(tok.skip("(")) {
+				func_t f = {
+					.name = name,
+					.mod_name = mod_name == "" ? module : mod_name
+				};
+				std::vector<AST *> args;
+				for(int i = 0; !tok.skip(")"); i++) {
+					args.push_back(expr_compare());
+					tok.skip(",");
 				}
-		
-				if(ispare) 
-					if(!tok.skip(")")) 
-						error("func: error: %d: expected expression ')'", tok.tok[tok.pos].nline);
-				et.change(T_INT);
+				return new FunctionCallAST(f, args);
 			} else { // single variable
-				
-				v = var.get(name, mod_name);
-				if(v == NULL) 
-					v = var.get(name, module);
-				if(v == NULL)
-					error("var: error: %d: '%s' was not declare", tok.tok[tok.pos].nline, name.c_str());
-				if(v->loctype == V_LOCAL) {
-					ntv.gencode(0x8b); ntv.gencode(0x45);
-					ntv.gencode(256 - ADDR_SIZE * v->id); // mov eax variable
-				} else if(v->loctype == V_GLOBAL) {
-					ntv.gencode(0xa1); ntv.gencode_int32(v->id); // mov eax GLOBAL_ADDR
-				}
-				et.change(v->type);
+				var_t v = {
+					.name = name,
+					.mod_name = mod_name == "" ? module : mod_name
+				};
+				return new VariableAST(v);
 			}
 		}
 	} else if(tok.skip("(")) {
-		if(is_asgmt()) asgmt(); else expr_entry();
+		AST *e = expr_compare();
 		if(!tok.skip(")"))
 			error("error: %d: expected expression ')'", tok.get().nline);
-	} else if(!make_array(et)) error("error: %d: invalid expression", tok.get().nline);
+		return e;
+	}// else if(!make_array(et)) error("error: %d: invalid expression", tok.get().nline);
 
-	while(tok.skip(".")) {
-		name = tok.get().val;
-		std::string class_name;
-		if(v == NULL) {
-			if(et.is_type(T_INT)) class_name = "Math";
-			else if(et.is_type(T_STRING)) class_name = "String";
-			else class_name = mod_name;
-		} else class_name = v->class_type;
-		tok.skip();
-		if(lib_list.is(class_name)) {
-			ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(0x00); // mov [esp], eax
-			if(HAS_PARAMS_FUNC) {
-				tok.skip("(");
-				for(size_t i = 0; !tok.skip(")") && !tok.skip(";"); i++) {
-					expr_entry();
-					ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode((i + 1) * ADDR_SIZE); // mov [esp+ADDR*(i+1)], eax
-					tok.skip(",");
-				}
-			} 
-			ntv.gencode(0xe8); ntv.gencode_int32(lib_list.call(name, class_name) - (uint32_t)&ntv.code[ntv.count] - ADDR_SIZE); // call func
-			et.change(T_INT);
-		} else {
-			func_t *function = funcs.get(name, class_name);
-			if(function == NULL) 
-				function = funcs.get(name, module);
-			if(function == NULL) error("function not found");
-			if(function->params > 0) ntv.genas("push eax");
-			if(HAS_PARAMS_FUNC) {
-				tok.skip("(");
-				for(size_t i = 0; i < function->params - 1; i++) {
-					expr_entry();
-					ntv.genas("push eax");
-					tok.skip(",");
-				}
-			} tok.skip(")");
-			ntv.gencode(0xe8); ntv.gencode_int32(0xFFFFFFFF - (ntv.count - function->address) - 3); // call func
-			ntv.genas("add esp %d", function->params * ADDR_SIZE);
-			et.change(T_INT);
-		}
-	} 
+	// while(tok.skip(".")) {
+	// 	name = tok.get().val;
+	// 	std::string class_name;
+	// 	if(v == NULL) {
+	// 		if(et.is_type(T_INT)) class_name = "Math";
+	// 		else if(et.is_type(T_STRING)) class_name = "String";
+	// 		else class_name = mod_name;
+	// 	} else class_name = v->class_type;
+	// 	tok.skip();
+	// 	if(lib_list.is(class_name)) {
+	// 		ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(0x00); // mov [esp], eax
+	// 		if(HAS_PARAMS_FUNC) {
+	// 			tok.skip("(");
+	// 			for(size_t i = 0; !tok.skip(")") && !tok.skip(";"); i++) {
+	// 				expr_entry();
+	// 				ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode((i + 1) * ADDR_SIZE); // mov [esp+ADDR*(i+1)], eax
+	// 				tok.skip(",");
+	// 			}
+	// 		} 
+	// 		ntv.gencode(0xe8); ntv.gencode_int32(lib_list.call(name, class_name) - (uint32_t)&ntv.code[ntv.count] - ADDR_SIZE); // call func
+	// 		et.change(T_INT);
+	// 	} else {
+	// 		func_t *function = funcs.get(name, class_name);
+	// 		if(function == NULL) 
+	// 			function = funcs.get(name, module);
+	// 		if(function == NULL) error("function not found");
+	// 		if(function->params > 0) ntv.genas("push eax");
+	// 		if(HAS_PARAMS_FUNC) {
+	// 			tok.skip("(");
+	// 			for(size_t i = 0; i < function->params - 1; i++) {
+	// 				expr_entry();
+	// 				ntv.genas("push eax");
+	// 				tok.skip(",");
+	// 			}
+	// 		} tok.skip(")");
+	// 		ntv.gencode(0xe8); ntv.gencode_int32(0xFFFFFFFF - (ntv.count - function->address) - 3); // call func
+	// 		ntv.genas("add esp %d", function->params * ADDR_SIZE);
+	// 		et.change(T_INT);
+	// 	}
+	// } 
 
-	while(is_index()) make_index(et);
+	// while(is_index()) make_index(et);
 	return 0;
 }
 
