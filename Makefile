@@ -1,8 +1,8 @@
 CFLAGS = -O0 -m32 -Wno-strict-aliasing
 CC = clang++ $(CFLAGS) 
 
-lit: main.o lit.o asm.o lex.o var.o expr.o parse.o stdfunc.o token.o option.o util.o library.o func.o
-	$(CC) -o lit -rdynamic -ldl main.o lit.o asm.o lex.o var.o expr.o parse.o token.o stdfunc.o option.o util.o library.o func.o
+lit: main.o lit.o asm.o lex.o var.o expr.o parse.o stdfunc.o token.o option.o util.o library.o func.o ast.o
+	$(CC) -o lit -rdynamic -ldl main.o lit.o asm.o lex.o var.o expr.o parse.o token.o stdfunc.o option.o util.o library.o func.o ast.o
 
 main.o: main.cpp common.h
 	$(CC) -c main.cpp
@@ -24,6 +24,9 @@ expr.o: expr.h expr.cpp
 
 parse.o: parse.h parse.cpp
 	$(CC) -c parse.cpp
+
+ast.o: ast.h ast.cpp
+	$(CC) -c ast.cpp
 
 func.o: func.h func.cpp
 	$(CC) -c func.cpp

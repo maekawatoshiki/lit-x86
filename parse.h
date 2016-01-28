@@ -7,6 +7,7 @@
 #include "func.h"
 #include "var.h"
 #include "library.h"
+#include "ast.h"
 
 #define IS_ARRAY(x) ((x) & (T_ARRAY))
 #define IS_TYPE(x, ty)  ((x) & (ty))
@@ -55,11 +56,11 @@ public:
 	int is_char_tok();
 
 	ExprType expr_entry();
-	int expr_compare(ExprType &);
-	int expr_logic(ExprType &);
-	int expr_add_sub(ExprType &);
-	int expr_mul_div(ExprType &);
-	int expr_primary(ExprType &);
+	AST *expr_compare(ExprType &);
+	AST *expr_logic(ExprType &);
+	AST *expr_add_sub(ExprType &);
+	AST *expr_mul_div(ExprType &);
+	AST *expr_primary(ExprType &);
 
 	int is_index();
 	int make_index(ExprType &);

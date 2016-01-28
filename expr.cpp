@@ -9,112 +9,92 @@
 #include "library.h"
 #include "var.h"
 #include "func.h"
+#include "ast.h"
 
 int Parser::is_string_tok() { return tok.get().type == TOK_STRING; }
 int Parser::is_number_tok() { return tok.get().type == TOK_NUMBER; }
 int Parser::is_ident_tok()  { return tok.get().type == TOK_IDENT;  }
 int Parser::is_char_tok() { return tok.get().type == TOK_CHAR; } 
 
+int visit(AST *ast) {
+	if(ast->get_type() == AST_BINARY) {
+		std::cout << "(" << ((BinaryAST *)ast)->op << " ";
+			visit(((BinaryAST *)ast)->left);
+			visit(((BinaryAST *)ast)->right);
+			std::cout << ")";
+	} else if(ast->get_type() == AST_NUMBER) {
+		std::cout << " " << ((NumberAST *)ast)->number << " ";
+	} else if(ast->get_type() == AST_STRING) {
+		std::cout << " " << ((StringAST *)ast)->str << " ";
+	}
+	return 0;
+}
+
 ExprType Parser::expr_entry() { 
 	ExprType et;
-	expr_compare(et);
+	AST *node = expr_compare(et);
+	visit(node);
 	return et;
 }
 
-int Parser::expr_compare(ExprType &et) {
+AST *Parser::expr_compare(ExprType &et) {
 	int andop=0, orop=0;
-	expr_logic(et);
+	AST *l, *r;
+	l = expr_logic(et);
 	while((andop=tok.skip("and") || tok.skip("&")) || (orop=tok.skip("or") || 
 				tok.skip("|")) || tok.skip("xor") || tok.skip("^")) {
-		ntv.genas("push eax");
-		expr_logic(et);
-		ntv.genas("mov ebx eax");
-		ntv.genas("pop eax");
-		ntv.gencode(andop ? 0x21 : orop ? 0x09 : 0x31); ntv.gencode(0xd8); // and eax ebx
+		r = expr_logic(et);
+		l = new BinaryAST(andop ? "and" : orop ? "or" : "xor", l, r);
 	}
 
-	return 0;
+	return l;
 }
 
-int Parser::expr_logic(ExprType &et) {
+AST *Parser::expr_logic(ExprType &et) {
 	int32_t lt=0, gt=0, ne=0, eql=0, fle=0;
-	expr_add_sub(et);
+	AST *l, *r;
+	l = expr_add_sub(et);
 	if((lt=tok.skip("<")) || (gt=tok.skip(">")) || (ne=tok.skip("!=")) ||
 			(eql=tok.skip("==")) || (fle=tok.skip("<=")) || tok.skip(">=")) {
-		ntv.genas("push eax");
-		expr_add_sub(et);
-		ntv.genas("mov ebx eax");
-		ntv.genas("pop eax");
-		ntv.gencode(0x39); ntv.gencode(0xd8); // cmp %eax, %ebx
-		/*
-		 * < setl 0x9c
-		 * > setg 0x9f
-		 * <= setle 0x9e
-		 * >= setge 0x9d
-		 * == sete 0x94
-		 * != setne 0x95
-		 */
-		ntv.gencode(0x0f); ntv.gencode(lt ? 0x9c : gt ? 0x9f : ne ? 0x95 : eql ? 0x94 : fle ? 0x9e : 0x9d); ntv.gencode(0xc0); // setX al
-		ntv.gencode(0x0f); ntv.gencode(0xb6); ntv.gencode(0xc0); // movzx eax al
+		r = expr_add_sub(et);
+		l = new BinaryAST(lt ? "<" : gt ? ">" : ne ? "!=" : eql ? "==" : fle ? "<=" : "!", l, r);
 	}
 
-	return 0;
+	return l;
 }
 
-int Parser::expr_add_sub(ExprType &et) {
+AST *Parser::expr_add_sub(ExprType &et) {
 	int add = 0, concat = 0;
-	expr_mul_div(et);
+	AST *l, *r;
+	l = expr_mul_div(et);
 	while((add = tok.skip("+")) || (concat = tok.skip("~")) || tok.skip("-")) {
-		ntv.genas("push eax");
-		expr_mul_div(et);
-		ntv.genas("mov ebx eax");  // mov %ebx %eax
-		ntv.genas("pop eax");
-		if(add) { ntv.genas("add eax ebx"); }// add %eax %ebx
-		else if(concat) {
-			// ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x24);
-			// ntv.gencode(0x89); ntv.gencode(0x5c); ntv.gencode(0x24); ntv.gencode(0xfc);
-			ntv.genas("push ebx");
-			ntv.genas("push eax");
-			ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(56); // call rea_concat
-			ntv.genas("add esp 8");
-		} else { ntv.genas("sub eax ebx"); } // sub %eax %ebx
+		r = expr_mul_div(et);
+		l = new BinaryAST(add ? "+" : concat ? "~" : "-", l, r);
 	}
-	return 0;
+	return l;
 }
 
-int Parser::expr_mul_div(ExprType &et) {
+AST *Parser::expr_mul_div(ExprType &et) {
 	int mul, div;
-	expr_primary(et);
+	AST *l, *r;
+	l = expr_primary(et);
 	while((mul = tok.skip("*")) || (div=tok.skip("/")) || tok.skip("%")) {
-		ntv.genas("push eax");
-		expr_primary(et);
-		ntv.genas("mov ebx eax"); // mov %ebx %eax
-		ntv.genas("pop eax");
-		if(mul) {
-			ntv.genas("mul ebx");
-		} else if(div) {
-			ntv.genas("mov edx 0");
-			ntv.genas("div ebx");
-		} else { //mod
-			ntv.genas("mov edx 0");
-			ntv.genas("div ebx");
-			ntv.genas("mov eax edx");
-		}
+		r = expr_primary(et);
+		l = new BinaryAST(mul ? "*" : div ? "/" : "%", l, r);
 	}
-	return 0;
+	return l;
 }
 
-int Parser::expr_primary(ExprType &et) {
+AST *Parser::expr_primary(ExprType &et) {
 	int is_get_addr = 0, ispare = 0;
 	std::string name, mod_name = "";
 	var_t *v = NULL; 
-
+	
 	if(tok.skip("&")) is_get_addr = 1;
 
 	if(is_number_tok()) {
 	
-		ntv.genas("mov eax %d", atoi(tok.next().val.c_str()));
-		et.change(T_INT);	
+		return new NumberAST(atoi(tok.next().val.c_str()));
 	
 	} else if(is_char_tok()) { 
 		
@@ -123,13 +103,7 @@ int Parser::expr_primary(ExprType &et) {
 	
 	} else if(is_string_tok()) { 
 
-		ntv.gencode(0xb8);
-		char *embed = (char *)malloc(tok.get().val.length() + 1);
-		strcpy(embed, tok.next().val.c_str());
-		replaceEscape(embed);
-		ntv.gencode_int32((uint32_t)embed); // mov eax string_address
-
-		et.change(T_STRING);	
+		return new StringAST(tok.next().val);
 
 	} else if(is_ident_tok()) { // variable or inc or dec
 	
