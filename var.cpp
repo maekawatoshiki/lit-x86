@@ -161,10 +161,10 @@ int Parser::asgmt_array(var_t *v) {
 
 	if(!tok.skip("[")) error("error: %d: expected '['", tok.tok[tok.pos].nline);
 	if(v->loctype == V_LOCAL) {
-		ExprType et = expr_entry();
+		ExprType et;// = expr_entry(); // TODO: fix
 		ntv.genas("push eax");
 		if(!tok.skip("]")) error("error: %d: ']' except", tok.tok[tok.pos].nline);
-		while(is_index()) make_index(et);
+		// while(is_index()) make_index(et);
 
 		if(tok.skip("=")) {
 			expr_entry();

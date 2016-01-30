@@ -70,7 +70,9 @@ int Lexer::lex(char *code) {
 		} else {
 
 			str = code[i];
-			if(code[i+1] == '=' ||
+			if(code[i+1] == '=' || 
+					(code[i]==':' && code[i+1]==':') || 
+					(code[i]=='[' && code[i+1]==']') ||
 					(code[i]=='+' && code[i+1]=='+') ||
 					(code[i]=='-' && code[i+1]=='-'))
 				str += code[++i];

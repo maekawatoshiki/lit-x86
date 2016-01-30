@@ -10,8 +10,11 @@ enum {
 	AST_STRING,
 	AST_BINARY,
 	AST_VARIABLE,
-	AST_FUNCTION_CALL
+	AST_VARIABLE_DECL,
+	AST_FUNCTION_CALL,
+	AST_ARRAY
 };
+
 
 class AST {
 public:
@@ -48,8 +51,11 @@ public:
 	virtual int get_type() const { return AST_VARIABLE; }
 };
 
-class AssignmentAST : public AST {
+class VariableDeclAST : public AST {
 public:
+	var_t info;
+	VariableDeclAST(var_t);
+	virtual int get_type() const { return AST_VARIABLE_DECL; }
 };
 
 class FunctionCallAST : public AST {
@@ -59,5 +65,14 @@ public:
 	FunctionCallAST(func_t f, std::vector<AST *> a);
 	virtual int get_type() const { return AST_FUNCTION_CALL; }
 };
+
+class ArrayAST : public AST {
+public:
+	std::vector<AST *> elems;
+	ArrayAST(std::vector<AST *>);
+	virtual int get_type() const { return AST_ARRAY; }
+};
+
+typedef std::vector<AST *> ast_vector;
 
 #endif

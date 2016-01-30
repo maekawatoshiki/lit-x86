@@ -18,18 +18,7 @@ enum {
 	V_LOCAL,
 	V_GLOBAL
 };
-/*
-enum {
-	T_INT,
-	T_INT_ARY,
-	T_STRING,
-	T_STRING_ARY,
-	T_DOUBLE,
-	T_DOUBLE_ARY,
-	T_USER_TYPE,
-	T_USER_TYPE_ARY
-};
-*/
+
 enum {
 	T_INT 			 = 1 << 1,
 	T_STRING		 = 1 << 2,

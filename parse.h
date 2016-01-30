@@ -61,12 +61,9 @@ public:
 	AST *expr_logic();
 	AST *expr_add_sub();
 	AST *expr_mul_div();
+	AST *expr_index();
 	AST *expr_primary();
-
-	int is_index();
-	int make_index(ExprType &);
-
-	int make_array(ExprType &);
+	AST *expr_array();
 
 // parse.h
 	void make_require();

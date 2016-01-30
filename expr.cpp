@@ -22,6 +22,17 @@ int visit(AST *ast) {
 			visit(((BinaryAST *)ast)->left);
 			visit(((BinaryAST *)ast)->right);
 			std::cout << ")";
+	} else if(ast->get_type() == AST_VARIABLE_DECL) {
+		std::cout << "(vardecl "
+			<< ((VariableDeclAST *)ast)->info.mod_name << "::"
+			<< ((VariableDeclAST *)ast)->info.name << " "
+			<< ((VariableDeclAST *)ast)->info.type << ")";
+	} else if(ast->get_type() == AST_ARRAY) {
+		ArrayAST *ary = (ArrayAST *)ast;
+		std::cout << "(array ";
+		for(int i = 0; i < ary->elems.size(); i++) 
+			visit(ary->elems[i]);
+		std::cout << ")";
 	} else if(ast->get_type() == AST_NUMBER) {
 		std::cout << " " << ((NumberAST *)ast)->number << " ";
 	} else if(ast->get_type() == AST_STRING) {
@@ -44,13 +55,13 @@ int visit(AST *ast) {
 
 AST *Parser::expr_entry() { 
 	AST *ast = expr_asgmt();
-	visit(ast);
+	visit(ast); std::cout << std::endl;
 	return ast;
 }
 
 AST *Parser::expr_asgmt() {
 	AST *l, *r;
-	l = expr_primary();
+	l = expr_compare();
 	while(tok.skip("=")) {
 		r = expr_compare();
 		l = new BinaryAST("=", l, r);
@@ -98,10 +109,22 @@ AST *Parser::expr_add_sub() {
 AST *Parser::expr_mul_div() {
 	int mul, div;
 	AST *l, *r;
-	l = expr_primary();
+	l = expr_index();
 	while((mul = tok.skip("*")) || (div=tok.skip("/")) || tok.skip("%")) {
-		r = expr_primary();
+		r = expr_index();
 		l = new BinaryAST(mul ? "*" : div ? "/" : "%", l, r);
+	}
+	return l;
+}
+
+AST *Parser::expr_index() {
+	AST *l, *r;
+	l = expr_primary();
+	while(tok.skip("[")) {
+		r = expr_primary();
+		l = new BinaryAST("[]", l, r);
+		if(!tok.skip("]"))
+			error("error: %d: expected expression ']'", tok.get().nline);
 	}
 	return l;
 }
@@ -114,31 +137,40 @@ AST *Parser::expr_primary() {
 	if(tok.skip("&")) is_get_addr = 1;
 
 	if(is_number_tok()) {
-	
 		return new NumberAST(atoi(tok.next().val.c_str()));
-	
 	} else if(is_char_tok()) { 
-		
 		ntv.genas("mov eax %d", (int)tok.next().val[0]);
-	
 	} else if(is_string_tok()) { 
-
 		return new StringAST(tok.next().val);
-
 	} else if(is_ident_tok()) { // variable or inc or dec
-	
-		name = tok.get().val; mod_name = "";
+		name = tok.next().val; mod_name = "";
+		int type, is_ary; bool is_vardecl = false; std::string class_name;
 
-		if(tok.is(":", 1)) { // module?
-			mod_name = tok.next().val; 
-			tok.skip(":");
-			name = tok.get().val; 
+		if(tok.skip("::")) { // module?
+			mod_name = tok.next().val;
+			swap(mod_name, name);
+		} else if(tok.skip(":")) {
+			if(tok.skip("int")) { 
+				if(tok.skip("[]")) { is_ary = T_ARRAY; }
+				type = T_INT | is_ary;
+			} else if(tok.skip("string")) { 
+				if(tok.skip("[]")) { is_ary = T_ARRAY; }
+				type = T_STRING | is_ary;
+			} else if(tok.skip("double")) { 
+				if(tok.skip("[]")) { is_ary = T_ARRAY; }
+				type = T_DOUBLE | is_ary;
+			} else {
+				class_name = tok.next().val;
+				if(tok.skip("[]")) { is_ary = T_ARRAY; }
+				type = T_USER_TYPE | is_ary;
+			}
+			is_vardecl = true;
+		} else { 
+			type = T_INT;
 		}
 		
 		{	
-			tok.skip();
-
-			if(tok.skip("(")) {
+			if(tok.skip("(")) { // function
 				func_t f = {
 					.name = name,
 					.mod_name = mod_name == "" ? module : mod_name
@@ -149,20 +181,30 @@ AST *Parser::expr_primary() {
 					tok.skip(",");
 				}
 				return new FunctionCallAST(f, args);
-			} else { // single variable
+			} else { // variable
 				var_t v = {
 					.name = name,
-					.mod_name = mod_name == "" ? module : mod_name
+					.mod_name = mod_name == "" ? module : mod_name,
+					.type = type,
+					.class_type = class_name
 				};
-				return new VariableAST(v);
+				if(is_vardecl)
+					return new VariableDeclAST(v);
+				else
+					return new VariableAST(v);
 			}
 		}
 	} else if(tok.skip("(")) {
-		AST *e = expr_compare();
+		AST *e = expr_asgmt();
 		if(!tok.skip(")"))
 			error("error: %d: expected expression ')'", tok.get().nline);
 		return e;
-	}// else if(!make_array(et)) error("error: %d: invalid expression", tok.get().nline);
+	} else {
+		AST *ary = expr_array();
+		if(ary == NULL)
+			error("error: %d: invalid expression", tok.get().nline);
+		else return ary;
+	}
 
 	// while(tok.skip(".")) {
 	// 	name = tok.get().val;
@@ -209,60 +251,16 @@ AST *Parser::expr_primary() {
 	return 0;
 }
 
-int Parser::is_index() {
-	if(tok.is("[")) {
-		return 1;
-	}
-	return 0;
-}
-
-int Parser::make_index(ExprType &et) {
-	ntv.genas("mov edx eax");
-	tok.skip("["); expr_entry(); tok.skip("]");
-	ntv.genas("mov ecx eax");
-	if(et.is_array()) { // TODO: create ExprType::is
-		ntv.gencode(0x8b); ntv.gencode(0x04); ntv.gencode(0x8a);// mov eax, [edx + ecx * 4]
-		if(et.is_type(T_INT)) et.change(T_INT);
-		else if(et.is_type(T_STRING)) et.change(T_STRING);
-	} else if(et.is_type(T_STRING)) {
-		ntv.gencode(0x0f); ntv.gencode(0xb6); ntv.gencode(0x04); ntv.gencode(0x0a);// movzx eax, [edx + ecx]
-		et.change(T_INT); // TODO: create type "char"
-	}
-	return 0;
-}
-
-int Parser::make_array(ExprType &et) {
+AST *Parser::expr_array() {
 	if(tok.skip("[")) {
-		int elems = 0, pos = tok.pos;
-		{ // count elements
-			int pare = 1;
-			while(pare) {
-				if(tok.at(pos).val == "[") pare++;
-				if(tok.at(pos).val == "]") pare--;
-				if(tok.at(pos++).val == "," && pare == 1) elems++;
-			} elems++;
+		ast_vector elems;
+		while(!tok.skip("]")) {
+			AST *elem = expr_asgmt();
+			elems.push_back(elem);
+			tok.skip(",");
 		}
-		{ // allocate memory
-			ntv.genas("mov eax %d", elems * ADDR_SIZE + ADDR_SIZE);
-			ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x24); // mov [esp], eax
-			ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(12); // call malloc
-			ntv.genas("push eax");
-			ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x24); // mov [esp], eax
-			ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(20); // call append_addr
-		} // stack top is allocated address
-		ExprType elem_type;	
-		for(int elem = 0; elem < elems; elem++)  {
-			elem_type;// = expr_entry();
-			ntv.genas("pop ecx"); // mem address 
-			ntv.genas("mov edx %d", elem);
-			ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x91); // mov [ecx+edx*4], eax
-			ntv.genas("push ecx");
-			if(elem < elems - 1) tok.skip(",");
-		} 
-		et.change(elem_type.get().type | T_ARRAY); // TODO: refactoring
-		ntv.genas("pop eax");
-		tok.skip("]");
-		return 1;
-	} else return 0;
+		return new ArrayAST(elems);
+	}
+	return NULL;
 }
 
