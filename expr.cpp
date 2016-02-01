@@ -22,6 +22,15 @@ int visit(AST *ast) {
 			visit(((BinaryAST *)ast)->left);
 			visit(((BinaryAST *)ast)->right);
 			std::cout << ")";
+	} else if(ast->get_type() == AST_IF) {
+		IfAST *ia = (IfAST *)ast;
+		std::cout << "(if ("; visit(ia->cond); std::cout << ")\n(";
+		for(int i = 0; i < ia->then_block.size(); i++) 
+			visit(ia->then_block[i]);
+		std::cout << ")\n(";
+		for(int i = 0; i < ia->else_block.size(); i++) 
+			visit(ia->else_block[i]);
+		std::cout << ")";
 	} else if(ast->get_type() == AST_VARIABLE_DECL) {
 		std::cout << "(vardecl "
 			<< ((VariableDeclAST *)ast)->info.mod_name << "::"

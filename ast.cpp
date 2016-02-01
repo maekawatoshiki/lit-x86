@@ -27,3 +27,7 @@ FunctionCallAST::FunctionCallAST(func_t f, std::vector<AST *> a) :
 ArrayAST::ArrayAST(std::vector<AST *> e) : 
 	elems(e) {
 }
+
+IfAST::IfAST(AST *c, std::vector<AST *> t, std::vector<AST *> e) : 
+	cond(c), then_block(t), else_block(e) {
+}

@@ -12,6 +12,7 @@ enum {
 	AST_VARIABLE,
 	AST_VARIABLE_DECL,
 	AST_FUNCTION_CALL,
+	AST_IF,
 	AST_ARRAY
 };
 
@@ -71,6 +72,14 @@ public:
 	std::vector<AST *> elems;
 	ArrayAST(std::vector<AST *>);
 	virtual int get_type() const { return AST_ARRAY; }
+};
+
+class IfAST : public AST {
+public:
+	AST *cond;
+	std::vector<AST *> then_block, else_block;
+	IfAST(AST *, std::vector<AST*>, std::vector<AST *>);
+	virtual int get_type() const { return AST_IF; }
 };
 
 typedef std::vector<AST *> ast_vector;
