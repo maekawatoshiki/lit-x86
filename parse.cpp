@@ -51,7 +51,7 @@ int Parser::make_return() {
 	return return_list.count++;
 }
 
-int Parser::expression(int pos, int status) {
+AST *Parser::expression(int pos, int status) {
 	int isputs = 0;
 
 	if(tok.skip("$")) { // global varibale
@@ -62,7 +62,7 @@ int Parser::expression(int pos, int status) {
 	
 		make_require();
 	
-	} else if(tok.skip("def")) { blocksCount++;
+	} else if(tok.skip("def")) { 
 
 		make_func();
 
@@ -82,7 +82,9 @@ int Parser::expression(int pos, int status) {
 		uint32_t espBgn = ntv.count + 2; ntv.genas("sub esp 0");
 		ntv.gencode(0x8b); ntv.gencode(0x75); ntv.gencode(0x0c); // mov esi, 0xc(%ebp)
 		
-		eval(0, BLOCK_NORMAL);
+		ast_vector a = eval(0, BLOCK_NORMAL);
+		for(int i = 0; i < a.size(); i++)
+			visit(a[i]), std::cout << std::endl;
 
 		ntv.gencode(0x81); ntv.gencode(0xc4); ntv.gencode_int32(ADDR_SIZE * (var.focus().size() + 6)); // add %esp nn
 		ntv.gencode(0xc9);// leave
@@ -121,55 +123,34 @@ int Parser::expression(int pos, int status) {
 
 		make_return();
 
-	} else if(tok.skip("if")) { blocksCount++;
-
-		make_if();
+	} else if(tok.is("if")) { return make_if();
 	
-	} else if(tok.skip("else")) {
-
-		uint32_t end;
-		ntv.gencode(0xe9); end = ntv.count; ntv.gencode_int32(0);// jmp while end
-		ntv.gencode_int32_insert(ntv.count - pos - 4, pos);
-		eval(end, BLOCK_NORMAL);
-		return 1;
-
-	} else if(tok.skip("elsif")) {
-
-		uint32_t endif, end;
-		ntv.gencode(0xe9); endif = ntv.count; ntv.gencode_int32(0);// jmp while end
-		ntv.gencode_int32_insert(ntv.count - pos - 4, pos);
-		expr_entry(); // if condition
-		ntv.gencode(0x83); ntv.gencode(0xf8); ntv.gencode(0x00);// cmp eax, 0
-		ntv.gencode(0x75); ntv.gencode(0x05); // jne 5
-		tok.skip(";");
-		ntv.gencode(0xe9); end = ntv.count; ntv.gencode_int32(0);// jmp while end
-		eval(end, BLOCK_NORMAL);
-		ntv.gencode_int32_insert(ntv.count - endif - 4, endif);
-		return 1;
+	} else if(tok.is("else")) { return NULL;
 
 	} else if(tok.skip("break")) {
 
 		make_break();
 
-	} else if(tok.skip("end")) { blocksCount--;
+	} else if(tok.is("end")) { return NULL;
 
-		if(status == NON) return 1;
-		if(status == BLOCK_NORMAL) {
-			ntv.gencode_int32_insert(ntv.count - pos - 4, pos);
-		} else if(status == BLOCK_FUNC) funcs.inside = false;
-		return 1;
-
-	} else if(!tok.skip(";")) {
-		expr_entry();
+	} else {
+		puts("expression");
+		return expr_entry();
 	}
 	
-	return 0;
+	return NULL;
 }
 
-int Parser::eval(int pos, int status) {
-	while(tok.pos < tok.size) 
-		if(expression(pos, status)) return 1;
-	return 0;
+ast_vector Parser::eval(int pos, int status) {
+	ast_vector block;
+	while(tok.pos < tok.size) {
+		while(tok.skip(";")) {}
+		AST *b = expression(0, 0);
+		if(b == NULL) break;
+		block.push_back(b);
+		std::cout << "type = " << b->get_type() << std::endl;
+	}
+	return block;
 }
 
 int Parser::parser() {
@@ -178,7 +159,7 @@ int Parser::parser() {
 	ntv.gencode(0xe9); main_address = ntv.count; ntv.gencode_int32(0);
 
 	blocksCount = 0;
-	eval(0, BLOCK_NORMAL);
+	eval(0,0);
 #ifdef DEBUG
 	printf("blocks: %d\n", blocksCount);
 #endif
@@ -202,13 +183,19 @@ void Parser::make_require() {
 	lib_list.append(tok.next().val);
 }
 
-int Parser::make_if() {
-	uint32_t end;
-	expr_entry(); // if condition
-	ntv.gencode(0x83); ntv.gencode(0xf8); ntv.gencode(0x00);// cmp eax, 0
-	ntv.gencode(0x75); ntv.gencode(0x05); // jne 5
-	ntv.gencode(0xe9); end = ntv.count; ntv.gencode_int32(0);// jmp
-	return eval(end, BLOCK_NORMAL);
+AST *Parser::make_if() {
+	if(tok.skip("if")) {
+		AST *cond = expr_entry();
+		ast_vector then = eval(0, 0), else_block;
+		if(tok.skip("else")) {
+			else_block = eval(0, 0);
+			tok.skip("end");
+		} else if(tok.skip("end")) {}
+		AST *i = new IfAST(cond, then, else_block);
+		visit(i);
+		return i;
+	}
+	return NULL;
 }
 
 int Parser::make_while() {
@@ -269,8 +256,6 @@ int Parser::make_func() {
 		ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24);
 		pos_save[i] = ntv.count; ntv.gencode(0x00);
 	}
-
-	eval(0, BLOCK_FUNC);
 
 	for(int i = 0; i < return_list.count; i++) {
 		ntv.gencode_int32_insert(ntv.count - return_list.addr_list[i] - 4, return_list.addr_list[i]);

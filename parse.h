@@ -67,14 +67,14 @@ public:
 
 // parse.h
 	void make_require();
-	int make_if();
+	AST *make_if();
 	int make_while();
 	int make_func();
 	int make_break();
 	int make_return();
 
-	int eval(int, int);
-	int expression(int, int);
+	ast_vector eval(int, int);
+	AST *expression(int, int);
 
 	int parser();
 	int get_string();

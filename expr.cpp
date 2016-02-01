@@ -16,7 +16,7 @@ int Parser::is_number_tok() { return tok.get().type == TOK_NUMBER; }
 int Parser::is_ident_tok()  { return tok.get().type == TOK_IDENT;  }
 int Parser::is_char_tok() { return tok.get().type == TOK_CHAR; } 
 
-int visit(AST *ast) {
+AST *visit(AST *ast) {
 	if(ast->get_type() == AST_BINARY) {
 		std::cout << "(" << ((BinaryAST *)ast)->op << " ";
 			visit(((BinaryAST *)ast)->left);
@@ -30,7 +30,7 @@ int visit(AST *ast) {
 		std::cout << ")\n(";
 		for(int i = 0; i < ia->else_block.size(); i++) 
 			visit(ia->else_block[i]);
-		std::cout << ")";
+		std::cout << "))";
 	} else if(ast->get_type() == AST_VARIABLE_DECL) {
 		std::cout << "(vardecl "
 			<< ((VariableDeclAST *)ast)->info.mod_name << "::"
@@ -59,12 +59,12 @@ int visit(AST *ast) {
 		}
 		std::cout << ")";
 	}
-	return 0;
+	return ast;
 }
 
 AST *Parser::expr_entry() { 
 	AST *ast = expr_asgmt();
-	visit(ast); std::cout << std::endl;
+	// visit(ast); std::cout << std::endl;
 	return ast;
 }
 
