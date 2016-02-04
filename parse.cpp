@@ -51,7 +51,7 @@ int Parser::make_return() {
 	return return_list.count++;
 }
 
-AST *Parser::expression(int pos, int status) {
+AST *Parser::expression() {
 	int isputs = 0;
 
 	if(tok.skip("$")) { // global varibale
@@ -64,34 +64,12 @@ AST *Parser::expression(int pos, int status) {
 	
 	} else if(tok.skip("def")) { 
 
-		make_func();
+		return make_func();
 
 	} else if(tok.skip("module")) { blocksCount++;
 		module = tok.tok[tok.pos++].val;
-		eval(0, NON);
+		eval();
 		module = "";
-	} else if(funcs.inside == false && !tok.is("def", 1) &&
-			!tok.is("module", 1) && !tok.is("$", 1) &&
-			!tok.is(";", 1) && module == "") {	// main func entry
-
-		funcs.inside = true;
-		funcs.now++;
-		funcs.append("main", ntv.count, 0); // append funcs
-		ntv.genas("push ebp");
-		ntv.genas("mov ebp esp");
-		uint32_t espBgn = ntv.count + 2; ntv.genas("sub esp 0");
-		ntv.gencode(0x8b); ntv.gencode(0x75); ntv.gencode(0x0c); // mov esi, 0xc(%ebp)
-		
-		ast_vector a = eval(0, BLOCK_NORMAL);
-		for(int i = 0; i < a.size(); i++)
-			visit(a[i]), std::cout << std::endl;
-
-		ntv.gencode(0x81); ntv.gencode(0xc4); ntv.gencode_int32(ADDR_SIZE * (var.focus().size() + 6)); // add %esp nn
-		ntv.gencode(0xc9);// leave
-		ntv.gencode(0xc3);// ret
-		ntv.gencode_int32_insert(ADDR_SIZE * (var.focus().size() + 6), espBgn);
-		funcs.inside = false;
-
 	} else if((isputs=tok.skip("puts")) || tok.skip("print")) {
 
 		do {
@@ -123,17 +101,12 @@ AST *Parser::expression(int pos, int status) {
 
 		make_return();
 
-	} else if(tok.is("if")) { return make_if();
-	
-	} else if(tok.is("else")) { return NULL;
-
-	} else if(tok.skip("break")) {
-
+	} else if(tok.is("if")) return make_if();
+	else if(tok.is("else")) return NULL;
+	else if(tok.skip("break")) {
 		make_break();
-
-	} else if(tok.is("end")) { return NULL;
-
-	} else {
+	} else if(tok.is("end")) return NULL;
+	else {
 		puts("expression");
 		return expr_entry();
 	}
@@ -141,14 +114,16 @@ AST *Parser::expression(int pos, int status) {
 	return NULL;
 }
 
-ast_vector Parser::eval(int pos, int status) {
+ast_vector Parser::eval() {
 	ast_vector block;
 	while(tok.pos < tok.size) {
-		while(tok.skip(";")) {}
-		AST *b = expression(0, 0);
+		while(tok.skip(";"))
+			if(tok.pos >= tok.size) break;
+		AST *b = expression();
+		while(tok.skip(";"))
+			if(tok.pos >= tok.size) break;
 		if(b == NULL) break;
 		block.push_back(b);
-		std::cout << "type = " << b->get_type() << std::endl;
 	}
 	return block;
 }
@@ -159,7 +134,12 @@ int Parser::parser() {
 	ntv.gencode(0xe9); main_address = ntv.count; ntv.gencode_int32(0);
 
 	blocksCount = 0;
-	eval(0,0);
+
+	ast_vector a = eval();
+	std::cout << "\n---------- abstract syntax tree ----------" << std::endl;
+	for(int i = 0; i < a.size(); i++)
+		visit(a[i]), std::cout << std::endl;
+
 #ifdef DEBUG
 	printf("blocks: %d\n", blocksCount);
 #endif
@@ -175,6 +155,21 @@ int Parser::parser() {
 	puts("");
 	printf("memsz: %d\n", funcs.focus()->var.size[funcs.now]);
 #endif
+// #ifdef DEBUG
+// 	printf("blocks: %d\n", blocksCount);
+// #endif
+// 	if(blocksCount != 0) error("error: 'end' is not enough");
+// 	uint32_t addr = 0;
+// 	func_t *func_main = funcs.get("main", "");
+// 	if(func_main == NULL) error("LitSystemError: not found function 'main'");
+// 	else addr = func_main->address;
+// 	ntv.gencode_int32_insert(addr - ADDR_SIZE - 1, main_address);
+// #ifdef DEBUG
+// 	for(int i = 0; i < ntv.count; i++)
+// 		printf("%02x", ntv.code[i]);
+// 	puts("");
+// 	printf("memsz: %d\n", funcs.focus()->var.size[funcs.now]);
+// #endif
 
 	return 1;
 }
@@ -186,9 +181,9 @@ void Parser::make_require() {
 AST *Parser::make_if() {
 	if(tok.skip("if")) {
 		AST *cond = expr_entry();
-		ast_vector then = eval(0, 0), else_block;
+		ast_vector then = eval(), else_block;
 		if(tok.skip("else")) {
-			else_block = eval(0, 0);
+			else_block = eval();
 			tok.skip("end");
 		} else if(tok.skip("end")) {}
 		AST *i = new IfAST(cond, then, else_block);
@@ -212,7 +207,7 @@ int Parser::make_while() {
 	ntv.gencode(0x75); ntv.gencode(0x05); // jne 5
 	ntv.gencode(0xe9); end = ntv.count; ntv.gencode_int32(0);// jmp while end
 
-	eval(0, BLOCK_LOOP);
+	eval();
 
 	if(stepOn) {
 		stepBgn[1] = tok.pos;
@@ -232,49 +227,22 @@ int Parser::make_while() {
 	return 0;
 }
 
-int Parser::make_func() {
+AST *Parser::make_func() {
 	uint32_t espBgn, params = 0;
-	std::string funcName = tok.next().val;
+	std::string func_name = tok.next().val;
+	ast_vector args, stmt;
+	func_t function = {.name = func_name};
 
-	funcs.now++; funcs.inside = true;
 	if(tok.skip("(")) { // get params
-		do { declare_var(); tok.skip(); params++; } while(tok.skip(","));
-		tok.skip(")");
-	}
-	funcs.append(funcName, ntv.count, params);
-	undef_funcs.rep_undef(funcName, ntv.count);
-
-	ntv.genas("push ebp");
-	ntv.genas("mov ebp esp");
-	espBgn = ntv.count + 2; ntv.genas("sub esp 0"); // align
-
-	uint32_t pos_save[128], i;
-
-	for(i = 0; i < params; i++) {
-		ntv.gencode(0x8b); ntv.gencode(0x45);
-		ntv.gencode(0x08 + (params - i - 1) * ADDR_SIZE);
-		ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24);
-		pos_save[i] = ntv.count; ntv.gencode(0x00);
+		do { args.push_back(expr_entry()); } while(tok.skip(","));
+		if(!tok.skip(")"))
+			error("error: %d: expected expression ')'", tok.get().nline);
 	}
 
-	for(int i = 0; i < return_list.count; i++) {
-		ntv.gencode_int32_insert(ntv.count - return_list.addr_list[i] - 4, return_list.addr_list[i]);
-	} return_list.count = 0;
+	stmt = eval();
+	if(!tok.skip("end")) { error("error: source %d", __LINE__); }
 
-	ntv.genas("add esp %u", ADDR_SIZE * (var.focus().size() + 6)); // add esp nn
-	ntv.gencode(0xc9);// leave
-	ntv.gencode(0xc3);// ret
-	ntv.gencode_int32_insert(ADDR_SIZE * (var.focus().size() + 6), espBgn);
-
-
-	for(i = 1; i <= params; i++) {
-		ntv.code[pos_save[i - 1]] =
-			256 - ADDR_SIZE * i + (((var.focus().size() + 6) * ADDR_SIZE) - 4);
-	}
-#ifdef DEBUG
-	printf("%s() has %u funcs or vars\n", funcName.c_str(), var.focus().size());
-#endif
-	return 0;
+	return new FunctionAST(function, args, stmt);
 }
 
 void Parser::replaceEscape(char *str) {

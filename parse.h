@@ -69,12 +69,12 @@ public:
 	void make_require();
 	AST *make_if();
 	int make_while();
-	int make_func();
+	AST *make_func();
 	int make_break();
 	int make_return();
 
-	ast_vector eval(int, int);
-	AST *expression(int, int);
+	ast_vector eval();
+	AST *expression();
 
 	int parser();
 	int get_string();

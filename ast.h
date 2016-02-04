@@ -12,7 +12,9 @@ enum {
 	AST_VARIABLE,
 	AST_VARIABLE_DECL,
 	AST_FUNCTION_CALL,
+	AST_FUNCTION,
 	AST_IF,
+	AST_WHILE,
 	AST_ARRAY
 };
 
@@ -67,6 +69,14 @@ public:
 	virtual int get_type() const { return AST_FUNCTION_CALL; }
 };
 
+class FunctionAST : public AST {
+public:
+	func_t info;
+	std::vector<AST *> args, statement;
+	FunctionAST(func_t f, std::vector<AST *> a, std::vector<AST *>);
+	virtual int get_type() const { return AST_FUNCTION; }
+};
+
 class ArrayAST : public AST {
 public:
 	std::vector<AST *> elems;
@@ -80,6 +90,14 @@ public:
 	std::vector<AST *> then_block, else_block;
 	IfAST(AST *, std::vector<AST*>, std::vector<AST *>);
 	virtual int get_type() const { return AST_IF; }
+};
+
+class WhileAST : public AST {
+public:
+	AST *cond;
+	std::vector<AST *> block;
+	WhileAST(AST *, std::vector<AST *>);
+	virtual int get_type() const { return AST_WHILE; }
 };
 
 typedef std::vector<AST *> ast_vector;

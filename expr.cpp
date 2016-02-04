@@ -22,6 +22,15 @@ AST *visit(AST *ast) {
 			visit(((BinaryAST *)ast)->left);
 			visit(((BinaryAST *)ast)->right);
 			std::cout << ")";
+	} else if(ast->get_type() == AST_FUNCTION) {
+		FunctionAST *fa = ((FunctionAST *) ast);
+		std::cout << "(defunc ("; 
+		for(int i = 0; i < fa->args.size(); i++) 
+			visit(fa->args[i]);
+		std::cout << ")\n(";
+		for(int i = 0; i < fa->statement.size(); i++) 
+			visit(fa->statement[i]);
+		std::cout << "))";
 	} else if(ast->get_type() == AST_IF) {
 		IfAST *ia = (IfAST *)ast;
 		std::cout << "(if ("; visit(ia->cond); std::cout << ")\n(";
