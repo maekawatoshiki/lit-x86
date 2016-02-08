@@ -4,6 +4,10 @@ NumberAST::NumberAST(int n) :
 	number(n) {
 }
 
+PostfixAST::PostfixAST(std::string o, AST *c) : 
+	op(o), expr(c) {
+}
+
 BinaryAST::BinaryAST(std::string o, AST *le, AST *re) :
 	op(o), left(le), right(re) {
 }

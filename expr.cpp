@@ -22,6 +22,17 @@ AST *visit(AST *ast) {
 			visit(((BinaryAST *)ast)->left);
 			visit(((BinaryAST *)ast)->right);
 			std::cout << ")";
+	} else if(ast->get_type() == AST_POSTFIX) {
+		std::cout << "(" << ((PostfixAST *)ast)->op << " ";
+			visit(((PostfixAST *)ast)->expr);
+			std::cout << ")";
+	} else if(ast->get_type() == AST_WHILE) {
+		WhileAST *wa = (WhileAST *)ast;
+		std::cout << "(while ("; visit(wa->cond);
+		std::cout << ")\n(";
+		for(int i = 0; i < wa->block.size(); i++) 
+			visit(wa->block[i]);
+		std::cout << "))";
 	} else if(ast->get_type() == AST_FUNCTION) {
 		FunctionAST *fa = ((FunctionAST *) ast);
 		std::cout << "(defunc ("; 
@@ -54,7 +65,7 @@ AST *visit(AST *ast) {
 	} else if(ast->get_type() == AST_NUMBER) {
 		std::cout << " " << ((NumberAST *)ast)->number << " ";
 	} else if(ast->get_type() == AST_STRING) {
-		std::cout << " " << ((StringAST *)ast)->str << " ";
+		std::cout << " \"" << ((StringAST *)ast)->str << "\" ";
 	} else if(ast->get_type() == AST_VARIABLE) {
 		std::cout << "(var " 
 			<< ((VariableAST *)ast)->info.mod_name << "::"
@@ -137,14 +148,23 @@ AST *Parser::expr_mul_div() {
 
 AST *Parser::expr_index() {
 	AST *l, *r;
-	l = expr_primary();
+	l = expr_postfix();
 	while(tok.skip("[")) {
-		r = expr_primary();
+		r = expr_postfix();
 		l = new BinaryAST("[]", l, r);
 		if(!tok.skip("]"))
 			error("error: %d: expected expression ']'", tok.get().nline);
 	}
 	return l;
+}
+
+AST *Parser::expr_postfix() {
+	AST *expr = expr_primary();
+	bool inc;
+	if((inc = tok.skip("++")) || tok.skip("--")) {
+		return new PostfixAST(inc ? "++" : "--", expr);
+	}
+	return NULL;
 }
 
 AST *Parser::expr_primary() {

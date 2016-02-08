@@ -8,6 +8,7 @@
 enum {
 	AST_NUMBER,
 	AST_STRING,
+	AST_POSTFIX,
 	AST_BINARY,
 	AST_VARIABLE,
 	AST_VARIABLE_DECL,
@@ -37,6 +38,15 @@ public:
 	std::string str;
 	StringAST(std::string);
 	virtual int get_type() const { return AST_STRING; };
+};
+
+class PostfixAST : public AST {
+public:
+	std::string op;
+	AST *expr;
+	PostfixAST(std::string, AST *);
+	~PostfixAST() { delete expr; }
+	virtual int get_type() const { return AST_POSTFIX; }
 };
 
 class BinaryAST : public AST {

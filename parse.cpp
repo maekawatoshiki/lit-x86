@@ -93,10 +93,7 @@ AST *Parser::expression() {
 		if(!tok.skip(",")) error("error: %d: expected ','", tok.tok[tok.pos].nline);
 		make_while();
 
-	} else if(tok.skip("while")) { blocksCount++;
-
-		make_while();
-
+	} else if(tok.is("while")) { return make_while();
 	} else if(tok.skip("return")) {
 
 		make_return();
@@ -193,38 +190,14 @@ AST *Parser::make_if() {
 	return NULL;
 }
 
-int Parser::make_while() {
-	uint32_t loopBgn = ntv.count, end, stepBgn[2], stepOn = 0;
-
-	expr_entry(); // condition
-	if(tok.skip(",")) {
-		stepOn = 1;
-		stepBgn[0] = tok.pos;
-		for(; tok.tok[tok.pos].val[0] != ';'; tok.pos++);
+AST *Parser::make_while() {
+	if(tok.skip("while")) {
+		AST *cond = expr_entry();
+		ast_vector block = eval();
+		if(!tok.skip("end")) error("error: %d: expected expression 'end'", tok.get().nline);
+		return new WhileAST(cond, block);
 	}
-	if(!tok.skip(";")) error("error");
-	ntv.gencode(0x83); ntv.gencode(0xf8); ntv.gencode(0x00);// cmp eax, 0
-	ntv.gencode(0x75); ntv.gencode(0x05); // jne 5
-	ntv.gencode(0xe9); end = ntv.count; ntv.gencode_int32(0);// jmp while end
-
-	eval();
-
-	if(stepOn) {
-		stepBgn[1] = tok.pos;
-		tok.pos = stepBgn[0];
-		expr_entry();
-		tok.pos = stepBgn[1];
-	}
-
-	uint32_t n = 0xFFFFFFFF - ntv.count + loopBgn - 4;
-	ntv.gencode(0xe9); ntv.gencode_int32(n); // jmp n
-	ntv.gencode_int32_insert(ntv.count - end - 4, end);
-
-	for(--break_list.count; break_list.count >= 0; break_list.count--) {
-		ntv.gencode_int32_insert(ntv.count - break_list.addr_list[break_list.count] - 4, break_list.addr_list[break_list.count]);
-	} break_list.count = 0;
-
-	return 0;
+	return NULL;
 }
 
 AST *Parser::make_func() {

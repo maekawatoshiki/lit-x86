@@ -62,13 +62,14 @@ public:
 	AST *expr_add_sub();
 	AST *expr_mul_div();
 	AST *expr_index();
+	AST *expr_postfix();
 	AST *expr_primary();
 	AST *expr_array();
 
 // parse.h
 	void make_require();
 	AST *make_if();
-	int make_while();
+	AST *make_while();
 	AST *make_func();
 	int make_break();
 	int make_return();
