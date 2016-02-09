@@ -21,7 +21,8 @@ AST *visit(AST *ast) {
 		std::cout << "(" << ((BinaryAST *)ast)->op << " ";
 			visit(((BinaryAST *)ast)->left);
 			visit(((BinaryAST *)ast)->right);
-		std::cout << ")" << std::endl;
+		std::cout << ")";
+		std::cout << std::endl;
 	} else if(ast->get_type() == AST_POSTFIX) {
 		std::cout << "(" << ((PostfixAST *)ast)->op << " ";
 			visit(((PostfixAST *)ast)->expr);
@@ -32,7 +33,8 @@ AST *visit(AST *ast) {
 		std::cout << ")\n(\n";
 		for(int i = 0; i < wa->block.size(); i++) 
 			visit(wa->block[i]);
-		std::cout << ")\n)" << std::endl;
+		std::cout << ")\n)";
+		std::cout << std::endl;
 	} else if(ast->get_type() == AST_FOR) {
 		ForAST *fa = (ForAST *)ast;
 		std::cout << "(for ("; visit(fa->asgmt);
@@ -41,7 +43,8 @@ AST *visit(AST *ast) {
 		std::cout << ")\n(" << std::endl;
 		for(int i = 0; i < fa->block.size(); i++) 
 			visit(fa->block[i]);
-		std::cout << ")\n)" << std::endl;
+		std::cout << ")\n)";
+		std::cout << std::endl;
 	} else if(ast->get_type() == AST_FUNCTION) {
 		FunctionAST *fa = ((FunctionAST *) ast);
 		std::cout << "(defunc " << fa->info.mod_name << "::" << fa->info.name << " ("; 
@@ -50,7 +53,8 @@ AST *visit(AST *ast) {
 		std::cout << ")\n(\n";
 		for(int i = 0; i < fa->statement.size(); i++) 
 			visit(fa->statement[i]);
-		std::cout << ")\n)" << std::endl;
+		std::cout << ")\n)";
+		std::cout << std::endl;
 	} else if(ast->get_type() == AST_IF) {
 		IfAST *ia = (IfAST *)ast;
 		std::cout << "(if ("; visit(ia->cond); std::cout << ")\n(";
@@ -59,18 +63,19 @@ AST *visit(AST *ast) {
 		std::cout << ")\n(\n";
 		for(int i = 0; i < ia->else_block.size(); i++) 
 			visit(ia->else_block[i]);
-		std::cout << ")\n)" << std::endl;
+		std::cout << ")\n)";
+		std::cout << std::endl;
 	} else if(ast->get_type() == AST_VARIABLE_DECL) {
 		std::cout << "(vardecl "
 			<< ((VariableDeclAST *)ast)->info.mod_name << "::"
 			<< ((VariableDeclAST *)ast)->info.name << " "
-			<< ((VariableDeclAST *)ast)->info.type << ")" << std::endl;
+			<< ((VariableDeclAST *)ast)->info.type << ")";
 	} else if(ast->get_type() == AST_ARRAY) {
 		ArrayAST *ary = (ArrayAST *)ast;
 		std::cout << "(array ";
 		for(int i = 0; i < ary->elems.size(); i++) 
 			visit(ary->elems[i]);
-		std::cout << ")" << std::endl;
+		std::cout << ")";
 	} else if(ast->get_type() == AST_NUMBER) {
 		std::cout << " " << ((NumberAST *)ast)->number << " ";
 	} else if(ast->get_type() == AST_STRING) {
@@ -78,7 +83,7 @@ AST *visit(AST *ast) {
 	} else if(ast->get_type() == AST_VARIABLE) {
 		std::cout << "(var " 
 			<< ((VariableAST *)ast)->info.mod_name << "::"
-			<< ((VariableAST *)ast)->info.name << ") " << std::endl;
+			<< ((VariableAST *)ast)->info.name << ") ";
 	} else if(ast->get_type() == AST_FUNCTION_CALL) {
 		std::cout << "(call " 
 			<< ((FunctionCallAST *)ast)->info.mod_name << "::"
@@ -86,8 +91,13 @@ AST *visit(AST *ast) {
 		for(int i = 0; i < ((FunctionCallAST *)ast)->args.size(); i++) {
 			visit(((FunctionCallAST *)ast)->args[i]);
 		}
-		std::cout << ")" << std::endl;
+		std::cout << ")";
+		std::cout << std::endl;
+	} else if(ast->get_type() == AST_RETURN) {
+		std::cout << "(return ("; visit(((ReturnAST *)ast)->expr);
+		std::cout << "))" << std::endl;
 	}
+
 	return ast;
 }
 

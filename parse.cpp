@@ -41,14 +41,12 @@ int Parser::make_break() {
 	return break_list.count++;
 }
 
-int Parser::make_return() {
-	expr_entry(); // get argument
-	ntv.gencode(0xe9); // jmp
-	return_list.addr_list = (uint32_t*)realloc(return_list.addr_list, ADDR_SIZE * (return_list.count + 1));
-	if(return_list.addr_list == NULL) error("LitSystemError: no enough memory");
-	return_list.addr_list[return_list.count] = ntv.count;
-	ntv.gencode_int32(0);
-	return return_list.count++;
+AST *Parser::make_return() {
+	if(tok.skip("return")) {
+		AST *expr = expr_entry();
+		return new ReturnAST(expr);
+	}
+	return NULL;
 }
 
 AST *Parser::expression() {
@@ -89,10 +87,7 @@ AST *Parser::expression() {
 
 	} else if(tok.is("for")) { return make_for();
 	} else if(tok.is("while")) { return make_while();
-	} else if(tok.skip("return")) {
-
-		make_return();
-
+	} else if(tok.is("return")) { return make_return();
 	} else if(tok.is("if")) return make_if();
 	else if(tok.is("else")) return NULL;
 	else if(tok.skip("break")) {

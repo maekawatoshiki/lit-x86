@@ -48,3 +48,7 @@ ForAST::ForAST(AST *a, AST *c, AST *s, std::vector<AST *> b) :
 	asgmt(a), cond(c), step(s), block(b) {
 }
 
+ReturnAST::ReturnAST(AST *e) : 
+	expr(e) {
+}
+

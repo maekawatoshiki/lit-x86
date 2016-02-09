@@ -73,7 +73,7 @@ public:
 	AST *make_for();
 	AST *make_func();
 	int make_break();
-	int make_return();
+	AST *make_return();
 
 	ast_vector eval();
 	AST *expression();

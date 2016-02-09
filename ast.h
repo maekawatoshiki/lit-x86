@@ -17,6 +17,7 @@ enum {
 	AST_IF,
 	AST_WHILE,
 	AST_FOR,
+	AST_RETURN,
 	AST_ARRAY
 };
 
@@ -117,6 +118,13 @@ public:
 	std::vector<AST *> block;
 	ForAST(AST *, AST *, AST *, std::vector<AST *>);
 	virtual int get_type() const { return AST_FOR; }
+};
+
+class ReturnAST : public AST {
+public:
+	AST *expr;
+	ReturnAST(AST *);
+	virtual int get_type() const { return AST_RETURN; }
 };
 
 typedef std::vector<AST *> ast_vector;
