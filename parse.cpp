@@ -87,12 +87,7 @@ AST *Parser::expression() {
 			ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(8);// call *0x08(esi) putLN
 		}
 
-	} else if(tok.skip("for")) { blocksCount++;
-
-		asgmt();
-		if(!tok.skip(",")) error("error: %d: expected ','", tok.tok[tok.pos].nline);
-		make_while();
-
+	} else if(tok.is("for")) { return make_for();
 	} else if(tok.is("while")) { return make_while();
 	} else if(tok.skip("return")) {
 
@@ -186,6 +181,20 @@ AST *Parser::make_if() {
 		AST *i = new IfAST(cond, then, else_block);
 		visit(i);
 		return i;
+	}
+	return NULL;
+}
+
+AST *Parser::make_for() {
+	if(tok.skip("for")) {
+		AST *asgmt = expr_entry();
+			if(!tok.skip(",")) error("E");
+		AST *cond = expr_entry();
+			if(!tok.skip(",")) error("E");
+		AST *step = expr_entry();
+		ast_vector block = eval();
+		if(!tok.skip("end")) error("error: %d: expected expression 'end'", tok.get().nline);
+		return new ForAST(asgmt, cond, step, block);
 	}
 	return NULL;
 }

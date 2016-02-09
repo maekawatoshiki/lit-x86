@@ -43,3 +43,8 @@ IfAST::IfAST(AST *c, std::vector<AST *> t, std::vector<AST *> e) :
 WhileAST::WhileAST(AST *c, std::vector<AST *> b) : 
 	cond(c), block(b) {
 }
+
+ForAST::ForAST(AST *a, AST *c, AST *s, std::vector<AST *> b) : 
+	asgmt(a), cond(c), step(s), block(b) {
+}
+

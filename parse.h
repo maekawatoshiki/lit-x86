@@ -70,6 +70,7 @@ public:
 	void make_require();
 	AST *make_if();
 	AST *make_while();
+	AST *make_for();
 	AST *make_func();
 	int make_break();
 	int make_return();

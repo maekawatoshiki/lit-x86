@@ -16,6 +16,7 @@ enum {
 	AST_FUNCTION,
 	AST_IF,
 	AST_WHILE,
+	AST_FOR,
 	AST_ARRAY
 };
 
@@ -108,6 +109,14 @@ public:
 	std::vector<AST *> block;
 	WhileAST(AST *, std::vector<AST *>);
 	virtual int get_type() const { return AST_WHILE; }
+};
+
+class ForAST : public AST {
+public:
+	AST *asgmt, *cond, *step;
+	std::vector<AST *> block;
+	ForAST(AST *, AST *, AST *, std::vector<AST *>);
+	virtual int get_type() const { return AST_FOR; }
 };
 
 typedef std::vector<AST *> ast_vector;
