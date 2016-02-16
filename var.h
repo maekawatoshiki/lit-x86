@@ -4,7 +4,6 @@
 #include <string>
 #include <vector>
 #include "common.h"
-#include "func.h"
 
 typedef struct {
 	std::string name, mod_name;
@@ -29,13 +28,9 @@ enum {
 
 class Variable {
 public:
-	std::vector< std::vector<var_t> > local;
+	std::vector<var_t> local;
 	std::vector<var_t> global;
-	FunctionList &funcs;
-	std::string &module;
 
-	Variable(FunctionList &f, std::string &mod): funcs(f), module(mod) { local.resize(100); }
-	std::vector<var_t> &focus();
 	var_t *get(std::string, std::string);
 	var_t *append(std::string, int, std::string = "");
 };

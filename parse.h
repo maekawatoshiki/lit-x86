@@ -8,26 +8,7 @@
 #include "var.h"
 #include "library.h"
 #include "ast.h"
-
-#define IS_ARRAY(x) ((x) & (T_ARRAY))
-#define IS_TYPE(x, ty)  ((x) & (ty))
-
-struct expr_type_t {
-	expr_type_t():type(T_INT) {};
-	int type;
-	std::string user_type;
-};
-
-class ExprType {
-public:
-	expr_type_t type;
-
-	expr_type_t &get();
-	bool change(int);
-	bool change(std::string);
-	bool is_array();
-	bool is_type(int);
-};
+#include "exprtype.h"
 
 class Parser {
 public:
@@ -39,7 +20,7 @@ public:
 	std::string module;
 
 	Parser(Token &token)
-		:tok(token), var(funcs, module), undef_funcs(module), funcs(module) { }
+		:tok(token), undef_funcs(module), funcs(module) { }
 
 // var.h
 	var_t *declare_var();
@@ -81,11 +62,11 @@ public:
 	int parser();
 	int get_string();
 
-	void replaceEscape(char *);
-
 // stdfunc.h
 	int make_stdfunc(std::string , std::string ); // func name, module name
 	int is_stdfunc(std::string , std::string );
 };
+
+char *replace_escape(char *);
 
 #endif

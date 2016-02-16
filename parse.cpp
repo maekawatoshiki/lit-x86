@@ -9,28 +9,6 @@
 #include "var.h"
 #include "func.h"
 
-expr_type_t &ExprType::get() {
-	return type;
-}
-
-bool ExprType::change(int ty) {
-	type.type = ty;
-	return true;
-}
-
-bool ExprType::change(std::string ty) {
-	type.type = T_USER_TYPE;
-	type.user_type = ty;
-	return true;
-}
-
-bool ExprType::is_array() {
-	return type.type & T_ARRAY;
-}
-
-bool ExprType::is_type(int ty) {
-	return type.type & ty;
-}
 
 int Parser::make_break() {
 	ntv.gencode(0xe9); // jmp
@@ -222,7 +200,7 @@ AST *Parser::make_func() {
 	return new FunctionAST(function, args, stmt);
 }
 
-void Parser::replaceEscape(char *str) {
+char *replace_escape(char *str) {
 	int i;
 	char *pos;
 	char escape[12][3] = {
@@ -233,10 +211,11 @@ void Parser::replaceEscape(char *str) {
 		"\\t", "\t",
 		"\\b", "\b"
 	};
-	for (i = 0; i < 12; i += 2) {
+	for(i = 0; i < 12; i += 2) {
 		while ((pos = strstr(str, escape[i])) != NULL) {
 			*pos = escape[i + 1][0];
 			memmove(pos + 1, pos + 2, strlen(str) - 2 + 1);
 		}
 	}
+	return str;
 }

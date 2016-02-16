@@ -4,6 +4,7 @@
 #include "common.h"
 #include "var.h"
 #include "func.h"
+#include "asm.h"
 
 enum {
 	AST_NUMBER,
@@ -40,6 +41,7 @@ public:
 	std::string str;
 	StringAST(std::string);
 	virtual int get_type() const { return AST_STRING; };
+	void codegen(Function &, NativeCode_x86 &);
 };
 
 class PostfixAST : public AST {
@@ -79,6 +81,7 @@ public:
 	std::vector<AST *> args;
 	FunctionCallAST(func_t f, std::vector<AST *> a);
 	virtual int get_type() const { return AST_FUNCTION_CALL; }
+	void codegen(Function &, NativeCode_x86 &);
 };
 
 class FunctionAST : public AST {
@@ -87,6 +90,7 @@ public:
 	std::vector<AST *> args, statement;
 	FunctionAST(func_t f, std::vector<AST *> a, std::vector<AST *>);
 	virtual int get_type() const { return AST_FUNCTION; }
+	Function codegen();
 };
 
 class ArrayAST : public AST {

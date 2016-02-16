@@ -6,14 +6,11 @@
 #include "lit.h"
 #include "func.h"
 
-
-std::vector<var_t> &Variable::focus() { return local[funcs.now]; }
-
 var_t *Variable::get(std::string name, std::string mod_name) {
 	// local var
-	for(int i = 0; i < local[funcs.now].size(); i++) {
-		if(name == local[funcs.now][i].name) {
-			return &(local[funcs.now][i]);
+	for(int i = 0; i < local.size(); i++) {
+		if(name == local[i].name) {
+			return &(local[i]);
 		}
 	}
 	// global var
@@ -27,31 +24,16 @@ var_t *Variable::get(std::string name, std::string mod_name) {
 }
 
 var_t * Variable::append(std::string name, int type, std::string c_name) {
-	if(funcs.inside == true) { // local
-		size_t sz = local[funcs.now].size();
-		var_t v = {
-			.name = name,
-			.type = type,
-			.class_type = c_name,
-			.id = sz + 2, 
-			.loctype = V_LOCAL
-		};
-		local[funcs.now].push_back(v);
-		return &local[funcs.now].back();
-	} else if(funcs.inside == false) { // global
-		var_t v = {
-			.name = name,
-			.mod_name = module,
-			.type = type,
-			.class_type = c_name,
-			.id = (uint32_t)&ntv.code[ntv.count], 
-			.loctype = V_GLOBAL
-		};
-		ntv.count += ADDR_SIZE;
-		global.push_back(v);
-		return &global.back();
-	}
-	return NULL;
+	uint32_t sz = local.size();
+	var_t v = {
+		.name = name,
+		.type = type,
+		.class_type = c_name,
+		.id = sz + 2, 
+		.loctype = V_LOCAL
+	};
+	local.push_back(v);
+	return &local.back();
 }
 
 int Parser::is_asgmt() {

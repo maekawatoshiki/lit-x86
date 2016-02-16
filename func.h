@@ -2,11 +2,18 @@
 #define _FUNC_LIT_
 
 #include "common.h"
+#include "var.h"
 
 typedef struct {
 	uint32_t address, params;
 	std::string name, mod_name;
 } func_t;
+
+class Function {
+public:
+	Variable var;
+	func_t info;
+};
 
 class FunctionList {
 public:
