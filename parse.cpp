@@ -46,23 +46,6 @@ AST *Parser::expression() {
 		module = tok.tok[tok.pos++].val;
 		eval();
 		module = "";
-	} else if((isputs=tok.skip("puts")) || tok.skip("print")) {
-
-		do {
-			ExprType et; //TODO: fix
-			ntv.genas("push eax");
-			if(et.is_type(T_STRING)) {
-				ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(4);// call *0x04(esi) putString
-			} else {
-				ntv.gencode(0xff); ntv.gencode(0x16); // call (esi) putNumber
-			}
-			ntv.genas("add esp 4");
-		} while(tok.skip(","));
-		// for new line
-		if(isputs) {
-			ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(8);// call *0x08(esi) putLN
-		}
-
 	} else if(tok.is("for")) { return make_for();
 	} else if(tok.is("while")) { return make_while();
 	} else if(tok.is("return")) { return make_return();
@@ -96,7 +79,6 @@ ast_vector Parser::eval() {
 int Parser::parser() {
 	tok.pos = ntv.count = 0;
 	uint32_t main_address;
-	ntv.gencode(0xe9); main_address = ntv.count; ntv.gencode_int32(0);
 
 	blocksCount = 0;
 
@@ -104,7 +86,9 @@ int Parser::parser() {
 	std::cout << "\n---------- abstract syntax tree ----------" << std::endl;
 	for(int i = 0; i < a.size(); i++)
 		visit(a[i]), std::cout << std::endl;
-
+	FunctionList list(module);
+	if(a[0]->get_type() == AST_FUNCTION) 
+		((FunctionAST *)a[0])->codegen(list);
 #ifdef DEBUG
 	printf("blocks: %d\n", blocksCount);
 #endif

@@ -196,7 +196,7 @@ AST *Parser::expr_primary() {
 	if(is_number_tok()) {
 		return new NumberAST(atoi(tok.next().val.c_str()));
 	} else if(is_char_tok()) { 
-		ntv.genas("mov eax %d", (int)tok.next().val[0]);
+		// ntv.genas("mov eax %d", (int)tok.next().val[0]);
 	} else if(is_string_tok()) {
 		return new StringAST(tok.next().val);
 	} else if(is_ident_tok()) { // variable or inc or dec

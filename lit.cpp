@@ -101,7 +101,7 @@ Lit::~Lit() {
 int Lit::execute(char *source) {
 	lex.lex(source);
 	parser.parser();
-	// run();
+	run();
 	return 0;
 }
 
