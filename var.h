@@ -33,6 +33,7 @@ public:
 
 	var_t *get(std::string, std::string);
 	var_t *append(std::string, int, std::string = "");
+	size_t total_size();
 };
 
 #endif // _LIT_VAR_

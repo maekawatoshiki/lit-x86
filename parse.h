@@ -10,6 +10,18 @@
 #include "ast.h"
 #include "exprtype.h"
 
+enum {
+	ADDR_SIZE = 4
+};
+
+enum {
+	BLOCK_NORMAL = 0,
+	BLOCK_LOOP,
+	BLOCK_FUNC,
+	BLOCK_GLOBAL,
+	NON
+};
+
 class Parser {
 public:
 	Token &tok;

@@ -17,17 +17,6 @@
 
 #define _LIT_VERSION_ "0.9.7"
 
-enum {
-	ADDR_SIZE = 4
-};
-
-enum {
-	BLOCK_NORMAL = 0,
-	BLOCK_LOOP,
-	BLOCK_FUNC,
-	BLOCK_GLOBAL,
-	NON
-};
 
 class ctrl_t {
 public:

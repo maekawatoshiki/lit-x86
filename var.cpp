@@ -36,6 +36,10 @@ var_t * Variable::append(std::string name, int type, std::string c_name) {
 	return &local.back();
 }
 
+size_t Variable::total_size() {
+	return local.size() * ADDR_SIZE;
+}
+
 int Parser::is_asgmt() {
 	if(tok.is("=", 1)) return 1;
 	else if(tok.is("++", 1)) return 1;

@@ -17,17 +17,16 @@ public:
 
 class FunctionList {
 public:
-	std::vector<func_t> func;
+	std::vector<Function> func;
 	int now;
 	bool inside;
 	std::string &module;
 	
 	FunctionList(std::string &mod): module(mod), now(0), inside(false) { func.reserve(128); }
 	bool is(std::string, std::string);
-	func_t *focus();
-	func_t *get(std::string, std::string);
-	func_t *append(std::string, int, int);
-	func_t *append_undef(std::string, std::string, int);
+	Function *get(std::string, std::string);
+	Function *append(Function);
+	Function *append_undef(std::string, std::string, int);
 	bool rep_undef(std::string, int);	
 };
 

@@ -110,10 +110,6 @@ int Parser::parser() {
 #endif
 	if(blocksCount != 0) error("error: 'end' is not enough");
 	uint32_t addr = 0;
-	func_t *func_main = funcs.get("main", "");
-	if(func_main == NULL) error("LitSystemError: not found function 'main'");
-	else addr = func_main->address;
-	ntv.gencode_int32_insert(addr - ADDR_SIZE - 1, main_address);
 #ifdef DEBUG
 	for(int i = 0; i < ntv.count; i++)
 		printf("%02x", ntv.code[i]);
