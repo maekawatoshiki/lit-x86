@@ -60,6 +60,7 @@ public:
 	AST *left, *right;
 	BinaryAST(std::string o, AST *le, AST *re);
 	virtual int get_type() const { return AST_BINARY; }
+	void codegen(Function &, NativeCode_x86 &);
 };
 
 class VariableAST : public AST {

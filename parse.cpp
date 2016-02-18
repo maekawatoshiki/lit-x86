@@ -130,7 +130,7 @@ AST *Parser::make_if() {
 		if(tok.skip("else")) {
 			else_block = eval();
 			tok.skip("end");
-		} else if(tok.skip("end")) {}
+		} else if(!tok.skip("end")) error("error: %d: expected expression 'end'", tok.get().nline);
 		AST *i = new IfAST(cond, then, else_block);
 		visit(i);
 		return i;
