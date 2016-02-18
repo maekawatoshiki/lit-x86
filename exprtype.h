@@ -8,7 +8,7 @@
 #define IS_TYPE(x, ty)  ((x) & (ty))
 
 struct expr_type_t {
-	expr_type_t():type(T_INT) {};
+	expr_type_t(int ty=T_INT): type(ty) {};
 	int type;
 	std::string user_type;
 };

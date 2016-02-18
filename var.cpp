@@ -8,9 +8,9 @@
 
 var_t *Variable::get(std::string name, std::string mod_name) {
 	// local var
-	for(int i = 0; i < local.size(); i++) {
-		if(name == local[i].name) {
-			return &(local[i]);
+	for(std::vector<var_t>::iterator it = local.begin(); it != local.end(); ++it) {
+		if(name == it->name) {
+			return &(*it);
 		}
 	}
 	// global var
@@ -29,7 +29,7 @@ var_t * Variable::append(std::string name, int type, std::string c_name) {
 		.name = name,
 		.type = type,
 		.class_type = c_name,
-		.id = sz + 2, 
+		.id = sz + 1, 
 		.loctype = V_LOCAL
 	};
 	local.push_back(v);

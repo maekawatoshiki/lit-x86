@@ -74,9 +74,6 @@ public:
 	int parser();
 	int get_string();
 
-// stdfunc.h
-	int make_stdfunc(std::string , std::string ); // func name, module name
-	int is_stdfunc(std::string , std::string );
 };
 
 char *replace_escape(char *);

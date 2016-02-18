@@ -13,6 +13,7 @@ enum {
 	AST_BINARY,
 	AST_VARIABLE,
 	AST_VARIABLE_DECL,
+	AST_VARIABLE_ASGMT,
 	AST_FUNCTION_CALL,
 	AST_FUNCTION,
 	AST_IF,
@@ -60,7 +61,7 @@ public:
 	AST *left, *right;
 	BinaryAST(std::string o, AST *le, AST *re);
 	virtual int get_type() const { return AST_BINARY; }
-	void codegen(Function &, NativeCode_x86 &);
+	int codegen(Function &, FunctionList &, NativeCode_x86 &); // ret is type of expr.
 };
 
 class VariableAST : public AST {
@@ -68,6 +69,16 @@ public:
 	var_t info;
 	VariableAST(var_t v);
 	virtual int get_type() const { return AST_VARIABLE; }
+	void codegen(Function &, NativeCode_x86 &);
+	var_t *get(Function &);
+};
+
+class VariableAsgmtAST : public AST {
+public:
+	AST *var, *src;
+	VariableAsgmtAST(AST *, AST *);
+	virtual int get_type() const { return AST_VARIABLE_ASGMT; }
+	void codegen(Function &, FunctionList &, NativeCode_x86 &);
 };
 
 class VariableDeclAST : public AST {
@@ -75,6 +86,7 @@ public:
 	var_t info;
 	VariableDeclAST(var_t);
 	virtual int get_type() const { return AST_VARIABLE_DECL; }
+	var_t *get(Function &);
 };
 
 class FunctionCallAST : public AST {

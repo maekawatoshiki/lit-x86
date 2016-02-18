@@ -3,7 +3,6 @@
 #include "asm.h"
 #include "expr.h"
 #include "parse.h"
-#include "stdfunc.h"
 #include "util.h"
 
 int Lexer::lex(char *code) {

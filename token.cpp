@@ -4,7 +4,6 @@
 #include "lex.h"
 #include "expr.h"
 #include "parse.h"
-#include "stdfunc.h"
 #include "util.h"
 
 bool Token::skip(std::string s) {

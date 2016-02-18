@@ -20,6 +20,10 @@ VariableAST::VariableAST(var_t v) :
 	info(v) {
 }
 
+VariableAsgmtAST::VariableAsgmtAST(AST *a, AST *b) : 
+	var(a), src(b) {
+}
+
 VariableDeclAST::VariableDeclAST(var_t v) : 
 	info(v) {
 }

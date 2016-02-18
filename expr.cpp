@@ -4,7 +4,6 @@
 #include "lex.h"
 #include "token.h"
 #include "parse.h"
-#include "stdfunc.h"
 #include "util.h"
 #include "library.h"
 #include "var.h"
@@ -23,6 +22,11 @@ AST *visit(AST *ast) {
 			visit(((BinaryAST *)ast)->right);
 		std::cout << ")";
 		std::cout << std::endl;
+	} else if(ast->get_type() == AST_VARIABLE_ASGMT) {
+		std::cout << "(= ";
+			visit(((VariableAsgmtAST *)ast)->var);
+			visit(((VariableAsgmtAST *)ast)->src);
+		std::cout << ")" << std::endl;;
 	} else if(ast->get_type() == AST_POSTFIX) {
 		std::cout << "(" << ((PostfixAST *)ast)->op << " ";
 			visit(((PostfixAST *)ast)->expr);
@@ -112,7 +116,7 @@ AST *Parser::expr_asgmt() {
 	l = expr_compare();
 	while(tok.skip("=")) {
 		r = expr_compare();
-		l = new BinaryAST("=", l, r);
+		l = new VariableAsgmtAST(l, r);
 	}
 	return l;
 }

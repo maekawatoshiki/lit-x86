@@ -4,7 +4,6 @@
 #include "expr.h"
 #include "parse.h"
 #include "token.h"
-#include "stdfunc.h"
 #include "util.h"
 #include "option.h"
 #include "library.h"
