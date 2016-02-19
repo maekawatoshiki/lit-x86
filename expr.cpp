@@ -69,6 +69,11 @@ AST *visit(AST *ast) {
 			visit(ia->else_block[i]);
 		std::cout << ")\n)";
 		std::cout << std::endl;
+	} else if(ast->get_type() == AST_VARIABLE_INDEX) {
+		std::cout << "([] ";
+			visit(((VariableIndexAST *)ast)->var);
+			visit(((VariableIndexAST *)ast)->idx);
+		std::cout << ")";
 	} else if(ast->get_type() == AST_VARIABLE_DECL) {
 		std::cout << "(vardecl "
 			<< ((VariableDeclAST *)ast)->info.mod_name << "::"
@@ -174,7 +179,7 @@ AST *Parser::expr_index() {
 	l = expr_postfix();
 	while(tok.skip("[")) {
 		r = expr_postfix();
-		l = new BinaryAST("[]", l, r);
+		l = new VariableIndexAST(l, r);
 		if(!tok.skip("]"))
 			error("error: %d: expected expression ']'", tok.get().nline);
 	}

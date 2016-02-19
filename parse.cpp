@@ -50,10 +50,8 @@ AST *Parser::expression() {
 	} else if(tok.is("while")) { return make_while();
 	} else if(tok.is("return")) { return make_return();
 	} else if(tok.is("if")) return make_if();
-	else if(tok.is("else")) return NULL;
-	else if(tok.skip("break")) {
-		make_break();
-	} else if(tok.is("end")) return NULL;
+	else if(tok.is("else") || tok.is("end")) return NULL;
+	else if(tok.skip("break")) return (AST *)make_break();
 	else {
 		puts("expression");
 		return expr_entry();
@@ -100,22 +98,6 @@ int Parser::parser() {
 	puts("");
 	printf("memsz: %d\n", funcs.focus()->var.size[funcs.now]);
 #endif
-// #ifdef DEBUG
-// 	printf("blocks: %d\n", blocksCount);
-// #endif
-// 	if(blocksCount != 0) error("error: 'end' is not enough");
-// 	uint32_t addr = 0;
-// 	func_t *func_main = funcs.get("main", "");
-// 	if(func_main == NULL) error("LitSystemError: not found function 'main'");
-// 	else addr = func_main->address;
-// 	ntv.gencode_int32_insert(addr - ADDR_SIZE - 1, main_address);
-// #ifdef DEBUG
-// 	for(int i = 0; i < ntv.count; i++)
-// 		printf("%02x", ntv.code[i]);
-// 	puts("");
-// 	printf("memsz: %d\n", funcs.focus()->var.size[funcs.now]);
-// #endif
-
 	return 1;
 }
 
@@ -123,16 +105,29 @@ void Parser::make_require() {
 	lib_list.append(tok.next().val);
 }
 
+/*
+ * if cond
+ * else if cond
+ * else if cond
+ * else
+ * end
+ */
+
 AST *Parser::make_if() {
 	if(tok.skip("if")) {
 		AST *cond = expr_entry();
 		ast_vector then = eval(), else_block;
+		bool is_if = false;
 		if(tok.skip("else")) {
+			if(tok.is("if")) is_if = true;
 			else_block = eval();
-			tok.skip("end");
-		} else if(!tok.skip("end")) error("error: %d: expected expression 'end'", tok.get().nline);
+		} 
+		if(is_if) {
+			if(!tok.is("end")) error("error: %d: expected expression 'end'", tok.get().nline);
+		} else { 
+			if(!tok.skip("end")) error("error: %d: expected expression 'end'", tok.get().nline);
+		}
 		AST *i = new IfAST(cond, then, else_block);
-		visit(i);
 		return i;
 	}
 	return NULL;

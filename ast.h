@@ -14,6 +14,7 @@ enum {
 	AST_VARIABLE,
 	AST_VARIABLE_DECL,
 	AST_VARIABLE_ASGMT,
+	AST_VARIABLE_INDEX,
 	AST_FUNCTION_CALL,
 	AST_FUNCTION,
 	AST_IF,
@@ -22,7 +23,6 @@ enum {
 	AST_RETURN,
 	AST_ARRAY
 };
-
 
 class AST {
 public:
@@ -81,6 +81,14 @@ public:
 	void codegen(Function &, FunctionList &, NativeCode_x86 &);
 };
 
+class VariableIndexAST : public AST {
+public:
+	AST *var, *idx;
+	VariableIndexAST(AST *, AST *);
+	virtual int get_type() const { return AST_VARIABLE_INDEX; }
+	int codegen(Function &, FunctionList &, NativeCode_x86 &);
+};
+
 class VariableDeclAST : public AST {
 public:
 	var_t info;
@@ -112,6 +120,7 @@ public:
 	std::vector<AST *> elems;
 	ArrayAST(std::vector<AST *>);
 	virtual int get_type() const { return AST_ARRAY; }
+	// void codegen(Function &, NativeCode_x86 &);
 };
 
 class IfAST : public AST {
@@ -120,6 +129,7 @@ public:
 	std::vector<AST *> then_block, else_block;
 	IfAST(AST *, std::vector<AST*>, std::vector<AST *>);
 	virtual int get_type() const { return AST_IF; }
+	void codegen(Function &, FunctionList &, NativeCode_x86 &);
 };
 
 class WhileAST : public AST {
@@ -128,6 +138,7 @@ public:
 	std::vector<AST *> block;
 	WhileAST(AST *, std::vector<AST *>);
 	virtual int get_type() const { return AST_WHILE; }
+	void codegen(Function &, FunctionList &, NativeCode_x86 &);
 };
 
 class ForAST : public AST {

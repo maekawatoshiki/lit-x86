@@ -24,6 +24,10 @@ VariableAsgmtAST::VariableAsgmtAST(AST *a, AST *b) :
 	var(a), src(b) {
 }
 
+VariableIndexAST::VariableIndexAST(AST *v, AST *i) : 
+	var(v), idx(i) {
+}
+
 VariableDeclAST::VariableDeclAST(var_t v) : 
 	info(v) {
 }

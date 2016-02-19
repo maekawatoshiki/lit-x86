@@ -80,7 +80,8 @@ void *funcTable[] = {
 	(void *) free_addr,	// 44
 	(void *) freeAddr,	// 48
 	(void *) fgets, 		// 52
-	(void *) rea_concat // 56
+	(void *) rea_concat,// 56
+	(void *) putc				// 60
 };
 
 

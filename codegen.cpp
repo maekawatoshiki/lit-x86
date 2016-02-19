@@ -1,6 +1,6 @@
 #include "codegen.h"
-#include "ast.h"
 #include "asm.h"
+#include "expr.h"
 #include "exprtype.h"
 #include "parse.h"
 
@@ -17,33 +17,74 @@ Function FunctionAST::codegen(FunctionList &f_list) {
 	}
 
 	for(ast_vector::iterator it = statement.begin(); it != statement.end(); ++it) {
-		int ty = (*it)->get_type();
-		if(ty == AST_FUNCTION_CALL) ((FunctionCallAST *)*it)->codegen(f, f_list, ntv);
-		else if(ty == AST_VARIABLE_ASGMT) ((VariableAsgmtAST *)*it)->codegen(f, f_list, ntv);
+		codegen_expression(f, f_list, *it);
 	}
 
 	ntv.genas("add esp %u", f.var.total_size() + 6 * ADDR_SIZE); // add esp nn
 	ntv.gencode(0xc9);// leave
 	ntv.gencode(0xc3);// ret
+
 	ntv.gencode_int32_insert(f.var.total_size() + ADDR_SIZE * 6, esp_);
 
 	return f;
 }
 
+void IfAST::codegen(Function &f, FunctionList &f_list, NativeCode_x86 &ntv) {
+	codegen_expression(f, f_list, cond);	
+	ntv.gencode(0x83); ntv.gencode(0xf8); ntv.gencode(0x00);// cmp eax, 0
+	ntv.gencode(0x75); ntv.gencode(0x05); // jne 5
+	ntv.gencode(0xe9); int end = ntv.count; ntv.gencode_int32(0);// jmp
+	for(ast_vector::iterator it = then_block.begin(); it != then_block.end(); ++it)
+		codegen_expression(f, f_list, *it);
+	ntv.gencode(0xe9); int end1 = ntv.count; ntv.gencode_int32(0);// jmp while end
+	ntv.gencode_int32_insert(ntv.count - end - 4, end);
+
+	for(ast_vector::iterator it = else_block.begin(); it != else_block.end(); ++it)
+		visit(*it), codegen_expression(f, f_list, *it);
+	ntv.gencode_int32_insert(ntv.count - end1 - 4, end1);
+}
+
+void WhileAST::codegen(Function &f, FunctionList &f_list, NativeCode_x86 &ntv) {
+	int loop_bgn = ntv.count;
+	codegen_expression(f, f_list, cond);
+	ntv.gencode(0x83); ntv.gencode(0xf8); ntv.gencode(0x00);// cmp eax, 0
+	ntv.gencode(0x75); ntv.gencode(0x05); // jne 5
+	ntv.gencode(0xe9); int end = ntv.count; ntv.gencode_int32(0);// jmp while end
+
+	for(ast_vector::iterator it = block.begin(); it != block.end(); ++it) {
+		codegen_expression(f, f_list, *it);
+	}
+
+	ntv.gencode(0xe9); ntv.gencode_int32(0xFFFFFFFF - ntv.count + loop_bgn - 4); // jmp n
+	ntv.gencode_int32_insert(ntv.count - end - 4, end);
+}
+
 int codegen_expression(Function &f, FunctionList &f_list, AST *ast) {
-	if(ast->get_type() == AST_NUMBER) {
+	switch(ast->get_type()) {
+	case AST_NUMBER:
 		((NumberAST *)ast)->codegen(f, ntv);
 		return T_INT;
-	} else if(ast->get_type() == AST_STRING) { 
+	case AST_STRING:
 		((StringAST *)ast)->codegen(f, ntv);
 		return T_STRING;
-	} else if(ast->get_type() == AST_VARIABLE) {
+	case AST_VARIABLE:
 		((VariableAST *)ast)->codegen(f, ntv);
 		return ((VariableAST *)ast)->get(f)->type;
-	} else if(ast->get_type() == AST_BINARY) {
-		return ((BinaryAST *)ast)->codegen(f, f_list, ntv);
-	} else if(ast->get_type() == AST_FUNCTION_CALL) {
+	case AST_VARIABLE_ASGMT:
+		((VariableAsgmtAST *)ast)->codegen(f, f_list, ntv);
+		return T_INT;
+	case AST_FUNCTION_CALL:
 		((FunctionCallAST *)ast)->codegen(f, f_list, ntv);
+		return T_INT;
+	case AST_BINARY: 
+		return ((BinaryAST *)ast)->codegen(f, f_list, ntv);
+	case AST_VARIABLE_INDEX:
+		return ((VariableIndexAST *)ast)->codegen(f, f_list, ntv);
+	case AST_IF:
+		((IfAST *)ast)->codegen(f, f_list, ntv);
+		return T_INT;
+	case AST_WHILE:
+		((WhileAST *)ast)->codegen(f, f_list, ntv);
 		return T_INT;
 	}
 	return -1;
@@ -75,11 +116,12 @@ void FunctionCallAST::codegen(Function &f, FunctionList &f_list, NativeCode_x86 
 			} else if(info.name == "puts") {
 				for(int i = 0; i < args.size(); i++) {
 					int ty = codegen_expression(f, f_list, args[i]);
+					ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x24); // mov [esp], eax
 					if(ty == T_STRING) {
-						ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x24); // mov [esp], eax
-						ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(4);// call *0x04(esi) putString
-					} else  {
-						ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x24); // mov [esp], eax
+						ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(4);// call *4(esi) putString
+					} else if(ty == T_CHAR) {
+						ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(60);// call *60(esi) putc
+					} else {
 						ntv.gencode(0xff); ntv.gencode(0x16); // call (esi) putNumber
 					}
 				}
@@ -147,6 +189,20 @@ void VariableAsgmtAST::codegen(Function &f, FunctionList &f_list, NativeCode_x86
 
 var_t *VariableDeclAST::get(Function &f) {
 	return f.var.append(info.name, info.type, "");
+}
+
+int VariableIndexAST::codegen(Function &f, FunctionList &f_list, NativeCode_x86 &ntv) {
+	int ty = codegen_expression(f, f_list, var); 
+	ntv.genas("mov edx eax");
+	codegen_expression(f, f_list, idx);
+	ntv.genas("mov ecx eax");
+	if(ty & T_STRING) {
+		ntv.gencode(0x0f); ntv.gencode(0xb6); ntv.gencode(0x04); ntv.gencode(0x0a);// movzx eax, [edx + ecx]
+		return T_CHAR;
+	} else {
+		ntv.gencode(0x8b); ntv.gencode(0x04); ntv.gencode(0x8a);// mov eax, [edx + ecx * 4
+		return T_INT;
+	}
 }
 
 void VariableAST::codegen(Function &f, NativeCode_x86 &ntv) {

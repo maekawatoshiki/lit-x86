@@ -18,14 +18,6 @@ enum {
 	V_GLOBAL
 };
 
-enum {
-	T_INT 			 = 1 << 1,
-	T_STRING		 = 1 << 2,
-	T_DOUBLE		 = 1 << 3,
-	T_USER_TYPE	 = 1 << 4,
-	T_ARRAY			 = 1 << 5
-};
-
 class Variable {
 public:
 	std::vector<var_t> local;
