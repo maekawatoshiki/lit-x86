@@ -36,7 +36,7 @@ void IfAST::codegen(Function &f, FunctionList &f_list, NativeCode_x86 &ntv) {
 	ntv.gencode(0xe9); int end = ntv.count; ntv.gencode_int32(0);// jmp
 	for(ast_vector::iterator it = then_block.begin(); it != then_block.end(); ++it)
 		codegen_expression(f, f_list, *it);
-	ntv.gencode(0xe9); int end1 = ntv.count; ntv.gencode_int32(0);// jmp while end
+	ntv.gencode(0xe9); int end1 = ntv.count; ntv.gencode_int32(0);// jmp end
 	ntv.gencode_int32_insert(ntv.count - end - 4, end);
 
 	for(ast_vector::iterator it = else_block.begin(); it != else_block.end(); ++it)
@@ -55,8 +55,12 @@ void WhileAST::codegen(Function &f, FunctionList &f_list, NativeCode_x86 &ntv) {
 		codegen_expression(f, f_list, *it);
 	}
 
-	ntv.gencode(0xe9); ntv.gencode_int32(0xFFFFFFFF - ntv.count + loop_bgn - 4); // jmp n
-	ntv.gencode_int32_insert(ntv.count - end - 4, end);
+	ntv.gencode(0xe9); ntv.gencode_int32(0xFFFFFFFF - ntv.count + loop_bgn - ADDR_SIZE); // jmp n
+	ntv.gencode_int32_insert(ntv.count - end - ADDR_SIZE, end);
+
+	for(std::vector<int>::iterator it = f.break_list.begin(); it != f.break_list.end(); ++it) {
+		ntv.gencode_int32_insert(ntv.count - *it - ADDR_SIZE, *it);
+	}
 }
 
 int codegen_expression(Function &f, FunctionList &f_list, AST *ast) {
@@ -85,6 +89,11 @@ int codegen_expression(Function &f, FunctionList &f_list, AST *ast) {
 		return T_INT;
 	case AST_WHILE:
 		((WhileAST *)ast)->codegen(f, f_list, ntv);
+		return T_INT;
+	case AST_BREAK:
+		ntv.gencode(0xe9); // jmp
+		f.break_list.push_back(ntv.count); 
+		ntv.gencode_int32(0x00000000);
 		return T_INT;
 	}
 	return -1;
@@ -163,7 +172,8 @@ int BinaryAST::codegen(Function &f, FunctionList &f_list, NativeCode_x86 &ntv) {
 		ntv.genas("mov eax edx");
 	} else if(op == "<" || op == ">" || op == "!=" || 
 			op == "==" || op == "<=" || op == ">=") {
-		bool lt = op == "<", gt = op == ">", ne = op == "!=", eql = op == "==", fle = "<=";
+		puts(op.c_str());
+		bool lt = op == "<", gt = op == ">", ne = op == "!=", eql = op == "==", fle = op == "<=";
 		ntv.gencode(0x39); ntv.gencode(0xd8); // cmp %eax, %ebx
 		ntv.gencode(0x0f); ntv.gencode(lt ? 0x9c : gt ? 0x9f : ne ? 0x95 : eql ? 0x94 : fle ? 0x9e : 0x9d); ntv.gencode(0xc0); // setX al
 		ntv.gencode(0x0f); ntv.gencode(0xb6); ntv.gencode(0xc0); // movzx eax al

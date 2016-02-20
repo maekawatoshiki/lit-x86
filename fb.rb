@@ -12,6 +12,6 @@ def main
 		end
 		i = i + 1
 	end
-	puts("yeih!")
+	puts("yeah!")
 end
 

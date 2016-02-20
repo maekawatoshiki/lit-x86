@@ -13,6 +13,7 @@ class Function {
 public:
 	Variable var;
 	func_t info;
+	std::vector<int> break_list, return_list;
 };
 
 class FunctionList {

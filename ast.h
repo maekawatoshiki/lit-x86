@@ -20,6 +20,7 @@ enum {
 	AST_IF,
 	AST_WHILE,
 	AST_FOR,
+	AST_BREAK,
 	AST_RETURN,
 	AST_ARRAY
 };
@@ -147,6 +148,11 @@ public:
 	std::vector<AST *> block;
 	ForAST(AST *, AST *, AST *, std::vector<AST *>);
 	virtual int get_type() const { return AST_FOR; }
+};
+
+class BreakAST : public AST {
+public:
+	virtual int get_type() const { return AST_BREAK; }
 };
 
 class ReturnAST : public AST {

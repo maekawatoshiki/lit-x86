@@ -146,7 +146,7 @@ AST *Parser::expr_logic() {
 	if((lt=tok.skip("<")) || (gt=tok.skip(">")) || (ne=tok.skip("!=")) ||
 			(eql=tok.skip("==")) || (fle=tok.skip("<=")) || tok.skip(">=")) {
 		r = expr_add_sub();
-		l = new BinaryAST(lt ? "<" : gt ? ">" : ne ? "!=" : eql ? "==" : fle ? "<=" : "!", l, r);
+		l = new BinaryAST(lt ? "<" : gt ? ">" : ne ? "!=" : eql ? "==" : fle ? "<=" : ">=", l, r);
 	}
 
 	return l;

@@ -66,7 +66,7 @@ public:
 	AST *make_while();
 	AST *make_for();
 	AST *make_func();
-	int make_break();
+	AST *make_break();
 	AST *make_return();
 
 	ast_vector eval();

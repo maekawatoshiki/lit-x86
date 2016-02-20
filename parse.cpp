@@ -9,14 +9,11 @@
 #include "var.h"
 #include "func.h"
 
-
-int Parser::make_break() {
-	ntv.gencode(0xe9); // jmp
-	break_list.addr_list = (uint32_t*)realloc(break_list.addr_list, ADDR_SIZE * (break_list.count + 1));
-	if(break_list.addr_list == NULL) error("LitSystemError: no enough memory");
-	break_list.addr_list[break_list.count] = ntv.count;
-	ntv.gencode_int32(0);
-	return break_list.count++;
+AST *Parser::make_break() {
+	if(tok.skip("break")) {
+		return new BreakAST();
+	}
+	return NULL;
 }
 
 AST *Parser::make_return() {
@@ -28,34 +25,20 @@ AST *Parser::make_return() {
 }
 
 AST *Parser::expression() {
-	int isputs = 0;
-
-	if(tok.skip("$")) { // global varibale
-
-		if(is_asgmt()) asgmt();
-
-	} else if(tok.skip("require")) {
-	
-		make_require();
-	
-	} else if(tok.skip("def")) { 
-
-		return make_func();
-
-	} else if(tok.skip("module")) { blocksCount++;
+	if(tok.skip("require")) make_require();
+	else if(tok.skip("def")) return make_func();
+	else if(tok.skip("module")) { blocksCount++;
 		module = tok.tok[tok.pos++].val;
 		eval();
 		module = "";
-	} else if(tok.is("for")) { return make_for();
-	} else if(tok.is("while")) { return make_while();
-	} else if(tok.is("return")) { return make_return();
-	} else if(tok.is("if")) return make_if();
-	else if(tok.is("else") || tok.is("elsif") || tok.is("end")) return NULL;
-	else if(tok.skip("break")) return (AST *)make_break();
-	else {
-		puts("expression");
-		return expr_entry();
 	}
+	else if(tok.is("for")) return make_for();
+	else if(tok.is("while"))  return make_while();
+	else if(tok.is("return"))  return make_return();
+	else if(tok.is("if")) return make_if();
+	else if(tok.is("break")) return make_break();
+	else if(tok.is("else") || tok.is("elsif") || tok.is("end")) return NULL;
+	else return expr_entry();
 	
 	return NULL;
 }
