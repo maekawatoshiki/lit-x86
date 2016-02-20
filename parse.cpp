@@ -50,7 +50,7 @@ AST *Parser::expression() {
 	} else if(tok.is("while")) { return make_while();
 	} else if(tok.is("return")) { return make_return();
 	} else if(tok.is("if")) return make_if();
-	else if(tok.is("else") || tok.is("end")) return NULL;
+	else if(tok.is("else") || tok.is("elsif") || tok.is("end")) return NULL;
 	else if(tok.skip("break")) return (AST *)make_break();
 	else {
 		puts("expression");
@@ -117,18 +117,28 @@ AST *Parser::make_if() {
 	if(tok.skip("if")) {
 		AST *cond = expr_entry();
 		ast_vector then = eval(), else_block;
-		bool is_if = false;
 		if(tok.skip("else")) {
-			if(tok.is("if")) is_if = true;
 			else_block = eval();
-		} 
-		if(is_if) {
-			if(!tok.is("end")) error("error: %d: expected expression 'end'", tok.get().nline);
-		} else { 
-			if(!tok.skip("end")) error("error: %d: expected expression 'end'", tok.get().nline);
+		} else if(tok.is("elsif")) {
+			else_block.push_back(make_elsif());
 		}
+		if(!tok.skip("end")) error("error: %d: expected expression 'end'", tok.get().nline);
 		AST *i = new IfAST(cond, then, else_block);
 		return i;
+	}
+	return NULL;
+}
+
+AST *Parser::make_elsif() {
+	if(tok.skip("elsif")) {
+		AST *cond = expr_entry();
+		ast_vector then = eval(), else_block;
+		if(tok.is("elsif")) {
+			else_block.push_back(make_elsif());
+		} else if(tok.skip("else")) {
+			else_block = eval();
+		}
+		return new IfAST(cond, then, else_block);
 	}
 	return NULL;
 }

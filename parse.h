@@ -62,6 +62,7 @@ public:
 // parse.h
 	void make_require();
 	AST *make_if();
+	AST *make_elsif();
 	AST *make_while();
 	AST *make_for();
 	AST *make_func();
