@@ -178,7 +178,7 @@ AST *Parser::expr_index() {
 	AST *l, *r;
 	l = expr_postfix();
 	while(tok.skip("[")) {
-		r = expr_postfix();
+		r = expr_entry();
 		l = new VariableIndexAST(l, r);
 		if(!tok.skip("]"))
 			error("error: %d: expected expression ']'", tok.get().nline);

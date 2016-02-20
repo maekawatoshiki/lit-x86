@@ -2,6 +2,7 @@
 #include "asm.h"
 #include "expr.h"
 #include "exprtype.h"
+#include "util.h"
 #include "parse.h"
 
 Function FunctionAST::codegen(FunctionList &f_list) {
@@ -172,7 +173,6 @@ int BinaryAST::codegen(Function &f, FunctionList &f_list, NativeCode_x86 &ntv) {
 		ntv.genas("mov eax edx");
 	} else if(op == "<" || op == ">" || op == "!=" || 
 			op == "==" || op == "<=" || op == ">=") {
-		puts(op.c_str());
 		bool lt = op == "<", gt = op == ">", ne = op == "!=", eql = op == "==", fle = op == "<=";
 		ntv.gencode(0x39); ntv.gencode(0xd8); // cmp %eax, %ebx
 		ntv.gencode(0x0f); ntv.gencode(lt ? 0x9c : gt ? 0x9f : ne ? 0x95 : eql ? 0x94 : fle ? 0x9e : 0x9d); ntv.gencode(0xc0); // setX al
@@ -191,10 +191,29 @@ void VariableAsgmtAST::codegen(Function &f, FunctionList &f_list, NativeCode_x86
 		v = ((VariableAST *)var)->get(f);
 	else if(var->get_type() == AST_VARIABLE_DECL) 
 		v = ((VariableDeclAST *)var)->get(f);
-	if(v == NULL) v = f.var.append(((VariableAST *)var)->info.name, T_INT, "");
-	codegen_expression(f, f_list, src);
-	ntv.gencode(0x89); ntv.gencode(0x45);
-	ntv.gencode(256 - ADDR_SIZE * v->id); // mov var eax
+	else if(var->get_type() == AST_VARIABLE_INDEX) {
+		VariableIndexAST *via = (VariableIndexAST *)var;
+		if(via->get_type() != AST_VARIABLE) error("error: variable");
+		v = ((VariableAST *)via->var)->get(f);
+		if(v == NULL) error("error: the var was not declared");
+		codegen_expression(f, f_list, via->idx);
+		ntv.genas("push eax");
+		codegen_expression(f, f_list, src);
+		ntv.gencode(0x8b); ntv.gencode(0x4d);
+		ntv.gencode(256 - ADDR_SIZE * v->id); // mov ecx [ebp-n]
+		ntv.genas("pop edx");
+		if(IS_ARRAY(v->type)) {
+			ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x91); // mov [ecx+edx*4], eax
+		} else if(IS_TYPE(v->type, T_STRING)) {
+			ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x11); // mov [ecx+edx], eax TODO: bug fix
+		}
+	}
+	if(var->get_type() != AST_VARIABLE_INDEX) {
+		if(v == NULL) v = f.var.append(((VariableAST *)var)->info.name, T_INT, "");
+		codegen_expression(f, f_list, src);
+		ntv.gencode(0x89); ntv.gencode(0x45);
+		ntv.gencode(256 - ADDR_SIZE * v->id); // mov var eax
+	}
 }
 
 var_t *VariableDeclAST::get(Function &f) {
@@ -210,6 +229,7 @@ int VariableIndexAST::codegen(Function &f, FunctionList &f_list, NativeCode_x86 
 		ntv.gencode(0x0f); ntv.gencode(0xb6); ntv.gencode(0x04); ntv.gencode(0x0a);// movzx eax, [edx + ecx]
 		return T_CHAR;
 	} else {
+		puts("int");
 		ntv.gencode(0x8b); ntv.gencode(0x04); ntv.gencode(0x8a);// mov eax, [edx + ecx * 4
 		return T_INT;
 	}
@@ -217,7 +237,7 @@ int VariableIndexAST::codegen(Function &f, FunctionList &f_list, NativeCode_x86 
 
 void VariableAST::codegen(Function &f, NativeCode_x86 &ntv) {
 	var_t *v = f.var.get(info.name, info.mod_name);
-	if(v == NULL) puts("error: null");
+	if(v == NULL) error("error: '%s' was not declared", info.name.c_str());
 	if(v->loctype == V_LOCAL) {
 		ntv.gencode(0x8b); ntv.gencode(0x45);
 		ntv.gencode(256 - ADDR_SIZE * v->id); // mov eax variable
@@ -231,7 +251,7 @@ var_t *VariableAST::get(Function &f) {
 
 void StringAST::codegen(Function &f, NativeCode_x86 &ntv) {
 	ntv.gencode(0xb8);
-	char *embed = (char *)malloc(str.length() + 1);
+	char *embed = (char *)calloc(sizeof(char), str.length() + ADDR_SIZE);
 	replace_escape(strcpy(embed, str.c_str()));
 	ntv.gencode_int32((uint32_t)embed); // mov eax string_address
 }

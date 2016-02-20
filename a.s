@@ -35,3 +35,4 @@ _start:
 	mov eax, 1000
 	mov [esp], eax
 	mov [esp-4], eax
+	movzx [ecx+edx], al
