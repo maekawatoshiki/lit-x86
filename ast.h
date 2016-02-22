@@ -148,11 +148,13 @@ public:
 	std::vector<AST *> block;
 	ForAST(AST *, AST *, AST *, std::vector<AST *>);
 	virtual int get_type() const { return AST_FOR; }
+	void codegen(Function &, FunctionList &, NativeCode_x86 &);
 };
 
 class BreakAST : public AST {
 public:
 	virtual int get_type() const { return AST_BREAK; }
+	void codegen(Function &, FunctionList &, NativeCode_x86 &);
 };
 
 class ReturnAST : public AST {

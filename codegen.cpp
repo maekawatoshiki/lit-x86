@@ -47,6 +47,7 @@ void IfAST::codegen(Function &f, FunctionList &f_list, NativeCode_x86 &ntv) {
 
 void WhileAST::codegen(Function &f, FunctionList &f_list, NativeCode_x86 &ntv) {
 	int loop_bgn = ntv.count;
+	std::vector<int>::iterator it = f.break_list.begin();
 	codegen_expression(f, f_list, cond);
 	ntv.gencode(0x83); ntv.gencode(0xf8); ntv.gencode(0x00);// cmp eax, 0
 	ntv.gencode(0x75); ntv.gencode(0x05); // jne 5
@@ -59,7 +60,29 @@ void WhileAST::codegen(Function &f, FunctionList &f_list, NativeCode_x86 &ntv) {
 	ntv.gencode(0xe9); ntv.gencode_int32(0xFFFFFFFF - ntv.count + loop_bgn - ADDR_SIZE); // jmp n
 	ntv.gencode_int32_insert(ntv.count - end - ADDR_SIZE, end);
 
-	for(std::vector<int>::iterator it = f.break_list.begin(); it != f.break_list.end(); ++it) {
+	for(; it != f.break_list.end(); ++it) {
+		ntv.gencode_int32_insert(ntv.count - *it - ADDR_SIZE, *it);
+	}
+}
+
+void ForAST::codegen(Function &f, FunctionList &f_list, NativeCode_x86 &ntv) {
+	codegen_expression(f, f_list, asgmt);
+	int loop_bgn = ntv.count;
+	std::vector<int>::iterator it = f.break_list.begin();
+	codegen_expression(f, f_list, cond);
+	ntv.gencode(0x83); ntv.gencode(0xf8); ntv.gencode(0x00);// cmp eax, 0
+	ntv.gencode(0x75); ntv.gencode(0x05); // jne 5
+	ntv.gencode(0xe9); int end = ntv.count; ntv.gencode_int32(0);// jmp while end
+
+	for(ast_vector::iterator it = block.begin(); it != block.end(); ++it) {
+		codegen_expression(f, f_list, *it);
+	}
+	codegen_expression(f, f_list, step);
+
+	ntv.gencode(0xe9); ntv.gencode_int32(0xFFFFFFFF - ntv.count + loop_bgn - ADDR_SIZE); // jmp n
+	ntv.gencode_int32_insert(ntv.count - end - ADDR_SIZE, end);
+
+	for(; it != f.break_list.end(); ++it) {
 		ntv.gencode_int32_insert(ntv.count - *it - ADDR_SIZE, *it);
 	}
 }
@@ -91,10 +114,10 @@ int codegen_expression(Function &f, FunctionList &f_list, AST *ast) {
 	case AST_WHILE:
 		((WhileAST *)ast)->codegen(f, f_list, ntv);
 		return T_INT;
+	case AST_FOR:
+		((ForAST *)ast)->codegen(f, f_list, ntv);
 	case AST_BREAK:
-		ntv.gencode(0xe9); // jmp
-		f.break_list.push_back(ntv.count); 
-		ntv.gencode_int32(0x00000000);
+		((BreakAST *)ast)->codegen(f, f_list, ntv);
 		return T_INT;
 	}
 	return -1;
@@ -247,6 +270,12 @@ void VariableAST::codegen(Function &f, NativeCode_x86 &ntv) {
 }
 var_t *VariableAST::get(Function &f) {
 	return f.var.get(info.name, info.mod_name);
+}
+
+void BreakAST::codegen(Function &f, FunctionList &f_list, NativeCode_x86 &ntv) {
+	ntv.gencode(0xe9); // jmp
+	f.break_list.push_back(ntv.count); 
+	ntv.gencode_int32(0x00000000);
 }
 
 void StringAST::codegen(Function &f, NativeCode_x86 &ntv) {

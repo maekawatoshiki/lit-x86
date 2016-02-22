@@ -1,6 +1,6 @@
 def main
 	i = 1
-	while i < 20
+	for i = 1, i < 20, i = i + 1
 		if i % 15 == 0
 			puts("FizzBuzz")
 		elsif i % 5 == 0
@@ -10,7 +10,6 @@ def main
 		else
 			puts(i)
 		end
-		i = i + 1
 	end
 	puts("yeah!")
 end
