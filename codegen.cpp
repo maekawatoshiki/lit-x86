@@ -100,7 +100,7 @@ int codegen_expression(Function &f, FunctionList &f_list, AST *ast) {
 		return ((VariableAST *)ast)->get(f)->type;
 	case AST_VARIABLE_ASGMT:
 		((VariableAsgmtAST *)ast)->codegen(f, f_list, ntv);
-		return T_INT;
+		return T_VOID;
 	case AST_FUNCTION_CALL:
 		((FunctionCallAST *)ast)->codegen(f, f_list, ntv);
 		return T_INT;
@@ -110,15 +110,16 @@ int codegen_expression(Function &f, FunctionList &f_list, AST *ast) {
 		return ((VariableIndexAST *)ast)->codegen(f, f_list, ntv);
 	case AST_IF:
 		((IfAST *)ast)->codegen(f, f_list, ntv);
-		return T_INT;
+		return T_VOID;
 	case AST_WHILE:
 		((WhileAST *)ast)->codegen(f, f_list, ntv);
-		return T_INT;
+		return T_VOID;
 	case AST_FOR:
 		((ForAST *)ast)->codegen(f, f_list, ntv);
+		return T_VOID;
 	case AST_BREAK:
 		((BreakAST *)ast)->codegen(f, f_list, ntv);
-		return T_INT;
+		return T_VOID;
 	}
 	return -1;
 }

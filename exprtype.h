@@ -8,12 +8,13 @@
 #define IS_TYPE(x, ty)  ((x) & (ty))
 
 enum {
-	T_INT 			 = 1 << 1,
-	T_STRING		 = 1 << 2,
-	T_CHAR			 = 1 << 3,
-	T_DOUBLE		 = 1 << 4,
-	T_USER_TYPE	 = 1 << 5,
-	T_ARRAY			 = 1 << 6
+	T_VOID			 = 1 << 1,
+	T_INT 			 = 1 << 2,
+	T_STRING		 = 1 << 3,
+	T_CHAR			 = 1 << 4,
+	T_DOUBLE		 = 1 << 5,
+	T_USER_TYPE	 = 1 << 6,
+	T_ARRAY			 = 1 << 7
 };
 
 struct expr_type_t {
