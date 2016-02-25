@@ -217,7 +217,7 @@ void VariableAsgmtAST::codegen(Function &f, FunctionList &f_list, NativeCode_x86
 		v = ((VariableDeclAST *)var)->get(f);
 	else if(var->get_type() == AST_VARIABLE_INDEX) {
 		VariableIndexAST *via = (VariableIndexAST *)var;
-		if(via->get_type() != AST_VARIABLE) error("error: variable");
+		if(via->var->get_type() != AST_VARIABLE) error("error: variable");
 		v = ((VariableAST *)via->var)->get(f);
 		if(v == NULL) error("error: the var was not declared");
 		codegen_expression(f, f_list, via->idx);
