@@ -68,8 +68,10 @@ int Parser::parser() {
 	for(int i = 0; i < a.size(); i++)
 		visit(a[i]), std::cout << std::endl;
 	FunctionList list(module);
-	if(a[0]->get_type() == AST_FUNCTION) 
-		((FunctionAST *)a[0])->codegen(list);
+	for(ast_vector::iterator it = a.begin(); it != a.end(); ++it) {
+		if((*it)->get_type() == AST_FUNCTION)
+			((FunctionAST *)*it)->codegen(list);
+	}
 #ifdef DEBUG
 	printf("blocks: %d\n", blocksCount);
 #endif
