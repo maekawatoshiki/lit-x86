@@ -205,6 +205,7 @@ AST *Parser::expr_primary() {
 	if(is_number_tok()) {
 		return new NumberAST(atoi(tok.next().val.c_str()));
 	} else if(is_char_tok()) { 
+		return new NumberAST(atoi(tok.next().val.c_str()));
 		// ntv.genas("mov eax %d", (int)tok.next().val[0]);
 	} else if(is_string_tok()) {
 		return new StringAST(tok.next().val);
@@ -215,7 +216,8 @@ AST *Parser::expr_primary() {
 		if(tok.skip("::")) { // module?
 			mod_name = tok.next().val;
 			swap(mod_name, name);
-		} else if(tok.skip(":")) {
+		} else if(tok.skip(":")) { // variable declaration
+			is_ary = 0;
 			if(tok.skip("int")) { 
 				if(tok.skip("[]")) { is_ary = T_ARRAY; }
 				type = T_INT | is_ary;

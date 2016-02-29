@@ -8,9 +8,6 @@ bool FunctionList::is(std::string name, std::string mod_name) {
 
 Function *FunctionList::get(std::string name, std::string mod_name) {
 	for(std::vector<Function>::iterator it = func.begin(); it != func.end(); it++) {
-#ifdef DEBUG
-		std::cout << mod_name.c_str() << " : " << name.c_str() << " <<< " << func[i].mod_name.c_str() << " : " func[i].name.c_str() << endl;
-#endif
 		if(it->info.name == name/* && it->mod_name == mod_name*/) {
 			return &(*it);
 		}

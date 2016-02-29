@@ -59,18 +59,21 @@ ast_vector Parser::eval() {
 
 int Parser::parser() {
 	tok.pos = ntv.count = 0;
-	uint32_t main_address;
-
 	blocksCount = 0;
 
 	ast_vector a = eval();
 	std::cout << "\n---------- abstract syntax tree ----------" << std::endl;
 	for(int i = 0; i < a.size(); i++)
 		visit(a[i]), std::cout << std::endl;
+	uint32_t main_address;
+	ntv.gencode(0xe9); main_address = ntv.count; ntv.gencode_int32(0);
 	FunctionList list(module);
 	for(ast_vector::iterator it = a.begin(); it != a.end(); ++it) {
-		if((*it)->get_type() == AST_FUNCTION)
-			((FunctionAST *)*it)->codegen(list);
+		if((*it)->get_type() == AST_FUNCTION) {
+			Function f = ((FunctionAST *)*it)->codegen(list);
+			if(f.info.name == "main") 
+				ntv.gencode_int32_insert(f.info.address - ADDR_SIZE - 1, main_address);
+		}
 	}
 #ifdef DEBUG
 	printf("blocks: %d\n", blocksCount);
@@ -159,7 +162,7 @@ AST *Parser::make_func() {
 	func_t function = {.name = func_name};
 
 	if(tok.skip("(")) { // get params
-		do { args.push_back(expr_entry()); } while(tok.skip(","));
+		do { args.push_back(expr_primary()); } while(tok.skip(","));
 		if(!tok.skip(")"))
 			error("error: %d: expected expression ')'", tok.get().nline);
 	}
