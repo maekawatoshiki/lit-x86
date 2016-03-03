@@ -20,10 +20,15 @@ def pi
       a[b] = d % g
       d = d / g
     end
-    printf "%04d", e + d / f
+		printf("%04d", e + d / f)
 
-    if cnt % 16 == 0 puts "" end; cnt = cnt + 1
+    if cnt % 16 == 0 
+			puts("")
+		end
+		cnt = cnt + 1
   end
 end
 
-puts pi()
+def main
+	puts(pi())
+end

@@ -185,10 +185,10 @@ void FunctionCallAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) 
 				ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(8);// call *0x08(esi) putLN
 			} else {
 				if(stdfunc[i].args == -1) { // vector
-					uint32_t a = 1;
+					uint32_t a = 0;
 					for(ast_vector::iterator it = args.begin(); it != args.end(); ++it) {
 						codegen_expression(f, f_list, *it);
-						ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(256 - ADDR_SIZE * a++); // mov [esp+a*ADDR_SIZE], eax
+						ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * a++); // mov [esp+a*ADDR_SIZE], eax
 					}
 				} else { // normal function
 					for(int arg = 0; arg < stdfunc[i].args; arg++) {
