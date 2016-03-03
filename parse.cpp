@@ -67,12 +67,14 @@ int Parser::parser() {
 		visit(a[i]), std::cout << std::endl;
 	uint32_t main_address;
 	ntv.gencode(0xe9); main_address = ntv.count; ntv.gencode_int32(0);
-	FunctionList list(module);
+	Module list(module);
 	for(ast_vector::iterator it = a.begin(); it != a.end(); ++it) {
 		if((*it)->get_type() == AST_FUNCTION) {
 			Function f = ((FunctionAST *)*it)->codegen(list);
 			if(f.info.name == "main") 
 				ntv.gencode_int32_insert(f.info.address - ADDR_SIZE - 1, main_address);
+		} else if((*it)->get_type() == AST_VARIABLE_DECL) {
+					
 		}
 	}
 #ifdef DEBUG

@@ -10,8 +10,17 @@ def fact(i)
 	end
 end
 
+def fibo(n)
+	if n < 2
+		1
+	else
+		fibo(n - 2) + fibo(n - 1)
+	end
+end
+
 def main
 	say2("hello", " world!")
 	puts("fact(10) = ", fact(10))
+	puts("fibo(30) = ", fibo(30))
 end
 

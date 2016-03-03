@@ -196,11 +196,12 @@ AST *Parser::expr_postfix() {
 }
 
 AST *Parser::expr_primary() {
-	int is_get_addr = 0, ispare = 0;
+	bool is_get_addr = false, ispare = false, is_global_decl = false;
 	std::string name, mod_name = "";
 	var_t *v = NULL; 
 	
-	if(tok.skip("&")) is_get_addr = 1;
+	if(tok.skip("&")) is_get_addr = true;
+	if(tok.skip("$")) is_global_decl = true;
 
 	if(is_number_tok()) {
 		return new NumberAST(atoi(tok.next().val.c_str()));
@@ -211,7 +212,9 @@ AST *Parser::expr_primary() {
 		return new StringAST(tok.next().val);
 	} else if(is_ident_tok()) { // variable or inc or dec
 		name = tok.next().val; mod_name = "";
-		int type, is_ary; bool is_vardecl = false; std::string class_name;
+		int type, is_ary; 
+		bool is_vardecl = false; 
+		std::string class_name;
 
 		if(tok.skip("::")) { // module?
 			mod_name = tok.next().val;
@@ -254,7 +257,8 @@ AST *Parser::expr_primary() {
 					.name = name,
 					.mod_name = mod_name == "" ? module : mod_name,
 					.type = type,
-					.class_type = class_name
+					.class_type = class_name,
+					.is_global = is_global_decl
 				};
 				if(is_vardecl)
 					return new VariableDeclAST(v);

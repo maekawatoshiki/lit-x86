@@ -54,6 +54,7 @@ public:
 	PostfixAST(std::string, AST *);
 	~PostfixAST() { delete expr; }
 	virtual int get_type() const { return AST_POSTFIX; }
+	void codegen(Function &, Module &, NativeCode_x86 &);
 };
 
 class BinaryAST : public AST {
@@ -62,7 +63,7 @@ public:
 	AST *left, *right;
 	BinaryAST(std::string o, AST *le, AST *re);
 	virtual int get_type() const { return AST_BINARY; }
-	int codegen(Function &, FunctionList &, NativeCode_x86 &); // ret is type of expr.
+	int codegen(Function &, Module &, NativeCode_x86 &); // ret is type of expr.
 };
 
 class VariableAST : public AST {
@@ -79,7 +80,7 @@ public:
 	AST *var, *src;
 	VariableAsgmtAST(AST *, AST *);
 	virtual int get_type() const { return AST_VARIABLE_ASGMT; }
-	void codegen(Function &, FunctionList &, NativeCode_x86 &);
+	void codegen(Function &, Module &, NativeCode_x86 &);
 };
 
 class VariableIndexAST : public AST {
@@ -87,7 +88,7 @@ public:
 	AST *var, *idx;
 	VariableIndexAST(AST *, AST *);
 	virtual int get_type() const { return AST_VARIABLE_INDEX; }
-	int codegen(Function &, FunctionList &, NativeCode_x86 &);
+	int codegen(Function &, Module &, NativeCode_x86 &);
 };
 
 class VariableDeclAST : public AST {
@@ -104,7 +105,7 @@ public:
 	std::vector<AST *> args;
 	FunctionCallAST(func_t f, std::vector<AST *> a);
 	virtual int get_type() const { return AST_FUNCTION_CALL; }
-	void codegen(Function &, FunctionList &, NativeCode_x86 &);
+	void codegen(Function &, Module &, NativeCode_x86 &);
 };
 
 class FunctionAST : public AST {
@@ -113,7 +114,7 @@ public:
 	std::vector<AST *> args, statement;
 	FunctionAST(func_t f, std::vector<AST *> a, std::vector<AST *>);
 	virtual int get_type() const { return AST_FUNCTION; }
-	Function codegen(FunctionList &);
+	Function codegen(Module &);
 };
 
 class ArrayAST : public AST {
@@ -130,7 +131,7 @@ public:
 	std::vector<AST *> then_block, else_block;
 	IfAST(AST *, std::vector<AST*>, std::vector<AST *>);
 	virtual int get_type() const { return AST_IF; }
-	void codegen(Function &, FunctionList &, NativeCode_x86 &);
+	void codegen(Function &, Module &, NativeCode_x86 &);
 };
 
 class WhileAST : public AST {
@@ -139,7 +140,7 @@ public:
 	std::vector<AST *> block;
 	WhileAST(AST *, std::vector<AST *>);
 	virtual int get_type() const { return AST_WHILE; }
-	void codegen(Function &, FunctionList &, NativeCode_x86 &);
+	void codegen(Function &, Module &, NativeCode_x86 &);
 };
 
 class ForAST : public AST {
@@ -148,13 +149,13 @@ public:
 	std::vector<AST *> block;
 	ForAST(AST *, AST *, AST *, std::vector<AST *>);
 	virtual int get_type() const { return AST_FOR; }
-	void codegen(Function &, FunctionList &, NativeCode_x86 &);
+	void codegen(Function &, Module &, NativeCode_x86 &);
 };
 
 class BreakAST : public AST {
 public:
 	virtual int get_type() const { return AST_BREAK; }
-	void codegen(Function &, FunctionList &, NativeCode_x86 &);
+	void codegen(Function &, Module &, NativeCode_x86 &);
 };
 
 class ReturnAST : public AST {
@@ -162,6 +163,7 @@ public:
 	AST *expr;
 	ReturnAST(AST *);
 	virtual int get_type() const { return AST_RETURN; }
+	void codegen(Function &, Module &, NativeCode_x86 &);
 };
 
 typedef std::vector<AST *> ast_vector;

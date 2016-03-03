@@ -5,6 +5,6 @@
 #include "func.h"
 #include "ast.h"
 
-int codegen_expression(Function &f, FunctionList &f_list, AST *ast);
+int codegen_expression(Function &f, Module &f_list, AST *ast);
 #endif
 

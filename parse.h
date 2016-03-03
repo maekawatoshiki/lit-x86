@@ -26,21 +26,11 @@ class Parser {
 public:
 	Token &tok;
 	LibraryList lib_list;
-	FunctionList undef_funcs, funcs;
-	Variable var;
 	int blocksCount;
 	std::string module;
 
 	Parser(Token &token)
-		:tok(token), undef_funcs(module), funcs(module) { }
-
-// var.h
-	var_t *declare_var();
-
-	int is_asgmt();
-	int asgmt();
-	int asgmt_single(var_t *);
-	int asgmt_array(var_t *);
+		:tok(token) { }
 
 // expr.h
 	int is_string_tok();

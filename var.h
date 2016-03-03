@@ -10,7 +10,7 @@ typedef struct {
 	unsigned int id;
 	int type;
 	std::string class_type;
-	int loctype;
+	bool is_global;
 } var_t;
 
 enum {

@@ -1,16 +1,14 @@
-$prime_list:int[] = 0
-
-def table(max)
+def table(prime_list:int[], max)
 	count = max - 2
-	for i = 0, i < max, i++
+	for i = 0, i < max, i = i + 1
 		prime_list[i] = 0
 	end
-	for i = 2, i * i < max, i++
+	for i = 2, i * i < max, i = i + 1
 		if prime_list[i] == 0
 			for k = i * 2, k < max, k = k + i
 				if prime_list[k] == 0
 					prime_list[k] = 1
-					count--
+					count = count - 1
 				end
 			end
 		end
@@ -18,21 +16,14 @@ def table(max)
 	count
 end
 
-def isprime(n)
-	if prime_list[n]
-		0
-	else
-		1
+def main
+	N = 1000000
+	prime_list = Array(N)
+	table(prime_list, N)
+
+	for i = 2, i < N, i = i + 1
+		if prime_list[i] == 0
+			puts(i, " is prime")
+		end
 	end
 end
-
-N = 10000000
-prime_list = Array(N)
-
-puts table(N)
-
-# for i = 2, i < N, i++
-#   if isprime(i) == 1
-#     puts i, " is prime"
-#   end
-# end
