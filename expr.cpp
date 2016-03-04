@@ -23,7 +23,7 @@ AST *visit(AST *ast) {
 		std::cout << ")";
 		std::cout << std::endl;
 	} else if(ast->get_type() == AST_VARIABLE_ASGMT) {
-		std::cout << "(= ";
+		std::cout << "(" << ((VariableAsgmtAST *)ast)->op << " ";
 			visit(((VariableAsgmtAST *)ast)->var);
 			visit(((VariableAsgmtAST *)ast)->src);
 		std::cout << ")" << std::endl;;
@@ -118,10 +118,14 @@ AST *Parser::expr_entry() {
 
 AST *Parser::expr_asgmt() {
 	AST *l, *r;
+	bool add = false, sub = false;
 	l = expr_compare();
-	while(tok.skip("=")) {
+	while((add = tok.skip("+=")) || (sub = tok.skip("-=")) || tok.skip("=")) {
 		r = expr_compare();
-		l = new VariableAsgmtAST(l, r);
+		l = new VariableAsgmtAST(l, r, 
+				add ? "+=" : 
+				sub ? "-=" : 
+				"=");
 	}
 	return l;
 }

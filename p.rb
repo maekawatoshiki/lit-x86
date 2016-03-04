@@ -8,7 +8,7 @@ def prime(i)
 		return 0
 	end
 
-	for k = 3, k * k <= i, k = k + 2
+	for k = 3, k * k <= i, k += 2
 		if i % k == 0
 			return 0
 		end
@@ -17,7 +17,7 @@ def prime(i)
 end
 
 def main
-	for i = 2, i < 100, i = i + 1
+	for i = 2, i < 100, i += 1
 		if prime(i)
 			puts(i, " is prime")
 		end

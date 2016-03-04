@@ -22,5 +22,10 @@ def main
 	say2("hello", " world!")
 	puts("fact(10) = ", fact(10))
 	puts("fibo(30) = ", fibo(30))
+	a = 1
+	a += 2
+	puts("a = ", a)
+	a -= 1
+	puts("a = ", a)
 end
 

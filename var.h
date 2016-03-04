@@ -21,7 +21,6 @@ enum {
 class Variable {
 public:
 	std::vector<var_t> local;
-	std::vector<var_t> global;
 
 	var_t *get(std::string, std::string);
 	var_t *append(std::string, int, std::string = "");

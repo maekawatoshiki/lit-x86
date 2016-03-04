@@ -13,12 +13,6 @@ var_t *Variable::get(std::string name, std::string mod_name) {
 			return &(*it);
 		}
 	}
-	// global var
-	for(std::vector<var_t>::iterator it = global.begin(); it != global.end(); it++) {
-		if(name == it->name && mod_name == it->mod_name) {
-			return &(*it);
-		}
-	}
 
 	return NULL;
 }

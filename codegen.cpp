@@ -263,12 +263,17 @@ void VariableAsgmtAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv)
 		if(IS_ARRAY(v->type)) {
 			ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x91); // mov [ecx+edx*4], eax
 		} else if(IS_TYPE(v->type, T_STRING)) {
-			ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x11); // mov [ecx+edx], eax TODO: bug fix
+			ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x11); // mov [ecx+edx], eax
 		}
 	}
 	if(var->get_type() != AST_VARIABLE_INDEX) {
-		if(v == NULL) v = f.var.append(((VariableAST *)var)->info.name, T_INT, "");
 		codegen_expression(f, f_list, src);
+		if(op != "=") { // TODO: maybe this block will fix..
+			ntv.genas("push eax");
+			codegen_expression(f, f_list, var);
+			ntv.genas("pop ebx");
+			ntv.genas("%s eax ebx", op == "+=" ? "add" : op == "-=" ? "sub" : ""); 
+		}
 		ntv.gencode(0x89); ntv.gencode(0x45);
 			ntv.gencode(256 - ADDR_SIZE * v->id); // mov var eax
 	}
@@ -299,7 +304,7 @@ void VariableAST::codegen(Function &f, NativeCode_x86 &ntv) {
 	if(v == NULL) error("error: '%s' was not declared", info.name.c_str());
 	if(v->is_global == false) {
 		ntv.gencode(0x8b); ntv.gencode(0x45);
-		ntv.gencode(256 - ADDR_SIZE * v->id); // mov eax variable
+			ntv.gencode(256 - ADDR_SIZE * v->id); // mov eax variable
 	} else { // global
 		ntv.gencode(0xa1); ntv.gencode_int32(v->id); // mov eax GLOBAL_ADDR
 	}

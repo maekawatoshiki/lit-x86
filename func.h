@@ -18,13 +18,12 @@ public:
 
 class Module {
 public:
+	std::string name;
 	std::vector<Function> func;
 	Variable var_global;
-	int now;
-	bool inside;
 	std::string &module;
 	
-	Module(std::string &mod): module(mod), now(0), inside(false) { func.reserve(128); }
+	Module(std::string &mod): module(mod) { func.reserve(128); }
 	bool is(std::string, std::string);
 	Function *get(std::string, std::string);
 	Function *append(Function);

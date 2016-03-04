@@ -54,7 +54,6 @@ public:
 	PostfixAST(std::string, AST *);
 	~PostfixAST() { delete expr; }
 	virtual int get_type() const { return AST_POSTFIX; }
-	void codegen(Function &, Module &, NativeCode_x86 &);
 };
 
 class BinaryAST : public AST {
@@ -78,7 +77,8 @@ public:
 class VariableAsgmtAST : public AST {
 public:
 	AST *var, *src;
-	VariableAsgmtAST(AST *, AST *);
+	std::string op;
+	VariableAsgmtAST(AST *, AST *, std::string = "=");
 	virtual int get_type() const { return AST_VARIABLE_ASGMT; }
 	void codegen(Function &, Module &, NativeCode_x86 &);
 };

@@ -20,8 +20,8 @@ VariableAST::VariableAST(var_t v) :
 	info(v) {
 }
 
-VariableAsgmtAST::VariableAsgmtAST(AST *a, AST *b) : 
-	var(a), src(b) {
+VariableAsgmtAST::VariableAsgmtAST(AST *a, AST *b, std::string o) : 
+	var(a), src(b), op(o) {
 }
 
 VariableIndexAST::VariableIndexAST(AST *v, AST *i) : 
