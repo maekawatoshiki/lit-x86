@@ -19,7 +19,7 @@ public:
 class Module {
 public:
 	std::string name;
-	std::vector<Function> func;
+	std::vector<Function> func, undef_func;
 	Variable var_global;
 	std::string &module;
 	

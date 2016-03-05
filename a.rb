@@ -18,6 +18,7 @@ def fibo(n)
 	end
 end
 
+
 def main
 	say2("hello", " world!")
 	puts("fact(10) = ", fact(10))
@@ -27,5 +28,10 @@ def main
 	puts("a = ", a)
 	a -= 1
 	puts("a = ", a)
+	puts("ret: ", undef_func())
 end
 
+
+def undef_func
+	12345
+end

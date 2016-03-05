@@ -11,7 +11,8 @@ Function FunctionAST::codegen(Module &f_list) {
 	f.info.mod_name = "";
 	f.info.address = ntv.count;
 	f.info.params = args.size();
-	
+	uint32_t func_bgn = ntv.count;
+
 	ntv.genas("push ebp");
 	ntv.genas("mov ebp esp");
 	uint32_t esp_ = ntv.count + 2; ntv.genas("sub esp 0");
@@ -32,6 +33,8 @@ Function FunctionAST::codegen(Module &f_list) {
 	}
 
 	f_list.append(f);
+	f_list.rep_undef(f.info.name, func_bgn);
+
 	for(ast_vector::iterator it = statement.begin(); it != statement.end(); ++it) {
 		codegen_expression(f, f_list, *it);
 	}
@@ -45,7 +48,6 @@ Function FunctionAST::codegen(Module &f_list) {
 	ntv.gencode(0xc3);// ret
 
 	ntv.gencode_int32_insert(f.var.total_size() + ADDR_SIZE * 6, esp_);
-
 	return f;
 }
 
@@ -203,13 +205,23 @@ void FunctionCallAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) 
 	}
 	if(!is_std_func) { // user's Function
 		Function *function = f_list.get(info.name, info.mod_name);
-		if(function == NULL) error("error: function is not found");
-		uint32_t a = 3;
-		for(ast_vector::iterator it = args.begin(); it != args.end(); ++it) {
-			codegen_expression(f, f_list, *it);
-			ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(256 - a++ * ADDR_SIZE); // mov [esp+ADDR*a], eax
+		if(function == NULL) {
+			uint32_t a = 3;
+			for(ast_vector::iterator it = args.begin(); it != args.end(); ++it) {
+				codegen_expression(f, f_list, *it);
+				ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(256 - a++ * ADDR_SIZE); // mov [esp+ADDR*a], eax
+			}
+			ntv.gencode(0xe8); f_list.append_undef(info.name, info.mod_name, ntv.count);
+				ntv.gencode_int32(0x00000000); // call Function
+		} else {
+			uint32_t a = 3;
+			if(args.size() != function->info.params) error("error: the number of arguments is not same");
+			for(ast_vector::iterator it = args.begin(); it != args.end(); ++it) {
+				codegen_expression(f, f_list, *it);
+				ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(256 - a++ * ADDR_SIZE); // mov [esp+ADDR*a], eax
+			}
+			ntv.gencode(0xe8); ntv.gencode_int32(0xFFFFFFFF - (ntv.count - function->info.address) - 3); // call Function
 		}
-		ntv.gencode(0xe8); ntv.gencode_int32(0xFFFFFFFF - (ntv.count - function->info.address) - 3); // call func
 	}
 }
 

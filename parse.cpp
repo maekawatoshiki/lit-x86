@@ -67,6 +67,7 @@ int Parser::parser() {
 		visit(a[i]), std::cout << std::endl;
 	uint32_t main_address;
 	ntv.gencode(0xe9); main_address = ntv.count; ntv.gencode_int32(0);
+	module = "";
 	Module list(module);
 	for(ast_vector::iterator it = a.begin(); it != a.end(); ++it) {
 		if((*it)->get_type() == AST_FUNCTION) {

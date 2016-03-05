@@ -18,9 +18,6 @@ Function *Module::get(std::string name, std::string mod_name) {
 
 Function *Module::append(Function f) {
 	func.push_back(f);
-#ifdef DEBUG
-	std::cout << func[func.size() - 1].mod_name << " : " << name << std::endl;
-#endif
 	return &func.back();
 }
 
@@ -32,15 +29,17 @@ Function *Module::append_undef(std::string name, std::string mod_name, int ntvc_
 			.name = name
 		}
 	};
-	func.push_back(f);
+	undef_func.push_back(f);
 	return 0;
 }
 
 bool Module::rep_undef(std::string name, int ntvc) {
-	for(std::vector<Function>::iterator it = func.begin(); it != func.end(); it++) {
+	bool replaced = false;
+	for(std::vector<Function>::iterator it = undef_func.begin(); it != undef_func.end(); it++) {
 		if(it->info.name == name && it->info.mod_name == module) {
 			ntv.gencode_int32_insert(ntvc - it->info.address - 4, it->info.address);
+			replaced = true;
 		}
 	}
-	return true;
+	return replaced;
 }
