@@ -21,15 +21,10 @@ Function FunctionAST::codegen(Module &f_list) {
 	}
 
 	for(ast_vector::iterator it = args.begin(); it != args.end(); ++it) {
-		std::string name; int type = T_VOID;
-		if((*it)->get_type() == AST_VARIABLE) {
-			name = ((VariableAST *)*it)->info.name;
-			type = T_INT;
-		} else if((*it)->get_type() == AST_VARIABLE_DECL) {
-			name = ((VariableDeclAST *)*it)->info.name;
-			type = ((VariableDeclAST *)*it)->info.type;
-		}
-		f.var.append(name, type);
+		if((*it)->get_type() == AST_VARIABLE) 
+			((VariableAST *)*it)->get(f);
+		else if((*it)->get_type() == AST_VARIABLE_DECL) 
+			((VariableDeclAST *)*it)->get(f);
 	}
 
 	f_list.append(f);
@@ -226,13 +221,22 @@ void FunctionCallAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) 
 }
 
 int BinaryAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
-	codegen_expression(f, f_list, left);
+	int ty1 = codegen_expression(f, f_list, left);
 	ntv.genas("push eax");
-	int ty = codegen_expression(f, f_list, right);
+	int ty2 = codegen_expression(f, f_list, right);
 	ntv.genas("mov ebx eax");
 	ntv.genas("pop eax");
-	if(op == "+") ntv.genas("add eax ebx");
-	else if(op == "-") ntv.genas("sub eax ebx");
+	if(ty1 != ty2) 
+		if(op != "+") error("error: type error"); // except string concat
+	if(op == "+") {
+		if(ty1 == T_STRING) {
+			ntv.genas("push ebx");
+			ntv.genas("push eax");
+			ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(56); // call rea_concat
+			ntv.genas("add esp 8");
+		} else 
+			ntv.genas("add eax ebx");
+	} else if(op == "-") ntv.genas("sub eax ebx");
 	else if(op == "*") ntv.genas("mul ebx");
 	else if(op == "/") { 
 		ntv.genas("mov edx 0");
@@ -252,7 +256,7 @@ int BinaryAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 		bool andop = op == "and", orop = op == "or";
 		ntv.gencode(andop ? 0x21 : orop ? 0x09 : 0x31); ntv.gencode(0xd8); // and eax ebx
 	}
-	return ty;
+	return ty1;
 }
 
 void VariableAsgmtAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {

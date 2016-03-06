@@ -121,7 +121,7 @@ AST *Parser::expr_asgmt() {
 	bool add = false, sub = false;
 	l = expr_compare();
 	while((add = tok.skip("+=")) || (sub = tok.skip("-=")) || tok.skip("=")) {
-		r = expr_compare();
+		r = expr_entry();
 		l = new VariableAsgmtAST(l, r, 
 				add ? "+=" : 
 				sub ? "-=" : 
@@ -210,8 +210,7 @@ AST *Parser::expr_primary() {
 	if(is_number_tok()) {
 		return new NumberAST(atoi(tok.next().val.c_str()));
 	} else if(is_char_tok()) { 
-		return new NumberAST(atoi(tok.next().val.c_str()));
-		// ntv.genas("mov eax %d", (int)tok.next().val[0]);
+		return new NumberAST(tok.next().val.c_str()[0]);
 	} else if(is_string_tok()) {
 		return new StringAST(tok.next().val);
 	} else if(is_ident_tok()) { // variable or inc or dec
