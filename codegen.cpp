@@ -22,9 +22,9 @@ Function FunctionAST::codegen(Module &f_list) {
 
 	for(ast_vector::iterator it = args.begin(); it != args.end(); ++it) {
 		if((*it)->get_type() == AST_VARIABLE) 
-			((VariableAST *)*it)->get(f);
+			((VariableAST *)*it)->append(f);
 		else if((*it)->get_type() == AST_VARIABLE_DECL) 
-			((VariableDeclAST *)*it)->get(f);
+			((VariableDeclAST *)*it)->append(f);
 	}
 
 	f_list.append(f);
@@ -263,11 +263,19 @@ int BinaryAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 
 void VariableAsgmtAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 	var_t *v;
-	if(var->get_type() == AST_VARIABLE)
-		v = ((VariableAST *)var)->get(f);
-	else if(var->get_type() == AST_VARIABLE_DECL) 
-		v = ((VariableDeclAST *)var)->get(f);
-	else if(var->get_type() == AST_VARIABLE_INDEX) {
+	bool first_decl = false;
+
+	if(var->get_type() == AST_VARIABLE) {
+		if((v = ((VariableAST *)var)->get(f)) == NULL) {
+			v = ((VariableAST *)var)->append(f);
+			first_decl = true;
+		}
+	} else if(var->get_type() == AST_VARIABLE_DECL) {
+		if((v = ((VariableDeclAST *)var)->get(f)) == NULL) {
+			v = ((VariableDeclAST *)var)->append(f);
+			first_decl = true;
+		}
+	} else if(var->get_type() == AST_VARIABLE_INDEX) {
 		VariableIndexAST *via = (VariableIndexAST *)var;
 		if(via->var->get_type() != AST_VARIABLE) error("error: variable");
 		v = ((VariableAST *)via->var)->get(f);
@@ -285,7 +293,7 @@ void VariableAsgmtAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv)
 		}
 	}
 	if(var->get_type() != AST_VARIABLE_INDEX) {
-		codegen_expression(f, f_list, src);
+		int ty = codegen_expression(f, f_list, src);
 		if(op != "=") { // TODO: maybe this block will fix..
 			ntv.genas("push eax");
 			codegen_expression(f, f_list, var);
@@ -294,13 +302,16 @@ void VariableAsgmtAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv)
 		}
 		ntv.gencode(0x89); ntv.gencode(0x45);
 			ntv.gencode(256 - ADDR_SIZE * v->id); // mov var eax
+		if(first_decl) v->type = ty;
 	}
 }
 
 var_t *VariableDeclAST::get(Function &f) {
-	var_t *v = f.var.get(info.name, info.mod_name);
-	if(v == NULL) v = f.var.append(info.name, info.type);
-	return v;
+	return f.var.get(info.name, info.mod_name);
+}
+
+var_t *VariableDeclAST::append(Function &f) {
+	return f.var.append(info.name, info.type);
 }
 
 int VariableIndexAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
@@ -328,9 +339,10 @@ void VariableAST::codegen(Function &f, NativeCode_x86 &ntv) {
 	}
 }
 var_t *VariableAST::get(Function &f) {
-	var_t *v = f.var.get(info.name, info.mod_name);
-	if(v == NULL) v = f.var.append(info.name, T_INT);
-	return v;
+	return f.var.get(info.name, info.mod_name);
+}
+var_t *VariableAST::append(Function &f) {
+	return f.var.append(info.name, info.type);
 }
 
 void ReturnAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
