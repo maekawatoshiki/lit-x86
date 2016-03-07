@@ -230,10 +230,12 @@ int BinaryAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 		if(op != "+") error("error: type error"); // except string concat
 	if(op == "+") {
 		if(ty1 == T_STRING) {
-			ntv.genas("push ebx");
-			ntv.genas("push eax");
+			// ntv.genas("push ebx");
+			// ntv.genas("push eax");
+			ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * 0); // mov [esp+0*ADDR_SIZE], eax
+			ntv.gencode(0x89); ntv.gencode(0x5c); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * 1); // mov [esp+1*ADDR_SIZE], ebx
 			ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(56); // call rea_concat
-			ntv.genas("add esp 8");
+			// ntv.genas("add esp 8");
 		} else 
 			ntv.genas("add eax ebx");
 	} else if(op == "-") ntv.genas("sub eax ebx");

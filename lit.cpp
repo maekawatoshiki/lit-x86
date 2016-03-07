@@ -106,7 +106,13 @@ int Lit::execute(char *source) {
 }
 
 int Lit::run() {
-	printf("");
+	printf(""); 
+	// this block writes out native code to file
+	// {
+	// 	std::ofstream bin("out", std::ios::binary);
+	// 	bin.write((const char *)ntv.code, ntv.count);
+	// 	bin.close();
+	// }
 	return ((int (*)(int *, void**))ntv.code)(0, funcTable);
 }
 
