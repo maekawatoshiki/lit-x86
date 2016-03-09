@@ -302,7 +302,7 @@ void VariableAsgmtAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv)
 		}
 		ntv.gencode(0x89); ntv.gencode(0x45);
 			ntv.gencode(256 - ADDR_SIZE * v->id); // mov var eax
-		if(first_decl) v->type = ty;
+		if(first_decl && var->get_type() == AST_VARIABLE) v->type = ty;
 	}
 }
 
@@ -356,6 +356,16 @@ void BreakAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 	ntv.gencode(0xe9); // jmp
 	f.break_list.push_back(ntv.count); 
 	ntv.gencode_int32(0x00000000);
+}
+
+void ArrayAST::codegen(Function &f, NativeCode_x86 &ntv) {
+	ntv.genas("mov eax %d", elems.size() * ADDR_SIZE);
+	ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x24); // mov [esp], eax
+	ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(12); // call malloc
+	uint32_t a = 0;
+	for(ast_vector::iterator it = elems.begin(); it != elems.end(); ++it) {
+		ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(a++ * ADDR_SIZE); // mov [esp+ADDR*a], eax
+	}
 }
 
 void StringAST::codegen(Function &f, NativeCode_x86 &ntv) {
