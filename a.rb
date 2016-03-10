@@ -29,9 +29,22 @@ def main
 	a -= 1
 	puts("a = ", a)
 	puts("ret: ", undef_func())
+	z:int[] = [1, 2, 3]
+	# z[0] = 1
+	# z[1] = 2
+	puts(z[0])
+	puts(z[1])
 end
 
 
 def undef_func
+	sum = 0
+	for i = 0, i < 10, i += 1
+		sum += i
+		if i >= 5
+			# break
+		end
+	end
+
 	12345
 end

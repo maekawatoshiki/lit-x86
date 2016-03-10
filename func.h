@@ -11,8 +11,8 @@ typedef struct {
 
 class Function {
 public:
-	Variable var;
 	func_t info;
+	Variable var;
 	std::vector<int> break_list, return_list;
 };
 

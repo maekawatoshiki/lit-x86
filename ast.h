@@ -124,7 +124,7 @@ public:
 	std::vector<AST *> elems;
 	ArrayAST(std::vector<AST *>);
 	virtual int get_type() const { return AST_ARRAY; }
-	void codegen(Function &, NativeCode_x86 &);
+	int codegen(Function &, Module &, NativeCode_x86 &);
 };
 
 class IfAST : public AST {
@@ -169,5 +169,6 @@ public:
 };
 
 typedef std::vector<AST *> ast_vector;
+
 
 #endif
