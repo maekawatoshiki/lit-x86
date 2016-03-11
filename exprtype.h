@@ -5,7 +5,7 @@
 #include "var.h"
 
 #define IS_ARRAY(x) ((x) & (T_ARRAY))
-#define IS_TYPE(x, ty)  ((x) & (ty))
+#define IS_TYPE(x, ty)  ((x) == (ty))
 
 enum {
 	T_VOID			 = 1 << 1,

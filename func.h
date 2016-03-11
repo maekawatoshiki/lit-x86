@@ -26,7 +26,7 @@ public:
 	
 	Module(std::string &mod): module(mod) { func.reserve(128); }
 	bool is(std::string, std::string);
-	Function *get(std::string, std::string);
+	Function *get(std::string, std::string = "");
 	Function *append(Function);
 	Function *append_undef(std::string, std::string, int);
 	bool rep_undef(std::string, int);	

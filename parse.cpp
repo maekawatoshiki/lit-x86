@@ -72,12 +72,13 @@ int Parser::parser() {
 	for(ast_vector::iterator it = a.begin(); it != a.end(); ++it) {
 		if((*it)->get_type() == AST_FUNCTION) {
 			Function f = ((FunctionAST *)*it)->codegen(list);
-			if(f.info.name == "main") 
-				ntv.gencode_int32_insert(f.info.address - ADDR_SIZE - 1, main_address);
 		} else if((*it)->get_type() == AST_VARIABLE_DECL) {
 					
 		}
 	}
+	Function *main = list.get("main");
+		if(main == NULL) error("error: not found function: 'main'");
+	ntv.gencode_int32_insert(main->info.address - ADDR_SIZE - 1, main_address);
 
 // #ifdef DEBUG
 // 	printf("blocks: %d\n", blocksCount);

@@ -34,6 +34,8 @@ def main
 	# z[1] = 2
 	puts(z[0])
 	puts(z[1])
+	str:string[] = ["would", "world!"]
+	puts("hello " + str[1])
 end
 
 

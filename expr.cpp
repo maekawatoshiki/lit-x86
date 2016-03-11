@@ -144,7 +144,7 @@ AST *Parser::expr_compare() {
 }
 
 AST *Parser::expr_logic() {
-	int32_t lt=0, gt=0, ne=0, eql=0, fle=0;
+	bool lt = false, gt=false, ne=false, eql=false, fle=false;
 	AST *l, *r;
 	l = expr_add_sub();
 	if((lt=tok.skip("<")) || (gt=tok.skip(">")) || (ne=tok.skip("!=")) ||

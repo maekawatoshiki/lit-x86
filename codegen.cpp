@@ -235,12 +235,9 @@ int BinaryAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 		if(op != "+") error("error: type error"); // except string concat
 	if(op == "+") {
 		if(ty1 == T_STRING) {
-			// ntv.genas("push ebx");
-			// ntv.genas("push eax");
 			ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * 0); // mov [esp+0*ADDR_SIZE], eax
 			ntv.gencode(0x89); ntv.gencode(0x5c); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * 1); // mov [esp+1*ADDR_SIZE], ebx
 			ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(56); // call rea_concat
-			// ntv.genas("add esp 8");
 		} else
 			ntv.genas("add eax ebx");
 	} else if(op == "-") ntv.genas("sub eax ebx");
@@ -330,7 +327,7 @@ int VariableIndexAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) 
 		return T_CHAR;
 	} else {
 		ntv.gencode(0x8b); ntv.gencode(0x04); ntv.gencode(0x8a);// mov eax, [edx + ecx * 4]
-		return T_INT;
+		return ((T_STRING | T_ARRAY) == ty) ? T_STRING : T_INT;
 	}
 }
 
@@ -370,8 +367,9 @@ int ArrayAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 	ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(12); // call malloc
 	ntv.genas("push eax");
 	uint32_t a = 0;
+	int ty;
 	for(ast_vector::iterator it = elems.begin(); it != elems.end(); ++it) {
-		codegen_expression(f, f_list, *it);
+		ty = codegen_expression(f, f_list, *it);
 		ntv.genas("pop ecx");
 		ntv.genas("mov edx %d", a);
 		ntv.gencode(0x89); ntv.gencode(0x81); ntv.gencode_int32(a); // mov [ecx+a], eax
@@ -379,13 +377,13 @@ int ArrayAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 		a += 4;
 	}
 	ntv.genas("pop eax");
-	return T_INT | T_ARRAY;
+	return ty | T_ARRAY;
 }
 
 void StringAST::codegen(Function &f, NativeCode_x86 &ntv) {
 	ntv.gencode(0xb8);
-	char *embed = (char *)calloc(sizeof(char), str.length() + ADDR_SIZE);
-	replace_escape(strcpy(embed, str.c_str()));
+		char *embed = (char *)calloc(sizeof(char), str.length() + 2);
+		replace_escape(strcpy(embed, str.c_str()));
 	ntv.gencode_int32((uint32_t)embed); // mov eax string_address
 }
 

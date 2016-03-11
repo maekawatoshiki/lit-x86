@@ -6,4 +6,7 @@ def fibo(n)
 	end		
 end
 
-puts fibo(30)
+def main
+	n = 40
+	puts("fibo(", n, ") = ", fibo(n))
+end
