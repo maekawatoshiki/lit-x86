@@ -21,9 +21,9 @@ Function FunctionAST::codegen(Module &f_list) {
 	}
 
 	for(ast_vector::iterator it = args.begin(); it != args.end(); ++it) {
-		if((*it)->get_type() == AST_VARIABLE) 
+		if((*it)->get_type() == AST_VARIABLE)
 			((VariableAST *)*it)->append(f);
-		else if((*it)->get_type() == AST_VARIABLE_DECL) 
+		else if((*it)->get_type() == AST_VARIABLE_DECL)
 			((VariableDeclAST *)*it)->append(f);
 	}
 
@@ -33,7 +33,7 @@ Function FunctionAST::codegen(Module &f_list) {
 	for(ast_vector::iterator it = statement.begin(); it != statement.end(); ++it) {
 		codegen_expression(f, f_list, *it);
 	}
-	
+
 	// generate return code
 	for(std::vector<int>::iterator it = f.return_list.begin(); it != f.return_list.end(); ++it) {
 		ntv.gencode_int32_insert(ntv.count - *it - ADDR_SIZE, *it);
@@ -47,7 +47,7 @@ Function FunctionAST::codegen(Module &f_list) {
 }
 
 void IfAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
-	codegen_expression(f, f_list, cond);	
+	codegen_expression(f, f_list, cond);
 	ntv.gencode(0x83); ntv.gencode(0xf8); ntv.gencode(0x00);// cmp eax, 0
 	ntv.gencode(0x75); ntv.gencode(0x05); // jne 5
 	ntv.gencode(0xe9); int end = ntv.count; ntv.gencode_int32(0);// jmp
@@ -63,7 +63,8 @@ void IfAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 
 void WhileAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 	ntv.gencode(0x90); int loop_bgn = ntv.count;
-	std::vector<int>::iterator it = f.break_list.begin();
+		std::vector<int> *break_list = new std::vector<int>;
+		f.break_list.push(break_list);
 	codegen_expression(f, f_list, cond);
 	ntv.gencode(0x83); ntv.gencode(0xf8); ntv.gencode(0x00);// cmp eax, 0
 	ntv.gencode(0x75); ntv.gencode(0x05); // jne 5
@@ -76,30 +77,32 @@ void WhileAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 	ntv.gencode(0xe9); ntv.gencode_int32(0xFFFFFFFF - ntv.count + loop_bgn - ADDR_SIZE); // jmp n
 	ntv.gencode_int32_insert(ntv.count - end - ADDR_SIZE, end);
 
-	for(; it != f.break_list.end(); ++it) {
+	for(std::vector<int>::iterator it = f.break_list.top()->begin(); it != f.break_list.top()->end(); ++it) {
 		ntv.gencode_int32_insert(ntv.count - *it - ADDR_SIZE, *it);
 	}
+	f.break_list.pop();
 }
 
 void ForAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 	codegen_expression(f, f_list, asgmt);
 	ntv.gencode(0x90); int loop_bgn = ntv.count;
-	std::vector<int>::iterator b_it = f.break_list.begin();
+		std::vector<int> *break_list = new std::vector<int>;
+		f.break_list.push(break_list);
 	codegen_expression(f, f_list, cond);
 	ntv.gencode(0x83); ntv.gencode(0xf8); ntv.gencode(0x00);// cmp eax, 0
 	ntv.gencode(0x75); ntv.gencode(0x05); // jne 5
 	ntv.gencode(0xe9); int end = ntv.count; ntv.gencode_int32(0x00000000);// jmp while end
 
 	for(ast_vector::iterator it = block.begin(); it != block.end(); ++it) {
-		codegen_expression(f, f_list, *it); 
+		codegen_expression(f, f_list, *it);
 	}
 	codegen_expression(f, f_list, step);
 
 	ntv.gencode(0xe9); ntv.gencode_int32(0xFFFFFFFF - ntv.count + loop_bgn - ADDR_SIZE); // jmp n
 	ntv.gencode_int32_insert(ntv.count - end - ADDR_SIZE, end);
 	ntv.gencode(0x90); ntv.gencode(0x90);
-	for(; b_it != f.break_list.end(); ++b_it) {
-		ntv.gencode_int32_insert(ntv.count - *b_it - ADDR_SIZE, *b_it);
+	for(std::vector<int>::iterator it = f.break_list.top()->begin(); it != f.break_list.top()->end(); ++it) {
+		ntv.gencode_int32_insert(ntv.count - *it - ADDR_SIZE, *it);
 	}
 }
 
@@ -120,7 +123,7 @@ int codegen_expression(Function &f, Module &f_list, AST *ast) {
 	case AST_FUNCTION_CALL:
 		((FunctionCallAST *)ast)->codegen(f, f_list, ntv);
 		return T_INT;
-	case AST_BINARY: 
+	case AST_BINARY:
 		return ((BinaryAST *)ast)->codegen(f, f_list, ntv);
 	case AST_ARRAY:
 		return ((ArrayAST *)ast)->codegen(f, f_list, ntv);
@@ -228,7 +231,7 @@ int BinaryAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 	int ty2 = codegen_expression(f, f_list, right);
 	ntv.genas("mov ebx eax");
 	ntv.genas("pop eax");
-	if(ty1 != ty2) 
+	if(ty1 != ty2)
 		if(op != "+") error("error: type error"); // except string concat
 	if(op == "+") {
 		if(ty1 == T_STRING) {
@@ -238,24 +241,24 @@ int BinaryAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 			ntv.gencode(0x89); ntv.gencode(0x5c); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * 1); // mov [esp+1*ADDR_SIZE], ebx
 			ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(56); // call rea_concat
 			// ntv.genas("add esp 8");
-		} else 
+		} else
 			ntv.genas("add eax ebx");
 	} else if(op == "-") ntv.genas("sub eax ebx");
 	else if(op == "*") ntv.genas("mul ebx");
-	else if(op == "/") { 
+	else if(op == "/") {
 		ntv.genas("mov edx 0");
 		ntv.genas("div ebx");
 	} else if(op == "%") {
 		ntv.genas("mov edx 0");
 		ntv.genas("div ebx");
 		ntv.genas("mov eax edx");
-	} else if(op == "<" || op == ">" || op == "!=" || 
+	} else if(op == "<" || op == ">" || op == "!=" ||
 			op == "==" || op == "<=" || op == ">=") {
 		bool lt = op == "<", gt = op == ">", ne = op == "!=", eql = op == "==", fle = op == "<=";
 		ntv.gencode(0x39); ntv.gencode(0xd8); // cmp %eax, %ebx
 		ntv.gencode(0x0f); ntv.gencode(lt ? 0x9c : gt ? 0x9f : ne ? 0x95 : eql ? 0x94 : fle ? 0x9e : 0x9d); ntv.gencode(0xc0); // setX al
 		ntv.gencode(0x0f); ntv.gencode(0xb6); ntv.gencode(0xc0); // movzx eax al
-	} else if(op == "and" || op == "&" || op == "or" || 
+	} else if(op == "and" || op == "&" || op == "or" ||
 			op == "|" || op == "xor" || op == "^") {
 		bool andop = op == "and", orop = op == "or";
 		ntv.gencode(andop ? 0x21 : orop ? 0x09 : 0x31); ntv.gencode(0xd8); // and eax ebx
@@ -300,7 +303,7 @@ void VariableAsgmtAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv)
 			ntv.genas("push eax");
 			codegen_expression(f, f_list, var);
 			ntv.genas("pop ebx");
-			ntv.genas("%s eax ebx", op == "+=" ? "add" : op == "-=" ? "sub" : ""); 
+			ntv.genas("%s eax ebx", op == "+=" ? "add" : op == "-=" ? "sub" : "");
 		}
 		ntv.gencode(0x89); ntv.gencode(0x45);
 			ntv.gencode(256 - ADDR_SIZE * v->id); // mov var eax
@@ -317,7 +320,7 @@ var_t *VariableDeclAST::append(Function &f) {
 }
 
 int VariableIndexAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
-	int ty = codegen_expression(f, f_list, var); 
+	int ty = codegen_expression(f, f_list, var);
 	ntv.genas("push eax");
 	codegen_expression(f, f_list, idx);
 	ntv.genas("mov ecx eax");
@@ -351,13 +354,13 @@ var_t *VariableAST::append(Function &f) {
 void ReturnAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 	codegen_expression(f, f_list, expr);
 	ntv.gencode(0xe9);
-	f.return_list.push_back(ntv.count);	
+	f.return_list.push_back(ntv.count);
 	ntv.gencode_int32(0x00000000);
 }
 
 void BreakAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 	ntv.gencode(0xe9); // jmp
-	f.break_list.push_back(ntv.count); 
+	f.break_list.top()->push_back(ntv.count);
 	ntv.gencode_int32(0x00000000);
 }
 
@@ -368,7 +371,7 @@ int ArrayAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 	ntv.genas("push eax");
 	uint32_t a = 0;
 	for(ast_vector::iterator it = elems.begin(); it != elems.end(); ++it) {
-		codegen_expression(f, f_list, *it); 
+		codegen_expression(f, f_list, *it);
 		ntv.genas("pop ecx");
 		ntv.genas("mov edx %d", a);
 		ntv.gencode(0x89); ntv.gencode(0x81); ntv.gencode_int32(a); // mov [ecx+a], eax

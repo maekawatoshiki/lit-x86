@@ -42,9 +42,9 @@ def undef_func
 	for i = 0, i < 10, i += 1
 		sum += i
 		if i >= 5
-			# break
+			break
 		end
 	end
 
-	12345
+	10000 + sum
 end

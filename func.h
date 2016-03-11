@@ -13,7 +13,8 @@ class Function {
 public:
 	func_t info;
 	Variable var;
-	std::vector<int> break_list, return_list;
+	std::vector<int> return_list;
+	std::stack< std::vector<int> * > break_list;
 };
 
 class Module {

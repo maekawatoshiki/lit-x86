@@ -78,17 +78,18 @@ int Parser::parser() {
 					
 		}
 	}
-#ifdef DEBUG
-	printf("blocks: %d\n", blocksCount);
-#endif
-	if(blocksCount != 0) error("error: 'end' is not enough");
-	uint32_t addr = 0;
-#ifdef DEBUG
-	for(int i = 0; i < ntv.count; i++)
-		printf("%02x", ntv.code[i]);
-	puts("");
-	printf("memsz: %d\n", funcs.focus()->var.size[funcs.now]);
-#endif
+
+// #ifdef DEBUG
+// 	printf("blocks: %d\n", blocksCount);
+// #endif
+// 	if(blocksCount != 0) error("error: 'end' is not enough");
+// 	uint32_t addr = 0;
+// #ifdef DEBUG
+// 	for(int i = 0; i < ntv.count; i++)
+// 		printf("%02x", ntv.code[i]);
+// 	puts("");
+// 	printf("memsz: %d\n", funcs.focus()->var.size[funcs.now]);
+// #endif
 	return 1;
 }
 
