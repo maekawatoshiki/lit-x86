@@ -5,6 +5,66 @@
 #include "util.h"
 #include "parse.h"
 
+int codegen_entry(ast_vector &program) {
+	uint32_t main_address;
+	std::string module = "";
+	ntv.gencode(0xe9); main_address = ntv.count; ntv.gencode_int32(0);
+	Module list(module);
+	for(ast_vector::iterator it = program.begin(); it != program.end(); ++it) {
+		if((*it)->get_type() == AST_FUNCTION) {
+			Function f = ((FunctionAST *)*it)->codegen(list);
+		} else if((*it)->get_type() == AST_VARIABLE_ASGMT) { // global variable assignment
+		}
+	}
+	Function *main = list.get("main");
+		if(main == NULL) error("error: not found function: 'main'");
+	ntv.gencode_int32_insert(main->info.address - ADDR_SIZE - 1, main_address);
+
+	return 0;
+}
+
+int codegen_expression(Function &f, Module &f_list, AST *ast) {
+	switch(ast->get_type()) {
+	case AST_NUMBER:
+		((NumberAST *)ast)->codegen(f, ntv);
+		return T_INT;
+	case AST_STRING:
+		((StringAST *)ast)->codegen(f, ntv);
+		return T_STRING;
+	case AST_VARIABLE:
+		((VariableAST *)ast)->codegen(f, ntv);
+		return ((VariableAST *)ast)->get(f)->type;
+	case AST_VARIABLE_ASGMT:
+		((VariableAsgmtAST *)ast)->codegen(f, f_list, ntv);
+		return T_VOID;
+	case AST_FUNCTION_CALL:
+		((FunctionCallAST *)ast)->codegen(f, f_list, ntv);
+		return T_INT;
+	case AST_BINARY:
+		return ((BinaryAST *)ast)->codegen(f, f_list, ntv);
+	case AST_ARRAY:
+		return ((ArrayAST *)ast)->codegen(f, f_list, ntv);
+	case AST_VARIABLE_INDEX:
+		return ((VariableIndexAST *)ast)->codegen(f, f_list, ntv);
+	case AST_IF:
+		((IfAST *)ast)->codegen(f, f_list, ntv);
+		return T_VOID;
+	case AST_WHILE:
+		((WhileAST *)ast)->codegen(f, f_list, ntv);
+		return T_VOID;
+	case AST_FOR:
+		((ForAST *)ast)->codegen(f, f_list, ntv);
+		return T_VOID;
+	case AST_BREAK:
+		((BreakAST *)ast)->codegen(f, f_list, ntv);
+		return T_VOID;
+	case AST_RETURN:
+		((ReturnAST *)ast)->codegen(f, f_list, ntv);
+		return T_VOID;
+	}
+	return T_VOID;
+}
+
 Function FunctionAST::codegen(Module &f_list) {
 	Function f;
 	f.info.name = info.name;
@@ -20,6 +80,7 @@ Function FunctionAST::codegen(Module &f_list) {
 		ntv.gencode(0x8b); ntv.gencode(0x75); ntv.gencode(0x0c); // mov esi, 0xc(%ebp)
 	}
 
+	// append argument  variables to function
 	for(ast_vector::iterator it = args.begin(); it != args.end(); ++it) {
 		if((*it)->get_type() == AST_VARIABLE)
 			((VariableAST *)*it)->append(f);
@@ -106,52 +167,10 @@ void ForAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 	}
 }
 
-int codegen_expression(Function &f, Module &f_list, AST *ast) {
-	switch(ast->get_type()) {
-	case AST_NUMBER:
-		((NumberAST *)ast)->codegen(f, ntv);
-		return T_INT;
-	case AST_STRING:
-		((StringAST *)ast)->codegen(f, ntv);
-		return T_STRING;
-	case AST_VARIABLE:
-		((VariableAST *)ast)->codegen(f, ntv);
-		return ((VariableAST *)ast)->get(f)->type;
-	case AST_VARIABLE_ASGMT:
-		((VariableAsgmtAST *)ast)->codegen(f, f_list, ntv);
-		return T_VOID;
-	case AST_FUNCTION_CALL:
-		((FunctionCallAST *)ast)->codegen(f, f_list, ntv);
-		return T_INT;
-	case AST_BINARY:
-		return ((BinaryAST *)ast)->codegen(f, f_list, ntv);
-	case AST_ARRAY:
-		return ((ArrayAST *)ast)->codegen(f, f_list, ntv);
-	case AST_VARIABLE_INDEX:
-		return ((VariableIndexAST *)ast)->codegen(f, f_list, ntv);
-	case AST_IF:
-		((IfAST *)ast)->codegen(f, f_list, ntv);
-		return T_VOID;
-	case AST_WHILE:
-		((WhileAST *)ast)->codegen(f, f_list, ntv);
-		return T_VOID;
-	case AST_FOR:
-		((ForAST *)ast)->codegen(f, f_list, ntv);
-		return T_VOID;
-	case AST_BREAK:
-		((BreakAST *)ast)->codegen(f, f_list, ntv);
-		return T_VOID;
-	case AST_RETURN:
-		((ReturnAST *)ast)->codegen(f, f_list, ntv);
-		return T_VOID;
-	}
-	return -1;
-}
-
 void FunctionCallAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 	struct {
 		std::string name, mod_name;
-		int args, addr;
+		int args, addr; // if args is -1, the function has vector args.
 	} stdfunc[] = {
 		{"Array", "", 1, 12},
 		{"printf", "", -1, 16},
@@ -165,6 +184,7 @@ void FunctionCallAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) 
 		{"puts", "", -1, -1} // special
 	};
 	bool is_std_func = false;
+
 	for(int i = 0; i < sizeof(stdfunc) / sizeof(stdfunc[0]); i++) {
 		if(stdfunc[i].name == info.name /* && stdfunc[i].mod_name == mod_name */) {
 			if(info.name == "Array") {
@@ -185,7 +205,7 @@ void FunctionCallAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) 
 					}
 				}
 				ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(8);// call *0x08(esi) putLN
-			} else {
+			} else { // user function
 				if(stdfunc[i].args == -1) { // vector
 					uint32_t a = 0;
 					for(ast_vector::iterator it = args.begin(); it != args.end(); ++it) {
@@ -279,14 +299,18 @@ void VariableAsgmtAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv)
 		}
 	} else if(var->get_type() == AST_VARIABLE_INDEX) {
 		VariableIndexAST *via = (VariableIndexAST *)var;
-		if(via->var->get_type() != AST_VARIABLE) error("error: variable");
+			if(via->var->get_type() != AST_VARIABLE) error("error: variable");
+		// while(via->var->get_type() == AST_VARIABLE_INDEX) {
+		// 	via = ((VariableIndexAST *)via->var);
+		// }
 		v = ((VariableAST *)via->var)->get(f);
-		if(v == NULL) error("error: the var was not declared");
+			if(v == NULL) error("error: the var was not declared");
 		codegen_expression(f, f_list, via->idx);
-		ntv.genas("push eax");
+			ntv.genas("push eax");
+			ntv.gencode(0x8b); ntv.gencode(0x4d);
+				ntv.gencode(256 - ADDR_SIZE * v->id); // mov ecx [ebp-n]
+		
 		codegen_expression(f, f_list, src);
-		ntv.gencode(0x8b); ntv.gencode(0x4d);
-			ntv.gencode(256 - ADDR_SIZE * v->id); // mov ecx [ebp-n]
 		ntv.genas("pop edx");
 		if(IS_ARRAY(v->type)) {
 			ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x91); // mov [ecx+edx*4], eax
@@ -296,7 +320,7 @@ void VariableAsgmtAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv)
 	}
 	if(var->get_type() != AST_VARIABLE_INDEX) {
 		int ty = codegen_expression(f, f_list, src);
-		if(op != "=") { // TODO: maybe this block will fix..
+		if(op != "=") { 
 			ntv.genas("push eax");
 			codegen_expression(f, f_list, var);
 			ntv.genas("pop ebx");
@@ -304,7 +328,7 @@ void VariableAsgmtAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv)
 		}
 		ntv.gencode(0x89); ntv.gencode(0x45);
 			ntv.gencode(256 - ADDR_SIZE * v->id); // mov var eax
-		if(first_decl && var->get_type() == AST_VARIABLE) v->type = ty;
+		if(first_decl && var->get_type() == AST_VARIABLE) v->type = ty; // for type inference
 	}
 }
 
@@ -324,7 +348,7 @@ int VariableIndexAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) 
 	ntv.genas("pop edx");
 	if(IS_TYPE(ty, T_STRING)) {
 		ntv.gencode(0x0f); ntv.gencode(0xb6); ntv.gencode(0x04); ntv.gencode(0x0a);// movzx eax, [edx + ecx]
-		return T_CHAR;
+		return T_INT; // T_CHAR;
 	} else {
 		ntv.gencode(0x8b); ntv.gencode(0x04); ntv.gencode(0x8a);// mov eax, [edx + ecx * 4]
 		return ((T_STRING | T_ARRAY) == ty) ? T_STRING : T_INT;

@@ -7,6 +7,7 @@
 #include "util.h"
 #include "library.h"
 #include "var.h"
+#include "codegen.h"
 #include "func.h"
 
 AST *Parser::make_break() {
@@ -65,32 +66,7 @@ int Parser::parser() {
 	std::cout << "\n---------- abstract syntax tree ----------" << std::endl;
 	for(int i = 0; i < a.size(); i++)
 		visit(a[i]), std::cout << std::endl;
-	uint32_t main_address;
-	ntv.gencode(0xe9); main_address = ntv.count; ntv.gencode_int32(0);
-	module = "";
-	Module list(module);
-	for(ast_vector::iterator it = a.begin(); it != a.end(); ++it) {
-		if((*it)->get_type() == AST_FUNCTION) {
-			Function f = ((FunctionAST *)*it)->codegen(list);
-		} else if((*it)->get_type() == AST_VARIABLE_DECL) {
-					
-		}
-	}
-	Function *main = list.get("main");
-		if(main == NULL) error("error: not found function: 'main'");
-	ntv.gencode_int32_insert(main->info.address - ADDR_SIZE - 1, main_address);
-
-// #ifdef DEBUG
-// 	printf("blocks: %d\n", blocksCount);
-// #endif
-// 	if(blocksCount != 0) error("error: 'end' is not enough");
-// 	uint32_t addr = 0;
-// #ifdef DEBUG
-// 	for(int i = 0; i < ntv.count; i++)
-// 		printf("%02x", ntv.code[i]);
-// 	puts("");
-// 	printf("memsz: %d\n", funcs.focus()->var.size[funcs.now]);
-// #endif
+	codegen_entry(a); // start code generating
 	return 1;
 }
 
