@@ -67,6 +67,7 @@ int Parser::parser() {
 	for(int i = 0; i < a.size(); i++)
 		visit(a[i]), std::cout << std::endl;
 	codegen_entry(a); // start code generating
+	std::cout << "\n---------- end of abstract syntax tree --" << std::endl;
 	return 1;
 }
 

@@ -70,9 +70,9 @@ public:
 	var_t info;
 	VariableAST(var_t v);
 	virtual int get_type() const { return AST_VARIABLE; }
-	void codegen(Function &, NativeCode_x86 &);
-	var_t *get(Function &);
-	var_t *append(Function &);
+	void codegen(Function &, Module &, NativeCode_x86 &);
+	var_t *get(Function &, Module &);
+	var_t *append(Function &, Module &);
 };
 
 class VariableDeclAST : public AST {
@@ -80,8 +80,8 @@ public:
 	var_t info;
 	VariableDeclAST(var_t);
 	virtual int get_type() const { return AST_VARIABLE_DECL; }
-	var_t *get(Function &);
-	var_t *append(Function &);
+	var_t *get(Function &, Module &);
+	var_t *append(Function &, Module &);
 };
 
 class VariableAsgmtAST : public AST {

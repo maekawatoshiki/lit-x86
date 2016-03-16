@@ -21,15 +21,20 @@ class Module {
 public:
 	std::string name;
 	std::vector<Function> func, undef_func;
-	Variable var_global;
+	Variable var_global; 
 	std::string &module;
 	
 	Module(std::string &mod): module(mod) { func.reserve(128); }
 	bool is(std::string, std::string);
 	Function *get(std::string, std::string = "");
 	Function *append(Function);
+	
 	Function *append_undef(std::string, std::string, int);
 	bool rep_undef(std::string, int);	
+
+	var_t *append_global_var(std::string, int);
+	void append_addr_of_global_var(std::string, int);
+	void insert_global_var();
 };
 
 

@@ -16,10 +16,11 @@ int codegen_entry(ast_vector &program) {
 		} else if((*it)->get_type() == AST_VARIABLE_ASGMT) { // global variable assignment
 		}
 	}
+	list.insert_global_var();
 	Function *main = list.get("main");
 		if(main == NULL) error("error: not found function: 'main'");
 	ntv.gencode_int32_insert(main->info.address - ADDR_SIZE - 1, main_address);
-
+	
 	return 0;
 }
 
@@ -32,8 +33,8 @@ int codegen_expression(Function &f, Module &f_list, AST *ast) {
 		((StringAST *)ast)->codegen(f, ntv);
 		return T_STRING;
 	case AST_VARIABLE:
-		((VariableAST *)ast)->codegen(f, ntv);
-		return ((VariableAST *)ast)->get(f)->type;
+		((VariableAST *)ast)->codegen(f, f_list, ntv);
+		return ((VariableAST *)ast)->get(f, f_list)->type;
 	case AST_VARIABLE_ASGMT:
 		((VariableAsgmtAST *)ast)->codegen(f, f_list, ntv);
 		return T_VOID;
@@ -83,9 +84,9 @@ Function FunctionAST::codegen(Module &f_list) {
 	// append argument  variables to function
 	for(ast_vector::iterator it = args.begin(); it != args.end(); ++it) {
 		if((*it)->get_type() == AST_VARIABLE)
-			((VariableAST *)*it)->append(f);
+			((VariableAST *)*it)->append(f, f_list);
 		else if((*it)->get_type() == AST_VARIABLE_DECL)
-			((VariableDeclAST *)*it)->append(f);
+			((VariableDeclAST *)*it)->append(f, f_list);
 	}
 
 	f_list.append(f);
@@ -118,7 +119,7 @@ void IfAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 	ntv.gencode_int32_insert(ntv.count - end - 4, end);
 
 	for(ast_vector::iterator it = else_block.begin(); it != else_block.end(); ++it)
-		visit(*it), codegen_expression(f, f_list, *it);
+		codegen_expression(f, f_list, *it);
 	ntv.gencode_int32_insert(ntv.count - end1 - 4, end1);
 }
 
@@ -225,7 +226,7 @@ void FunctionCallAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) 
 	}
 	if(!is_std_func) { // user's Function
 		Function *function = f_list.get(info.name, info.mod_name);
-		if(function == NULL) {
+		if(function == NULL) { // undefined
 			uint32_t a = 3;
 			for(ast_vector::iterator it = args.begin(); it != args.end(); ++it) {
 				codegen_expression(f, f_list, *it);
@@ -233,7 +234,7 @@ void FunctionCallAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) 
 			}
 			ntv.gencode(0xe8); f_list.append_undef(info.name, info.mod_name, ntv.count);
 				ntv.gencode_int32(0x00000000); // call Function
-		} else {
+		} else { // defined
 			uint32_t a = 3;
 			if(args.size() != function->info.params) error("error: the number of arguments is not same");
 			for(ast_vector::iterator it = args.begin(); it != args.end(); ++it) {
@@ -288,13 +289,13 @@ void VariableAsgmtAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv)
 	bool first_decl = false;
 
 	if(var->get_type() == AST_VARIABLE) {
-		if((v = ((VariableAST *)var)->get(f)) == NULL) {
-			v = ((VariableAST *)var)->append(f);
+		if((v = ((VariableAST *)var)->get(f, f_list)) == NULL) {
+			v = ((VariableAST *)var)->append(f, f_list);
 			first_decl = true;
 		}
 	} else if(var->get_type() == AST_VARIABLE_DECL) {
-		if((v = ((VariableDeclAST *)var)->get(f)) == NULL) {
-			v = ((VariableDeclAST *)var)->append(f);
+		if((v = ((VariableDeclAST *)var)->get(f, f_list)) == NULL) {
+			v = ((VariableDeclAST *)var)->append(f, f_list);
 			first_decl = true;
 		}
 	} else if(var->get_type() == AST_VARIABLE_INDEX) {
@@ -303,7 +304,7 @@ void VariableAsgmtAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv)
 		// while(via->var->get_type() == AST_VARIABLE_INDEX) {
 		// 	via = ((VariableIndexAST *)via->var);
 		// }
-		v = ((VariableAST *)via->var)->get(f);
+		v = ((VariableAST *)via->var)->get(f, f_list);
 			if(v == NULL) error("error: the var was not declared");
 		codegen_expression(f, f_list, via->idx);
 			ntv.genas("push eax");
@@ -326,17 +327,24 @@ void VariableAsgmtAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv)
 			ntv.genas("pop ebx");
 			ntv.genas("%s eax ebx", op == "+=" ? "add" : op == "-=" ? "sub" : "");
 		}
-		ntv.gencode(0x89); ntv.gencode(0x45);
-			ntv.gencode(256 - ADDR_SIZE * v->id); // mov var eax
-		if(first_decl && var->get_type() == AST_VARIABLE) v->type = ty; // for type inference
+		if(v->is_global) {
+			ntv.gencode(0xa3); f_list.append_addr_of_global_var(v->name, ntv.count); 
+				ntv.gencode_int32(0x00000000); // GLOBAL_INSERT
+		} else {
+			ntv.gencode(0x89); ntv.gencode(0x45);
+				ntv.gencode(256 - ADDR_SIZE * v->id); // mov var eax
+			if(first_decl && var->get_type() == AST_VARIABLE) v->type = ty; // for type inference
+		}
 	}
 }
 
-var_t *VariableDeclAST::get(Function &f) {
+var_t *VariableDeclAST::get(Function &f, Module &f_list) {
+	if(info.is_global) return f_list.var_global.get(info.name, info.mod_name);
 	return f.var.get(info.name, info.mod_name);
 }
 
-var_t *VariableDeclAST::append(Function &f) {
+var_t *VariableDeclAST::append(Function &f, Module &f_list) {
+	if(info.is_global) return f_list.var_global.append(info.name, info.type, true);
 	return f.var.append(info.name, info.type);
 }
 
@@ -355,34 +363,41 @@ int VariableIndexAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) 
 	}
 }
 
-void VariableAST::codegen(Function &f, NativeCode_x86 &ntv) {
-	var_t *v = f.var.get(info.name, info.mod_name);
+void VariableAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
+	var_t *v;
+	if(info.is_global) 
+		v = f_list.var_global.get(info.name, info.mod_name);
+	else 
+		v = f.var.get(info.name, info.mod_name);
 	if(v == NULL) error("error: '%s' was not declared", info.name.c_str());
-	if(v->is_global == false) {
+	if(info.is_global == false) {
 		ntv.gencode(0x8b); ntv.gencode(0x45);
 			ntv.gencode(256 - ADDR_SIZE * v->id); // mov eax variable
 	} else { // global
-		ntv.gencode(0xa1); ntv.gencode_int32(v->id); // mov eax GLOBAL_ADDR
+		ntv.gencode(0xa1); f_list.append_addr_of_global_var(v->name, ntv.count);
+			ntv.gencode_int32(0x00000000); // mov eax GLOBAL_ADDR GLOBAL_INSERT
 	}
 }
-var_t *VariableAST::get(Function &f) {
+var_t *VariableAST::get(Function &f, Module &f_list) {
+	if(info.is_global) return f_list.var_global.get(info.name, info.mod_name);
 	return f.var.get(info.name, info.mod_name);
 }
-var_t *VariableAST::append(Function &f) {
+var_t *VariableAST::append(Function &f, Module &f_list) {
+	if(info.is_global) return f_list.append_global_var(info.name, info.type);
 	return f.var.append(info.name, info.type);
 }
 
 void ReturnAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 	codegen_expression(f, f_list, expr);
 	ntv.gencode(0xe9);
-	f.return_list.push_back(ntv.count);
-	ntv.gencode_int32(0x00000000);
+		f.return_list.push_back(ntv.count);
+		ntv.gencode_int32(0x00000000);
 }
 
 void BreakAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 	ntv.gencode(0xe9); // jmp
-	f.break_list.top()->push_back(ntv.count);
-	ntv.gencode_int32(0x00000000);
+		f.break_list.top()->push_back(ntv.count);
+		ntv.gencode_int32(0x00000000);
 }
 
 int ArrayAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {

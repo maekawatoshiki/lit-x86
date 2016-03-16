@@ -11,6 +11,7 @@ typedef struct {
 	int type;
 	std::string class_type;
 	bool is_global;
+	std::vector<int> used_location; // for global variables
 } var_t;
 
 enum {
@@ -20,10 +21,10 @@ enum {
 
 class Variable {
 public:
-std::vector<var_t> local;
+	std::vector<var_t> local;
 
 	var_t *get(std::string, std::string);
-	var_t *append(std::string, int, std::string = "");
+	var_t *append(std::string, int, bool = false, std::string = "");
 	size_t total_size();
 };
 

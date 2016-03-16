@@ -1,4 +1,5 @@
 def say2(s1:string, s2:string)
+	$global = 123
 	puts(s1, s2)
 end
 
@@ -20,7 +21,9 @@ end
 
 
 def main
-	say2("hello", " world!")
+	$global = 12
+	say2("hello", " world! ")
+	puts($global)
 	puts("fact(10) = ", fact(10))
 	puts("fibo(30) = ", fibo(30))
 	a = 1

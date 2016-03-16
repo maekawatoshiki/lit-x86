@@ -1,6 +1,7 @@
 #include "func.h"
 #include "parse.h"
 #include "asm.h"
+#include "lit.h"
 
 bool Module::is(std::string name, std::string mod_name) {
 	return get(name, mod_name) == NULL ? false : true;
@@ -42,4 +43,26 @@ bool Module::rep_undef(std::string name, int ntvc) {
 		}
 	}
 	return replaced;
+}
+
+var_t *Module::append_global_var(std::string name, int type) {
+	var_t *v = var_global.append(name, type);
+	v->is_global = true;
+	return v;
+}
+
+void Module::append_addr_of_global_var(std::string name, int ntv_pos) {
+	var_t *v = var_global.get(name, "");
+	if(v == NULL) puts("error: nullptr");
+	v->used_location.push_back(ntv_pos);
+}
+
+void Module::insert_global_var() {
+	for(std::vector<var_t>::iterator it = var_global.local.begin(); it != var_global.local.end(); ++it) {
+		uint32_t g_addr = (uint32_t)manage_alloc(ADDR_SIZE);
+		for(std::vector<int>::iterator pos = it->used_location.begin(); pos != it->used_location.end(); ++pos) {
+			ntv.gencode_int32_insert(g_addr, *pos);
+		}
+		ntv.gencode_int32(0x00000000);
+	}
 }

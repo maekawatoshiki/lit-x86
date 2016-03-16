@@ -66,8 +66,9 @@ public:
 
 extern MemoryList mem;
 
+void *manage_alloc(uint32_t);
 void freeAddr();
-void freeInProgram(uint32_t);
+void free_addr_in_program(uint32_t);
 void putNumber(int);
 void putString(int *);
 void putln();

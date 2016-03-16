@@ -31,6 +31,12 @@ void ssleep(uint32_t t) {
 #endif
 }
 
+void *manage_alloc(uint32_t size) {
+	void *addr = malloc(size);
+	appendAddr((uint32_t) addr);
+	return addr;
+}
+
 void appendAddr(uint32_t addr) {
 	mem_info mi = {
 		.addr = addr,
@@ -39,7 +45,7 @@ void appendAddr(uint32_t addr) {
 	mem.mem.push_back(mi);
 }
 
-void free_addr(uint32_t addr) {
+void free_addr_in_program(uint32_t addr) {
 	for(int i = 0; i < mem.mem.size(); i++) {
 		if(mem.mem[i].addr == addr) {
 			free((void *)mem.mem[i].addr);
@@ -69,7 +75,7 @@ void *funcTable[] = {
 	(void *) putNumber, // 0
 	(void *) putString, // 4
 	(void *) putln,			// 8
-	(void *) malloc, 		// 12
+	(void *) manage_alloc, 		// 12
 	(void *) printf, 		// 16
 	(void *) appendAddr,// 20
 	(void *) ssleep, 		// 24
@@ -77,7 +83,7 @@ void *funcTable[] = {
 	(void *) fprintf, 	// 32
 	(void *) fclose,		// 36
 	(void *) File_read,	// 40
-	(void *) free_addr,	// 44
+	(void *) free_addr_in_program,	// 44
 	(void *) freeAddr,	// 48
 	(void *) fgets, 		// 52
 	(void *) rea_concat,// 56
