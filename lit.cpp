@@ -32,7 +32,7 @@ void ssleep(uint32_t t) {
 }
 
 void *manage_alloc(uint32_t size) {
-	void *addr = malloc(size);
+	void *addr = calloc(sizeof(int), size);
 	appendAddr((uint32_t) addr);
 	return addr;
 }
@@ -71,6 +71,12 @@ char *rea_concat(char *a, char *b) {
 	return strcat(t, b);
 }
 
+char *gets_stdin() {
+	char *str = (char *)manage_alloc(256);
+	fgets(str, 256, stdin);
+	return str;
+}
+
 void *funcTable[] = {
 	(void *) putNumber, // 0
 	(void *) putString, // 4
@@ -85,7 +91,7 @@ void *funcTable[] = {
 	(void *) File_read,	// 40
 	(void *) free_addr_in_program,	// 44
 	(void *) freeAddr,	// 48
-	(void *) fgets, 		// 52
+	(void *) gets_stdin, 		// 52
 	(void *) rea_concat,// 56
 	(void *) putc				// 60
 };

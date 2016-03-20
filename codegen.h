@@ -7,6 +7,7 @@
 
 int codegen_entry(ast_vector &);
 int codegen_expression(Function &f, Module &f_list, AST *ast);
+bool const_folding(AST *, int *);
 
 #endif
 
