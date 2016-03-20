@@ -32,7 +32,7 @@ bool const_folding(AST *e, int *res) {
 	if(expr->left->get_type() == AST_BINARY) {
 		if(!const_folding(expr->left, &tmp))
 			return false;
-		a = tmp; is_left_bin = true;
+		a = tmp;
 	} else if(expr->left->get_type() == AST_NUMBER) 
 		a = ((NumberAST *)expr->left)->number;
 	else return false;
@@ -40,7 +40,7 @@ bool const_folding(AST *e, int *res) {
 	if(expr->right->get_type() == AST_BINARY) {
 		if(!const_folding(expr->right, &tmp))
 			return false;
-		b = tmp; is_right_bin = true;
+		b = tmp;
 	} else if(expr->right->get_type() == AST_NUMBER) 
 		b = ((NumberAST *)expr->right)->number;
 	else return false;
