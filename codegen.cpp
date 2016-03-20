@@ -26,20 +26,21 @@ int codegen_entry(ast_vector &program) {
 
 bool const_folding(AST *e, int *res) {
 	BinaryAST *expr = (BinaryAST *)e;
-	int res1 = 0, res2 = 0;
+	int tmp = 0;
 	int a, b;
+
 	if(expr->left->get_type() == AST_BINARY) {
-		if(!const_folding(expr->left, &res1))
+		if(!const_folding(expr->left, &tmp))
 			return false;
-		a = res1;
+		a = tmp; is_left_bin = true;
 	} else if(expr->left->get_type() == AST_NUMBER) 
 		a = ((NumberAST *)expr->left)->number;
 	else return false;
 
 	if(expr->right->get_type() == AST_BINARY) {
-		if(!const_folding(expr->right, &res2))
+		if(!const_folding(expr->right, &tmp))
 			return false;
-		b = res2;
+		b = tmp; is_right_bin = true;
 	} else if(expr->right->get_type() == AST_NUMBER) 
 		b = ((NumberAST *)expr->right)->number;
 	else return false;
@@ -73,9 +74,10 @@ int codegen_expression(Function &f, Module &f_list, AST *ast) {
 		return T_INT;
 	case AST_BINARY: {
 		int res = 0;
-		if(const_folding(ast, &res))
-			return res;
-		else
+		if(const_folding(ast, &res)) {
+			ntv.genas("mov eax %d", res);
+			return T_INT;
+		} else
 			return ((BinaryAST *)ast)->codegen(f, f_list, ntv);
 	}
 	case AST_ARRAY:
