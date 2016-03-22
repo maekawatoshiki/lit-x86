@@ -42,9 +42,14 @@ AST *visit(AST *ast) {
 	} else if(ast->get_type() == AST_FOR) {
 		ForAST *fa = (ForAST *)ast;
 		std::cout << "(for ("; visit(fa->asgmt);
-		std::cout << ") ("; visit(fa->cond); 
-		std::cout << ") ("; visit(fa->step);
-		std::cout << ")\n(" << std::endl;
+		if(fa->is_range_for) {
+			std::cout << ") ("; visit(fa->range);
+			std::cout << ")\n(" << std::endl;
+		} else {
+			std::cout << ") ("; visit(fa->cond); 
+			std::cout << ") ("; visit(fa->step);
+			std::cout << ")\n(" << std::endl;
+		}
 		for(int i = 0; i < fa->block.size(); i++) 
 			visit(fa->block[i]);
 		std::cout << ")\n)";
@@ -131,13 +136,13 @@ AST *Parser::expr_asgmt() {
 }
 
 AST *Parser::expr_compare() {
-	int andop=0, orop=0;
+	bool andop=0, orop=0, xorop = false;
 	AST *l, *r;
 	l = expr_logic();
 	while((andop=tok.skip("and") || tok.skip("&")) || (orop=tok.skip("or") || 
-				tok.skip("|")) || tok.skip("xor") || tok.skip("^")) {
+				tok.skip("|")) || (xorop=(tok.skip("xor") || tok.skip("^"))) || tok.skip("..")) {
 		r = expr_logic();
-		l = new BinaryAST(andop ? "and" : orop ? "or" : "xor", l, r);
+		l = new BinaryAST(andop ? "and" : orop ? "or" : xorop ? "xor" : "range", l, r);
 	}
 
 	return l;
@@ -281,48 +286,6 @@ AST *Parser::expr_primary() {
 		else return ary;
 	}
 
-	// while(tok.skip(".")) {
-	// 	name = tok.get().val;
-	// 	std::string class_name;
-	// 	if(v == NULL) {
-	// 		if(et.is_type(T_INT)) class_name = "Math";
-	// 		else if(et.is_type(T_STRING)) class_name = "String";
-	// 		else class_name = mod_name;
-	// 	} else class_name = v->class_type;
-	// 	tok.skip();
-	// 	if(lib_list.is(class_name)) {
-	// 		ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(0x00); // mov [esp], eax
-	// 		if(HAS_PARAMS_FUNC) {
-	// 			tok.skip("(");
-	// 			for(size_t i = 0; !tok.skip(")") && !tok.skip(";"); i++) {
-	// 				expr_entry();
-	// 				ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode((i + 1) * ADDR_SIZE); // mov [esp+ADDR*(i+1)], eax
-	// 				tok.skip(",");
-	// 			}
-	// 		} 
-	// 		ntv.gencode(0xe8); ntv.gencode_int32(lib_list.call(name, class_name) - (uint32_t)&ntv.code[ntv.count] - ADDR_SIZE); // call func
-	// 		et.change(T_INT);
-	// 	} else {
-	// 		func_t *function = funcs.get(name, class_name);
-	// 		if(function == NULL) 
-	// 			function = funcs.get(name, module);
-	// 		if(function == NULL) error("function not found");
-	// 		if(function->params > 0) ntv.genas("push eax");
-	// 		if(HAS_PARAMS_FUNC) {
-	// 			tok.skip("(");
-	// 			for(size_t i = 0; i < function->params - 1; i++) {
-	// 				expr_entry();
-	// 				ntv.genas("push eax");
-	// 				tok.skip(",");
-	// 			}
-	// 		} tok.skip(")");
-	// 		ntv.gencode(0xe8); ntv.gencode_int32(0xFFFFFFFF - (ntv.count - function->address) - 3); // call func
-	// 		ntv.genas("add esp %d", function->params * ADDR_SIZE);
-	// 		et.change(T_INT);
-	// 	}
-	// } 
-
-	// while(is_index()) make_index(et);
 	return 0;
 }
 

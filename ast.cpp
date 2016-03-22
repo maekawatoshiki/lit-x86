@@ -53,7 +53,10 @@ WhileAST::WhileAST(AST *c, std::vector<AST *> b) :
 }
 
 ForAST::ForAST(AST *a, AST *c, AST *s, std::vector<AST *> b) : 
-	asgmt(a), cond(c), step(s), block(b) {
+	asgmt(a), cond(c), step(s), block(b), is_range_for(false) {
+}
+ForAST::ForAST(AST *a, AST *r, std::vector<AST *> b) : 
+	asgmt(a), range(r), block(b), is_range_for(true) {
 }
 
 ReturnAST::ReturnAST(AST *e) : 

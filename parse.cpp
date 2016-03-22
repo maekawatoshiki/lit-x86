@@ -116,13 +116,19 @@ AST *Parser::make_elsif() {
 AST *Parser::make_for() {
 	if(tok.skip("for")) {
 		AST *asgmt = expr_entry();
-			if(!tok.skip(",")) error("E");
-		AST *cond = expr_entry();
-			if(!tok.skip(",")) error("E");
-		AST *step = expr_entry();
-		ast_vector block = eval();
-		if(!tok.skip("end")) error("error: %d: expected expression 'end'", tok.get().nline);
-		return new ForAST(asgmt, cond, step, block);
+		if(tok.skip(",")) {
+			AST *cond = expr_entry();
+			if(!tok.skip(",")) error("error: %d: expect expression ','", tok.get().nline);
+			AST *step = expr_entry();
+			ast_vector block = eval();
+			if(!tok.skip("end")) error("error: %d: expected expression 'end'", tok.get().nline);
+			return new ForAST(asgmt, cond, step, block);
+		} else if(tok.skip("in")) {
+			AST *range = expr_entry();
+				ast_vector block = eval();
+			if(!tok.skip("end")) error("error: %d: expected expression 'end'", tok.get().nline);
+			return new ForAST(asgmt, range, block);
+		} else error("error: %d: unknown syntax", tok.get().nline);
 	}
 	return NULL;
 }

@@ -183,25 +183,77 @@ void WhileAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 }
 
 void ForAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
-	codegen_expression(f, f_list, asgmt);
-	ntv.gencode(0x90); int loop_bgn = ntv.count;
+	if(is_range_for == true) {
+		VariableAST *r = (VariableAST *)asgmt;
+			var_t *v = r->get(f, f_list);
+			if(v == NULL) v = r->append(f, f_list);
+
 		std::vector<int> *break_list = new std::vector<int>;
 		f.break_list.push(break_list);
-	codegen_expression(f, f_list, cond);
-	ntv.gencode(0x83); ntv.gencode(0xf8); ntv.gencode(0x00);// cmp eax, 0
-	ntv.gencode(0x75); ntv.gencode(0x05); // jne 5
-	ntv.gencode(0xe9); int end = ntv.count; ntv.gencode_int32(0x00000000);// jmp while end
 
-	for(ast_vector::iterator it = block.begin(); it != block.end(); ++it) {
-		codegen_expression(f, f_list, *it);
-	}
-	codegen_expression(f, f_list, step);
+		AST *min, *max;
+		if(range->get_type() == AST_BINARY) {
+			if(((BinaryAST *)range)->op != "range")
+				error("error: for syntax: not range expression");
+			min = ((BinaryAST *)range)->left;
+			max = ((BinaryAST *)range)->right;
+		}
+		codegen_expression(f, f_list, min);
+		ntv.gencode(0x89); ntv.gencode(0x45);
+			ntv.gencode(256 - ADDR_SIZE * v->id); // mov var eax
+	
+		ntv.gencode(0x90); int loop_bgn = ntv.count;
 
-	ntv.gencode(0xe9); ntv.gencode_int32(0xFFFFFFFF - ntv.count + loop_bgn - ADDR_SIZE); // jmp n
-	ntv.gencode_int32_insert(ntv.count - end - ADDR_SIZE, end);
-	ntv.gencode(0x90); ntv.gencode(0x90);
-	for(std::vector<int>::iterator it = f.break_list.top()->begin(); it != f.break_list.top()->end(); ++it) {
-		ntv.gencode_int32_insert(ntv.count - *it - ADDR_SIZE, *it);
+		{
+			codegen_expression(f, f_list, max);
+			ntv.genas("mov ebx eax");
+			codegen_expression(f, f_list, asgmt);
+		}
+		ntv.gencode(0x39); ntv.gencode(0xd8); // cmp %eax, %ebx
+		ntv.gencode(0x0f); ntv.gencode(0x9e); ntv.gencode(0xc0); // set fle al
+		ntv.gencode(0x0f); ntv.gencode(0xb6); ntv.gencode(0xc0); // movzx eax al
+		
+		ntv.gencode(0x83); ntv.gencode(0xf8); ntv.gencode(0x00);// cmp eax, 0
+		ntv.gencode(0x75); ntv.gencode(0x05); // jne 5
+		ntv.gencode(0xe9); int end = ntv.count; ntv.gencode_int32(0x00000000);// jmp while end
+
+		for(ast_vector::iterator it = block.begin(); it != block.end(); ++it) {
+			codegen_expression(f, f_list, *it);
+		}
+		
+		codegen_expression(f, f_list, asgmt);
+		ntv.genas("add eax 1"); // inc
+		ntv.gencode(0x89); ntv.gencode(0x45);
+			ntv.gencode(256 - ADDR_SIZE * v->id); // mov var eax
+
+		ntv.gencode(0xe9); ntv.gencode_int32(0xFFFFFFFF - ntv.count + loop_bgn - ADDR_SIZE); // jmp n
+
+		ntv.gencode_int32_insert(ntv.count - end - ADDR_SIZE, end);
+		ntv.gencode(0x90); ntv.gencode(0x90);
+		for(std::vector<int>::iterator it = f.break_list.top()->begin(); it != f.break_list.top()->end(); ++it) {
+			ntv.gencode_int32_insert(ntv.count - *it - ADDR_SIZE, *it);
+		}
+	} else {
+		codegen_expression(f, f_list, asgmt);
+		ntv.gencode(0x90); int loop_bgn = ntv.count;
+		std::vector<int> *break_list = new std::vector<int>;
+		f.break_list.push(break_list);
+		codegen_expression(f, f_list, cond);
+		ntv.gencode(0x83); ntv.gencode(0xf8); ntv.gencode(0x00);// cmp eax, 0
+		ntv.gencode(0x75); ntv.gencode(0x05); // jne 5
+		ntv.gencode(0xe9); int end = ntv.count; ntv.gencode_int32(0x00000000);// jmp while end
+
+		for(ast_vector::iterator it = block.begin(); it != block.end(); ++it) {
+			codegen_expression(f, f_list, *it);
+		}
+		codegen_expression(f, f_list, step);
+
+		ntv.gencode(0xe9); ntv.gencode_int32(0xFFFFFFFF - ntv.count + loop_bgn - ADDR_SIZE); // jmp n
+		ntv.gencode_int32_insert(ntv.count - end - ADDR_SIZE, end);
+		ntv.gencode(0x90); ntv.gencode(0x90);
+		for(std::vector<int>::iterator it = f.break_list.top()->begin(); it != f.break_list.top()->end(); ++it) {
+			ntv.gencode_int32_insert(ntv.count - *it - ADDR_SIZE, *it);
+		}
 	}
 }
 

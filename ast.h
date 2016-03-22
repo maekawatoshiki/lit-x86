@@ -147,9 +147,11 @@ public:
 
 class ForAST : public AST {
 public:
-	AST *asgmt, *cond, *step;
+	bool is_range_for;
+	AST *asgmt, *cond, *step, *range;
 	std::vector<AST *> block;
-	ForAST(AST *, AST *, AST *, std::vector<AST *>);
+	ForAST(AST *, AST *, AST *, std::vector<AST *>); // c like style
+	ForAST(AST *, AST *, std::vector<AST *>); // python like style
 	virtual int get_type() const { return AST_FOR; }
 	void codegen(Function &, Module &, NativeCode_x86 &);
 };
