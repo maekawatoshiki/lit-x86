@@ -1,6 +1,6 @@
 
-def c_to_s(c)
-	s:string = "*"
+def c_to_s(c):string
+	s:string = Array(2)
 	s[0] = c
 	s
 end

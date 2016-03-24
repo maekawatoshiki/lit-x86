@@ -107,7 +107,7 @@ public:
 	std::vector<AST *> args;
 	FunctionCallAST(func_t f, std::vector<AST *> a);
 	virtual int get_type() const { return AST_FUNCTION_CALL; }
-	void codegen(Function &, Module &, NativeCode_x86 &);
+	int codegen(Function &, Module &, NativeCode_x86 &);
 };
 
 class FunctionAST : public AST {

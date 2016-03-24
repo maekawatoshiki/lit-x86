@@ -39,8 +39,13 @@ int Lexer::lex(char *code) {
 			for(i++; code[i] != '\n'; i++) { ; } line++;
 		} else if(code[i] == '\"') { // string?
 
-			for(i++; code[i] != '"' && code[i] != '\0'; i++)
-				str += code[i];
+			for(i++; ; i++) {
+				if(code[i] == '\\' && code[i+1] == '"') {
+					str += code[i++]; str += code[i];
+				} else if(code[i] == '"') break;
+				else 
+					str += code[i];
+			}
 			tmp_tok.val = str;
 			tmp_tok.nline = line;
 			tmp_tok.type = TOK_STRING;

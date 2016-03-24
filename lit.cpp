@@ -74,6 +74,7 @@ char *rea_concat(char *a, char *b) {
 char *gets_stdin() {
 	char *str = (char *)manage_alloc(256);
 	fgets(str, 256, stdin);
+	str[strlen(str) - 1] = '\0';
 	return str;
 }
 
@@ -93,7 +94,8 @@ void *funcTable[] = {
 	(void *) freeAddr,	// 48
 	(void *) gets_stdin, 		// 52
 	(void *) rea_concat,// 56
-	(void *) putc				// 60
+	(void *) putc,			// 60
+	(void *) strlen,		// 64
 };
 
 

@@ -17,7 +17,7 @@ def prime(i)
 end
 
 def main
-	for i = 2, i < 100, i += 1
+	for i in 2..100
 		if prime(i)
 			puts(i, " is prime")
 		end

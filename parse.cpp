@@ -144,15 +144,29 @@ AST *Parser::make_while() {
 }
 
 AST *Parser::make_func() {
-	uint32_t espBgn, params = 0;
+	uint32_t params = 0;
 	std::string func_name = tok.next().val;
 	ast_vector args, stmt;
-	func_t function = {.name = func_name};
+	func_t function = { .name = func_name, .type = T_INT };
 
 	if(tok.skip("(")) { // get params
 		do { args.push_back(expr_primary()); } while(tok.skip(","));
 		if(!tok.skip(")"))
 			error("error: %d: expected expression ')'", tok.get().nline);
+	}
+	if(tok.skip(":")) { 
+		int is_ary = 0, type = T_VOID; 
+		if(tok.skip("int")) { 
+			if(tok.skip("[]")) { is_ary = T_ARRAY; }
+			type = T_INT | is_ary;
+		} else if(tok.skip("string")) { 
+			if(tok.skip("[]")) { is_ary = T_ARRAY; }
+			type = T_STRING | is_ary;
+		} else if(tok.skip("double")) { 
+			if(tok.skip("[]")) { is_ary = T_ARRAY; }
+			type = T_DOUBLE | is_ary;
+		}
+		function.type = type;
 	}
 
 	stmt = eval();
@@ -164,15 +178,16 @@ AST *Parser::make_func() {
 char *replace_escape(char *str) {
 	int i;
 	char *pos;
-	char escape[12][3] = {
+	char escape[14][3] = {
 		"\\a", "\a",
 		"\\r", "\r",
 		"\\f", "\f",
 		"\\n", "\n",
 		"\\t", "\t",
-		"\\b", "\b"
+		"\\b", "\b",
+		"\\\"",  "\""
 	};
-	for(i = 0; i < 12; i += 2) {
+	for(i = 0; i < 14; i += 2) {
 		while ((pos = strstr(str, escape[i])) != NULL) {
 			*pos = escape[i + 1][0];
 			memmove(pos + 1, pos + 2, strlen(str) - 2 + 1);

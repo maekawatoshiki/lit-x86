@@ -70,8 +70,7 @@ int codegen_expression(Function &f, Module &f_list, AST *ast) {
 		((VariableAsgmtAST *)ast)->codegen(f, f_list, ntv);
 		return T_VOID;
 	case AST_FUNCTION_CALL:
-		((FunctionCallAST *)ast)->codegen(f, f_list, ntv);
-		return T_INT;
+		return ((FunctionCallAST *)ast)->codegen(f, f_list, ntv);
 	case AST_BINARY: {
 		int res = 0;
 		if(const_folding(ast, &res)) {
@@ -109,6 +108,7 @@ Function FunctionAST::codegen(Module &f_list) {
 	f.info.mod_name = "";
 	f.info.address = ntv.count;
 	f.info.params = args.size();
+	f.info.type = info.type;
 	uint32_t func_bgn = ntv.count;
 
 	ntv.genas("push ebp");
@@ -257,7 +257,7 @@ void ForAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 	}
 }
 
-void FunctionCallAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
+int FunctionCallAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 	struct {
 		std::string name, mod_name;
 		int args, addr; // if args is -1, the function has vector args.
@@ -271,12 +271,13 @@ void FunctionCallAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) 
 		{"close", "File", 1, 36},
 		{"gets", "File", 0, 52},
 		{"free", "Sys", 1, 44},
+		{"strlen", "", 1, 64},
 		{"puts", "", -1, -1} // special
 	};
 	bool is_std_func = false;
 
 	for(int i = 0; i < sizeof(stdfunc) / sizeof(stdfunc[0]); i++) {
-		if(stdfunc[i].name == info.name /* && stdfunc[i].mod_name == mod_name */) {
+		if(stdfunc[i].name == info.name) {
 			if(info.name == "Array") {
 				codegen_expression(f, f_list, args[0]);
 				ntv.genas("shl eax 2");
@@ -295,7 +296,7 @@ void FunctionCallAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) 
 					}
 				}
 				ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(8);// call *0x08(esi) putLN
-			} else { // user function
+			} else {
 				if(stdfunc[i].args == -1) { // vector
 					uint32_t a = 0;
 					for(ast_vector::iterator it = args.begin(); it != args.end(); ++it) {
@@ -313,26 +314,30 @@ void FunctionCallAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) 
 			is_std_func = true;
 		}
 	}
-	if(!is_std_func) { // user's Function
-		Function *function = f_list.get(info.name, info.mod_name);
-		if(function == NULL) { // undefined
-			uint32_t a = 3;
-			for(ast_vector::iterator it = args.begin(); it != args.end(); ++it) {
-				codegen_expression(f, f_list, *it);
-				ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(256 - a++ * ADDR_SIZE); // mov [esp+ADDR*a], eax
-			}
-			ntv.gencode(0xe8); f_list.append_undef(info.name, info.mod_name, ntv.count);
-				ntv.gencode_int32(0x00000000); // call Function
-		} else { // defined
-			uint32_t a = 3;
-			if(args.size() != function->info.params) error("error: the number of arguments is not same");
-			for(ast_vector::iterator it = args.begin(); it != args.end(); ++it) {
-				codegen_expression(f, f_list, *it);
-				ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(256 - a++ * ADDR_SIZE); // mov [esp+ADDR*a], eax
-			}
-			ntv.gencode(0xe8); ntv.gencode_int32(0xFFFFFFFF - (ntv.count - function->info.address) - 3); // call Function
+	if(!is_std_func) {
+	// user's Function
+	Function *function = f_list.get(info.name, info.mod_name);
+	if(function == NULL) { // undefined
+		uint32_t a = 3;
+		for(ast_vector::iterator it = args.begin(); it != args.end(); ++it) {
+			codegen_expression(f, f_list, *it);
+			ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(256 - a++ * ADDR_SIZE); // mov [esp+ADDR*a], eax
 		}
+		ntv.gencode(0xe8); f_list.append_undef(info.name, info.mod_name, ntv.count);
+		ntv.gencode_int32(0x00000000); // call function
+		return T_INT;
+	} else { // defined
+		uint32_t a = 3;
+		if(args.size() != function->info.params) error("error: the number of arguments is not same");
+		for(ast_vector::iterator it = args.begin(); it != args.end(); ++it) {
+			codegen_expression(f, f_list, *it);
+			ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(256 - a++ * ADDR_SIZE); // mov [esp+ADDR*a], eax
+		}
+		ntv.gencode(0xe8); ntv.gencode_int32(0xFFFFFFFF - (ntv.count - function->info.address) - 3); // call function
+		return function->info.type;
 	}
+	}
+	return T_INT;
 }
 
 int BinaryAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
@@ -344,7 +349,7 @@ int BinaryAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 	if(ty1 != ty2)
 		if(op != "+") error("error: type error"); // except string concat
 	if(op == "+") {
-		if(ty1 == T_STRING) {
+		if(ty1 == T_STRING && ty2 == T_STRING) {
 			ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * 0); // mov [esp+0*ADDR_SIZE], eax
 			ntv.gencode(0x89); ntv.gencode(0x5c); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * 1); // mov [esp+1*ADDR_SIZE], ebx
 			ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(56); // call rea_concat

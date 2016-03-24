@@ -6,6 +6,7 @@
 
 typedef struct {
 	uint32_t address, params;
+	int type;
 	std::string name, mod_name;
 } func_t;
 
