@@ -1,4 +1,5 @@
 #include "codegen.h"
+#include "lit.h"
 #include "asm.h"
 #include "expr.h"
 #include "exprtype.h"
@@ -272,6 +273,7 @@ int FunctionCallAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 		{"gets", "File", 0, 52},
 		{"free", "Sys", 1, 44},
 		{"strlen", "", 1, 64},
+		{"len", "", 1, 68},
 		{"puts", "", -1, -1} // special
 	};
 	bool is_std_func = false;
@@ -515,7 +517,7 @@ int ArrayAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 
 void StringAST::codegen(Function &f, NativeCode_x86 &ntv) {
 	ntv.gencode(0xb8);
-		char *embed = (char *)calloc(sizeof(char), str.length() + 2);
+		char *embed = (char *)LitMemory::alloc(str.length() + 1);
 		replace_escape(strcpy(embed, str.c_str()));
 	ntv.gencode_int32((uint32_t)embed); // mov eax string_address
 }

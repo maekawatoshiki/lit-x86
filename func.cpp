@@ -59,7 +59,7 @@ void Module::append_addr_of_global_var(std::string name, int ntv_pos) {
 
 void Module::insert_global_var() {
 	for(std::vector<var_t>::iterator it = var_global.local.begin(); it != var_global.local.end(); ++it) {
-		uint32_t g_addr = (uint32_t)manage_alloc(ADDR_SIZE);
+		uint32_t g_addr = (uint32_t)LitMemory::alloc(ADDR_SIZE);
 		for(std::vector<int>::iterator pos = it->used_location.begin(); pos != it->used_location.end(); ++pos) {
 			ntv.gencode_int32_insert(g_addr, *pos);
 		}

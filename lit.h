@@ -51,26 +51,11 @@ public:
 };
 
 /* for native(JIT) code. */
-
-struct mem_info {
-	uint32_t addr;
-	bool isfree;
+namespace LitMemory {
+	void *alloc(uint32_t);
 };
 
-class MemoryList {
-public:
-	std::vector<mem_info> mem;
-
-	size_t count() { return mem.size(); }
-};
-
-extern MemoryList mem;
-
-void *manage_alloc(uint32_t);
-void freeAddr();
-void free_addr_in_program(uint32_t);
 void putNumber(int);
 void putString(int *);
 void putln();
-void appendAddr(uint32_t);
 #endif

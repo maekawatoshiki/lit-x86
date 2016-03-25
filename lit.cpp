@@ -8,7 +8,6 @@
 #include "option.h"
 #include "library.h"
 
-MemoryList mem;
 ctrl_t break_list, return_list;
 
 // ---- for native code --- //
@@ -31,48 +30,49 @@ void ssleep(uint32_t t) {
 #endif
 }
 
-void *manage_alloc(uint32_t size) {
-	void *addr = calloc(sizeof(int), size);
-	appendAddr((uint32_t) addr);
-	return addr;
-}
-
-void appendAddr(uint32_t addr) {
-	mem_info mi = {
-		.addr = addr,
-		.isfree = false
+namespace LitMemory {
+	class MemoryInfo {
+		void *addr;
+		size_t size;
+	public:
+		MemoryInfo(void *a, size_t sz) : 
+			addr(a), size(sz) { 
+		}
+		void *get_addr() { return addr; }
+		uint32_t get_size() { return size; }
+		void free_mem() { free(addr); }
 	};
-	mem.mem.push_back(mi);
-}
+	
+	std::map<uint32_t, MemoryInfo *> mem_list;
 
-void free_addr_in_program(uint32_t addr) {
-	for(int i = 0; i < mem.mem.size(); i++) {
-		if(mem.mem[i].addr == addr) {
-			free((void *)mem.mem[i].addr);
-			mem.mem[i].isfree = false;
+	void *alloc(uint32_t size) {
+		void *addr = calloc(size, sizeof(int));
+		mem_list[(uint32_t)addr] = new MemoryInfo(addr, size);
+		return addr;	
+	}
+
+	uint32_t get_size(void *addr) {
+		MemoryInfo *m = mem_list[(uint32_t)addr];
+		if(m == NULL) return 0;
+		return m->get_size();
+	}
+
+	void free_all_mem() {
+		for(std::map<uint32_t, MemoryInfo *>::iterator it = mem_list.begin(); it != mem_list.end(); ++it) {
+			it->second->free_mem();
+			// std::cout << "freed success: " << it->second->get_addr() << std::endl;
 		}
 	}
-}
-
-void freeAddr() {
-	if(mem.count() > 0) {
-		for(size_t i = 0; i < mem.count(); i++) {
-			if(mem.mem[i].isfree == 0) {
-				free((void *)mem.mem[i].addr);
-				mem.mem.pop_back();
-			}
-		}
-	}
-}
+};
 
 char *rea_concat(char *a, char *b) {
-	char *t = (char *)malloc(strlen(a) + strlen(b) + 2);
+	char *t = (char *)LitMemory::alloc(strlen(a) + strlen(b) + 1);
 	strcpy(t, a);
 	return strcat(t, b);
 }
 
 char *gets_stdin() {
-	char *str = (char *)manage_alloc(256);
+	char *str = (char *)LitMemory::alloc(256);
 	fgets(str, 256, stdin);
 	str[strlen(str) - 1] = '\0';
 	return str;
@@ -82,20 +82,21 @@ void *funcTable[] = {
 	(void *) putNumber, // 0
 	(void *) putString, // 4
 	(void *) putln,			// 8
-	(void *) manage_alloc, 		// 12
+	(void *) LitMemory::alloc, 		// 12
 	(void *) printf, 		// 16
-	(void *) appendAddr,// 20
+	(void *) NULL,// 20
 	(void *) ssleep, 		// 24
 	(void *) fopen, 		// 28
 	(void *) fprintf, 	// 32
 	(void *) fclose,		// 36
 	(void *) File_read,	// 40
-	(void *) free_addr_in_program,	// 44
-	(void *) freeAddr,	// 48
+	(void *) NULL,	// 44
+	(void *) LitMemory::free_all_mem,	// 48
 	(void *) gets_stdin, 		// 52
 	(void *) rea_concat,// 56
 	(void *) putc,			// 60
 	(void *) strlen,		// 64
+	(void *) LitMemory::get_size, // 68
 };
 
 
@@ -109,7 +110,8 @@ Lit::Lit(int ac, char **av)
 }
 
 Lit::~Lit() {
-	freeAddr();
+	LitMemory::free_all_mem();
+	// freeAddr();
 }
 
 int Lit::execute(char *source) {
