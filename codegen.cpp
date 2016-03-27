@@ -274,6 +274,7 @@ int FunctionCallAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 		{"free", "Sys", 1, 44},
 		{"strlen", "", 1, 64},
 		{"len", "", 1, 68},
+		{"GC", "", 0, 72},
 		{"puts", "", -1, -1} // special
 	};
 	bool is_std_func = false;
@@ -428,8 +429,16 @@ void VariableAsgmtAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv)
 		ntv.gencode_int32(0x00000000); // GLOBAL_INSERT
 	} else {
 		ntv.gencode(0x89); ntv.gencode(0x45);
-		ntv.gencode(256 - ADDR_SIZE * v->id); // mov var eax
+			ntv.gencode(256 - ADDR_SIZE * v->id); // mov var eax
 		if(first_decl && var->get_type() == AST_VARIABLE) v->type = ty; // for type inference
+		if(v->type & T_ARRAY) {
+			ntv.genas("push eax");
+				ntv.gencode(0x8d); ntv.gencode(0x45);
+					ntv.gencode(256 - ADDR_SIZE * v->id); // lea eax [esp - id*ADDR_SIZE]
+				ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x24); // mov [esp], eax
+				ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(44);// call *44(esi) LitMemory::append_ptr
+			ntv.genas("pop eax");
+		}
 	}
 }
 
@@ -517,7 +526,7 @@ int ArrayAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 
 void StringAST::codegen(Function &f, NativeCode_x86 &ntv) {
 	ntv.gencode(0xb8);
-		char *embed = (char *)LitMemory::alloc(str.length() + 1);
+		char *embed = (char *)malloc(str.length() + 1); // TODO: fix!
 		replace_escape(strcpy(embed, str.c_str()));
 	ntv.gencode_int32((uint32_t)embed); // mov eax string_address
 }

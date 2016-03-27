@@ -8,4 +8,4 @@ _start:
 	push ebx
 	mov [ebp - 4], eax
 	add eax, 1
-	mov ebx, [ecx + 4]
+	lea eax, [ebp - 4]

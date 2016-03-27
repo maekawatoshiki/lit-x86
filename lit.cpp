@@ -35,15 +35,18 @@ namespace LitMemory {
 		void *addr;
 		size_t size;
 	public:
+		bool marked;
 		MemoryInfo(void *a, size_t sz) : 
-			addr(a), size(sz) { 
+			addr(a), size(sz), marked(false) { 
 		}
 		void *get_addr() { return addr; }
 		uint32_t get_size() { return size; }
+		void mark() { marked = true; }
 		void free_mem() { free(addr); }
 	};
 	
 	std::map<uint32_t, MemoryInfo *> mem_list;
+	std::map<uint32_t, bool> root_ptr;
 
 	void *alloc(uint32_t size) {
 		void *addr = calloc(size, sizeof(int));
@@ -55,6 +58,31 @@ namespace LitMemory {
 		MemoryInfo *m = mem_list[(uint32_t)addr];
 		if(m == NULL) return 0;
 		return m->get_size();
+	}
+
+	void append_ptr(void *ptr) {
+		root_ptr[(uint32_t)ptr] = true;
+	}
+	void delete_ptr(void *ptr) {
+		root_ptr.erase(root_ptr.find((uint32_t)ptr));
+	}
+	void gc() {
+		for(std::map<uint32_t, bool>::iterator it = root_ptr.begin(); it != root_ptr.end(); ++it) {
+			int *ptr = (int *)it->first;
+			MemoryInfo *m = mem_list[(uint32_t)*ptr];
+			if(m != NULL) {
+				m->mark();
+			} else { 
+				mem_list.erase(mem_list.find((uint32_t)*ptr));
+			}
+		} 
+		for(std::map<uint32_t, MemoryInfo *>::iterator it = mem_list.begin(); it != mem_list.end(); ++it) {
+			if(!it->second->marked) {
+				std::cout << "freed success: " << it->second->get_addr() << ", size: " << it->second->get_size() << "bytes" << std::endl;
+				it->second->free_mem();
+				mem_list.erase(mem_list.find(it->first));
+			} else it->second->marked = false;
+		} 
 	}
 
 	void free_all_mem() {
@@ -90,13 +118,14 @@ void *funcTable[] = {
 	(void *) fprintf, 	// 32
 	(void *) fclose,		// 36
 	(void *) File_read,	// 40
-	(void *) NULL,	// 44
+	(void *) LitMemory::append_ptr,	// 44
 	(void *) LitMemory::free_all_mem,	// 48
 	(void *) gets_stdin, 		// 52
 	(void *) rea_concat,// 56
 	(void *) putc,			// 60
 	(void *) strlen,		// 64
 	(void *) LitMemory::get_size, // 68
+	(void *) LitMemory::gc,	// 72
 };
 
 
