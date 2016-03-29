@@ -270,23 +270,22 @@ void ForAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 int FunctionCallAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 	struct {
 		std::string name, mod_name;
-		int args, addr; // if args is -1, the function has vector args.
+		int args, addr, type; // if args is -1, the function has vector args.
 	} stdfunc[] = {
-		{"Array", "", 1, 12},
-		{"printf", "", -1, 16},
-		{"sleep", "Time", 1, 24},
-		{"open", "File", 2, 28},
-		{"write", "File", -1, 32},
-		{"read", "File", 3, 40},
-		{"close", "File", 1, 36},
-		{"gets", "File", 0, 52},
-		{"free", "Sys", 1, 44},
-		{"strlen", "", 1, 64},
-		{"len", "", 1, 68},
-		{"GC", "", 0, 72},
-		{"puts", "", -1, -1} // special
+		{"Array", "", 1, 12, T_INT | T_ARRAY},
+		{"printf", "", -1, 16, T_VOID},
+		{"sleep", "Time", 1, 24, T_VOID},
+		{"open", "File", 2, 28, T_INT},
+		{"write", "File", -1, 32, T_INT},
+		{"read", "File", 3, 40, T_INT},
+		{"close", "File", 1, 36, T_INT},
+		{"gets", "File", 0, 52, T_STRING},
+		{"free", "Sys", 1, 44, T_VOID},
+		{"strlen", "", 1, 64, T_INT},
+		{"len", "", 1, 68, T_INT},
+		{"GC", "", 0, 72, T_INT},
+		{"puts", "", -1, -1, T_VOID} // special
 	};
-	bool is_std_func = false;
 
 	for(int i = 0; i < sizeof(stdfunc) / sizeof(stdfunc[0]); i++) {
 		if(stdfunc[i].name == info.name) {
@@ -323,11 +322,9 @@ int FunctionCallAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 				}
 				ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(stdfunc[i].addr); // call $function
 			}
-			is_std_func = true;
+			return stdfunc[i].type;
 		}
 	}
-	if(!is_std_func) {
-	// user's Function
 	Function *function = f_list.get(info.name, info.mod_name);
 	if(function == NULL) { // undefined
 		uint32_t a = 3;
@@ -348,8 +345,6 @@ int FunctionCallAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 		ntv.gencode(0xe8); ntv.gencode_int32(0xFFFFFFFF - (ntv.count - function->info.address) - 3); // call function
 		return function->info.type;
 	}
-	}
-	return T_INT;
 }
 
 int BinaryAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {

@@ -86,7 +86,7 @@ namespace LitMemory {
 		} 
 		for(std::map<uint32_t, MemoryInfo *>::iterator it = mem_list.begin(); it != mem_list.end(); ++it) {
 			if(!it->second->marked) {
-				std::cout << "freed success: " << it->second->get_addr() << ", size: " << it->second->get_size() << "bytes" << std::endl;
+				// std::cout << "freed success: " << it->second->get_addr() << ", size: " << it->second->get_size() << "bytes" << std::endl;
 				it->second->free_mem();
 				current_mem -= it->second->get_size();
 				mem_list.erase(mem_list.find(it->first));
@@ -97,7 +97,7 @@ namespace LitMemory {
 	void free_all_mem() {
 		for(std::map<uint32_t, MemoryInfo *>::iterator it = mem_list.begin(); it != mem_list.end(); ++it) {
 			it->second->free_mem();
-			std::cout << "freed success: " << it->second->get_addr() << std::endl;
+			// std::cout << "freed success: " << it->second->get_addr() << std::endl;
 		}
 	}
 };
