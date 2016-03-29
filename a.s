@@ -9,3 +9,4 @@ _start:
 	mov [ebp - 4], eax
 	add eax, 1
 	lea eax, [ebp - 4]
+	mov [esp + 4], eax

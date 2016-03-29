@@ -19,6 +19,7 @@ end
 def main
 	N = 10000000
 	prime_list:int[] = Array(N)
+	GC()
 	puts("found ", table(prime_list, N), " primes between 2 and ", N)
 	# for i = 2, i < N, i = i + 1
 	# 	if prime_list[i] == 0

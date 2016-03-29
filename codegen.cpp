@@ -123,8 +123,16 @@ Function FunctionAST::codegen(Module &f_list) {
 	for(ast_vector::iterator it = args.begin(); it != args.end(); ++it) {
 		if((*it)->get_type() == AST_VARIABLE)
 			((VariableAST *)*it)->append(f, f_list);
-		else if((*it)->get_type() == AST_VARIABLE_DECL)
+		else if((*it)->get_type() == AST_VARIABLE_DECL) {
 			((VariableDeclAST *)*it)->append(f, f_list);
+			var_t *v = &((VariableDeclAST *)*it)->info;
+			if(v->type & T_ARRAY) {
+				ntv.gencode(0x8d); ntv.gencode(0x45);
+					ntv.gencode(256 - ADDR_SIZE * v->id); // lea eax [esp - id*ADDR_SIZE]
+				ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x24); // mov [esp], eax
+				ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(44);// call *44(esi) LitMemory::append_ptr
+			}
+		}
 	}
 
 	f_list.append(f);
@@ -134,10 +142,11 @@ Function FunctionAST::codegen(Module &f_list) {
 		codegen_expression(f, f_list, *it);
 	}
 
-	// generate return code
+	// generate code to return 
 	for(std::vector<int>::iterator it = f.return_list.begin(); it != f.return_list.end(); ++it) {
 		ntv.gencode_int32_insert(ntv.count - *it - ADDR_SIZE, *it);
 	}
+
 	ntv.genas("add esp %u", f.var.total_size() + 6 * ADDR_SIZE); // add esp nn
 	ntv.gencode(0xc9);// leave
 	ntv.gencode(0xc3);// ret

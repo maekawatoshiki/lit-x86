@@ -44,12 +44,18 @@ namespace LitMemory {
 		void mark() { marked = true; }
 		void free_mem() { free(addr); }
 	};
-	
+
+	const size_t max_mem = 256 * 1024; // 256KB
+	size_t current_mem = 0;
 	std::map<uint32_t, MemoryInfo *> mem_list;
 	std::map<uint32_t, bool> root_ptr;
 
 	void *alloc(uint32_t size) {
 		void *addr = calloc(size, sizeof(int));
+		if(current_mem >= max_mem) {
+			gc();
+		}
+		current_mem += size;
 		mem_list[(uint32_t)addr] = new MemoryInfo(addr, size);
 		return addr;	
 	}
@@ -64,22 +70,25 @@ namespace LitMemory {
 		root_ptr[(uint32_t)ptr] = true;
 	}
 	void delete_ptr(void *ptr) {
-		root_ptr.erase(root_ptr.find((uint32_t)ptr));
+		root_ptr[(uint32_t)ptr] = false;
 	}
 	void gc() {
 		for(std::map<uint32_t, bool>::iterator it = root_ptr.begin(); it != root_ptr.end(); ++it) {
-			int *ptr = (int *)it->first;
-			MemoryInfo *m = mem_list[(uint32_t)*ptr];
-			if(m != NULL) {
-				m->mark();
-			} else { 
-				mem_list.erase(mem_list.find((uint32_t)*ptr));
+			if(it->second == true) {
+				int *ptr = (int *)it->first;
+				MemoryInfo *m = mem_list[(uint32_t)*ptr];
+				if(m != NULL) {
+					m->mark();
+				} else { 
+					mem_list.erase(mem_list.find((uint32_t)*ptr));
+				}
 			}
 		} 
 		for(std::map<uint32_t, MemoryInfo *>::iterator it = mem_list.begin(); it != mem_list.end(); ++it) {
 			if(!it->second->marked) {
 				std::cout << "freed success: " << it->second->get_addr() << ", size: " << it->second->get_size() << "bytes" << std::endl;
 				it->second->free_mem();
+				current_mem -= it->second->get_size();
 				mem_list.erase(mem_list.find(it->first));
 			} else it->second->marked = false;
 		} 
@@ -88,7 +97,7 @@ namespace LitMemory {
 	void free_all_mem() {
 		for(std::map<uint32_t, MemoryInfo *>::iterator it = mem_list.begin(); it != mem_list.end(); ++it) {
 			it->second->free_mem();
-			// std::cout << "freed success: " << it->second->get_addr() << std::endl;
+			std::cout << "freed success: " << it->second->get_addr() << std::endl;
 		}
 	}
 };
@@ -112,7 +121,7 @@ void *funcTable[] = {
 	(void *) putln,			// 8
 	(void *) LitMemory::alloc, 		// 12
 	(void *) printf, 		// 16
-	(void *) NULL,// 20
+	(void *) LitMemory::delete_ptr,// 20
 	(void *) ssleep, 		// 24
 	(void *) fopen, 		// 28
 	(void *) fprintf, 	// 32

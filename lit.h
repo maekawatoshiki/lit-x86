@@ -53,6 +53,7 @@ public:
 /* for native(JIT) code. */
 namespace LitMemory {
 	void *alloc(uint32_t);
+	void gc();
 };
 
 void putNumber(int);
