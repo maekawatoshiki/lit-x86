@@ -72,32 +72,41 @@ namespace LitMemory {
 	void delete_ptr(void *ptr) {
 		root_ptr[(uint32_t)ptr] = false;
 	}
-	void gc() {
+	void gc_mark() {
 		for(std::map<uint32_t, bool>::iterator it = root_ptr.begin(); it != root_ptr.end(); ++it) {
 			if(it->second == true) {
 				int *ptr = (int *)it->first;
 				MemoryInfo *m = mem_list[(uint32_t)*ptr];
 				if(m != NULL) {
 					m->mark();
+					// std::cout << "marked success: " << (uint32_t)m->get_addr() << std::endl;
 				} else { 
 					mem_list.erase(mem_list.find((uint32_t)*ptr));
 				}
 			}
 		} 
+	}
+	void gc_sweep() {
 		for(std::map<uint32_t, MemoryInfo *>::iterator it = mem_list.begin(); it != mem_list.end(); ++it) {
-			if(!it->second->marked) {
-				// std::cout << "freed success: " << it->second->get_addr() << ", size: " << it->second->get_size() << "bytes" << std::endl;
+			if(it->second->marked == false) {
+				// std::cout << "freed success: " << (uint32_t)it->second->get_addr() << ", size: " << it->second->get_size() << "bytes" << std::endl;
 				it->second->free_mem();
 				current_mem -= it->second->get_size();
 				mem_list.erase(mem_list.find(it->first));
-			} else it->second->marked = false;
+			}
 		} 
+		for(std::map<uint32_t, MemoryInfo *>::iterator it = mem_list.begin(); it != mem_list.end(); ++it) 
+			it->second->marked = false;
+	}
+	void gc() {
+		gc_mark();
+		gc_sweep();
 	}
 
 	void free_all_mem() {
 		for(std::map<uint32_t, MemoryInfo *>::iterator it = mem_list.begin(); it != mem_list.end(); ++it) {
 			it->second->free_mem();
-			// std::cout << "freed success: " << it->second->get_addr() << std::endl;
+			// std::cout << "freed success: " << (uint32_t)it->second->get_addr() << std::endl;
 		}
 	}
 };

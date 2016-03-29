@@ -435,7 +435,7 @@ void VariableAsgmtAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv)
 		ntv.gencode(0x89); ntv.gencode(0x45);
 			ntv.gencode(256 - ADDR_SIZE * v->id); // mov var eax
 		if(first_decl && var->get_type() == AST_VARIABLE) v->type = ty; // for type inference
-		if(v->type & T_ARRAY) {
+		if(v->type & T_ARRAY || v->type == T_STRING) {
 			ntv.genas("push eax");
 				ntv.gencode(0x8d); ntv.gencode(0x45);
 					ntv.gencode(256 - ADDR_SIZE * v->id); // lea eax [esp - id*ADDR_SIZE]
