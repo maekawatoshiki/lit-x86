@@ -1,6 +1,6 @@
 # The prime number search program by maekawa toshiki.
 
-def prime(i)
+def prime i
 	if i == 2 
 		return 1
 	end
@@ -18,8 +18,8 @@ end
 
 def main
 	for i in 2..100
-		if prime(i)
-			puts(i, " is prime")
+		if prime i
+			puts i, " is prime"
 		end
 	end
 end

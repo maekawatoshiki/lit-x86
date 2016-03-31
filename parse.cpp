@@ -61,7 +61,10 @@ ast_vector Parser::eval() {
 int Parser::parser() {
 	tok.pos = ntv.count = 0;
 	blocksCount = 0;
-
+	for(int i = 0; i < sizeof(stdfunc) / sizeof(stdfunc[0]); i++) {
+		append_func(stdfunc[i].name);
+	}
+	
 	ast_vector a = eval();
 	std::cout << "\n---------- abstract syntax tree ----------" << std::endl;
 	for(int i = 0; i < a.size(); i++)
@@ -148,11 +151,15 @@ AST *Parser::make_func() {
 	std::string func_name = tok.next().val;
 	ast_vector args, stmt;
 	func_t function = { .name = func_name, .type = T_INT };
+	append_func(func_name);
 
-	if(tok.skip("(")) { // get params
-		do { args.push_back(expr_primary()); } while(tok.skip(","));
-		if(!tok.skip(")"))
-			error("error: %d: expected expression ')'", tok.get().nline);
+	bool is_parentheses = false;
+	if((is_parentheses=tok.skip("(")) || is_ident_tok()) { // get params
+		do { args.push_back(expr_primary()); } while(tok.skip(",") || is_ident_tok());
+		if(is_parentheses) {
+			if(!tok.skip(")"))
+				error("error: %d: expected expression ')'", tok.get().nline);
+		}
 	}
 	if(tok.skip(":")) { 
 		int is_ary = 0, type = T_VOID; 
@@ -173,6 +180,14 @@ AST *Parser::make_func() {
 	if(!tok.skip("end")) { error("error: source %d", __LINE__); }
 
 	return new FunctionAST(function, args, stmt);
+}
+
+bool Parser::is_func(std::string name) {
+	return function_list.count(name) != 0 ? true : false;
+}
+
+void Parser::append_func(std::string name) {
+	function_list[name] = true;
 }
 
 char *replace_escape(char *str) {

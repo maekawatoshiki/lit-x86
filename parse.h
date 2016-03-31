@@ -65,6 +65,9 @@ public:
 	int parser();
 	int get_string();
 
+	std::map<std::string, bool> function_list;
+	bool is_func(std::string);
+	void append_func(std::string);
 };
 
 char *replace_escape(char *);

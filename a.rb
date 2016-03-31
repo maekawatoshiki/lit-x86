@@ -22,10 +22,10 @@ end
 
 def main
 	$global = 12
-	say2("hello", " world! ")
-	puts($global)
-	puts("fact(10) = ", fact(10))
-	puts("fibo(30) = ", fibo(30))
+	say2 "hello" " world! "
+	puts $global
+	puts "fact(10) = ", fact 10
+	puts "fibo(30) = ", fibo 30
 	a = 1
 	a += 2
 	puts("a = ", a)
@@ -41,7 +41,7 @@ def main
 	puts("hello " + str[1])
 
 	s:string[] = ["hello", "world!"]
-	puts(s[0][1])
+	puts s[0][1] 
 end
 
 

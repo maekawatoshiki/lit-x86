@@ -249,14 +249,14 @@ AST *Parser::expr_primary() {
 		}
 		
 		{	
-			if(tok.skip("(")) { // function
+			if(tok.skip("(") || is_func(name)) { // function
 				func_t f = {
 					.name = name,
 					.mod_name = mod_name == "" ? module : mod_name
 				};
 				std::vector<AST *> args;
-				for(int i = 0; !tok.skip(")"); i++) {
-					args.push_back(expr_compare());
+				for(int i = 0; !tok.skip(")") && !tok.is(";"); i++) {
+					args.push_back(expr_entry());
 					tok.skip(",");
 				}
 				return new FunctionCallAST(f, args);

@@ -268,26 +268,7 @@ void ForAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 }
 
 int FunctionCallAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
-	struct {
-		std::string name, mod_name;
-		int args, addr, type; // if args is -1, the function has vector args.
-	} stdfunc[] = {
-		{"Array", "", 1, 12, T_INT | T_ARRAY},
-		{"printf", "", -1, 16, T_VOID},
-		{"sleep", "Time", 1, 24, T_VOID},
-		{"open", "File", 2, 28, T_INT},
-		{"write", "File", -1, 32, T_INT},
-		{"read", "File", 3, 40, T_INT},
-		{"close", "File", 1, 36, T_INT},
-		{"gets", "File", 0, 52, T_STRING},
-		{"free", "Sys", 1, 44, T_VOID},
-		{"strlen", "", 1, 64, T_INT},
-		{"len", "", 1, 68, T_INT},
-		{"GC", "", 0, 72, T_INT},
-		{"puts", "", -1, -1, T_VOID} // special
-	};
-
-	for(int i = 0; i < sizeof(stdfunc) / sizeof(stdfunc[0]); i++) {
+for(int i = 0; i < sizeof(stdfunc) / sizeof(stdfunc[0]); i++) {
 		if(stdfunc[i].name == info.name) {
 			if(info.name == "Array") {
 				codegen_expression(f, f_list, args[0]);

@@ -1,4 +1,4 @@
-def table(prime_list:int[], max)
+def table prime_list:int[] max
 	count = max - 2
 	for i = 0, i < max, i = i + 1
 		prime_list[i] = 0
@@ -18,9 +18,9 @@ end
 
 def main
 	N = 10000000
-	prime_list:int[] = Array(N)
-	GC()
-	puts("found ", table(prime_list, N), " primes between 2 and ", N)
+	prime_list:int[] = Array N
+	GC
+	puts "found " table(prime_list N) " primes between 2 and " N
 	# for i = 2, i < N, i = i + 1
 	# 	if prime_list[i] == 0
 	# 		puts(i, " is prime")
