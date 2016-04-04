@@ -1,5 +1,5 @@
 # Introduction
-- Lit is JIT Compile language.
+- Lit is a programming language that uses JIT compiling.
 So very faster.
 
 # How to use
