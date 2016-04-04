@@ -5,7 +5,6 @@
 #include "token.h"
 #include "parse.h"
 #include "util.h"
-#include "library.h"
 #include "var.h"
 #include "func.h"
 #include "ast.h"
@@ -110,6 +109,15 @@ AST *visit(AST *ast) {
 	} else if(ast->get_type() == AST_RETURN) {
 		std::cout << "(return ("; visit(((ReturnAST *)ast)->expr);
 		std::cout << "))" << std::endl;
+	} else if(ast->get_type() == AST_LIBRARY) {
+		LibraryAST *l = (LibraryAST *)ast;
+		std::cout << "(lib " << l->lib_name << "(" << std::endl;
+		for(int i = 0; i < l->proto.size(); i++) 
+			visit(l->proto[i]);
+		std::cout << ")" << std::endl;
+	} else if(ast->get_type() == AST_PROTO) {
+		PrototypeAST *prt = (PrototypeAST *)ast;
+		std::cout << "(proto " << prt->proto.name << " " << prt->proto.params << ")" << std::endl;
 	}
 
 	return ast;

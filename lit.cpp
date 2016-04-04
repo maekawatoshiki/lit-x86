@@ -6,7 +6,6 @@
 #include "token.h"
 #include "util.h"
 #include "option.h"
-#include "library.h"
 
 ctrl_t break_list, return_list;
 

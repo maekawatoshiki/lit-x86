@@ -32,6 +32,14 @@ VariableDeclAST::VariableDeclAST(var_t v) :
 	info(v) {
 }
 
+LibraryAST::LibraryAST(std::string nm, std::vector<AST *> p) : 
+	lib_name(nm), proto(p) {
+}
+
+PrototypeAST::PrototypeAST(func_t fun, std::vector<AST *> arg) : 
+	proto(fun), args_type(arg) {
+}
+
 FunctionCallAST::FunctionCallAST(func_t f, std::vector<AST *> a) : 
 	info(f), args(a) {
 }

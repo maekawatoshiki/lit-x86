@@ -9,12 +9,11 @@ typedef struct {
 	int no;
 } lib_t;
 
-class LibraryList {
-public:
+namespace LibraryList {
 	std::vector<lib_t> lib;
 	int count;
 
-	~LibraryList();
+	void free_libraries();
 	int append(std::string);
 	bool is(std::string);
 	lib_t *get(std::string);

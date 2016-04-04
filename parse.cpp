@@ -5,7 +5,6 @@
 #include "expr.h"
 #include "token.h"
 #include "util.h"
-#include "library.h"
 #include "var.h"
 #include "codegen.h"
 #include "func.h"
@@ -28,11 +27,13 @@ AST *Parser::make_return() {
 AST *Parser::expression() {
 	if(tok.skip("require")) make_require();
 	else if(tok.skip("def")) return make_func();
+	else if(tok.is("proto")) return make_proto();
 	else if(tok.skip("module")) { blocksCount++;
 		module = tok.tok[tok.pos++].val;
 		eval();
 		module = "";
 	}
+	else if(tok.is("lib")) return make_lib();
 	else if(tok.is("for")) return make_for();
 	else if(tok.is("while"))  return make_while();
 	else if(tok.is("return"))  return make_return();
@@ -75,16 +76,53 @@ int Parser::parser() {
 }
 
 void Parser::make_require() {
-	lib_list.append(tok.next().val);
+	// lib_list.append(tok.next().val);
 }
 
-/*
- * if cond
- * else if cond
- * else if cond
- * else
- * end
- */
+AST *Parser::make_lib() {
+	if(tok.skip("lib")) {
+		std::string name = tok.next().val;
+		ast_vector proto = eval();
+		if(!tok.skip("end")) error("error: %d: expected expression 'end'", tok.get().nline);
+		return new LibraryAST(name, proto);
+	}
+	return NULL;
+}
+
+AST *Parser::make_proto() {
+	if(tok.skip("proto")) {
+		std::string func_name = tok.next().val;
+		ast_vector args;
+		func_t function = { .name = func_name, .type = T_INT };
+		append_func(func_name);
+
+		bool is_parentheses = false;
+		if((is_parentheses=tok.skip("(")) || is_ident_tok()) { // get params
+			do { args.push_back(expr_primary()); } while(tok.skip(",") || is_ident_tok());
+			if(is_parentheses) {
+				if(!tok.skip(")"))
+					error("error: %d: expected expression ')'", tok.get().nline);
+			}
+		}
+		function.params = args.size();
+		if(tok.skip(":")) { 
+			int is_ary = 0, type = T_VOID; 
+			if(tok.skip("int")) { 
+				if(tok.skip("[]")) { is_ary = T_ARRAY; }
+				type = T_INT | is_ary;
+			} else if(tok.skip("string")) { 
+				if(tok.skip("[]")) { is_ary = T_ARRAY; }
+				type = T_STRING | is_ary;
+			} else if(tok.skip("double")) { 
+				if(tok.skip("[]")) { is_ary = T_ARRAY; }
+				type = T_DOUBLE | is_ary;
+			}
+			function.type = type;
+		}
+		return new PrototypeAST(function, args);	
+	}
+	return NULL;
+}
 
 AST *Parser::make_if() {
 	if(tok.skip("if")) {

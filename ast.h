@@ -22,7 +22,9 @@ enum {
 	AST_FOR,
 	AST_BREAK,
 	AST_RETURN,
-	AST_ARRAY
+	AST_ARRAY,
+	AST_LIBRARY,
+	AST_PROTO
 };
 
 class AST {
@@ -99,6 +101,24 @@ public:
 	VariableIndexAST(AST *, AST *);
 	virtual int get_type() const { return AST_VARIABLE_INDEX; }
 	int codegen(Function &, Module &, NativeCode_x86 &);
+};
+
+class LibraryAST : public AST {
+public:
+	std::string lib_name;
+	std::vector<AST *> proto;
+	LibraryAST(std::string, std::vector<AST *>);
+	virtual int get_type() const { return AST_LIBRARY; }
+	int codegen(Module &, NativeCode_x86 &);
+};
+
+class PrototypeAST : public AST {
+public:
+	func_t proto;
+	std::vector<AST *> args_type;
+	PrototypeAST(func_t, std::vector<AST *>);	
+	virtual int get_type() const { return AST_PROTO; }
+	void append(void *, Module &);
 };
 
 class FunctionCallAST : public AST {

@@ -15,6 +15,8 @@ int codegen_entry(ast_vector &program) {
 		if((*it)->get_type() == AST_FUNCTION) {
 			Function f = ((FunctionAST *)*it)->codegen(list);
 		} else if((*it)->get_type() == AST_VARIABLE_ASGMT) { // global variable assignment
+		} else if((*it)->get_type() == AST_LIBRARY) {
+			((LibraryAST *)*it)->codegen(list, ntv);
 		}
 	}
 	list.insert_global_var();
@@ -25,7 +27,7 @@ int codegen_entry(ast_vector &program) {
 	return 0;
 }
 
-bool const_folding(AST *e, int *res) {
+bool const_folding(AST *e, int *res) { // TODO: rewrite more beautiful!
 	BinaryAST *expr = (BinaryAST *)e;
 	int tmp = 0;
 	int a, b;
@@ -103,6 +105,33 @@ int codegen_expression(Function &f, Module &f_list, AST *ast) {
 	return T_VOID;
 }
 
+int LibraryAST::codegen(Module &f_list, NativeCode_x86 &ntv) {
+	void *lib = dlopen(("./lib/" + lib_name + ".so").c_str(), RTLD_LAZY | RTLD_NOW);
+	if(lib == NULL) error("LitSystemError: cannot load library '%s'", lib_name.c_str());
+	/*
+		lib_t l = {
+			.name = name,
+			.no = lib.size(),
+			.handle = dlopen(("./lib/" + name + ".so").c_str(), RTLD_LAZY | RTLD_NOW)
+		};
+		if(l.handle == NULL)
+	 */
+	for(ast_vector::iterator it = proto.begin(); it != proto.end(); ++it) {
+		((PrototypeAST *)*it)->append(lib, f_list);
+	}
+	return 0;
+}
+
+void PrototypeAST::append(void *lib, Module &f_list) {
+	Function f;
+	f.info.name = proto.name;
+	f.info.mod_name = "";
+	// f.info.address = (uint32_t)dlsym(lib, proto.name.c_str());
+	f.info.params = args_type.size();
+	f.info.type = proto.type;
+	f_list.append(f);
+}
+
 Function FunctionAST::codegen(Module &f_list) {
 	Function f;
 	f.info.name = info.name;
@@ -119,7 +148,7 @@ Function FunctionAST::codegen(Module &f_list) {
 		ntv.gencode(0x8b); ntv.gencode(0x75); ntv.gencode(0x0c); // mov esi, 0xc(%ebp)
 	}
 
-	// append argument  variables to function
+	// append arguments 
 	for(ast_vector::iterator it = args.begin(); it != args.end(); ++it) {
 		if((*it)->get_type() == AST_VARIABLE)
 			((VariableAST *)*it)->append(f, f_list);

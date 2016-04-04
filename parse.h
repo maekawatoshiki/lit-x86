@@ -6,7 +6,6 @@
 #include "token.h"
 #include "func.h"
 #include "var.h"
-#include "library.h"
 #include "ast.h"
 #include "exprtype.h"
 
@@ -25,7 +24,6 @@ enum {
 class Parser {
 public:
 	Token &tok;
-	LibraryList lib_list;
 	int blocksCount;
 	std::string module;
 
@@ -51,6 +49,8 @@ public:
 
 // parse.h
 	void make_require();
+	AST *make_lib();
+	AST *make_proto();
 	AST *make_if();
 	AST *make_elsif();
 	AST *make_while();
