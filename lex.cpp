@@ -46,10 +46,20 @@ int Lexer::lex(char *code) {
 				else 
 					str += code[i];
 			}
-			tmp_tok.val = str;
-			tmp_tok.nline = line;
-			tmp_tok.type = TOK_STRING;
-			tok.tok.push_back(tmp_tok);
+
+			if(tok.tok.back().val == "require") {
+				tok.tok.erase(tok.tok.end());
+				std::ifstream ifs_src(("./lib/" + str + ".rb").c_str());
+				if(!ifs_src) error("LitSystemError: cannot open file '%s'", str.c_str());
+				std::istreambuf_iterator<char> it(ifs_src), last;
+				std::string all(it, last);
+				lex((char *)all.c_str());
+			} else {
+				tmp_tok.val = str;
+				tmp_tok.nline = line;
+				tmp_tok.type = TOK_STRING;
+				tok.tok.push_back(tmp_tok);
+			}
 			if(code[i] == '\0') 
 				error("error: %d: expected expression '\"'", tok.tok[tok.pos].nline);
 			SKIP_TOK;
@@ -89,11 +99,11 @@ int Lexer::lex(char *code) {
 
 		}
 	}
-#ifdef DEBUG
+// #ifdef DEBUG
 	for(int32_t i = 0; i < tok.pos; i++) {
 		printf("tk: %d:%d > %s\n", i, tok.tok[i].nline, tok.tok[i].val.c_str());
 	}
-#endif
+// #endif
 	tmp_tok.val = ";";
 	tmp_tok.nline = line++;
 	tmp_tok.type = TOK_END;

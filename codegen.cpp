@@ -358,11 +358,10 @@ int FunctionCallAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 			uint32_t a = 3;
 			for(ast_vector::iterator it = args.begin(); it != args.end(); ++it) {
 				codegen_expression(f, f_list, *it);
-				ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(256 - a++ * ADDR_SIZE); // mov [esp+ADDR*a], eax
+				ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(256 - a++ * ADDR_SIZE); // mov [esp-ADDR*a], eax
 			}
 		}
 		function->call(ntv);
-		// ntv.gencode(0xe8); ntv.gencode_int32(0xFFFFFFFF - (ntv.count - function->info.address) - 3); // call function
 		return function->info.type;
 	}
 }

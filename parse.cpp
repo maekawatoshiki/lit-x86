@@ -25,7 +25,7 @@ AST *Parser::make_return() {
 }
 
 AST *Parser::expression() {
-	if(tok.skip("require")) make_require();
+	if(tok.skip("require")) return NULL;
 	else if(tok.skip("def")) return make_func();
 	else if(tok.is("proto")) return make_proto();
 	else if(tok.skip("module")) { blocksCount++;
