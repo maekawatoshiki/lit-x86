@@ -24,7 +24,7 @@ int Math_fact(int n) {
 	return r;
 }
 
-int Math_even(int n) { return n & 1; }
+int Math_even(int n) { return n % 2 == 0 ? 1 : 0; }
 int Math_odd(int n) { return !Math_even(n); }
 int Math_abs(int n) { return n < 0 ? -n : n; }
 int Math_rand() { return rand(); }

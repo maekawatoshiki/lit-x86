@@ -3,12 +3,14 @@
 
 #include "common.h"
 #include "var.h"
+#include "asm.h"
 
-typedef struct {
+struct func_t {
 	uint32_t address, params;
 	int type;
+	bool is_lib;
 	std::string name, mod_name;
-} func_t;
+};
 
 class Function {
 public:
@@ -16,6 +18,7 @@ public:
 	Variable var;
 	std::vector<int> return_list;
 	std::stack< std::vector<int> * > break_list;
+	uint32_t call(NativeCode_x86 &);
 };
 
 class Module {

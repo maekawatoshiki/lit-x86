@@ -126,7 +126,8 @@ void PrototypeAST::append(void *lib, Module &f_list) {
 	Function f;
 	f.info.name = proto.name;
 	f.info.mod_name = "";
-	// f.info.address = (uint32_t)dlsym(lib, proto.name.c_str());
+	f.info.is_lib = true;
+	f.info.address = (uint32_t)dlsym(lib, proto.name.c_str());
 	f.info.params = args_type.size();
 	f.info.type = proto.type;
 	f_list.append(f);
@@ -150,12 +151,12 @@ Function FunctionAST::codegen(Module &f_list) {
 
 	// append arguments 
 	for(ast_vector::iterator it = args.begin(); it != args.end(); ++it) {
-		if((*it)->get_type() == AST_VARIABLE)
-			((VariableAST *)*it)->append(f, f_list);
-		else if((*it)->get_type() == AST_VARIABLE_DECL) {
+		if((*it)->get_type() == AST_VARIABLE) {
+			var_t *v = ((VariableAST *)*it)->append(f, f_list);
+		} else if((*it)->get_type() == AST_VARIABLE_DECL) {
 			((VariableDeclAST *)*it)->append(f, f_list);
 			var_t *v = &((VariableDeclAST *)*it)->info;
-			if(v->type & T_ARRAY) {
+			if(v->type & T_ARRAY || v->type == T_STRING) {
 				ntv.gencode(0x8d); ntv.gencode(0x45);
 					ntv.gencode(256 - ADDR_SIZE * v->id); // lea eax [esp - id*ADDR_SIZE]
 				ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x24); // mov [esp], eax
@@ -175,12 +176,12 @@ Function FunctionAST::codegen(Module &f_list) {
 	for(std::vector<int>::iterator it = f.return_list.begin(); it != f.return_list.end(); ++it) {
 		ntv.gencode_int32_insert(ntv.count - *it - ADDR_SIZE, *it);
 	}
-
-	ntv.genas("add esp %u", f.var.total_size() + 6 * ADDR_SIZE); // add esp nn
+	int margin = 6;
+	ntv.genas("add esp %u", f.var.total_size() + margin * ADDR_SIZE); // add esp nn
 	ntv.gencode(0xc9);// leave
 	ntv.gencode(0xc3);// ret
 
-	ntv.gencode_int32_insert(f.var.total_size() + ADDR_SIZE * 6, esp_);
+	ntv.gencode_int32_insert(f.var.total_size() + ADDR_SIZE * margin, esp_);
 	return f;
 }
 
@@ -297,7 +298,7 @@ void ForAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 }
 
 int FunctionCallAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
-for(int i = 0; i < sizeof(stdfunc) / sizeof(stdfunc[0]); i++) {
+	for(int i = 0; i < sizeof(stdfunc) / sizeof(stdfunc[0]); i++) {
 		if(stdfunc[i].name == info.name) {
 			if(info.name == "Array") {
 				codegen_expression(f, f_list, args[0]);
@@ -346,13 +347,22 @@ for(int i = 0; i < sizeof(stdfunc) / sizeof(stdfunc[0]); i++) {
 		ntv.gencode_int32(0x00000000); // call function
 		return T_INT;
 	} else { // defined
-		uint32_t a = 3;
 		if(args.size() != function->info.params) error("error: the number of arguments is not same");
-		for(ast_vector::iterator it = args.begin(); it != args.end(); ++it) {
-			codegen_expression(f, f_list, *it);
-			ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(256 - a++ * ADDR_SIZE); // mov [esp+ADDR*a], eax
+		if(function->info.is_lib) {
+			uint32_t a = 0;
+			for(ast_vector::iterator it = args.begin(); it != args.end(); ++it) {
+				codegen_expression(f, f_list, *it);
+				ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(a++ * ADDR_SIZE); // mov [esp+ADDR*a], eax
+			}
+		} else {
+			uint32_t a = 3;
+			for(ast_vector::iterator it = args.begin(); it != args.end(); ++it) {
+				codegen_expression(f, f_list, *it);
+				ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(256 - a++ * ADDR_SIZE); // mov [esp+ADDR*a], eax
+			}
 		}
-		ntv.gencode(0xe8); ntv.gencode_int32(0xFFFFFFFF - (ntv.count - function->info.address) - 3); // call function
+		function->call(ntv);
+		// ntv.gencode(0xe8); ntv.gencode_int32(0xFFFFFFFF - (ntv.count - function->info.address) - 3); // call function
 		return function->info.type;
 	}
 }
