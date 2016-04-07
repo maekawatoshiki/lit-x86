@@ -25,8 +25,7 @@ AST *Parser::make_return() {
 }
 
 AST *Parser::expression() {
-	if(tok.skip("require")) return NULL;
-	else if(tok.skip("def")) return make_func();
+	if(tok.skip("def")) return make_func();
 	else if(tok.is("proto")) return make_proto();
 	else if(tok.skip("module")) { blocksCount++;
 		module = tok.tok[tok.pos++].val;
@@ -73,10 +72,6 @@ int Parser::parser() {
 	codegen_entry(a); // start code generating
 	std::cout << "\n---------- end of abstract syntax tree --" << std::endl;
 	return 1;
-}
-
-void Parser::make_require() {
-	// lib_list.append(tok.next().val);
 }
 
 AST *Parser::make_lib() {

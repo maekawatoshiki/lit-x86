@@ -48,7 +48,6 @@ public:
 	AST *expr_array();
 
 // parse.h
-	void make_require();
 	AST *make_lib();
 	AST *make_proto();
 	AST *make_if();
