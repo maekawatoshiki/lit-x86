@@ -1,51 +1,49 @@
-
-def c_to_s(c):string
-	s:string = Array(2)
-	s[0] = c
-	s
+def get_num e:string : string
+	num = ""
+	while '0' <= e[$pos] and e[$pos] <= '9'
+		num = num + e[$pos]
+		$pos += 1
+	end
+	$pos -= 1
+	num 
 end
 
-def prim(e:string, out:string)
-	out = out + c_to_s(e[$pos])
+def prim e:string out:string : string
+	out = out + get_num e
 	$pos += 1
-	out
+	out + "|"
 end
 
-def muldiv(e:string, out:string)
-	out = prim(e, out)
+def muldiv e:string out:string : string
+	out = prim e out
 	while e[$pos] == '*' or e[$pos] == '/'
 		op = e[$pos]
 		$pos += 1
-		out = prim(e, out)
-		out = out + c_to_s(op)
+		out = prim e out
+		out = out + op + '|'
 	end
 	out
 end
 
-def addsub(e:string, out:string)
-	out = muldiv(e, out)
+def addsub e:string out:string : string
+	out = muldiv e out
 	while e[$pos] == '+' or e[$pos] == '-'
 		op = e[$pos]
 		$pos += 1
-		out = muldiv(e, out)
-		out = out + c_to_s(op)
+		out = muldiv e out
+		out = out + op + '|'
 	end
 	out
 end
 
-def calc(e:string)
-	out:string = ""
-	cpy:string = e
-	out = addsub(cpy, out)	
-	puts("expr = ", out)
+def calc e:string
+	out = ""
+	out = addsub e out
+	puts "expr = " out
 end
 
 def main
 	$pos = 0
-	expr:string = gets()
-
-	puts(expr)
-	calc(expr)
+	calc gets
 end
-
 

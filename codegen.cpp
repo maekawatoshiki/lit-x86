@@ -168,14 +168,15 @@ Function FunctionAST::codegen(Module &f_list) {
 	f_list.append(f);
 	f_list.rep_undef(f.info.name, func_bgn);
 
-	for(ast_vector::iterator it = statement.begin(); it != statement.end(); ++it) {
+	for(ast_vector::iterator it = statement.begin(); it != statement.end(); ++it) { // function body
 		codegen_expression(f, f_list, *it);
 	}
 
-	// generate code to return 
+	// generate code for 'return'
 	for(std::vector<int>::iterator it = f.return_list.begin(); it != f.return_list.end(); ++it) {
 		ntv.gencode_int32_insert(ntv.count - *it - ADDR_SIZE, *it);
 	}
+
 	int margin = 6;
 	ntv.genas("add esp %u", f.var.total_size() + margin * ADDR_SIZE); // add esp nn
 	ntv.gencode(0xc9);// leave
@@ -375,10 +376,14 @@ int BinaryAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 	if(ty1 != ty2)
 		if(op != "+") error("error: type error"); // except string concat
 	if(op == "+") {
-		if(ty1 == T_STRING && ty2 == T_STRING) {
+		if(ty1 == T_STRING && ty2 == T_STRING) { // string + string
 			ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * 0); // mov [esp+0*ADDR_SIZE], eax
 			ntv.gencode(0x89); ntv.gencode(0x5c); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * 1); // mov [esp+1*ADDR_SIZE], ebx
 			ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(56); // call rea_concat
+		} else if(ty1 == T_STRING && ty2 == T_INT) { // string + char(int)
+			ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * 0); // mov [esp+0*ADDR_SIZE], eax
+			ntv.gencode(0x89); ntv.gencode(0x5c); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * 1); // mov [esp+1*ADDR_SIZE], ebx
+			ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(76); // call rea_concat_char
 		} else
 			ntv.genas("add eax ebx");
 	} else if(op == "-") ntv.genas("sub eax ebx");

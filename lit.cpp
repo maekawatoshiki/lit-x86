@@ -50,10 +50,10 @@ namespace LitMemory {
 	std::map<uint32_t, bool> root_ptr;
 
 	void *alloc(uint32_t size) {
-		void *addr = calloc(size, sizeof(int));
 		if(current_mem >= max_mem) {
 			gc();
 		}
+		void *addr = calloc(size, sizeof(int));
 		current_mem += size;
 		mem_list[(uint32_t)addr] = new MemoryInfo(addr, size);
 		return addr;	
@@ -79,7 +79,7 @@ namespace LitMemory {
 				if(m != NULL) {
 					m->mark();
 					// std::cout << "marked success: " << (uint32_t)m->get_addr() << std::endl;
-				} else { 
+				} else {
 					mem_list.erase(mem_list.find((uint32_t)*ptr));
 				}
 			}
@@ -91,7 +91,7 @@ namespace LitMemory {
 				// std::cout << "freed success: " << (uint32_t)it->second->get_addr() << ", size: " << it->second->get_size() << "bytes" << std::endl;
 				it->second->free_mem();
 				current_mem -= it->second->get_size();
-				mem_list.erase(mem_list.find(it->first));
+				mem_list.erase(it);
 			}
 		} 
 		for(std::map<uint32_t, MemoryInfo *>::iterator it = mem_list.begin(); it != mem_list.end(); ++it) 
@@ -115,11 +115,20 @@ char *rea_concat(char *a, char *b) {
 	strcpy(t, a);
 	return strcat(t, b);
 }
+char *rea_concat_char(char *a, int b) {
+	char *t = (char *)LitMemory::alloc(strlen(a) + 1 + 1);
+	strcpy(t, a);
+	t[strlen(t)] = b;
+	return t;
+}
 
 char *gets_stdin() {
-	char *str = (char *)LitMemory::alloc(256);
-	fgets(str, 256, stdin);
-	str[strlen(str) - 1] = '\0';
+	char *str;	
+	std::string input;
+	std::getline(std::cin, input);
+	str = (char *)LitMemory::alloc(input.size() + 1);
+	strcpy(str, input.c_str());
+
 	return str;
 }
 
@@ -143,6 +152,7 @@ void *funcTable[] = {
 	(void *) strlen,		// 64
 	(void *) LitMemory::get_size, // 68
 	(void *) LitMemory::gc,	// 72
+	(void *) rea_concat_char, // 76
 };
 
 
@@ -160,10 +170,18 @@ Lit::~Lit() {
 	// freeAddr();
 }
 
+#include <sys/types.h>
+#include <sys/wait.h>
+
 int Lit::execute(char *source) {
 	lex.lex(source);
 	parser.parser();
-	run();
+	if((fork()) == 0) run();
+	int status = 0;
+	wait(&status);
+	if(!WIFEXITED(status)) {
+		puts("LitRuntimeError: *** the process was terminated abnormally ***");
+	}
 	return 0;
 }
 

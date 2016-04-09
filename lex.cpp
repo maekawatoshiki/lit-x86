@@ -99,11 +99,11 @@ int Lexer::lex(char *code) {
 
 		}
 	}
-// #ifdef DEBUG
+#ifdef DEBUG
 	for(int32_t i = 0; i < tok.pos; i++) {
 		printf("tk: %d:%d > %s\n", i, tok.tok[i].nline, tok.tok[i].val.c_str());
 	}
-// #endif
+#endif
 	tmp_tok.val = ";";
 	tmp_tok.nline = line++;
 	tmp_tok.type = TOK_END;
