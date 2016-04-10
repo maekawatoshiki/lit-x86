@@ -16,11 +16,9 @@ def prime i
 	1
 end
 
-def main
-	for i in 2..100
-		if prime i
-			puts i, " is prime"
-		end
+for i in 2..100
+	if prime i
+		puts i, " is prime"
 	end
 end
 

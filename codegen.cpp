@@ -11,18 +11,42 @@ int codegen_entry(ast_vector &program) {
 	std::string module = "";
 	ntv.gencode(0xe9); main_address = ntv.count; ntv.gencode_int32(0);
 	Module list(module);
+
+	Function main;
+	std::vector<AST *> main_code;
 	for(ast_vector::iterator it = program.begin(); it != program.end(); ++it) {
 		if((*it)->get_type() == AST_FUNCTION) {
 			Function f = ((FunctionAST *)*it)->codegen(list);
-		} else if((*it)->get_type() == AST_VARIABLE_ASGMT) { // global variable assignment
 		} else if((*it)->get_type() == AST_LIBRARY) {
 			((LibraryAST *)*it)->codegen(list, ntv);
+		} else {
+			main_code.push_back(*it);
 		}
 	}
+
+	main.info.name = "main";
+	main.info.address = ntv.count;
+	ntv.genas("push ebp");
+	ntv.genas("mov ebp esp");
+	ntv.gencode(0x8b); ntv.gencode(0x75); ntv.gencode(0x0c); // mov esi, 0xc(%ebp)
+	uint32_t esp_ = ntv.count + 2; ntv.genas("sub esp 0");
+	
+	list.append(main);
+	for(std::vector<AST *>::iterator it = main_code.begin(); it != main_code.end(); ++it) {
+		codegen_expression(main, list, *it);
+	}
+
+	int margin = 6;
+	ntv.gencode_int32_insert(main.var.total_size() + ADDR_SIZE * margin, esp_);
+	ntv.genas("add esp %u", main.var.total_size() + margin * ADDR_SIZE); // add esp nn
+	ntv.gencode(0xc9);// leave
+	ntv.gencode(0xc3);// ret
+
 	list.insert_global_var();
-	Function *main = list.get("main");
-		if(main == NULL) error("error: not found function: 'main'");
-	ntv.gencode_int32_insert(main->info.address - ADDR_SIZE - 1, main_address);
+
+	Function *_main = list.get("main");
+		if(_main == NULL) error("error: not found function: 'main'");
+	ntv.gencode_int32_insert(_main->info.address - ADDR_SIZE - 1, main_address);
 	
 	return 0;
 }

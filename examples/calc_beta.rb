@@ -42,8 +42,6 @@ def calc e:string
 	puts "expr = " out
 end
 
-def main
-	$pos = 0
-	calc gets
-end
+$pos = 0
+calc gets
 

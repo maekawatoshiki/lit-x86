@@ -29,6 +29,4 @@ def pi
   end
 end
 
-def main
-	puts(pi())
-end
+puts pi
