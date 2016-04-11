@@ -1,4 +1,4 @@
-def fibo(n)
+def fibo n
 	if n < 2
 		1
 	else
@@ -6,7 +6,5 @@ def fibo(n)
 	end		
 end
 
-def main
-	n = 40
-	puts("fibo(", n, ") = ", fibo(n))
-end
+n = 40
+puts "fibo(" n ") = " fibo n

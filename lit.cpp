@@ -116,7 +116,7 @@ char *rea_concat(char *a, char *b) {
 	return strcat(t, b);
 }
 char *rea_concat_char(char *a, int b) {
-	char *t = (char *)LitMemory::alloc(strlen(a) + 1 + 1);
+	char *t = (char *)LitMemory::alloc(strlen(a) + 1);
 	strcpy(t, a);
 	t[strlen(t)] = b;
 	return t;
@@ -126,7 +126,7 @@ char *gets_stdin() {
 	char *str;	
 	std::string input;
 	std::getline(std::cin, input);
-	str = (char *)LitMemory::alloc(input.size() + 1);
+	str = (char *)LitMemory::alloc(input.size());
 	strcpy(str, input.c_str());
 
 	return str;
