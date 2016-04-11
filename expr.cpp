@@ -8,6 +8,7 @@
 #include "var.h"
 #include "func.h"
 #include "ast.h"
+#include "exprtype.h"
 
 int Parser::is_string_tok() { return tok.get().type == TOK_STRING; }
 int Parser::is_number_tok() { return tok.get().type == TOK_NUMBER; }
@@ -226,6 +227,8 @@ AST *Parser::expr_primary() {
 		return new NumberAST(tok.next().val.c_str()[0]);
 	} else if(is_string_tok()) {
 		return new StringAST(tok.next().val);
+	} else if(tok.get().val == "true" || tok.get().val == "false") {
+		return new NumberAST(tok.next().val == "true" ? 1 : 0);
 	} else if(is_ident_tok()) { // variable or inc or dec
 		name = tok.next().val; mod_name = "";
 		int type, is_ary; 
@@ -237,20 +240,8 @@ AST *Parser::expr_primary() {
 			swap(mod_name, name);
 		} else if(tok.skip(":")) { // variable declaration
 			is_ary = 0;
-			if(tok.skip("int")) { 
-				if(tok.skip("[]")) { is_ary = T_ARRAY; }
-				type = T_INT | is_ary;
-			} else if(tok.skip("string")) { 
-				if(tok.skip("[]")) { is_ary = T_ARRAY; }
-				type = T_STRING | is_ary;
-			} else if(tok.skip("double")) { 
-				if(tok.skip("[]")) { is_ary = T_ARRAY; }
-				type = T_DOUBLE | is_ary;
-			} else {
-				class_name = tok.next().val;
-				if(tok.skip("[]")) { is_ary = T_ARRAY; }
-				type = T_USER_TYPE | is_ary;
-			}
+			type = Type::str_to_type(tok.next().val);
+			if(tok.skip("[]")) type |= T_ARRAY;
 			is_vardecl = true;
 		} else { 
 			type = T_INT;

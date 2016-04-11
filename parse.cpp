@@ -7,6 +7,7 @@
 #include "util.h"
 #include "var.h"
 #include "codegen.h"
+#include "exprtype.h"
 #include "func.h"
 
 AST *Parser::make_break() {
@@ -196,16 +197,8 @@ AST *Parser::make_func() {
 	}
 	if(tok.skip(":")) { 
 		int is_ary = 0, type = T_VOID; 
-		if(tok.skip("int")) { 
-			if(tok.skip("[]")) { is_ary = T_ARRAY; }
-			type = T_INT | is_ary;
-		} else if(tok.skip("string")) { 
-			if(tok.skip("[]")) { is_ary = T_ARRAY; }
-			type = T_STRING | is_ary;
-		} else if(tok.skip("double")) { 
-			if(tok.skip("[]")) { is_ary = T_ARRAY; }
-			type = T_DOUBLE | is_ary;
-		}
+		type = Type::str_to_type(tok.next().val);
+		if(tok.skip("[]")) { type |= T_ARRAY; }
 		function.type = type;
 	}
 
