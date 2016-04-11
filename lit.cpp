@@ -33,13 +33,15 @@ namespace LitMemory {
 	class MemoryInfo {
 		void *addr;
 		size_t size;
+		bool const_mem;
 	public:
 		bool marked;
-		MemoryInfo(void *a, size_t sz) : 
-			addr(a), size(sz), marked(false) { 
+		MemoryInfo(void *a, size_t sz, bool const_m = false) : 
+			addr(a), size(sz), marked(false), const_mem(const_m) { 
 		}
 		void *get_addr() { return addr; }
 		uint32_t get_size() { return size; }
+		bool is_const() { return const_mem; }
 		void mark() { marked = true; }
 		void free_mem() { free(addr); }
 	};
@@ -49,6 +51,11 @@ namespace LitMemory {
 	std::map<uint32_t, MemoryInfo *> mem_list;
 	std::map<uint32_t, bool> root_ptr;
 
+	void *alloc_const(uint32_t size) {
+		void *addr = alloc(size);
+		mem_list[(uint32_t)addr] = new MemoryInfo(addr, size, true);
+		return addr;	
+	}
 	void *alloc(uint32_t size) {
 		if(current_mem >= max_mem) {
 			gc();
@@ -77,6 +84,7 @@ namespace LitMemory {
 				int *ptr = (int *)it->first;
 				MemoryInfo *m = mem_list[(uint32_t)*ptr];
 				if(m != NULL) {
+					if(m->is_const()) continue;
 					m->mark();
 					// std::cout << "marked success: " << (uint32_t)m->get_addr() << std::endl;
 				} else {
@@ -88,6 +96,7 @@ namespace LitMemory {
 	void gc_sweep() {
 		for(std::map<uint32_t, MemoryInfo *>::iterator it = mem_list.begin(); it != mem_list.end(); ++it) {
 			if(it->second->marked == false) {
+				if(it->second->is_const()) continue;
 				// std::cout << "freed success: " << (uint32_t)it->second->get_addr() << ", size: " << it->second->get_size() << "bytes" << std::endl;
 				it->second->free_mem();
 				current_mem -= it->second->get_size();

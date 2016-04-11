@@ -578,7 +578,7 @@ int ArrayAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 
 void StringAST::codegen(Function &f, NativeCode_x86 &ntv) {
 	ntv.gencode(0xb8);
-		char *embed = (char *)malloc(str.length() + 1); // TODO: fix!
+		char *embed = (char *)LitMemory::alloc_const(str.length() + 1); // TODO: fix!
 		replace_escape(strcpy(embed, str.c_str()));
 	ntv.gencode_int32((uint32_t)embed); // mov eax string_address
 }

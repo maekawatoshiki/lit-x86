@@ -53,6 +53,7 @@ public:
 /* for native(JIT) code. */
 namespace LitMemory {
 	void *alloc(uint32_t);
+	void *alloc_const(uint32_t);
 	void gc();
 	void gc_mark();
 	void gc_sweep();
