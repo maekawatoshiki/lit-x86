@@ -9,6 +9,7 @@
 enum {
 	AST_NUMBER,
 	AST_STRING,
+	AST_CHAR,
 	AST_POSTFIX,
 	AST_BINARY,
 	AST_VARIABLE,
@@ -24,7 +25,8 @@ enum {
 	AST_RETURN,
 	AST_ARRAY,
 	AST_LIBRARY,
-	AST_PROTO
+	AST_PROTO,
+	AST_NEW,
 };
 
 class AST {
@@ -38,6 +40,14 @@ public:
 	int32_t number;
 	NumberAST(int);
 	virtual int get_type() const { return AST_NUMBER; };
+	void codegen(Function &, NativeCode_x86 &);
+};
+
+class CharAST : public AST {
+public:
+	char ch;
+	CharAST(char);
+	virtual int get_type() const { return  AST_CHAR; }
 	void codegen(Function &, NativeCode_x86 &);
 };
 
@@ -67,6 +77,15 @@ public:
 	int codegen(Function &, Module &, NativeCode_x86 &); // ret is type of expr.
 };
 
+class NewAllocAST : public AST {
+public:
+	std::string type;
+	AST * size;
+	NewAllocAST(std::string, AST *size);
+	virtual int get_type() const { return AST_NEW; }
+	int codegen(Function &, Module &, NativeCode_x86 &);
+};
+
 class VariableAST : public AST {
 public:
 	var_t info;
@@ -89,8 +108,7 @@ public:
 class VariableAsgmtAST : public AST {
 public:
 	AST *var, *src;
-	std::string op;
-	VariableAsgmtAST(AST *, AST *, std::string = "=");
+	VariableAsgmtAST(AST *, AST *);
 	virtual int get_type() const { return AST_VARIABLE_ASGMT; }
 	void codegen(Function &, Module &, NativeCode_x86 &);
 };

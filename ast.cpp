@@ -12,16 +12,24 @@ BinaryAST::BinaryAST(std::string o, AST *le, AST *re) :
 	op(o), left(le), right(re) {
 }
 
+CharAST::CharAST(char c) : 
+	ch(c) {
+}
+
 StringAST::StringAST(std::string s) : 
 	str(s) {
+}
+
+NewAllocAST::NewAllocAST(std::string ty, AST *sz) : 
+	type(ty), size(sz) {
 }
 
 VariableAST::VariableAST(var_t v) : 
 	info(v) {
 }
 
-VariableAsgmtAST::VariableAsgmtAST(AST *a, AST *b, std::string o) : 
-	var(a), src(b), op(o) {
+VariableAsgmtAST::VariableAsgmtAST(AST *a, AST *b) : 
+	var(a), src(b) {
 }
 
 VariableIndexAST::VariableIndexAST(AST *v, AST *i) : 

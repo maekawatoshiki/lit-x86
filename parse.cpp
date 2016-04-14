@@ -102,17 +102,8 @@ AST *Parser::make_proto() {
 		}
 		function.params = args.size();
 		if(tok.skip(":")) { 
-			int is_ary = 0, type = T_VOID; 
-			if(tok.skip("int")) { 
-				if(tok.skip("[]")) { is_ary = T_ARRAY; }
-				type = T_INT | is_ary;
-			} else if(tok.skip("string")) { 
-				if(tok.skip("[]")) { is_ary = T_ARRAY; }
-				type = T_STRING | is_ary;
-			} else if(tok.skip("double")) { 
-				if(tok.skip("[]")) { is_ary = T_ARRAY; }
-				type = T_DOUBLE | is_ary;
-			}
+			int type = Type::str_to_type(tok.next().val);
+			if(tok.skip("[]")) type |= T_ARRAY;
 			function.type = type;
 		}
 		return new PrototypeAST(function, args);	

@@ -51,16 +51,16 @@ namespace LitMemory {
 	std::map<uint32_t, MemoryInfo *> mem_list;
 	std::map<uint32_t, bool> root_ptr;
 
-	void *alloc_const(uint32_t size) {
-		void *addr = alloc(size);
+	void *alloc_const(uint32_t size) { // allocate constant memory(for string)
+		void *addr = alloc(size, 1);
 		mem_list[(uint32_t)addr] = new MemoryInfo(addr, size, true);
 		return addr;	
 	}
-	void *alloc(uint32_t size) {
+	void *alloc(uint32_t size, uint32_t byte) {
 		if(current_mem >= max_mem) {
 			gc();
 		}
-		void *addr = calloc(size, sizeof(int));
+		void *addr = calloc(size, byte);
 		current_mem += size;
 		mem_list[(uint32_t)addr] = new MemoryInfo(addr, size);
 		return addr;	
@@ -120,12 +120,12 @@ namespace LitMemory {
 };
 
 char *rea_concat(char *a, char *b) {
-	char *t = (char *)LitMemory::alloc(strlen(a) + strlen(b) + 1);
+	char *t = (char *)LitMemory::alloc(strlen(a) + strlen(b) + 1, 1);
 	strcpy(t, a);
 	return strcat(t, b);
 }
 char *rea_concat_char(char *a, int b) {
-	char *t = (char *)LitMemory::alloc(strlen(a) + 1);
+	char *t = (char *)LitMemory::alloc(strlen(a) + 1, 1);
 	strcpy(t, a);
 	t[strlen(t)] = b;
 	return t;
@@ -135,7 +135,7 @@ char *gets_stdin() {
 	char *str;	
 	std::string input;
 	std::getline(std::cin, input);
-	str = (char *)LitMemory::alloc(input.size());
+	str = (char *)LitMemory::alloc(input.size(), 1);
 	strcpy(str, input.c_str());
 
 	return str;
@@ -157,7 +157,7 @@ void *funcTable[] = {
 	(void *) LitMemory::free_all_mem,	// 48
 	(void *) gets_stdin, 		// 52
 	(void *) rea_concat,// 56
-	(void *) putc,			// 60
+	(void *) putchar,			// 60
 	(void *) strlen,		// 64
 	(void *) LitMemory::get_size, // 68
 	(void *) LitMemory::gc,	// 72

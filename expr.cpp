@@ -23,7 +23,7 @@ AST *visit(AST *ast) {
 		std::cout << ")";
 		std::cout << std::endl;
 	} else if(ast->get_type() == AST_VARIABLE_ASGMT) {
-		std::cout << "(" << ((VariableAsgmtAST *)ast)->op << " ";
+		std::cout << "(=";
 			visit(((VariableAsgmtAST *)ast)->var);
 			visit(((VariableAsgmtAST *)ast)->src);
 		std::cout << ")" << std::endl;;
@@ -119,6 +119,11 @@ AST *visit(AST *ast) {
 	} else if(ast->get_type() == AST_PROTO) {
 		PrototypeAST *prt = (PrototypeAST *)ast;
 		std::cout << "(proto " << prt->proto.name << " " << prt->proto.params << ")" << std::endl;
+	} else if(ast->get_type() == AST_NEW) {
+		NewAllocAST *na = (NewAllocAST *)ast;
+		std::cout << "(new " << na->type << " ";
+		visit(na->size);
+		std::cout << ")" << std::endl;
 	}
 
 	return ast;
@@ -136,10 +141,10 @@ AST *Parser::expr_asgmt() {
 	l = expr_compare();
 	while((add = tok.skip("+=")) || (sub = tok.skip("-=")) || tok.skip("=")) {
 		r = expr_entry();
-		l = new VariableAsgmtAST(l, r, 
-				add ? "+=" : 
-				sub ? "-=" : 
-				"=");
+		if(add || sub) {
+			l = new VariableAsgmtAST(l, new BinaryAST(add ? "+" : "-", l, r));	
+		} else 
+			l = new VariableAsgmtAST(l, r);
 	}
 	return l;
 }
@@ -221,10 +226,17 @@ AST *Parser::expr_primary() {
 	if(tok.skip("&")) is_get_addr = true;
 	if(tok.skip("$")) is_global_decl = true;
 
-	if(is_number_tok()) {
+	if(tok.get().val == "new") {
+		tok.skip();
+		AST *size = expr_entry();
+		std::string type = "int";
+		if(is_ident_tok())
+			type = tok.next().val;
+		return new NewAllocAST(type, size);
+	} else if(is_number_tok()) {
 		return new NumberAST(atoi(tok.next().val.c_str()));
 	} else if(is_char_tok()) { 
-		return new NumberAST(tok.next().val.c_str()[0]);
+		return new CharAST(tok.next().val.c_str()[0]);
 	} else if(is_string_tok()) {
 		return new StringAST(tok.next().val);
 	} else if(tok.get().val == "true" || tok.get().val == "false") {
