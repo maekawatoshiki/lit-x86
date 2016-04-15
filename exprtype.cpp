@@ -28,6 +28,8 @@ namespace Type {
 		int is_ary = 0;
 		if(str == "int") { 
 			return T_INT;
+		} else if(str == "char") {
+			return T_CHAR;
 		} else if(str == "bool") {
 			return T_BOOL;
 		} else if(str == "string") { 

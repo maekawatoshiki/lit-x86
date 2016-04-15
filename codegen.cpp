@@ -410,7 +410,8 @@ int BinaryAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 			ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * 0); // mov [esp+0*ADDR_SIZE], eax
 			ntv.gencode(0x89); ntv.gencode(0x5c); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * 1); // mov [esp+1*ADDR_SIZE], ebx
 			ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(56); // call rea_concat
-		} else if(ty1 == T_STRING && ty2 == T_INT) { // string + char(int)
+		} else if(ty1 == T_STRING && ty2 == T_CHAR) { // string + char(int)
+			puts("OK");
 			ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * 0); // mov [esp+0*ADDR_SIZE], eax
 			ntv.gencode(0x89); ntv.gencode(0x5c); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * 1); // mov [esp+1*ADDR_SIZE], ebx
 			ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(76); // call rea_concat_char
@@ -443,7 +444,7 @@ int NewAllocAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 	int alloc_type = Type::str_to_type(type);
 	codegen_expression(f, f_list, size);
 	ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(0 * ADDR_SIZE); // mov [esp], eax
-	if(alloc_type == T_STRING) ntv.genas("mov eax 1"); else ntv.genas("mov eax 4");
+	ntv.genas("mov eax 4");
 	ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(1 * ADDR_SIZE); // mov [esp+ADDR_SIZE], eax
 	ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(12); // call malloc
 	return alloc_type | T_ARRAY;
@@ -473,7 +474,6 @@ void VariableAsgmtAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv)
 		ntv.gencode(0x8b); ntv.gencode(0x4d);
 			ntv.gencode(256 - ADDR_SIZE * v->id); // mov ecx [ebp-n]
 		ntv.genas("push ecx");
-		
 			codegen_expression(f, f_list, src);
 		ntv.genas("pop ecx");
 		ntv.genas("pop edx");

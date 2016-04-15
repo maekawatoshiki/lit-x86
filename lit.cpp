@@ -97,7 +97,7 @@ namespace LitMemory {
 		for(std::map<uint32_t, MemoryInfo *>::iterator it = mem_list.begin(); it != mem_list.end(); ++it) {
 			if(it->second->marked == false) {
 				if(it->second->is_const()) continue;
-				// std::cout << "freed success: " << (uint32_t)it->second->get_addr() << ", size: " << it->second->get_size() << "bytes" << std::endl;
+				std::cout << "freed success: " << (uint32_t)it->second->get_addr() << ", size: " << it->second->get_size() << "bytes" << std::endl;
 				it->second->free_mem();
 				current_mem -= it->second->get_size();
 				mem_list.erase(it);
@@ -120,14 +120,17 @@ namespace LitMemory {
 };
 
 char *rea_concat(char *a, char *b) {
-	char *t = (char *)LitMemory::alloc(strlen(a) + strlen(b) + 1, 1);
+	char *t = (char *)LitMemory::alloc(strlen(a) + strlen(b) + 1, 4);
 	strcpy(t, a);
-	return strcat(t, b);
+	t = strcat(t, b);
+	printf("%s + %s = %s\n", a, b, t);
+	return t;
 }
 char *rea_concat_char(char *a, int b) {
-	char *t = (char *)LitMemory::alloc(strlen(a) + 1, 1);
+	char *t = (char *)LitMemory::alloc(strlen(a) + 1, 4);
 	strcpy(t, a);
 	t[strlen(t)] = b;
+	printf("%s + %c = %s\n", a, b, t);
 	return t;
 }
 
@@ -135,7 +138,7 @@ char *gets_stdin() {
 	char *str;	
 	std::string input;
 	std::getline(std::cin, input);
-	str = (char *)LitMemory::alloc(input.size(), 1);
+	str = (char *)LitMemory::alloc(input.size() + 1, 4);
 	strcpy(str, input.c_str());
 
 	return str;

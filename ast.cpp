@@ -12,7 +12,7 @@ BinaryAST::BinaryAST(std::string o, AST *le, AST *re) :
 	op(o), left(le), right(re) {
 }
 
-CharAST::CharAST(char c) : 
+CharAST::CharAST(int c) : 
 	ch(c) {
 }
 

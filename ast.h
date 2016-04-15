@@ -45,8 +45,8 @@ public:
 
 class CharAST : public AST {
 public:
-	char ch;
-	CharAST(char);
+	int ch;
+	CharAST(int);
 	virtual int get_type() const { return  AST_CHAR; }
 	void codegen(Function &, NativeCode_x86 &);
 };

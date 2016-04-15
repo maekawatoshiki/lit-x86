@@ -92,6 +92,8 @@ AST *visit(AST *ast) {
 		std::cout << ")";
 	} else if(ast->get_type() == AST_NUMBER) {
 		std::cout << " " << ((NumberAST *)ast)->number << " ";
+	} else if(ast->get_type() == AST_CHAR) {
+		std::cout << " " << ((CharAST *)ast)->ch << " ";
 	} else if(ast->get_type() == AST_STRING) {
 		std::cout << " \"" << ((StringAST *)ast)->str << "\" ";
 	} else if(ast->get_type() == AST_VARIABLE) {
@@ -130,19 +132,19 @@ AST *visit(AST *ast) {
 }
 
 AST *Parser::expr_entry() { 
-	AST *ast = expr_asgmt();
-	// visit(ast); std::cout << std::endl;
-	return ast;
+	return expr_asgmt();
 }
 
 AST *Parser::expr_asgmt() {
 	AST *l, *r;
-	bool add = false, sub = false;
+	bool add = false, sub = false, mul = false, div = false;
 	l = expr_compare();
-	while((add = tok.skip("+=")) || (sub = tok.skip("-=")) || tok.skip("=")) {
+	while((add = tok.skip("+=")) || (sub = tok.skip("-=")) || (mul = tok.skip("*=")) ||
+			(div = tok.skip("/=")) || tok.skip("=")) {
 		r = expr_entry();
-		if(add || sub) {
-			l = new VariableAsgmtAST(l, new BinaryAST(add ? "+" : "-", l, r));	
+		if(add || sub || mul || div) {
+			l = new VariableAsgmtAST(l,
+					new BinaryAST(add ? "+" : sub ? "-" : mul ? "*" : div ? "/" : "EXCEPTION", l, r));	
 		} else 
 			l = new VariableAsgmtAST(l, r);
 	}
