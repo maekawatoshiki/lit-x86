@@ -6,7 +6,7 @@ def pi
   NM = N - 14 # PI LONG
   a = new N int
   d = 0; e = 0; g = 0; h = 0
-  f = 10000; cnt = 1
+  f = 10000
   for c = NM, c, c -= 14
     d = d % f
     e = d
@@ -20,12 +20,10 @@ def pi
       a[b] = d % g
       d = d / g
     end
-		printf "%04d" e + d / f
-
-    if cnt % 16 == 0 
+		printf "%04d " e + d / f
+		if c % 112 == 0
 			puts ""
 		end
-		cnt += 1
   end
 end
 

@@ -1,18 +1,14 @@
-def fibo(n, memo:int[])
-	if n == 0
-		0
-	elsif n == 1
-		1
+def fibo n memo:int[]
+	if n == 0 or n == 1
+		n
 	elsif memo[n] != 0
 		memo[n]
 	else 
-		memo[n] = fibo(n - 1, memo) + fibo(n - 2, memo)
+		memo[n] = fibo(n - 1 memo) + fibo(n - 2 memo)
 	end
 end
 
-def main
-	n = 46
-	memo:int[] = Array(n)
-	puts("fibo(", n, ") = ", fibo(n, memo))
-end
+n = 46
+memo = new n int
+puts "fibo(" n ") = " fibo n memo
 
