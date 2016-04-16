@@ -411,7 +411,6 @@ int BinaryAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 			ntv.gencode(0x89); ntv.gencode(0x5c); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * 1); // mov [esp+1*ADDR_SIZE], ebx
 			ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(56); // call rea_concat
 		} else if(ty1 == T_STRING && ty2 == T_CHAR) { // string + char(int)
-			puts("OK");
 			ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * 0); // mov [esp+0*ADDR_SIZE], eax
 			ntv.gencode(0x89); ntv.gencode(0x5c); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * 1); // mov [esp+1*ADDR_SIZE], ebx
 			ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(76); // call rea_concat_char

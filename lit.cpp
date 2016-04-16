@@ -123,14 +123,12 @@ char *rea_concat(char *a, char *b) {
 	char *t = (char *)LitMemory::alloc(strlen(a) + strlen(b) + 1, 4);
 	strcpy(t, a);
 	t = strcat(t, b);
-	printf("%s + %s = %s\n", a, b, t);
 	return t;
 }
 char *rea_concat_char(char *a, int b) {
 	char *t = (char *)LitMemory::alloc(strlen(a) + 1, 4);
 	strcpy(t, a);
 	t[strlen(t)] = b;
-	printf("%s + %c = %s\n", a, b, t);
 	return t;
 }
 
