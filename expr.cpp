@@ -262,16 +262,19 @@ AST *Parser::expr_primary() {
 		}
 		
 		{	
-			if(tok.skip("(") || is_func(name)) { // function
+			bool has_pare = false;
+			if((has_pare=tok.skip("(")) || is_func(name)) { // function
 				func_t f = {
 					.name = name,
-					.mod_name = mod_name == "" ? module : mod_name
+					// .mod_name = mod_name == "" ? module : mod_name
 				};
 				std::vector<AST *> args;
-				for(int i = 0; !tok.skip(")") && !tok.is(";"); i++) {
-					args.push_back(expr_entry());
-					tok.skip(",");
-				}
+				if(HAS_PARAMS_FUNC) {
+					while(!tok.is(")") && !tok.is(";")) {
+						args.push_back(expr_entry());
+						tok.skip(",");
+					} 				
+				} if(has_pare) tok.skip(")");
 				return new FunctionCallAST(f, args);
 			} else { // variable
 				var_t v = {

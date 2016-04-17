@@ -37,8 +37,12 @@ void Lit::show_option() {
 					" -e 'command'	one line of script"
 					);
 		} else if(opt_interpret) interpret();
-		else if(opt_eval) execute((char *)args[2].c_str());
-		else run_from_file((char *)args[1].c_str());
+		else if(opt_eval) {
+			if(args.size() < 3)
+				error("LitSystemError: no input");
+			else
+				execute((char *)args[2].c_str());
+		} else run_from_file((char *)args[1].c_str());
 	}
 }
 

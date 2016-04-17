@@ -15,7 +15,7 @@
 	#include <sys/wait.h>
 #endif
 
-#define _LIT_VERSION_ "0.9.7"
+#define _LIT_VERSION_ "0.1.0"
 
 
 class ctrl_t {

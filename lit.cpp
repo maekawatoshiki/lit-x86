@@ -120,13 +120,13 @@ namespace LitMemory {
 };
 
 char *rea_concat(char *a, char *b) {
-	char *t = (char *)LitMemory::alloc(strlen(a) + strlen(b) + 1, 4);
+	char *t = (char *)LitMemory::alloc(strlen(a) + strlen(b) + 1, ADDR_SIZE);
 	strcpy(t, a);
 	t = strcat(t, b);
 	return t;
 }
 char *rea_concat_char(char *a, int b) {
-	char *t = (char *)LitMemory::alloc(strlen(a) + 1, 4);
+	char *t = (char *)LitMemory::alloc(strlen(a) + 1, ADDR_SIZE);
 	strcpy(t, a);
 	t[strlen(t)] = b;
 	return t;
@@ -136,11 +136,13 @@ char *gets_stdin() {
 	char *str;	
 	std::string input;
 	std::getline(std::cin, input);
-	str = (char *)LitMemory::alloc(input.size() + 1, 4);
+	str = (char *)LitMemory::alloc(input.size() + 1, ADDR_SIZE);
 	strcpy(str, input.c_str());
 
 	return str;
 }
+int streql(char *a, char *b) { return strcmp(a, b) == 0 ? 1 : 0; }
+int strne(char *a, char *b) { return strcmp(a, b) != 0 ? 1 : 0; }
 
 void *funcTable[] = {
 	(void *) putNumber, // 0
@@ -163,6 +165,8 @@ void *funcTable[] = {
 	(void *) LitMemory::get_size, // 68
 	(void *) LitMemory::gc,	// 72
 	(void *) rea_concat_char, // 76
+	(void *) streql,		// 80
+	(void *) strne, 		// 84
 };
 
 
