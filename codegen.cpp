@@ -219,15 +219,15 @@ void IfAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 	codegen_expression(f, f_list, cond);
 	ntv.gencode(0x83); ntv.gencode(0xf8); ntv.gencode(0x00);// cmp eax, 0
 	ntv.gencode(0x75); ntv.gencode(0x05); // jne 5
-	ntv.gencode(0xe9); int end = ntv.count; ntv.gencode_int32(0);// jmp
+	ntv.gencode(0xe9); int addr_before_cond = ntv.count; ntv.gencode_int32(0);// jmp
 	for(ast_vector::iterator it = then_block.begin(); it != then_block.end(); ++it)
 		codegen_expression(f, f_list, *it);
-	ntv.gencode(0xe9); int end1 = ntv.count; ntv.gencode_int32(0);// jmp end
-	ntv.gencode_int32_insert(ntv.count - end - 4, end);
+	ntv.gencode(0xe9); int addr_end = ntv.count; ntv.gencode_int32(0);// jmp end
+	ntv.gencode_int32_insert(ntv.count - addr_before_cond - 4, addr_before_cond);
 
 	for(ast_vector::iterator it = else_block.begin(); it != else_block.end(); ++it)
 		codegen_expression(f, f_list, *it);
-	ntv.gencode_int32_insert(ntv.count - end1 - 4, end1);
+	ntv.gencode_int32_insert(ntv.count - addr_end - 4, addr_end);
 }
 
 void WhileAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
@@ -375,7 +375,7 @@ int FunctionCallAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 			ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(256 - a++ * ADDR_SIZE); // mov [esp+ADDR*a], eax
 		}
 		ntv.gencode(0xe8); f_list.append_undef(info.name, info.mod_name, ntv.count);
-		ntv.gencode_int32(0x00000000); // call function
+			ntv.gencode_int32(0x00000000); // call function
 		return T_INT;
 	} else { // defined
 		if(args.size() != function->info.params) error("error: the number of arguments is not same");
@@ -398,11 +398,17 @@ int FunctionCallAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 }
 
 int BinaryAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
-	int ty1 = codegen_expression(f, f_list, left);
-	ntv.genas("push eax");
-	int ty2 = codegen_expression(f, f_list, right);
-	ntv.genas("mov ebx eax");
-	ntv.genas("pop eax");
+	int ty1 = codegen_expression(f, f_list, left), ty2 = T_VOID;
+	if(right->get_type() == AST_NUMBER) {
+		NumberAST *n = (NumberAST *)right;
+		ntv.genas("mov ebx %d", n->number);
+		ty2 = T_INT;
+	} else {
+		ntv.genas("push eax");
+		ty2 = codegen_expression(f, f_list, right);
+		ntv.genas("mov ebx eax");
+		ntv.genas("pop eax");
+	}
 	if(ty1 != ty2)
 		if(op != "+") error("error: type error"); // except string concat
 	if(op == "+") {
@@ -503,7 +509,7 @@ void VariableAsgmtAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv)
 		ntv.gencode(0x89); ntv.gencode(0x45);
 			ntv.gencode(256 - ADDR_SIZE * v->id); // mov var eax
 		if(first_decl && var->get_type() == AST_VARIABLE) v->type = ty; // for type inference
-		if(v->type & T_ARRAY || v->type == T_STRING) {
+		if(v->type & T_ARRAY || v->type == T_STRING) { // append root for GC
 			ntv.genas("push eax");
 				ntv.gencode(0x8d); ntv.gencode(0x45);
 					ntv.gencode(256 - ADDR_SIZE * v->id); // lea eax [esp - id*ADDR_SIZE]
@@ -579,7 +585,9 @@ void BreakAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 
 int ArrayAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 	ntv.genas("mov eax %d", elems.size() * ADDR_SIZE);
-	ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x24); // mov [esp], eax
+	ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(0 * ADDR_SIZE); // mov [esp+arg*ADDR_SIZE], eax
+	ntv.genas("mov eax 4");
+	ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(1 * ADDR_SIZE); // mov [esp+arg*ADDR_SIZE], eax
 	ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(12); // call malloc
 	ntv.genas("push eax");
 	uint32_t a = 0;

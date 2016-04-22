@@ -10,3 +10,8 @@ _start:
 	add eax, 1
 	lea eax, [ebp - 4]
 	mov [esp + 4], eax
+	add eax, 15
+	sub eax, 15
+	sub eax, 1000
+	mov eax, 1000
+	mov eax, 16

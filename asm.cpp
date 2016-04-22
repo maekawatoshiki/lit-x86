@@ -91,19 +91,25 @@ int NativeCode_x86::genas(const char *s, ...) {
 			gencode(0x03);
 			gencode(mk_modrm(nem[1], nem[2]));
 		} else if(isdigit(*nem[2])) { // integer?
-			gencode(0x81);
-			gencode(0xc0 + regBit(nem[1]));
-			gencode_int32(atoi(nem[2]));
-		} else {
-		}
+			int num = atoi(nem[2]);
+			if(((unsigned int)num) < 256) {
+				gencode(0x83);
+				gencode(0xc0 + regBit(nem[1]));
+				gencode(atoi(nem[2]));
+			} else {
+				gencode(0x81);
+				gencode(0xc0 + regBit(nem[1]));
+				gencode_int32(atoi(nem[2]));
+			}
+		} 
 	} else if(strcmp(nem[0], "sub") == 0) { // sub
 		if(isalpha(*nem[2])) { // register?
 			gencode(0x2b);
 			gencode(mk_modrm(nem[1], nem[2]));
-    } else if(isdigit(*nem[2])) { // integer?
-  		gencode(0x81);
-  		gencode(0xe8 + regBit(nem[1]));
-  		gencode_int32(atoi(nem[2]));
+		} else if(isdigit(*nem[2])) { // integer?
+			gencode(0x81);
+			gencode(0xe8 + regBit(nem[1]));
+			gencode_int32(atoi(nem[2]));
   	}
 	} else if(strcmp(nem[0], "mul") == 0) { // mul
 		if(isalpha(*nem[1])) { // register?
