@@ -131,6 +131,19 @@ char *rea_concat_char(char *a, int b) {
 	t[strlen(t)] = b;
 	return t;
 }
+char *str_replace(char *s, char *b, char *a) {
+	std::string str = s;
+	std::string from = b;
+	std::string to = a;
+	std::string::size_type pos = str.find(from);
+	while(pos != std::string::npos){
+		str.replace(pos, from.size(), to);
+		pos = str.find(from, pos + to.size());
+	}
+	char *ret = (char *)LitMemory::alloc(str.size() + 1, sizeof(char));
+	strcpy(ret, str.c_str());
+	return ret;
+}
 
 char *gets_stdin() {
 	char *str;	
@@ -138,7 +151,6 @@ char *gets_stdin() {
 	std::getline(std::cin, input);
 	str = (char *)LitMemory::alloc(input.size() + 1, ADDR_SIZE);
 	strcpy(str, input.c_str());
-
 	return str;
 }
 int streql(char *a, char *b) { return strcmp(a, b) == 0 ? 1 : 0; }
@@ -167,6 +179,7 @@ void *funcTable[] = {
 	(void *) rea_concat_char, // 76
 	(void *) streql,		// 80
 	(void *) strne, 		// 84
+	(void *) str_replace,	// 88
 };
 
 

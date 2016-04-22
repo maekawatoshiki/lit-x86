@@ -26,6 +26,7 @@ struct {
 	{"strlen", "", 1, 64, T_INT},
 	{"len", "", 1, 68, T_INT},
 	{"GC", "", 0, 72, T_INT},
+	{"replace", "", 3, 88, T_STRING},
 	{"puts", "", -1, -1, T_VOID} // special
 };
 
