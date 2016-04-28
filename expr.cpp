@@ -152,13 +152,13 @@ AST *Parser::expr_asgmt() {
 }
 
 AST *Parser::expr_compare() {
-	bool andop=0, orop=0, xorop = false;
+	bool andop=0, orop=0, xorop = false, cls_intrvl=false;
 	AST *l, *r;
 	l = expr_logic();
-	while((andop=tok.skip("and") || tok.skip("&")) || (orop=tok.skip("or") || 
-				tok.skip("|")) || (xorop=(tok.skip("xor") || tok.skip("^"))) || tok.skip("..")) {
+	while((andop=tok.skip("and") || tok.skip("&")) || (orop=tok.skip("or") || tok.skip("|")) || 
+			(xorop=(tok.skip("xor") || tok.skip("^"))) || (cls_intrvl=tok.skip("..")) || tok.skip("...")) {
 		r = expr_logic();
-		l = new BinaryAST(andop ? "and" : orop ? "or" : xorop ? "xor" : "range", l, r);
+		l = new BinaryAST(andop ? "and" : orop ? "or" : xorop ? "xor" : cls_intrvl ? ".." : "...", l, r);
 	}
 
 	return l;

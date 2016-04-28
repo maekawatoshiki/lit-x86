@@ -62,7 +62,7 @@ ast_vector Parser::eval() {
 int Parser::parser() {
 	tok.pos = ntv.count = 0;
 	blocksCount = 0;
-	for(int i = 0; i < sizeof(stdfunc) / sizeof(stdfunc[0]); i++) {
+	for(int i = 0; i < sizeof(stdfunc) / sizeof(stdfunc[0]); i++) { // append standard functions
 		append_func(stdfunc[i].name);
 	}
 	
@@ -152,10 +152,19 @@ AST *Parser::make_for() {
 			if(!tok.skip("end")) error("error: %d: expected expression 'end'", tok.get().nline);
 			return new ForAST(asgmt, cond, step, block);
 		} else if(tok.skip("in")) {
-			AST *range = expr_entry();
-				ast_vector block = eval();
+			AST *range = expr_entry(), *cond, *step;
+			if(range->get_type() == AST_BINARY) {
+				BinaryAST *cond_bin = (BinaryAST *)range;
+				AST *var = asgmt;
+				asgmt = new VariableAsgmtAST(asgmt, cond_bin->left);
+				cond = new BinaryAST(cond_bin->op == ".." ? "<" : "<=", var, cond_bin->right);
+				step = new VariableAsgmtAST(var, 
+								new BinaryAST("+", var, new NumberAST(1))
+						);
+			} else error("error: %d: invalid expression", tok.get().nline);
+			ast_vector block = eval();
 			if(!tok.skip("end")) error("error: %d: expected expression 'end'", tok.get().nline);
-			return new ForAST(asgmt, range, block);
+			return new ForAST(asgmt, cond, step, block);
 		} else error("error: %d: unknown syntax", tok.get().nline);
 	}
 	return NULL;

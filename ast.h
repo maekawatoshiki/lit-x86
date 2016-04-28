@@ -188,8 +188,7 @@ public:
 	bool is_range_for;
 	AST *asgmt, *cond, *step, *range;
 	std::vector<AST *> block;
-	ForAST(AST *, AST *, AST *, std::vector<AST *>); // c like style
-	ForAST(AST *, AST *, std::vector<AST *>); // python like style
+	ForAST(AST *, AST *, AST *, std::vector<AST *>); // assignment, condition, step, body
 	virtual int get_type() const { return AST_FOR; }
 	void codegen(Function &, Module &, NativeCode_x86 &);
 };
