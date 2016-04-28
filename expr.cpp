@@ -213,7 +213,7 @@ AST *Parser::expr_index() {
 
 AST *Parser::expr_postfix() {
 	AST *expr = expr_primary();
-	bool inc;
+	bool inc = false;
 	if((inc = tok.skip("++")) || tok.skip("--")) {
 		return new PostfixAST(inc ? "++" : "--", expr);
 	}
@@ -269,7 +269,7 @@ AST *Parser::expr_primary() {
 					// .mod_name = mod_name == "" ? module : mod_name
 				};
 				std::vector<AST *> args;
-				if(HAS_PARAMS_FUNC) {
+				if(tok.get().val != ";") {
 					while(!tok.is(")") && !tok.is(";")) {
 						args.push_back(expr_entry());
 						tok.skip(",");
