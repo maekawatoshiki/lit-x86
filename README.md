@@ -7,7 +7,7 @@ Please look at Wiki.
 
 # Build
 
-- compile 
+- compile
 
 ```
 $ make (need clang)

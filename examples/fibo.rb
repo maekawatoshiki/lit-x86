@@ -6,5 +6,4 @@ def fibo n
 	end		
 end
 
-n = 40
-puts "fibo(" n ") = " fibo n
+puts fibo 40
