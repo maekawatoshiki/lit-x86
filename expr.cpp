@@ -266,7 +266,6 @@ AST *Parser::expr_primary() {
 			if((has_pare=tok.skip("(")) || is_func(name)) { // function
 				func_t f = {
 					.name = name,
-					// .mod_name = mod_name == "" ? module : mod_name
 				};
 				std::vector<AST *> args;
 				if(tok.get().val != ";") {

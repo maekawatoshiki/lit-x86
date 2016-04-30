@@ -451,6 +451,10 @@ void VariableAsgmtAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv)
 		ntv.gencode(0xa3); f_list.append_addr_of_global_var(v->name, ntv.count); 
 		ntv.gencode_int32(0x00000000); // GLOBAL_INSERT
 	} else {
+		if(v->type == T_STRING) {
+			ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x24); // mov [esp], eax
+			ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(96);// call *96(esi) str_copy
+		}
 		ntv.gencode(0x89); ntv.gencode(0x45);
 			ntv.gencode(256 - ADDR_SIZE * v->id); // mov var eax
 		if(first_decl && var->get_type() == AST_VARIABLE) v->type = ty; // for type inference

@@ -95,7 +95,7 @@ namespace LitMemory {
 		for(std::map<uint32_t, MemoryInfo *>::iterator it = mem_list.begin(); it != mem_list.end(); ++it) {
 			if(it->second->marked == false) {
 				if(it->second->is_const()) continue;
-				// std::cout << "freed success: " << (uint32_t)it->second->get_addr() << ", size: " << it->second->get_size() << "bytes" << std::endl;
+				std::cout << "freed success: " << (uint32_t)it->second->get_addr() << ", size: " << it->second->get_size() << "bytes" << std::endl;
 				it->second->free_mem();
 				current_mem -= it->second->get_size();
 				mem_list.erase(it);
@@ -118,18 +118,17 @@ namespace LitMemory {
 };
 
 char *rea_concat(char *a, char *b) {
-	char *t = (char *)LitMemory::alloc(strlen(a) + strlen(b) + 1, ADDR_SIZE);
+	char *t = (char *)LitMemory::alloc(strlen(a) + strlen(b) + 1, 1);
 	strcpy(t, a);
-	t = strcat(t, b);
-	return t;
+	return strcat(t, b);
 }
 char *rea_concat_char(char *a, int b) {
-	char *t = (char *)LitMemory::alloc(strlen(a) + 1, ADDR_SIZE);
+	char *t = (char *)LitMemory::alloc(strlen(a) + 2, 1);
 	strcpy(t, a);
 	t[strlen(t)] = b;
 	return t;
 }
-char *str_replace(char *s, char *b, char *a) {
+char *str_replace(char *s, char *b, char *a) { // replace from b to a in s
 	std::string str = s;
 	std::string from = b;
 	std::string to = a;
@@ -142,7 +141,25 @@ char *str_replace(char *s, char *b, char *a) {
 	strcpy(ret, str.c_str());
 	return ret;
 }
-
+uint32_t str_split(char *s, char *t) { // divide s by t, and make them array  
+	std::vector<std::string> splited;
+	char *str = (char *)malloc(strlen(s) + 1);
+	strcpy(str, s);
+	char *p = strtok(str, t);
+	splited.push_back(p);
+	while(p != NULL) {
+		p = strtok(NULL, t);
+		if(p != NULL)
+			splited.push_back(p);
+	}
+	uint32_t *ary = (uint32_t *)LitMemory::alloc(splited.size(), sizeof(int));
+	for(int i = 0; i < splited.size(); i++) {
+		char *ss = (char *)LitMemory::alloc(splited[i].size() + 1, sizeof(char));
+		strcpy(ss, splited[i].c_str());
+		ary[i] = (uint32_t)ss;
+	}
+	return (uint32_t)ary;
+}
 char *gets_stdin() {
 	char *str;	
 	std::string input;
@@ -153,6 +170,7 @@ char *gets_stdin() {
 }
 int streql(char *a, char *b) { return strcmp(a, b) == 0 ? 1 : 0; }
 int strne(char *a, char *b) { return strcmp(a, b) != 0 ? 1 : 0; }
+char *str_copy(char *_s) { return strcpy((char *)LitMemory::alloc(strlen(_s) + 1, sizeof(char)), _s); }
 
 void *funcTable[] = {
 	(void *) putNumber, // 0
@@ -178,6 +196,8 @@ void *funcTable[] = {
 	(void *) streql,		// 80
 	(void *) strne, 		// 84
 	(void *) str_replace,	// 88
+	(void *) str_split,		// 92
+	(void *) str_copy,		// 96
 };
 
 
