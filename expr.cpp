@@ -139,6 +139,7 @@ AST *Parser::expr_asgmt() {
 	AST *l, *r;
 	bool add = false, sub = false, mul = false, div = false;
 	l = expr_compare();
+	if(tok.get().type == TOK_STRING) return l;
 	while((add = tok.skip("+=")) || (sub = tok.skip("-=")) || (mul = tok.skip("*=")) ||
 			(div = tok.skip("/=")) || tok.skip("=")) {
 		r = expr_entry();
@@ -155,6 +156,7 @@ AST *Parser::expr_compare() {
 	bool andop=0, orop=0, xorop = false, cls_intrvl=false;
 	AST *l, *r;
 	l = expr_logic();
+	if(tok.get().type == TOK_STRING) return l;
 	while((andop=tok.skip("and") || tok.skip("&")) || (orop=tok.skip("or") || tok.skip("|")) || 
 			(xorop=(tok.skip("xor") || tok.skip("^"))) || (cls_intrvl=tok.skip("..")) || tok.skip("...")) {
 		r = expr_logic();
@@ -168,6 +170,7 @@ AST *Parser::expr_logic() {
 	bool lt = false, gt=false, ne=false, eql=false, fle=false;
 	AST *l, *r;
 	l = expr_add_sub();
+	if(tok.get().type == TOK_STRING) return l;
 	if((lt=tok.skip("<")) || (gt=tok.skip(">")) || (ne=tok.skip("!=")) ||
 			(eql=tok.skip("==")) || (fle=tok.skip("<=")) || tok.skip(">=")) {
 		r = expr_add_sub();
@@ -181,6 +184,7 @@ AST *Parser::expr_add_sub() {
 	int add = 0, concat = 0;
 	AST *l, *r;
 	l = expr_mul_div();
+	if(tok.get().type == TOK_STRING) return l;
 	while((add = tok.skip("+")) || (concat = tok.skip("~")) || tok.skip("-")) {
 		r = expr_mul_div();
 		l = new BinaryAST(add ? "+" : concat ? "~" : "-", l, r);
@@ -192,6 +196,7 @@ AST *Parser::expr_mul_div() {
 	int mul, div;
 	AST *l, *r;
 	l = expr_index();
+	if(tok.get().type == TOK_STRING) return l;
 	while((mul = tok.skip("*")) || (div=tok.skip("/")) || tok.skip("%")) {
 		r = expr_index();
 		l = new BinaryAST(mul ? "*" : div ? "/" : "%", l, r);
@@ -202,6 +207,7 @@ AST *Parser::expr_mul_div() {
 AST *Parser::expr_index() {
 	AST *l, *r;
 	l = expr_postfix();
+	if(tok.get().type == TOK_STRING) return l;
 	while(tok.skip("[")) {
 		r = expr_entry();
 		l = new VariableIndexAST(l, r);
@@ -214,6 +220,7 @@ AST *Parser::expr_index() {
 AST *Parser::expr_postfix() {
 	AST *expr = expr_primary();
 	bool inc = false;
+	if(tok.get().type == TOK_STRING) return expr;
 	if((inc = tok.skip("++")) || tok.skip("--")) {
 		return new PostfixAST(inc ? "++" : "--", expr);
 	}
@@ -272,7 +279,7 @@ AST *Parser::expr_primary() {
 					while(!tok.is(")") && !tok.is(";")) {
 						args.push_back(expr_entry());
 						tok.skip(",");
-					} 				
+					}
 				} if(has_pare) tok.skip(")");
 				return new FunctionCallAST(f, args);
 			} else { // variable

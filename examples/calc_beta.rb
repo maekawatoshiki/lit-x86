@@ -48,7 +48,7 @@ def calc e:string
 	puts "input = " e
 	out = addsub e out
 	puts "expr = " out
-	ary = split out, "|"
+	ary = split out "|"
 	ary_len = len ary
 	stack = new 128 int
 	sp = 0
