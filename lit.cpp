@@ -7,8 +7,6 @@
 #include "util.h"
 #include "option.h"
 
-ctrl_t break_list, return_list;
-
 // ---- for native code --- //
 
 char *File_read(char *s, int len, FILE *fp) { fread(s, 1, len, fp); return s; }
@@ -188,8 +186,6 @@ void *funcTable[] = {
 Lit::Lit(int ac, char **av)
 	:lex(tok), parser(tok), argc(ac), argv(av) {
 	tok.pos = 0; tok.size = 0xfff;
-	return_list.addr_list = (uint32_t *)calloc(sizeof(uint32_t), 1);
-	break_list.addr_list = (uint32_t *)calloc(sizeof(uint32_t), 1);
 }
 
 Lit::~Lit() {

@@ -18,14 +18,6 @@
 #define _LIT_VERSION_ "0.1.0"
 
 
-class ctrl_t {
-public:
-	uint32_t *addr_list;
-	int count;
-};
-
-extern ctrl_t break_list, return_list;
-
 class Lit {
 	Token tok;
 	Lexer lex;
