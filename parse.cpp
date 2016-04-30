@@ -157,7 +157,7 @@ AST *Parser::make_for() {
 				BinaryAST *cond_bin = (BinaryAST *)range;
 				AST *var = asgmt;
 				asgmt = new VariableAsgmtAST(asgmt, cond_bin->left);
-				cond = new BinaryAST(cond_bin->op == ".." ? "<" : "<=", var, cond_bin->right);
+				cond = new BinaryAST(cond_bin->op == ".." ? "<=" : /* op=... */ "<", var, cond_bin->right);
 				step = new VariableAsgmtAST(var, 
 								new BinaryAST("+", var, new NumberAST(1))
 						);

@@ -103,14 +103,8 @@ int codegen_expression(Function &f, Module &f_list, AST *ast) {
 		return T_VOID;
 	case AST_FUNCTION_CALL:
 		return ((FunctionCallAST *)ast)->codegen(f, f_list, ntv);
-	case AST_BINARY: {
-		int res = 0;
-		if(const_folding(ast, &res)) {
-			ntv.genas("mov eax %d", res);
-			return T_INT;
-		} else
-			return ((BinaryAST *)ast)->codegen(f, f_list, ntv);
-	}
+	case AST_BINARY: 
+		return ((BinaryAST *)ast)->codegen(f, f_list, ntv);
 	case AST_ARRAY:
 		return ((ArrayAST *)ast)->codegen(f, f_list, ntv);
 	case AST_VARIABLE_INDEX:
@@ -347,6 +341,10 @@ int FunctionCallAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 
 int BinaryAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 	int ty1 = codegen_expression(f, f_list, left), ty2 = T_VOID;
+	int res; if(const_folding(this, &res)) {
+		ntv.genas("mov eax %d", res);
+		return T_INT;
+	}
 	if(right->get_type() == AST_NUMBER) {
 		NumberAST *n = (NumberAST *)right;
 		ntv.genas("mov ebx %d", n->number);
@@ -357,8 +355,7 @@ int BinaryAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 		ntv.genas("mov ebx eax");
 		ntv.genas("pop eax");
 	}
-	if(ty1 != ty2)
-		if(op != "+") error("error: type error"); // except string concat
+	if(ty1 != ty2) if(op != "+") error("error: type error"); // except string concat
 	if(op == "+") {
 		if(ty1 == T_STRING && ty2 == T_STRING) { // string + string
 			ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * 0); // mov [esp+0*ADDR_SIZE], eax
