@@ -57,6 +57,7 @@ public:
 	AST *make_func();
 	AST *make_break();
 	AST *make_return();
+	AST *make_struct();
 
 	ast_vector eval();
 	AST *expression();

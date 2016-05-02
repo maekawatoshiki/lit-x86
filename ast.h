@@ -27,6 +27,7 @@ enum {
 	AST_LIBRARY,
 	AST_PROTO,
 	AST_NEW,
+	AST_STRUCT,
 };
 
 class AST {
@@ -155,6 +156,14 @@ public:
 	FunctionAST(func_t f, std::vector<AST *> a, std::vector<AST *>);
 	virtual int get_type() const { return AST_FUNCTION; }
 	Function codegen(Module &);
+};
+
+class StructAST : public AST {
+public:
+	std::string name;
+	std::vector<AST *> var_decls;
+	StructAST(std::string, std::vector<AST *>);
+	virtual int get_type() const { return AST_STRUCT; }
 };
 
 class ArrayAST : public AST {

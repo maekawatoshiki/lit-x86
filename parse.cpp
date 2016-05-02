@@ -28,6 +28,7 @@ AST *Parser::make_return() {
 AST *Parser::expression() {
 	if(tok.skip("def")) return make_func();
 	else if(tok.is("proto")) return make_proto();
+	else if(tok.is("struct")) return make_struct();
 	else if(tok.skip("module")) { blocksCount++;
 		module = tok.tok[tok.pos++].val;
 		eval();
@@ -67,9 +68,9 @@ int Parser::parser() {
 	}
 	
 	ast_vector a = eval();
-	// std::cout << "\n---------- abstract syntax tree ----------" << std::endl;
-	// for(int i = 0; i < a.size(); i++)
-	// 	visit(a[i]), std::cout << std::endl;
+	std::cout << "\n---------- abstract syntax tree ----------" << std::endl;
+	for(int i = 0; i < a.size(); i++)
+		visit(a[i]), std::cout << std::endl;
 	codegen_entry(a); // start code generating
 	// std::cout << "\n---------- end of abstract syntax tree --" << std::endl;
 	return 1;
@@ -108,6 +109,16 @@ AST *Parser::make_proto() {
 		}
 		return new PrototypeAST(function, args);	
 	}
+	return NULL;
+}
+
+AST *Parser::make_struct() {
+	if(tok.skip("struct")) {
+		std::string name = tok.next().val;
+		ast_vector decl_vars = eval();
+		if(!tok.skip("end")) error("error: %d: expected expression 'end'", tok.get().nline);
+		return new StructAST(name, decl_vars);
+	} 
 	return NULL;
 }
 

@@ -56,6 +56,10 @@ FunctionAST::FunctionAST(func_t f, std::vector<AST *> a, std::vector<AST *> stmt
 	info(f), args(a), statement(stmt) {
 }
 
+StructAST::StructAST(std::string _name, std::vector<AST *> _vars) : 
+	name(_name), var_decls(_vars) {
+}
+
 ArrayAST::ArrayAST(std::vector<AST *> e) : 
 	elems(e) {
 }

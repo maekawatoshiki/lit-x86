@@ -22,6 +22,12 @@ AST *visit(AST *ast) {
 			visit(((BinaryAST *)ast)->right);
 		std::cout << ")";
 		std::cout << std::endl;
+	} else if(ast->get_type() == AST_STRUCT) {
+		StructAST *sa = (StructAST *)ast;
+		std::cout << "(struct " << sa->name << "(" << std::endl;
+		for(int i = 0; i < sa->var_decls.size(); i++) 
+			visit(sa->var_decls[i]);
+		std::cout << ")\n)" << std::endl;
 	} else if(ast->get_type() == AST_VARIABLE_ASGMT) {
 		std::cout << "(=";
 			visit(((VariableAsgmtAST *)ast)->var);
