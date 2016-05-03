@@ -190,7 +190,6 @@ AST *Parser::make_for() {
 			if(range->get_type() == AST_BINARY) {
 				BinaryAST *cond_bin = (BinaryAST *)range;
 				AST *var = asgmt;
-				std::cout << "OP = " << cond_bin->op << std::endl;
 				asgmt = new VariableAsgmtAST(asgmt, cond_bin->left);
 				cond = new BinaryAST(cond_bin->op == ".." ? "<=" : /* op=... */ "<", var, cond_bin->right);
 				step = new VariableAsgmtAST(var, 
