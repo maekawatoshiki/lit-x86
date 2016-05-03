@@ -2,7 +2,7 @@ require "String"
 
 def get_num e:string : string
 	num = ""
-	while '0' <= e[$pos] and e[$pos] <= '9'
+	while '0' <= e[$pos] & e[$pos] <= '9'
 		num += e[$pos]
 		$pos += 1
 	end
@@ -23,7 +23,7 @@ end
 
 def muldiv e:string out:string : string
 	out = prim e out
-	while e[$pos] == '*' or e[$pos] == '/'
+	while e[$pos] == '*' | e[$pos] == '/'
 		op = e[$pos]
 		$pos += 1
 		out = prim e out
@@ -34,7 +34,7 @@ end
 
 def addsub e:string out:string : string
 	out = muldiv e out
-	while e[$pos] == '+' or e[$pos] == '-'
+	while e[$pos] == '+' | e[$pos] == '-'
 		op = e[$pos]
 		$pos += 1
 		out = muldiv e out

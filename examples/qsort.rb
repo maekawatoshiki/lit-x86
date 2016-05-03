@@ -28,7 +28,7 @@ for i in 0..max
 	printf "%d " a[i]
 end; puts ""
 
-qsort a 0 max-1
+qsort a 0 max
 
 for i in 0..max
 	printf "%d " a[i]

@@ -63,6 +63,29 @@ ast_vector Parser::eval() {
 int Parser::parser() {
 	tok.pos = ntv.count = 0;
 	blocksCount = 0;
+	op_prec["="] =  100;
+	op_prec["+="] = 100;
+	op_prec["-="] = 100;
+	op_prec["*="] = 100;
+	op_prec["/="] = 100;
+	op_prec["%="] = 100;
+	op_prec["=="] = 200;
+	op_prec["!="] = 200;
+	op_prec["<="] = 200;
+	op_prec[">="] = 200;
+	op_prec["<"] =  200;
+	op_prec[">"] =  200;
+	op_prec["&"] =  150;
+	op_prec["|"] =  150;
+	op_prec["^"] =  150;
+	op_prec[".."] = 150;
+	op_prec["..."] =150;
+	op_prec["+"] =  300;
+	op_prec["-"] =  300;
+	op_prec["*"] =  400;
+	op_prec["/"] =  400;
+	op_prec["%"] =  400;
+
 	for(int i = 0; i < sizeof(stdfunc) / sizeof(stdfunc[0]); i++) { // append standard functions
 		append_func(stdfunc[i].name);
 	}
@@ -167,6 +190,7 @@ AST *Parser::make_for() {
 			if(range->get_type() == AST_BINARY) {
 				BinaryAST *cond_bin = (BinaryAST *)range;
 				AST *var = asgmt;
+				std::cout << "OP = " << cond_bin->op << std::endl;
 				asgmt = new VariableAsgmtAST(asgmt, cond_bin->left);
 				cond = new BinaryAST(cond_bin->op == ".." ? "<=" : /* op=... */ "<", var, cond_bin->right);
 				step = new VariableAsgmtAST(var, 
@@ -176,7 +200,9 @@ AST *Parser::make_for() {
 			ast_vector block = eval();
 			if(!tok.skip("end")) error("error: %d: expected expression 'end'", tok.get().nline);
 			return new ForAST(asgmt, cond, step, block);
-		} else error("error: %d: unknown syntax", tok.get().nline);
+		} else  {
+			error("error: %d: unknown syntax", tok.get().nline);
+		}
 	}
 	return NULL;
 }

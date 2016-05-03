@@ -36,6 +36,8 @@ public:
 	int is_ident_tok();
 	int is_char_tok();
 
+	std::map<std::string, int> op_prec;
+	int get_op_prec(std::string);
 	AST *expr_entry();
 	AST *expr_asgmt();
 	AST *expr_compare();
@@ -46,6 +48,7 @@ public:
 	AST *expr_postfix();
 	AST *expr_primary();
 	AST *expr_array();
+	AST *expr_rhs(int, AST *);
 
 // parse.h
 	AST *make_lib();

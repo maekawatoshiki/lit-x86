@@ -395,7 +395,7 @@ int BinaryAST::codegen(Function &f, Module &f_list, NativeCode_x86 &ntv) {
 		}
 	} else if(op == "and" || op == "&" || op == "or" ||
 			op == "|" || op == "xor" || op == "^") {
-		bool andop = op == "and", orop = op == "or";
+		bool andop = op == "and" || op == "&", orop = op == "or" || op == "|";
 		ntv.gencode(andop ? 0x21 : orop ? 0x09 : 0x31); ntv.gencode(0xd8); // and eax ebx
 	}
 	return ty1;

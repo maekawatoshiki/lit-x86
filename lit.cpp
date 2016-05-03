@@ -95,7 +95,7 @@ namespace LitMemory {
 		for(std::map<uint32_t, MemoryInfo *>::iterator it = mem_list.begin(); it != mem_list.end(); ++it) {
 			if(it->second->marked == false) {
 				if(it->second->is_const()) continue;
-				std::cout << "freed success: " << (uint32_t)it->second->get_addr() << ", size: " << it->second->get_size() << "bytes" << std::endl;
+				std::cout << "*** freed success: " << (uint32_t)it->second->get_addr() << ", size: " << it->second->get_size() << "bytes ***" << std::endl;
 				it->second->free_mem();
 				current_mem -= it->second->get_size();
 				mem_list.erase(it);
@@ -212,9 +212,6 @@ Lit::~Lit() {
 	LitMemory::free_all_mem();
 	// freeAddr();
 }
-
-#include <sys/types.h>
-#include <sys/wait.h>
 
 int Lit::execute(char *source) {
 	lex.lex(source);

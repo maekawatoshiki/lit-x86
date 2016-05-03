@@ -137,8 +137,40 @@ AST *visit(AST *ast) {
 	return ast;
 }
 
+int Parser::get_op_prec(std::string op) {
+	return op_prec.count(op) != 0 ? op_prec[op] : -1;
+}
+
+AST *Parser::expr_rhs(int prec, AST *lhs) {
+	while(true) {
+		int tok_prec, next_prec;
+		if(tok.get().type == TOK_SYMBOL) {
+			tok_prec = get_op_prec(tok.get().val);
+			if(tok_prec < prec) return lhs;
+		} else return lhs;
+		std::string op = tok.next().val;
+		AST *rhs = expr_index();
+		if(tok.get().type == TOK_SYMBOL) {
+			next_prec = get_op_prec(tok.get().val);
+			if(tok_prec < next_prec) 
+				rhs = expr_rhs(tok_prec + 1, rhs);
+		}
+		if(op == "+=" ||
+				op == "-=" ||
+				op == "*=" ||
+				op == "/=" ||
+				op == "=") {
+			bool add = op == "+=", sub = op == "-=", mul = op == "*=", div = op == "/=", normal = op == "=";
+			lhs = new VariableAsgmtAST(lhs, normal ? rhs :
+						new BinaryAST(add ? "+" : sub ? "-" : mul ? "*" : div ? "/" : "?", lhs, rhs));	
+		} else 
+			lhs = new BinaryAST(op, lhs, rhs);		
+	}
+}
+
 AST *Parser::expr_entry() { 
-	return expr_asgmt();
+	AST *lhs = expr_index();
+	return expr_rhs(0, lhs);
 }
 
 AST *Parser::expr_asgmt() {
@@ -212,7 +244,7 @@ AST *Parser::expr_mul_div() {
 
 AST *Parser::expr_index() {
 	AST *l, *r;
-	l = expr_postfix();
+	l = expr_primary();
 	if(tok.get().type == TOK_STRING) return l;
 	while(tok.skip("[")) {
 		r = expr_entry();
@@ -281,7 +313,7 @@ AST *Parser::expr_primary() {
 					.name = name,
 				};
 				std::vector<AST *> args;
-				if(tok.get().val != ";") {
+				if(tok.get().type != TOK_END && tok.get().type != TOK_SYMBOL) {
 					while(!tok.is(")") && !tok.is(";")) {
 						args.push_back(expr_entry());
 						tok.skip(",");
