@@ -39,13 +39,7 @@ public:
 	std::map<std::string, int> op_prec;
 	int get_op_prec(std::string);
 	AST *expr_entry();
-	AST *expr_asgmt();
-	AST *expr_compare();
-	AST *expr_logic();
-	AST *expr_add_sub();
-	AST *expr_mul_div();
 	AST *expr_index();
-	AST *expr_postfix();
 	AST *expr_primary();
 	AST *expr_array();
 	AST *expr_rhs(int, AST *);

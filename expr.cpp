@@ -173,75 +173,6 @@ AST *Parser::expr_entry() {
 	return expr_rhs(0, lhs);
 }
 
-AST *Parser::expr_asgmt() {
-	AST *l, *r;
-	bool add = false, sub = false, mul = false, div = false;
-	l = expr_compare();
-	if(tok.get().type == TOK_STRING) return l;
-	while((add = tok.skip("+=")) || (sub = tok.skip("-=")) || (mul = tok.skip("*=")) ||
-			(div = tok.skip("/=")) || tok.skip("=")) {
-		r = expr_entry();
-		if(add || sub || mul || div) {
-			l = new VariableAsgmtAST(l,
-					new BinaryAST(add ? "+" : sub ? "-" : mul ? "*" : div ? "/" : "EXCEPTION", l, r));	
-		} else 
-			l = new VariableAsgmtAST(l, r);
-	}
-	return l;
-}
-
-AST *Parser::expr_compare() {
-	bool andop=0, orop=0, xorop = false, cls_intrvl=false;
-	AST *l, *r;
-	l = expr_logic();
-	if(tok.get().type == TOK_STRING) return l;
-	while((andop=tok.skip("and") || tok.skip("&")) || (orop=tok.skip("or") || tok.skip("|")) || 
-			(xorop=(tok.skip("xor") || tok.skip("^"))) || (cls_intrvl=tok.skip("..")) || tok.skip("...")) {
-		r = expr_logic();
-		l = new BinaryAST(andop ? "and" : orop ? "or" : xorop ? "xor" : cls_intrvl ? ".." : "...", l, r);
-	}
-
-	return l;
-}
-
-AST *Parser::expr_logic() {
-	bool lt = false, gt=false, ne=false, eql=false, fle=false;
-	AST *l, *r;
-	l = expr_add_sub();
-	if(tok.get().type == TOK_STRING) return l;
-	if((lt=tok.skip("<")) || (gt=tok.skip(">")) || (ne=tok.skip("!=")) ||
-			(eql=tok.skip("==")) || (fle=tok.skip("<=")) || tok.skip(">=")) {
-		r = expr_add_sub();
-		l = new BinaryAST(lt ? "<" : gt ? ">" : ne ? "!=" : eql ? "==" : fle ? "<=" : ">=", l, r);
-	}
-
-	return l;
-}
-
-AST *Parser::expr_add_sub() {
-	int add = 0, concat = 0;
-	AST *l, *r;
-	l = expr_mul_div();
-	if(tok.get().type == TOK_STRING) return l;
-	while((add = tok.skip("+")) || (concat = tok.skip("~")) || tok.skip("-")) {
-		r = expr_mul_div();
-		l = new BinaryAST(add ? "+" : concat ? "~" : "-", l, r);
-	}
-	return l;
-}
-
-AST *Parser::expr_mul_div() {
-	int mul, div;
-	AST *l, *r;
-	l = expr_index();
-	if(tok.get().type == TOK_STRING) return l;
-	while((mul = tok.skip("*")) || (div=tok.skip("/")) || tok.skip("%")) {
-		r = expr_index();
-		l = new BinaryAST(mul ? "*" : div ? "/" : "%", l, r);
-	}
-	return l;
-}
-
 AST *Parser::expr_index() {
 	AST *l, *r;
 	l = expr_primary();
@@ -253,16 +184,6 @@ AST *Parser::expr_index() {
 			error("error: %d: expected expression ']'", tok.get().nline);
 	}
 	return l;
-}
-
-AST *Parser::expr_postfix() {
-	AST *expr = expr_primary();
-	bool inc = false;
-	if(tok.get().type == TOK_STRING) return expr;
-	if((inc = tok.skip("++")) || tok.skip("--")) {
-		return new PostfixAST(inc ? "++" : "--", expr);
-	}
-	return expr;
 }
 
 AST *Parser::expr_primary() {
@@ -335,7 +256,7 @@ AST *Parser::expr_primary() {
 			}
 		}
 	} else if(tok.skip("(")) {
-		AST *e = expr_asgmt();
+		AST *e = expr_entry();
 		if(!tok.skip(")"))
 			error("error: %d: expected expression ')'", tok.get().nline);
 		return e;
@@ -353,7 +274,7 @@ AST *Parser::expr_array() {
 	if(tok.skip("[")) {
 		ast_vector elems;
 		while(!tok.skip("]")) {
-			AST *elem = expr_asgmt();
+			AST *elem = expr_entry();
 			elems.push_back(elem);
 			tok.skip(",");
 		}
