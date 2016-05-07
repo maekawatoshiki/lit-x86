@@ -7,12 +7,13 @@
 #include "exprtype.h"
 
 int codegen_entry(ast_vector &);
-int codegen_expression(Function &f, Module &f_list, AST *ast);
+llvm::Value *codegen_expression(Function &f, Program &f_list, AST *ast, int * = NULL);
 bool const_folding(AST *, int *);
 
 struct {
 	std::string name, mod_name;
 	int args, addr, type; // if args is -1, the function has vector args.
+	llvm::Function *func;
 } stdfunc[] = {
 	{"Array", "", 1, 12, T_INT | T_ARRAY},
 	{"printf", "", -1, 16, T_VOID},
@@ -30,6 +31,7 @@ struct {
 	{"split", "", 2, 92, T_STRING | T_ARRAY},
 	{"puts", "", -1, -1, T_VOID} // special
 };
+
 
 #endif
 

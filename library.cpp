@@ -10,7 +10,7 @@ namespace LibraryList {
 	int append(std::string name) {
 		lib_t l = {
 			.name = name,
-			.no = lib.size(),
+			.no = (int)lib.size(),
 			.handle = dlopen(("./lib/" + name + ".so").c_str(), RTLD_LAZY | RTLD_NOW)
 		};
 		if(l.handle == NULL)
@@ -30,10 +30,10 @@ namespace LibraryList {
 		return NULL;
 	}
 
-	uint32_t call(std::string name, std::string mod_name) {
+	void *call(std::string name, std::string mod_name) {
 		void *function = dlsym(get(mod_name)->handle, (mod_name + "_" + name).c_str());
 		if(function == NULL) 
 			error("LitSystemError: cannot load function '%s'", (mod_name + "_" + name).c_str());
-		return (uint32_t)function;
+		return function;
 	}
 }

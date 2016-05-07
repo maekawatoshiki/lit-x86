@@ -46,12 +46,12 @@ namespace LitMemory {
 
 	const size_t max_mem = 256 * 1024; // 256KB
 	size_t current_mem = 0;
-	std::map<uint32_t, MemoryInfo *> mem_list;
-	std::map<uint32_t, bool> root_ptr;
+	std::map<void *, MemoryInfo *> mem_list;
+	std::map<void *, bool> root_ptr;
 
 	void *alloc_const(uint32_t size) { // allocate constant memory(for string)
 		void *addr = alloc(size, 1);
-		mem_list[(uint32_t)addr] = new MemoryInfo(addr, size, true);
+		mem_list[(void *)addr] = new MemoryInfo(addr, size, true);
 		return addr;	
 	}
 	void *alloc(uint32_t size, uint32_t byte) {
@@ -60,48 +60,48 @@ namespace LitMemory {
 		}
 		void *addr = calloc(size, byte);
 		current_mem += size;
-		mem_list[(uint32_t)addr] = new MemoryInfo(addr, size);
+		mem_list[(void *)addr] = new MemoryInfo(addr, size);
 		return addr;	
 	}
 
 	uint32_t get_size(void *addr) {
-		MemoryInfo *m = mem_list[(uint32_t)addr];
+		MemoryInfo *m = mem_list[(void *)addr];
 		if(m == NULL) return 0;
 		return m->get_size();
 	}
 
 	void append_ptr(void *ptr) {
-		root_ptr[(uint32_t)ptr] = true;
+		root_ptr[(void *)ptr] = true;
 	}
 	void delete_ptr(void *ptr) {
-		root_ptr[(uint32_t)ptr] = false;
+		root_ptr[(void *)ptr] = false;
 	}
 	void gc_mark() {
-		for(std::map<uint32_t, bool>::iterator it = root_ptr.begin(); it != root_ptr.end(); ++it) {
+		for(std::map<void *, bool>::iterator it = root_ptr.begin(); it != root_ptr.end(); ++it) {
 			if(it->second == true) {
 				int *ptr = (int *)it->first;
-				MemoryInfo *m = mem_list[(uint32_t)*ptr];
+				MemoryInfo *m = mem_list[(void *)*ptr];
 				if(m != NULL) {
 					if(m->is_const()) continue;
 					m->mark();
 					// std::cout << "marked success: " << (uint32_t)m->get_addr() << std::endl;
 				} else {
-					mem_list.erase(mem_list.find((uint32_t)*ptr));
+					mem_list.erase(mem_list.find((void *)*ptr));
 				}
 			}
 		} 
 	}
 	void gc_sweep() {
-		for(std::map<uint32_t, MemoryInfo *>::iterator it = mem_list.begin(); it != mem_list.end(); ++it) {
+		for(std::map<void *, MemoryInfo *>::iterator it = mem_list.begin(); it != mem_list.end(); ++it) {
 			if(it->second->marked == false) {
 				if(it->second->is_const()) continue;
-				std::cout << "*** freed success: " << (uint32_t)it->second->get_addr() << ", size: " << it->second->get_size() << "bytes ***" << std::endl;
+				std::cout << "*** freed success: " << (uint64_t)it->second->get_addr() << ", size: " << it->second->get_size() << "bytes ***" << std::endl;
 				it->second->free_mem();
 				current_mem -= it->second->get_size();
 				mem_list.erase(it);
 			}
 		} 
-		for(std::map<uint32_t, MemoryInfo *>::iterator it = mem_list.begin(); it != mem_list.end(); ++it) 
+		for(std::map<void *, MemoryInfo *>::iterator it = mem_list.begin(); it != mem_list.end(); ++it) 
 			it->second->marked = false;
 	}
 	void gc() {
@@ -110,7 +110,7 @@ namespace LitMemory {
 	}
 
 	void free_all_mem() {
-		for(std::map<uint32_t, MemoryInfo *>::iterator it = mem_list.begin(); it != mem_list.end(); ++it) {
+		for(std::map<void *, MemoryInfo *>::iterator it = mem_list.begin(); it != mem_list.end(); ++it) {
 			it->second->free_mem();
 			// std::cout << "freed success: " << (uint32_t)it->second->get_addr() << std::endl;
 		}
@@ -152,13 +152,13 @@ uint32_t str_split(char *s, char *t) { // divide s by t, and make them array
 		if(p != NULL)
 			splited.push_back(p);
 	}
-	uint32_t *ary = (uint32_t *)LitMemory::alloc(splited.size(), sizeof(int));
+	uint64_t *ary = (uint64_t *)LitMemory::alloc(splited.size(), sizeof(int64_t));
 	for(int i = 0; i < splited.size(); i++) {
 		char *ss = (char *)LitMemory::alloc(splited[i].size() + 1, sizeof(char));
 		strcpy(ss, splited[i].c_str());
-		ary[i] = (uint32_t)ss;
+		ary[i] = (uint64_t)ss;
 	}
-	return (uint32_t)ary;
+	return (uint64_t)ary;
 }
 char *gets_stdin() {
 	char *str;	
@@ -216,12 +216,12 @@ Lit::~Lit() {
 int Lit::execute(char *source) {
 	lex.lex(source);
 	parser.parser();
-	if((fork()) == 0) run();
-	int status = 0;
-	wait(&status);
-	if(!WIFEXITED(status)) {
-		puts("LitRuntimeError: *** the process was terminated abnormally ***");
-	}
+	// if((fork()) == 0) run();
+	// int status = 0;
+	// wait(&status);
+	// if(!WIFEXITED(status)) {
+	// 	puts("LitRuntimeError: *** the process was terminated abnormally ***");
+	// }
 	return 0;
 }
 

@@ -21,14 +21,14 @@ public:
 	uint32_t call(NativeCode_x86 &);
 };
 
-class Module {
+class Program {
 public:
 	std::string name;
 	std::vector<Function> func, undef_func;
 	Variable var_global; 
 	std::string &module;
 	
-	Module(std::string &mod): module(mod) { func.reserve(128); }
+	Program(std::string &mod): module(mod) { func.reserve(128); }
 	bool is(std::string, std::string);
 	Function *get(std::string, std::string = "");
 	Function *append(Function);
