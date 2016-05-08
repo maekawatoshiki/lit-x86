@@ -10,9 +10,64 @@ llvm::LLVMContext &context(llvm::getGlobalContext());
 llvm::IRBuilder<> builder(context);
 llvm::Module *mod;
 
+struct stdfunc_t {
+	std::string name, mod_name;
+	int args, addr, type; // if args is -1, the function has vector args.
+	llvm::Function *func;
+};
+
+std::map<std::string, stdfunc_t> stdfunc;
+
+extern "C" {
+	void put_num(int n) {
+		printf("%d", n);
+	}
+	void put_string(char *s) {
+		printf("%s", s);
+	}
+	void put_ln() {
+		putchar('\n');
+	}
+}
+
 int codegen_entry(ast_vector &program) {
 	llvm::InitializeNativeTarget();
 	mod = new llvm::Module("LIT", context);
+	{ // initialize standard functions
+		stdfunc["Array"] = stdfunc_t {"Array", "", 1, 12, T_INT | T_ARRAY};
+		stdfunc["gets"] = stdfunc_t {"gets", "File", 0, 52, T_STRING};
+		stdfunc["strlen"] = {"strlen", "", 1, 64, T_INT};
+		stdfunc["puts"] = {"puts", "", -1, -1, T_VOID};
+		stdfunc["put_num"] = {"put_num", "", 1, 1, T_VOID};
+		stdfunc["put_string"] = {"put_string", "", 1, 1, T_VOID};
+
+		// create put_string function
+		std::vector<llvm::Type *> func_args;
+			func_args.push_back(builder.getInt8Ty()->getPointerTo());
+		llvm::Function *func = llvm::Function::Create(
+				llvm::FunctionType::get(/*ret*/builder.getVoidTy(), func_args, false),
+				llvm::GlobalValue::ExternalLinkage,
+				"put_string", mod);
+		func->setCallingConv(llvm::CallingConv::C);
+		stdfunc["put_string"].func = func;
+		func_args.clear();
+		// create put_ln function
+		func_args.push_back(builder.getInt32Ty());
+		func = llvm::Function::Create(
+				llvm::FunctionType::get(/*ret*/builder.getVoidTy(), func_args, false),
+				llvm::GlobalValue::ExternalLinkage,
+				"put_num", mod);
+		func->setCallingConv(llvm::CallingConv::C);
+		stdfunc["put_num"].func = func;
+		func_args.clear();
+		// create put_ln function
+		func = llvm::Function::Create(
+				llvm::FunctionType::get(/*ret*/builder.getVoidTy(), func_args, false),
+				llvm::GlobalValue::ExternalLinkage,
+				"put_ln", mod);
+		func->setCallingConv(llvm::CallingConv::C);
+		stdfunc["put_ln"].func = func;
+	}
 	// create main function
 	llvm::Function *func_main = llvm::Function::Create(
 			llvm::FunctionType::get(builder.getVoidTy(), false),
@@ -25,16 +80,6 @@ int codegen_entry(ast_vector &program) {
 	// llvm::Value *hello_world_val = builder.CreateGlobalStringPtr("hello world!");
 	// llvm::Value *const_num = llvm::ConstantInt::get(context, llvm::APInt(32, llvm::StringRef("12"), 10));
 
-	// create puts function
-	std::vector<llvm::Type *> puts_args;
-		puts_args.push_back(builder.getInt8Ty()->getPointerTo());
-
-	llvm::Function *func_puts = llvm::Function::Create(
-			llvm::FunctionType::get(/*ret*/builder.getInt32Ty(), puts_args, false),
-			llvm::GlobalValue::ExternalLinkage,
-			"puts", mod);
-	func_puts->setCallingConv(llvm::CallingConv::C);
-	stdfunc[14].func = func_puts;
 
 	std::string module = "";
 	Program list(module);
@@ -59,7 +104,7 @@ int codegen_entry(ast_vector &program) {
 
 	llvm::verifyFunction(*func_main);
 	
-	// mod->dump();
+	mod->dump();
 	
 	std::string err;
 	llvm::ExecutionEngine *exec_engine = llvm::EngineBuilder(mod).setErrorStr(&err).create();
@@ -298,47 +343,43 @@ llvm::Value * ForAST::codegen(Function &f, Program &f_list) {
 }
 
 llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, int *ty) {
-	for(int i = 0; i < sizeof(stdfunc) / sizeof(stdfunc[0]); i++) {
-		if(stdfunc[i].name == info.name) {
-			if(info.name == "Array") {
-				codegen_expression(f, f_list, args[0]);
-				ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(0 * ADDR_SIZE); // mov [esp+arg*ADDR_SIZE], eax
-				ntv.genas("mov eax 4");
-				ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(1 * ADDR_SIZE); // mov [esp+arg*ADDR_SIZE], eax
-				ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(12); // call malloc
-			} else if(info.name == "puts") {
-				for(int n = 0; n < args.size(); n++) {
-					int ty;
-					llvm::Value *val = codegen_expression(f, f_list, args[n], &ty);
-
-	// val = builder.CreateGlobalStringPtr("hello");
-					if(ty == T_STRING) {
-						//call function
-						std::vector<llvm::Value*> func_args;
-							func_args.push_back(val);
-						builder.CreateCall(stdfunc[i].func, func_args)->setCallingConv(llvm::CallingConv::C);
-					} else if(ty == T_CHAR) {
-					} else {
-					}
+	if(stdfunc.count(info.name)) {
+		if(info.name == "Array") {
+			codegen_expression(f, f_list, args[0]);
+			ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(0 * ADDR_SIZE); // mov [esp+arg*ADDR_SIZE], eax
+			ntv.genas("mov eax 4");
+			ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(1 * ADDR_SIZE); // mov [esp+arg*ADDR_SIZE], eax
+			ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(12); // call malloc
+		} else if(info.name == "puts") {
+			for(int n = 0; n < args.size(); n++) {
+				int ty;
+				llvm::Value *val = codegen_expression(f, f_list, args[n], &ty);
+				std::vector<llvm::Value*> func_args;
+					func_args.push_back(val);
+				if(ty == T_STRING) {
+					builder.CreateCall(stdfunc["put_string"].func, func_args)->setCallingConv(llvm::CallingConv::C);
+				} else if(ty == T_CHAR) {
+				} else {
+					builder.CreateCall(stdfunc["put_num"].func, func_args)->setCallingConv(llvm::CallingConv::C);
 				}
-				ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(8);// call *0x08(esi) putLN
-			} else {
-				if(stdfunc[i].args == -1) { // vector
-					uint32_t a = 0;
-					for(ast_vector::iterator it = args.begin(); it != args.end(); ++it) {
-						codegen_expression(f, f_list, *it);
-						ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * a++); // mov [esp+a*ADDR_SIZE], eax
-					}
-				} else { // normal function
-					for(int arg = 0; arg < stdfunc[i].args; arg++) {
-						codegen_expression(f, f_list, args[arg]);
-						ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(arg * ADDR_SIZE); // mov [esp+arg*ADDR_SIZE], eax
-					}
-				}
-				ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(stdfunc[i].addr); // call $function
 			}
-			return NULL;
+			builder.CreateCall(stdfunc["put_ln"].func, std::vector<llvm::Value *>())->setCallingConv(llvm::CallingConv::C); // for new line
+		} else {
+			if(stdfunc[info.name].args == -1) { // vector
+				uint32_t a = 0;
+				for(ast_vector::iterator it = args.begin(); it != args.end(); ++it) {
+					codegen_expression(f, f_list, *it);
+					ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * a++); // mov [esp+a*ADDR_SIZE], eax
+				}
+			} else { // normal function
+				for(int arg = 0; arg < stdfunc[info.name].args; arg++) {
+					codegen_expression(f, f_list, args[arg]);
+					ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(arg * ADDR_SIZE); // mov [esp+arg*ADDR_SIZE], eax
+				}
+			}
+			ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(stdfunc[info.name].addr); // call $function
 		}
+		return NULL;
 	}
 	Function *function = f_list.get(info.name, info.mod_name);
 	if(function == NULL) { // undefined
@@ -373,49 +414,38 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, int *ty) {
 }
 
 llvm::Value * BinaryAST::codegen(Function &f, Program &f_list, int *ty) {
-	// int ty1 = codegen_expression(f, f_list, left), ty2 = T_VOID;
-	int ty1, ty2;
-	int res; if(const_folding(this, &res)) {
-		ntv.genas("mov eax %d", res);
-		return NULL;
+	int ty_l = T_VOID, ty_r = T_VOID;
+	llvm::Value *lhs = codegen_expression(f, f_list, left, &ty_l);
+	llvm::Value *rhs = codegen_expression(f, f_list, right, &ty_r);
+	*ty = ty_l;
+
+	if(ty_l != ty_r) if(op != "+") error("error: type error"); // except string concat
+	if(op == "+") return builder.CreateAdd(lhs, rhs, "addtmp");
+	// this is unsupported. 
+	// if(ty_l == T_STRING && ty_r == T_STRING) { // string + string
+	// 	ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * 0); // mov [esp+0*ADDR_SIZE], eax
+	// 	ntv.gencode(0x89); ntv.gencode(0x5c); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * 1); // mov [esp+1*ADDR_SIZE], ebx
+	// 	ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(56); // call rea_concat
+	// } else if(ty_l == T_STRING && ty_r == T_CHAR) { // string + char(int)
+	// 	ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * 0); // mov [esp+0*ADDR_SIZE], eax
+	// 	ntv.gencode(0x89); ntv.gencode(0x5c); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * 1); // mov [esp+1*ADDR_SIZE], ebx
+	// 	ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(76); // call rea_concat_char
+	// } 
+	else if(op == "-") return builder.CreateSub(lhs, rhs, "subtmp");
+	else if(op == "*") return builder.CreateMul(lhs, rhs, "multmp");
+	else if(op == "/") return builder.CreateSDiv(lhs, rhs, "divtmp");
+	else if(op == "%") return builder.CreateSRem(lhs, rhs, "remtmp");
+	else if(op == "<") { 
+		lhs = builder.CreateICmpSLT(lhs, rhs, "lttmp");
+		lhs = builder.CreateBitCast(lhs, builder.getInt32Ty());
+		return lhs;
 	}
-	if(right->get_type() == AST_NUMBER) {
-		NumberAST *n = (NumberAST *)right;
-		ntv.genas("mov ebx %d", n->number);
-		ty2 = T_INT;
-	} else {
-		ntv.genas("push eax");
-		// ty2 = codegen_expression(f, f_list, right);
-		ntv.genas("mov ebx eax");
-		ntv.genas("pop eax");
-	}
-	if(ty1 != ty2) if(op != "+") error("error: type error"); // except string concat
-	if(op == "+") {
-		if(ty1 == T_STRING && ty2 == T_STRING) { // string + string
-			ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * 0); // mov [esp+0*ADDR_SIZE], eax
-			ntv.gencode(0x89); ntv.gencode(0x5c); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * 1); // mov [esp+1*ADDR_SIZE], ebx
-			ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(56); // call rea_concat
-		} else if(ty1 == T_STRING && ty2 == T_CHAR) { // string + char(int)
-			ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * 0); // mov [esp+0*ADDR_SIZE], eax
-			ntv.gencode(0x89); ntv.gencode(0x5c); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * 1); // mov [esp+1*ADDR_SIZE], ebx
-			ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(76); // call rea_concat_char
-		} else
-			ntv.genas("add eax ebx");
-	} else if(op == "-") ntv.genas("sub eax ebx");
-	else if(op == "*") ntv.genas("mul ebx");
-	else if(op == "/") {
-		ntv.genas("mov edx 0");
-		ntv.genas("div ebx");
-	} else if(op == "%") {
-		ntv.genas("mov edx 0");
-		ntv.genas("div ebx");
-		ntv.genas("mov eax edx");
-	} else if(op == "<" || op == ">" || op == "!=" ||
+	else if(op == "<" || op == ">" || op == "!=" ||
 			op == "==" || op == "<=" || op == ">=") {
 		bool lt = op == "<", gt = op == ">", ne = op == "!=", eql = op == "==", fle = op == "<=";
 		bool str_cmp = false;
 		if(ne || eql) {
-			if(ty1 == T_STRING && ty2 == T_STRING) { // string == or != string
+			if(ty_l == T_STRING && ty_r == T_STRING) { // string == or != string
 				ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * 0); // mov [esp+0*ADDR_SIZE], eax
 				ntv.gencode(0x89); ntv.gencode(0x5c); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * 1); // mov [esp+1*ADDR_SIZE], ebx
 				ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(eql ? 80 : 84); // call streql or strne
@@ -432,7 +462,7 @@ llvm::Value * BinaryAST::codegen(Function &f, Program &f_list, int *ty) {
 		bool andop = op == "and" || op == "&", orop = op == "or" || op == "|";
 		ntv.gencode(andop ? 0x21 : orop ? 0x09 : 0x31); ntv.gencode(0xd8); // and eax ebx
 	}
-	*ty = ty1;
+	*ty = ty_l;
 	return NULL;
 }
 
@@ -450,11 +480,17 @@ llvm::Value * NewAllocAST::codegen(Function &f, Program &f_list, int *ty) {
 llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, int *ty) {
 	var_t *v;
 	bool first_decl = false;
+	llvm::AllocaInst *ai = NULL;
 
 	if(var->get_type() == AST_VARIABLE) {
 		if((v = ((VariableAST *)var)->get(f, f_list)) == NULL) {
 			v = ((VariableAST *)var)->append(f, f_list);
 			first_decl = true;
+			ai = builder.CreateAlloca(
+					llvm::Type::getInt32Ty(context),
+					0, // array size
+					v->name);
+			v->val = ai;
 		}
 	} else if(var->get_type() == AST_VARIABLE_DECL) {
 		if((v = ((VariableDeclAST *)var)->get(f, f_list)) == NULL) {
@@ -484,16 +520,17 @@ llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, int *ty) {
 
 	// int ty = codegen_expression(f, f_list, src);
 	int v_ty;
+	llvm::Value *val = codegen_expression(f, f_list, src, &v_ty);
 	if(v->is_global) {
 		ntv.gencode(0xa3); f_list.append_addr_of_global_var(v->name, ntv.count); 
 		ntv.gencode_int32(0x00000000); // GLOBAL_INSERT
 	} else {
-		if(v->type == T_STRING) {
+		if(v->type == T_STRING) { // string is copied
 			ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x24); // mov [esp], eax
 			ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(96);// call *96(esi) str_copy
 		}
-		ntv.gencode(0x89); ntv.gencode(0x45);
-			ntv.gencode(256 - ADDR_SIZE * v->id); // mov var eax
+		*ty = v_ty;
+		return builder.CreateStore(val, v->val);
 		if(first_decl && var->get_type() == AST_VARIABLE) v->type = v_ty; // for type inference
 		if(v->type & T_ARRAY || v->type == T_STRING) { // append root for GC
 			ntv.genas("push eax");
@@ -504,6 +541,7 @@ llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, int *ty) {
 			ntv.genas("pop eax");
 		}
 	}
+	return NULL;
 }
 
 var_t *VariableDeclAST::get(Function &f, Program &f_list) {
@@ -540,9 +578,9 @@ llvm::Value * VariableAST::codegen(Function &f, Program &f_list, int *ty) {
 	} else 
 		v = f.var.get(info.name, info.mod_name);
 	if(v == NULL) error("error: '%s' was not declared", info.name.c_str());
-	if(info.is_global == false) {
-		ntv.gencode(0x8b); ntv.gencode(0x45);
-			ntv.gencode(256 - ADDR_SIZE * v->id); // mov eax variable
+	if(info.is_global == false) { // local
+		*ty = v->type;
+		return builder.CreateLoad(v->val, "vartmp");
 	} else { // global
 		ntv.gencode(0xa1); f_list.append_addr_of_global_var(v->name, ntv.count);
 			ntv.gencode_int32(0x00000000); // mov eax GLOBAL_ADDR GLOBAL_INSERT
@@ -603,5 +641,6 @@ llvm::Value * CharAST::codegen(Function &f, int *ty) {
 }
 
 llvm::Value * NumberAST::codegen(Function &f, int *ty) {
-	ntv.genas("mov eax %d", number);
+	*ty = T_INT;
+	return llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), number, true);
 }

@@ -86,10 +86,21 @@ int Parser::parser() {
 	op_prec["/"] =  400;
 	op_prec["%"] =  400;
 
-	for(int i = 0; i < sizeof(stdfunc) / sizeof(stdfunc[0]); i++) { // append standard functions
-		append_func(stdfunc[i].name);
-	}
-	
+	// "Array",
+	// "printf",
+	// "gets",
+	// "strlen",
+	// "len",
+	// "replace",
+	// "split",
+	// "puts"
+	append_func("Array");
+	append_func("printf");
+	append_func("gets");
+	append_func("strlen");
+	append_func("len");
+	append_func("puts");
+
 	ast_vector a = eval();
 	// std::cout << "\n---------- abstract syntax tree ----------" << std::endl;
 	// for(int i = 0; i < a.size(); i++)

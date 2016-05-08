@@ -12,6 +12,7 @@ typedef struct {
 	std::string class_type;
 	bool is_global;
 	std::vector<int> used_location; // for global variables
+	llvm::Value *val; // for codegen
 } var_t;
 
 enum {
