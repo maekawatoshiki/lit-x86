@@ -8,6 +8,7 @@
 
 enum {
 	AST_NUMBER,
+	AST_NUMBER_FLOAT,
 	AST_STRING,
 	AST_CHAR,
 	AST_POSTFIX,
@@ -36,6 +37,13 @@ public:
 	virtual ~AST() {};
 };
 
+class FloatNumberAST : public AST {
+public:
+	double number;
+	FloatNumberAST(double);
+	virtual int get_type() const { return AST_NUMBER_FLOAT; };
+	llvm::Value *codegen(Function &, int *);
+};
 class NumberAST : public AST {
 public:
 	int32_t number;

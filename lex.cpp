@@ -16,7 +16,7 @@ int Lexer::lex(char *code) {
 		str.clear();
 		if(isdigit(code[i])) { // number?
 
-			for(; isdigit(code[i]); i++)
+			for(; isdigit(code[i]) || code[i] == '.'/*float*/; i++)
 				str += code[i];
 			tmp_tok.val = str;
 			tmp_tok.nline = line;

@@ -98,6 +98,8 @@ AST *visit(AST *ast) {
 		std::cout << ")";
 	} else if(ast->get_type() == AST_NUMBER) {
 		std::cout << " " << ((NumberAST *)ast)->number << " ";
+	} else if(ast->get_type() == AST_NUMBER_FLOAT) {
+		std::cout << " " << ((FloatNumberAST *)ast)->number << " ";
 	} else if(ast->get_type() == AST_CHAR) {
 		std::cout << " " << ((CharAST *)ast)->ch << " ";
 	} else if(ast->get_type() == AST_STRING) {
@@ -202,7 +204,10 @@ AST *Parser::expr_primary() {
 			type = tok.next().val;
 		return new NewAllocAST(type, size);
 	} else if(is_number_tok()) {
-		return new NumberAST(atoi(tok.next().val.c_str()));
+		if(strstr(tok.get().val.c_str(), ".") != NULL)
+			return new FloatNumberAST(atof(tok.next().val.c_str()));
+		else
+			return new NumberAST(atoi(tok.next().val.c_str()));
 	} else if(is_char_tok()) { 
 		return new CharAST(tok.next().val.c_str()[0]);
 	} else if(is_string_tok()) {

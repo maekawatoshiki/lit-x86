@@ -3,6 +3,9 @@
 NumberAST::NumberAST(int n) : 
 	number(n) {
 }
+FloatNumberAST::FloatNumberAST(double f) : 
+	number(f) {
+}
 
 PostfixAST::PostfixAST(std::string o, AST *c) : 
 	op(o), expr(c) {

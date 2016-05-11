@@ -86,14 +86,7 @@ int Parser::parser() {
 	op_prec["/"] =  400;
 	op_prec["%"] =  400;
 
-	// "Array",
-	// "printf",
-	// "gets",
-	// "strlen",
-	// "len",
-	// "replace",
-	// "split",
-	// "puts"
+	// append standard functions to a list of declared functions
 	append_func("Array");
 	append_func("printf");
 	append_func("gets");
