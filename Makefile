@@ -1,54 +1,55 @@
 CFLAGS = -O0  -Wno-strict-aliasing -rdynamic -std=c++11
 CC = clang++ $(CFLAGS) 
+LLVM = `llvm-config --cppflags --ldflags --libs core jit native`
 
 lit: main.o lit.o asm.o lex.o var.o expr.o parse.o  token.o option.o util.o library.o func.o ast.o codegen.o exprtype.o
 	$(CC) -o lit -rdynamic -ldl main.o lit.o asm.o lex.o var.o expr.o parse.o \
-		token.o option.o util.o library.o func.o ast.o codegen.o exprtype.o `llvm-config --cppflags --ldflags --libs core jit native` 
+		token.o option.o util.o library.o func.o ast.o codegen.o exprtype.o $(LLVM) 
 
 main.o: main.cpp common.h
-	$(CC) -c main.cpp `llvm-config --cppflags --ldflags --libs core jit native` 
+	$(CC) -c main.cpp $(LLVM) 
 
 lit.o: lit.h lit.cpp
-	$(CC) -c lit.cpp `llvm-config --cppflags --ldflags --libs core jit native` 
+	$(CC) -c lit.cpp $(LLVM) 
 
 asm.o: asm.h asm.cpp
-	$(CC) -c asm.cpp `llvm-config --cppflags --ldflags --libs core jit native` 
+	$(CC) -c asm.cpp $(LLVM) 
 
 lex.o: lex.h lex.cpp
-	$(CC) -c lex.cpp `llvm-config --cppflags --ldflags --libs core jit native` 
+	$(CC) -c lex.cpp $(LLVM) 
 
 var.o: var.h var.cpp
-	$(CC) -c var.cpp `llvm-config --cppflags --ldflags --libs core jit native` 
+	$(CC) -c var.cpp $(LLVM) 
 
 expr.o: expr.h expr.cpp
-	$(CC) -c expr.cpp `llvm-config --cppflags --ldflags --libs core jit native` 
+	$(CC) -c expr.cpp $(LLVM) 
 
 parse.o: parse.h parse.cpp
-	$(CC) -c parse.cpp `llvm-config --cppflags --ldflags --libs core jit native` 
+	$(CC) -c parse.cpp $(LLVM) 
 
 ast.o: ast.h ast.cpp
-	$(CC) -c ast.cpp `llvm-config --cppflags --ldflags --libs core jit native` 
+	$(CC) -c ast.cpp $(LLVM) 
 
 codegen.o: codegen.h codegen.cpp
-	$(CC) -c codegen.cpp `llvm-config --cppflags --ldflags --libs core jit native` 
+	$(CC) -c codegen.cpp $(LLVM) 
 
 exprtype.o: exprtype.h exprtype.cpp
-	$(CC) -c exprtype.cpp `llvm-config --cppflags --ldflags --libs core jit native` 
+	$(CC) -c exprtype.cpp $(LLVM) 
 
 func.o: func.h func.cpp
-	$(CC) -c func.cpp `llvm-config --cppflags --ldflags --libs core jit native` 
+	$(CC) -c func.cpp $(LLVM) 
 
 token.o: token.h token.cpp
-	$(CC) -c token.cpp `llvm-config --cppflags --ldflags --libs core jit native` 
+	$(CC) -c token.cpp $(LLVM) 
 
 option.o: option.h option.cpp
-	$(CC) -c option.cpp `llvm-config --cppflags --ldflags --libs core jit native` 
+	$(CC) -c option.cpp $(LLVM) 
 
 util.o: util.h util.cpp
-	$(CC) -c util.cpp `llvm-config --cppflags --ldflags --libs core jit native` 
+	$(CC) -c util.cpp $(LLVM) 
 
 library.o: library.h library.cpp
-	$(CC) -c library.cpp `llvm-config --cppflags --ldflags --libs core jit native` 
+	$(CC) -c library.cpp $(LLVM) 
 
 lib: lit
 	make -j -f lib/Makefile

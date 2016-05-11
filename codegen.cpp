@@ -471,35 +471,51 @@ llvm::Value * BinaryAST::codegen(Function &f, Program &f_list, int *ty) {
 	else if(op == "*") return builder.CreateMul(lhs, rhs, "multmp");
 	else if(op == "/") return builder.CreateSDiv(lhs, rhs, "divtmp");
 	else if(op == "%") return builder.CreateSRem(lhs, rhs, "remtmp"); 
-	else if(op == "<") { 
-		lhs = builder.CreateICmpSLT(lhs, rhs, "lttmp");
-		llvm::Instruction *bitcast = new llvm::BitCastInst(lhs, llvm::Type::getInt32Ty(context), "cast_tmp");
-		lhs = bitcast;
-		return lhs;
-	}
 	else if(op == "<" || op == ">" || op == "!=" ||
 			op == "==" || op == "<=" || op == ">=") {
 		bool lt = op == "<", gt = op == ">", ne = op == "!=", eql = op == "==", fle = op == "<=";
 		bool str_cmp = false;
-		if(ne || eql) {
-			if(ty_l == T_STRING && ty_r == T_STRING) { // string == or != string
-				ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * 0); // mov [esp+0*ADDR_SIZE], eax
-				ntv.gencode(0x89); ntv.gencode(0x5c); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * 1); // mov [esp+1*ADDR_SIZE], ebx
-				ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(eql ? 80 : 84); // call streql or strne
-				str_cmp = true;
-			}
-		} 
-		if(!str_cmp) {
-			ntv.gencode(0x39); ntv.gencode(0xd8); // cmp %eax, %ebx
-			ntv.gencode(0x0f); ntv.gencode(lt ? 0x9c : gt ? 0x9f : ne ? 0x95 : eql ? 0x94 : fle ? 0x9e : 0x9d); ntv.gencode(0xc0); // setX al
-			ntv.gencode(0x0f); ntv.gencode(0xb6); ntv.gencode(0xc0); // movzx eax al
+		std::string tmp_name = "cmp_tmp";
+		if(op == "<") {
+		} else if(op == ">") {
+			lhs = builder.CreateICmpSLT(lhs, rhs, tmp_name);
+		} else if(op == "!=") {
+			lhs = builder.CreateICmpSGT(lhs, rhs, tmp_name);
+		} else if(op == "==") {
+			lhs = builder.CreateICmpNE(lhs, rhs, tmp_name);
+		} else if(op == "<=") {
+			lhs = builder.CreateICmpEQ(lhs, rhs, tmp_name);
+		} else if(op == ">=") {
+			lhs = builder.CreateICmpSLE(lhs, rhs, tmp_name);
 		}
+		lhs = builder.CreateZExt(lhs, builder.getInt32Ty());
+		return lhs;
+		// if(ne || eql) {
+		// 	if(ty_l == T_STRING && ty_r == T_STRING) { // string == or != string
+		// 		ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * 0); // mov [esp+0*ADDR_SIZE], eax
+		// 		ntv.gencode(0x89); ntv.gencode(0x5c); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * 1); // mov [esp+1*ADDR_SIZE], ebx
+		// 		ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(eql ? 80 : 84); // call streql or strne
+		// 		str_cmp = true;
+		// 	}
+		// } 
+		// if(!str_cmp) {
+		// 	ntv.gencode(0x39); ntv.gencode(0xd8); // cmp %eax, %ebx
+		// 	ntv.gencode(0x0f); ntv.gencode(lt ? 0x9c : gt ? 0x9f : ne ? 0x95 : eql ? 0x94 : fle ? 0x9e : 0x9d); ntv.gencode(0xc0); // setX al
+		// 	ntv.gencode(0x0f); ntv.gencode(0xb6); ntv.gencode(0xc0); // movzx eax al
+		// }
 	} else if(op == "and" || op == "&" || op == "or" ||
 			op == "|" || op == "xor" || op == "^") {
 		bool andop = op == "and" || op == "&", orop = op == "or" || op == "|";
-		ntv.gencode(andop ? 0x21 : orop ? 0x09 : 0x31); ntv.gencode(0xd8); // and eax ebx
+		if(andop) {
+			lhs = builder.CreateAnd(lhs, rhs);
+		} else if(orop) {
+			lhs = builder.CreateOr(lhs, rhs);
+		} else {
+			lhs = builder.CreateXor(lhs, rhs);
+		}
+		lhs = builder.CreateZExt(lhs, builder.getInt32Ty());
+		return lhs;
 	}
-	*ty = ty_l;
 	return NULL;
 }
 
