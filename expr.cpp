@@ -178,7 +178,7 @@ AST *Parser::expr_entry() {
 AST *Parser::expr_index() {
 	AST *l, *r;
 	l = expr_primary();
-	if(tok.get().type == TOK_STRING) return l;
+	if(tok.get().type == TOK_STRING) return l; // skip string tok such as "[" 
 	while(tok.skip("[")) {
 		r = expr_entry();
 		l = new VariableIndexAST(l, r);

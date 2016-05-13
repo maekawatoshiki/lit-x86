@@ -16,7 +16,7 @@ class Function {
 public:
 	func_t info;
 	Variable var;
-	std::vector<int> return_list;
+	llvm::BasicBlock *bb_return;
 	std::stack< std::vector<int> * > break_list;
 	uint32_t call(NativeCode_x86 &);
 };

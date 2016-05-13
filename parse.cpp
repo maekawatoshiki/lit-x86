@@ -63,6 +63,8 @@ ast_vector Parser::eval() {
 int Parser::parser() {
 	tok.pos = ntv.count = 0;
 	blocksCount = 0;
+	op_prec[".."] = 50;
+	op_prec["..."] =50;
 	op_prec["="] =  100;
 	op_prec["+="] = 100;
 	op_prec["-="] = 100;
@@ -78,8 +80,6 @@ int Parser::parser() {
 	op_prec["&"] =  150;
 	op_prec["|"] =  150;
 	op_prec["^"] =  150;
-	op_prec[".."] = 150;
-	op_prec["..."] =150;
 	op_prec["+"] =  300;
 	op_prec["-"] =  300;
 	op_prec["*"] =  400;
