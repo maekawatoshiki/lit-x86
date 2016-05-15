@@ -537,7 +537,11 @@ llvm::Value * BinaryAST::codegen(Function &f, Program &f_list, int *ty) {
 			ty_l = T_DOUBLE;
 		} else if(ty_l == T_DOUBLE && ty_r == T_INT) {
 			rhs = builder.CreateSIToFP(rhs, builder.getFloatTy());
-		} 
+		} else if(ty_l == T_CHAR) {
+			rhs = builder.CreateZExt(rhs, builder.getInt8Ty());
+		} else if(ty_l == T_INT && ty_r != T_INT) {
+			rhs = builder.CreateZExt(rhs, builder.getInt32Ty());
+		}
 	}
 
 	// if(ty_l != ty_r) if(op != "+") error("error: type error"); // except string concat
