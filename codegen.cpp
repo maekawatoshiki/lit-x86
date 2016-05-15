@@ -26,6 +26,9 @@ extern "C" {
 	void put_num_float(float n) {
 		printf("%g", n);
 	}
+	void put_char(char ch) {
+		putchar(ch);
+	}
 	void put_string(char *s) {
 		printf("%s", s);
 	}
@@ -52,12 +55,13 @@ int codegen_entry(ast_vector &program) {
 	llvm::InitializeNativeTarget();
 	mod = new llvm::Module("LIT", context);
 	{ // initialize standard functions
-		stdfunc["create_array"] = {"create_array", 1, T_INT | T_ARRAY};
+		stdfunc["create_array"] = {"create_array", 1, T_ARRAY};
 		stdfunc["gets"] = {"gets", 0, T_STRING};
 		stdfunc["strlen"] = {"strlen", 1, T_INT};
 		stdfunc["puts"] = {"puts", -1, T_VOID};
 		stdfunc["put_num"] = {"put_num", 1, T_VOID};
 		stdfunc["put_num_float"] = {"put_num_float", 1, T_VOID};
+		stdfunc["put_char"] = {"put_char", 1, T_VOID};
 		stdfunc["put_string"] = {"put_string", 1, T_VOID};
 		stdfunc["strcat"] = {"strcat", 1, T_STRING};
 
@@ -68,8 +72,15 @@ int codegen_entry(ast_vector &program) {
 				llvm::FunctionType::get(/*ret*/builder.getVoidTy(), func_args, false),
 				llvm::GlobalValue::ExternalLinkage,
 				"put_string", mod);
-		func->setCallingConv(llvm::CallingConv::C);
 		stdfunc["put_string"].func = func;
+		func_args.clear();
+		// create put_string function
+		func_args.push_back(builder.getInt8Ty());
+		func = llvm::Function::Create(
+				llvm::FunctionType::get(/*ret*/builder.getVoidTy(), func_args, false),
+				llvm::GlobalValue::ExternalLinkage,
+				"put_char", mod);
+		stdfunc["put_char"].func = func;
 		func_args.clear();
 		// create put_num function
 		func_args.push_back(builder.getInt32Ty());
@@ -77,7 +88,6 @@ int codegen_entry(ast_vector &program) {
 				llvm::FunctionType::get(/*ret*/builder.getVoidTy(), func_args, false),
 				llvm::GlobalValue::ExternalLinkage,
 				"put_num", mod);
-		func->setCallingConv(llvm::CallingConv::C);
 		stdfunc["put_num"].func = func;
 		func_args.clear();
 		// create put_num_float function
@@ -86,7 +96,6 @@ int codegen_entry(ast_vector &program) {
 				llvm::FunctionType::get(builder.getVoidTy(), func_args, false),
 				llvm::GlobalValue::ExternalLinkage,
 				"put_num_float", mod);
-		func->setCallingConv(llvm::CallingConv::C);
 		stdfunc["put_num_float"].func = func;
 		func_args.clear();
 		// create put_ln function
@@ -94,7 +103,6 @@ int codegen_entry(ast_vector &program) {
 				llvm::FunctionType::get(/*ret*/builder.getVoidTy(), func_args, false),
 				llvm::GlobalValue::ExternalLinkage,
 				"put_ln", mod);
-		func->setCallingConv(llvm::CallingConv::C);
 		stdfunc["put_ln"].func = func;
 		// create strcat function
 		func_args.push_back(builder.getInt8PtrTy());
@@ -103,7 +111,6 @@ int codegen_entry(ast_vector &program) {
 				llvm::FunctionType::get(/*ret*/builder.getInt8PtrTy(), func_args, false),
 				llvm::GlobalValue::ExternalLinkage,
 				"str_concat", mod);
-		func->setCallingConv(llvm::CallingConv::C);
 		stdfunc["strcat"].func = func;
 		func_args.clear();
 		// create create_array function
@@ -113,7 +120,6 @@ int codegen_entry(ast_vector &program) {
 				llvm::FunctionType::get(/*ret*/builder.getVoidTy()->getPointerTo(), func_args, false),
 				llvm::GlobalValue::ExternalLinkage,
 				"create_array", mod);
-		func->setCallingConv(llvm::CallingConv::C);
 		stdfunc["create_array"].func = func;
 		func_args.clear();
 	}
@@ -137,7 +143,6 @@ int codegen_entry(ast_vector &program) {
 	llvm::Function *func_main = llvm::Function::Create(
 			llvm::FunctionType::get(builder.getInt32Ty(), std::vector<llvm::Type *>(), false),
 			llvm::Function::ExternalLinkage, "main", mod);
-	func_main->setCallingConv(llvm::CallingConv::C);
 	// create entry point of main function
 	llvm::BasicBlock *entry = llvm::BasicBlock::Create(context, "entry", func_main);
 	builder.SetInsertPoint(entry);
@@ -154,7 +159,6 @@ int codegen_entry(ast_vector &program) {
 	llvm::ExecutionEngine *exec_engine = llvm::EngineBuilder(mod).setErrorStr(&err).create();
 	if(!exec_engine) error("LitSystemError: LLVMError: %s\n", err.c_str());
 
-	// Set up the optimizer pipeline.  Start with registering info about how the
 	// target lays out data structures.
 	func_pass_mgr.add(new llvm::DataLayout(*exec_engine->getDataLayout()));
 	// Provide basic AliasAnalysis support for GVN.
@@ -173,6 +177,7 @@ int codegen_entry(ast_vector &program) {
 
 	void *prog_ptr = exec_engine->getPointerToFunction(mod->getFunction("main"));
 	int (*f)() = (int (*)())(int*)prog_ptr;
+	// mod->dump();
 	f(); // run
 	
 	return 0;
@@ -463,6 +468,7 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, int *ty) {
 				if(ty == T_STRING) {
 					builder.CreateCall(stdfunc["put_string"].func, func_args)->setCallingConv(llvm::CallingConv::C);
 				} else if(ty == T_CHAR) {
+					builder.CreateCall(stdfunc["put_char"].func, func_args)->setCallingConv(llvm::CallingConv::C);
 				} else if(ty == T_DOUBLE) {
 					builder.CreateCall(stdfunc["put_num_float"].func, func_args)->setCallingConv(llvm::CallingConv::C);
 				} else {
@@ -611,7 +617,7 @@ llvm::Value * NewAllocAST::codegen(Function &f, Program &f_list, int *ty) {
 }
 
 llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, int *ty) {
-	var_t *v;
+	var_t *v = NULL;
 	bool first_decl = false;
 
 	if(var->get_type() == AST_VARIABLE) {
@@ -629,18 +635,14 @@ llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, int *ty) {
 		llvm::Value *elem = llvm::GetElementPtrInst::CreateInBounds(
 				codegen_expression(f, f_list, vidx->var),
 				llvm::ArrayRef<llvm::Value *>(codegen_expression(f, f_list, vidx->idx)), "elem_tmp", builder.GetInsertBlock());
-		return builder.CreateStore(codegen_expression(f, f_list, src), elem);
-		// int ty;
-		// llvm::Value *ret = llvm::GetElementPtrInst::CreateInBounds(
-		// 		codegen_expression(f, f_list, var, &ty), 
-		// 		llvm::ArrayRef<llvm::Value *>(codegen_expression(f, f_list, idx)), "elem_tmp", builder.GetInsertBlock());
-		// ret = builder.CreateLoad(ret);
-		// *ret_ty = ty | T_INT ? T_INT : T_STRING;
-		// return ret;
-
-		return NULL;
+		llvm::Value *val = codegen_expression(f, f_list, src);
+		if(elem->getType()->getTypeID() == builder.getInt8PtrTy()->getTypeID()) {
+			val = builder.CreateZExt(val, builder.getInt8Ty());
+		}
+		return builder.CreateStore(val, elem);
 	}
 
+	// single assignment
 	int v_ty;
 	llvm::Value *val = codegen_expression(f, f_list, src, &v_ty);
 	*ty = v_ty;
@@ -683,7 +685,7 @@ llvm::Value * VariableIndexAST::codegen(Function &f, Program &f_list, int *ret_t
 			codegen_expression(f, f_list, var, &ty), 
 			llvm::ArrayRef<llvm::Value *>(codegen_expression(f, f_list, idx)), "elem_tmp", builder.GetInsertBlock());
 	ret = builder.CreateLoad(ret);
-	*ret_ty = ty | T_INT ? T_INT : T_STRING;
+	*ret_ty = ty & T_INT ? T_INT : ty & T_STRING ? T_CHAR : T_STRING;
 	return ret;
 }
 
@@ -697,7 +699,7 @@ llvm::Value * VariableAST::codegen(Function &f, Program &f_list, int *ty) {
 	if(v == NULL) error("error: '%s' was not declared", info.name.c_str());
 	if(info.is_global == false) { // local
 		*ty = v->type;
-		return builder.CreateLoad(v->val, "vartmp");
+		return builder.CreateLoad(v->val, "var_tmp");
 	} else { // global
 		ntv.gencode(0xa1); f_list.append_addr_of_global_var(v->name, ntv.count);
 			ntv.gencode_int32(0x00000000); // mov eax GLOBAL_ADDR GLOBAL_INSERT
