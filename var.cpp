@@ -24,7 +24,7 @@ var_t * Variable::append(std::string name, int type, bool is_global, std::string
 		.type = type,
 		.class_type = c_name,
 		.id = sz + 1, 
-		.is_global = is_global
+		.is_global = is_global,
 	};
 	local.push_back(v);
 	return &local.back();

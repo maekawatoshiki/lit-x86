@@ -175,7 +175,7 @@ int codegen_entry(ast_vector &program) {
 
 	void *prog_ptr = exec_engine->getPointerToFunction(mod->getFunction("main"));
 	int (*program_entry)() = (int (*)())(int*)prog_ptr;
-	// mod->dump();
+	mod->dump();
 	
 	program_entry(); // run
 	
@@ -289,27 +289,30 @@ Function FunctionAST::codegen(Program &f_list) {
 	f.info.type = info.type;
 	uint32_t func_bgn = ntv.count;
 
+	f_list.append(f);
+	f_list.rep_undef(f.info.name, func_bgn);
+
 	// append arguments 
 	std::vector<llvm::Type *> arg_types;
 	std::vector<var_t *> arg_variables;
+	std::vector<std::string> arg_names;
+	std::vector<llvm::Value *> arg_vals;
 	for(ast_vector::iterator it = args.begin(); it != args.end(); ++it) {
 		if((*it)->get_type() == AST_VARIABLE) {
 			var_t *v = ((VariableAST *)*it)->append(f, f_list);
 			arg_types.push_back(builder.getInt32Ty());
-			arg_variables.push_back(v);
+			arg_names.push_back(v->name);
+			arg_vals.push_back(v->val);
 		} else if((*it)->get_type() == AST_VARIABLE_DECL) {
 			var_t *v = ((VariableDeclAST *)*it)->append(f, f_list);
 			if(v->type == T_STRING) 
 				arg_types.push_back(builder.getInt8PtrTy());
-			else 
+			else if(v->type & T_ARRAY && v->type & T_INT) 
+				arg_types.push_back(builder.getInt32Ty()->getPointerTo());
+			else
 				arg_types.push_back(builder.getInt32Ty());
-			arg_variables.push_back(v);
-			// if(v->type & T_ARRAY || v->type == T_STRING) {
-			// 	ntv.gencode(0x8d); ntv.gencode(0x45);
-			// 		ntv.gencode(256 - ADDR_SIZE * v->id); // lea eax [esp - id*ADDR_SIZE]
-			// 	ntv.gencode(0x89); ntv.gencode(0x04); ntv.gencode(0x24); // mov [esp], eax
-			// 	ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(44);// call *44(esi) LitMemory::append_ptr
-			// }
+			arg_names.push_back(v->name);
+			arg_vals.push_back(v->val);
 		}
 	}
 
@@ -322,18 +325,16 @@ Function FunctionAST::codegen(Program &f_list) {
 	builder.SetInsertPoint(entry);
 
 	// set argment variable names and store
-	auto arg_it = func->arg_begin();
 	auto arg_types_it = arg_types.begin();
-	for(auto it : arg_variables) {
-		arg_it->setName((*it).name);
-		llvm::AllocaInst *ainst = create_entry_alloca(func, (*it).name, (*arg_types_it));
+	auto arg_names_it = arg_names.begin();
+	for(auto arg_it = func->arg_begin(); arg_it != func->arg_end(); ++arg_it) {
+		arg_it->setName(*arg_names_it);
+		llvm::AllocaInst *ainst = create_entry_alloca(func, *arg_names_it, (*arg_types_it));
 		builder.CreateStore(arg_it, ainst);
-		(*it).val = ainst;
-		++arg_it; ++arg_types_it;
+		var_t *v = f.var.get(*arg_names_it, "");
+		if(v) v->val = ainst;
+		arg_types_it++; arg_names_it++;
 	}
-
-	f_list.append(f);
-	f_list.rep_undef(f.info.name, func_bgn);
 
 	llvm::Value *ret_value = llvm::ConstantInt::get(builder.getInt32Ty(), 0); // default return code 0
 	for(ast_vector::iterator it = statement.begin(); it != statement.end(); ++it) { // function body
@@ -621,11 +622,12 @@ llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, int *ty) {
 		}
 	} else if(var->get_type() == AST_VARIABLE_INDEX) {
 		VariableIndexAST *vidx = (VariableIndexAST *)var;
+		int expr_ty;
 		llvm::Value *elem = llvm::GetElementPtrInst::CreateInBounds(
-				codegen_expression(f, f_list, vidx->var),
+				codegen_expression(f, f_list, vidx->var, &expr_ty),
 				llvm::ArrayRef<llvm::Value *>(codegen_expression(f, f_list, vidx->idx)), "elem_tmp", builder.GetInsertBlock());
 		llvm::Value *val = codegen_expression(f, f_list, src);
-		if(elem->getType()->getTypeID() == builder.getInt8PtrTy()->getTypeID()) {
+		if(expr_ty == T_STRING) {
 			val = builder.CreateZExt(val, builder.getInt8Ty());
 		}
 		return builder.CreateStore(val, elem);
