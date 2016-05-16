@@ -9,7 +9,6 @@
 llvm::LLVMContext &context(llvm::getGlobalContext());
 llvm::IRBuilder<> builder(context);
 llvm::Module *mod;
-llvm::FunctionPassManager func_pass_mgr(mod);
 
 struct stdfunc_t {
 	std::string name;
@@ -153,32 +152,32 @@ int codegen_entry(ast_vector &program) {
 
 	builder.CreateRet(llvm::ConstantInt::get(builder.getInt32Ty(), 0));
 
-	llvm::verifyFunction(*func_main);
-	
 	std::string err;
 	llvm::ExecutionEngine *exec_engine = llvm::EngineBuilder(mod).setErrorStr(&err).create();
 	if(!exec_engine) error("LitSystemError: LLVMError: %s\n", err.c_str());
 
-	// target lays out data structures.
-	func_pass_mgr.add(new llvm::DataLayout(*exec_engine->getDataLayout()));
-	// Provide basic AliasAnalysis support for GVN.
-	func_pass_mgr.add(llvm::createBasicAliasAnalysisPass());
-	// Promote allocas to registers.
-	func_pass_mgr.add(llvm::createPromoteMemoryToRegisterPass());
-	// Do simple "peephole" optimizations and bit-twiddling optzns.
-	func_pass_mgr.add(llvm::createInstructionCombiningPass());
-	// Reassociate expressions.
-	func_pass_mgr.add(llvm::createReassociatePass());
-	// Eliminate Common SubExpressions.
-	func_pass_mgr.add(llvm::createGVNPass());
-	// Simplify the control flow graph (deleting unreachable blocks, etc).
-	func_pass_mgr.add(llvm::createCFGSimplificationPass());
-	func_pass_mgr.doInitialization();
+	{ // optimize 
+		llvm::PassManager pass_mgr;
+		// target lays out data structures.
+		pass_mgr.add(new llvm::DataLayout(*exec_engine->getDataLayout()));
+		// mem2reg
+		pass_mgr.add(llvm::createPromoteMemoryToRegisterPass());
+		// Provide basic AliasAnalysis support for GVN.
+		pass_mgr.add(llvm::createBasicAliasAnalysisPass());
+		// Do simple "peephole" optimizations and bit-twiddling optzns.
+		pass_mgr.add(llvm::createInstructionCombiningPass());
+		// Reassociate expressions.
+		pass_mgr.add(llvm::createReassociatePass());
+		// Simplify the control flow graph (deleting unreachable blocks, etc).
+		pass_mgr.add(llvm::createCFGSimplificationPass());
+		pass_mgr.run(*mod);
+	}
 
 	void *prog_ptr = exec_engine->getPointerToFunction(mod->getFunction("main"));
-	int (*f)() = (int (*)())(int*)prog_ptr;
+	int (*program_entry)() = (int (*)())(int*)prog_ptr;
 	// mod->dump();
-	f(); // run
+	
+	program_entry(); // run
 	
 	return 0;
 }
@@ -290,7 +289,6 @@ Function FunctionAST::codegen(Program &f_list) {
 	f.info.type = info.type;
 	uint32_t func_bgn = ntv.count;
 
-
 	// append arguments 
 	std::vector<llvm::Type *> arg_types;
 	std::vector<var_t *> arg_variables;
@@ -319,14 +317,9 @@ Function FunctionAST::codegen(Program &f_list) {
 	llvm::Type *func_ret_type = info.type == T_STRING ? (llvm::Type *)builder.getInt8PtrTy() : (llvm::Type *)builder.getInt32Ty();
 	llvm::FunctionType *func_type = llvm::FunctionType::get(func_ret_type, arg_types, false);
 	llvm::Function *func = llvm::Function::Create(func_type, llvm::Function::ExternalLinkage, f.info.name, mod);
-	func->setCallingConv(llvm::CallingConv::C);
-
-	f_list.append(f);
-	f_list.rep_undef(f.info.name, func_bgn);
 
 	llvm::BasicBlock *entry = llvm::BasicBlock::Create(context, "entry", func);
 	builder.SetInsertPoint(entry);
-
 
 	// set argment variable names and store
 	auto arg_it = func->arg_begin();
@@ -339,6 +332,9 @@ Function FunctionAST::codegen(Program &f_list) {
 		++arg_it; ++arg_types_it;
 	}
 
+	f_list.append(f);
+	f_list.rep_undef(f.info.name, func_bgn);
+
 	llvm::Value *ret_value = llvm::ConstantInt::get(builder.getInt32Ty(), 0); // default return code 0
 	for(ast_vector::iterator it = statement.begin(); it != statement.end(); ++it) { // function body
 		ret_value = codegen_expression(f, f_list, *it);
@@ -350,10 +346,7 @@ Function FunctionAST::codegen(Program &f_list) {
 		ret_value = llvm::ConstantInt::get(builder.getInt32Ty(), 0);
 	} else error("error: return code of function is incorrect");
 
-
 	builder.CreateRet(ret_value);
-	llvm::verifyFunction(*func);
-	func_pass_mgr.run(*func);
 
 	return f;
 }
@@ -402,8 +395,6 @@ llvm::Value * IfAST::codegen(Function &f, Program &f_list) {
 
 llvm::Value * WhileAST::codegen(Function &f, Program &f_list) {
 	ntv.gencode(0x90); int loop_bgn = ntv.count;
-		std::vector<int> *break_list = new std::vector<int>;
-		f.break_list.push(break_list);
 	// codegen_expression(f, f_list, cond);
 	ntv.gencode(0x83); ntv.gencode(0xf8); ntv.gencode(0x00);// cmp eax, 0
 	ntv.gencode(0x75); ntv.gencode(0x05); // jne 5
@@ -412,14 +403,6 @@ llvm::Value * WhileAST::codegen(Function &f, Program &f_list) {
 	for(ast_vector::iterator it = block.begin(); it != block.end(); ++it) {
 		// codegen_expression(f, f_list, *it);
 	}
-
-	ntv.gencode(0xe9); ntv.gencode_int32(0xFFFFFFFF - ntv.count + loop_bgn - ADDR_SIZE); // jmp n
-	ntv.gencode_int32_insert(ntv.count - end - ADDR_SIZE, end);
-
-	for(std::vector<int>::iterator it = f.break_list.top()->begin(); it != f.break_list.top()->end(); ++it) {
-		ntv.gencode_int32_insert(ntv.count - *it - ADDR_SIZE, *it);
-	}
-	f.break_list.pop();
 }
 
 llvm::Value * ForAST::codegen(Function &f, Program &f_list) {
@@ -428,9 +411,10 @@ llvm::Value * ForAST::codegen(Function &f, Program &f_list) {
 
 	llvm::BasicBlock *bb_loop = llvm::BasicBlock::Create(context, "loop", func);
 	llvm::BasicBlock *bb_after_loop = llvm::BasicBlock::Create(context, "after_loop", func);
+	f.break_br_list.push(bb_after_loop);
 
 	llvm::Value *frst_cond_val = builder.CreateICmpNE(
-			codegen_expression(f, f_list, cond), llvm::ConstantInt::get(builder.getInt32Ty(), 0, "loop_cond"));
+			codegen_expression(f, f_list, cond), llvm::ConstantInt::get(builder.getInt32Ty(), 0 ));
 	builder.CreateCondBr(frst_cond_val, bb_loop, bb_after_loop);
 
 	builder.SetInsertPoint(bb_loop);
@@ -441,11 +425,12 @@ llvm::Value * ForAST::codegen(Function &f, Program &f_list) {
 		codegen_expression(f, f_list, step);
 
 		llvm::Value *cond_val = builder.CreateICmpNE(
-				codegen_expression(f, f_list, cond), llvm::ConstantInt::get(builder.getInt32Ty(), 0, "loop_cond"));
+				codegen_expression(f, f_list, cond), llvm::ConstantInt::get(builder.getInt32Ty(), 0));
 
 	builder.CreateCondBr(cond_val, bb_loop, bb_after_loop);
 
 	builder.SetInsertPoint(bb_after_loop);
+	f.break_br_list.pop();
 
 	return NULL;
 }
@@ -720,9 +705,8 @@ llvm::Value *ReturnAST::codegen(Function &f, Program &f_list) {
 }
 
 llvm::Value * BreakAST::codegen(Function &f, Program &f_list) {
-	ntv.gencode(0xe9); // jmp
-		f.break_list.top()->push_back(ntv.count);
-		ntv.gencode_int32(0x00000000);
+	builder.CreateBr(f.break_br_list.top());
+	return NULL;
 }
 
 llvm::Value * ArrayAST::codegen(Function &f, Program &f_list, int *ret_ty) {

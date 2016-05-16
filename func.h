@@ -17,7 +17,7 @@ public:
 	func_t info;
 	Variable var;
 	llvm::BasicBlock *bb_return;
-	std::stack< std::vector<int> * > break_list;
+	std::stack<llvm::BasicBlock *> break_br_list;
 	uint32_t call(NativeCode_x86 &);
 };
 
