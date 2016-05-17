@@ -177,8 +177,6 @@ int codegen_entry(ast_vector &program) {
 		pass_mgr.add(llvm::createInstructionCombiningPass());
 		// Reassociate expressions.
 		pass_mgr.add(llvm::createReassociatePass());
-		// Simplify the control flow graph (deleting unreachable blocks, etc).
-		pass_mgr.add(llvm::createCFGSimplificationPass());
 		pass_mgr.run(*mod);
 	}
 
@@ -403,15 +401,30 @@ llvm::Value * IfAST::codegen(Function &f, Program &f_list) {
 }
 
 llvm::Value * WhileAST::codegen(Function &f, Program &f_list) {
-	ntv.gencode(0x90); int loop_bgn = ntv.count;
-	// codegen_expression(f, f_list, cond);
-	ntv.gencode(0x83); ntv.gencode(0xf8); ntv.gencode(0x00);// cmp eax, 0
-	ntv.gencode(0x75); ntv.gencode(0x05); // jne 5
-	ntv.gencode(0xe9); int end = ntv.count; ntv.gencode_int32(0);// jmp while end
+	llvm::Function *func = builder.GetInsertBlock()->getParent();
 
-	for(ast_vector::iterator it = block.begin(); it != block.end(); ++it) {
-		// codegen_expression(f, f_list, *it);
-	}
+	llvm::BasicBlock *bb_loop = llvm::BasicBlock::Create(context, "loop", func);
+	llvm::BasicBlock *bb_after_loop = llvm::BasicBlock::Create(context, "after_loop", func);
+	f.break_br_list.push(bb_after_loop);
+
+	llvm::Value *frst_cond_val = builder.CreateICmpNE(
+			codegen_expression(f, f_list, cond), llvm::ConstantInt::get(builder.getInt32Ty(), 0 ));
+	builder.CreateCondBr(frst_cond_val, bb_loop, bb_after_loop);
+
+	builder.SetInsertPoint(bb_loop);
+
+		for(auto expr : block) 
+			codegen_expression(f, f_list, expr);
+
+		llvm::Value *cond_val = builder.CreateICmpNE(
+				codegen_expression(f, f_list, cond), llvm::ConstantInt::get(builder.getInt32Ty(), 0));
+
+	builder.CreateCondBr(cond_val, bb_loop, bb_after_loop);
+
+	builder.SetInsertPoint(bb_after_loop);
+	f.break_br_list.pop();
+
+	return NULL;
 }
 
 llvm::Value * ForAST::codegen(Function &f, Program &f_list) {
