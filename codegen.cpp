@@ -57,6 +57,7 @@ int codegen_entry(ast_vector &program) {
 		stdfunc["create_array"] = {"create_array", 1, T_ARRAY};
 		stdfunc["gets"] = {"gets", 0, T_STRING};
 		stdfunc["strlen"] = {"strlen", 1, T_INT};
+		stdfunc["printf"] = {"printf", -1, T_VOID};
 		stdfunc["puts"] = {"puts", -1, T_VOID};
 		stdfunc["put_num"] = {"put_num", 1, T_VOID};
 		stdfunc["put_num_float"] = {"put_num_float", 1, T_VOID};
@@ -72,6 +73,14 @@ int codegen_entry(ast_vector &program) {
 				llvm::GlobalValue::ExternalLinkage,
 				"put_string", mod);
 		stdfunc["put_string"].func = func;
+		func_args.clear();
+		// create printf function
+		func_args.push_back(builder.getInt8Ty());
+		func = llvm::Function::Create(
+				llvm::FunctionType::get(/*ret*/builder.getVoidTy(), func_args, true),
+				llvm::GlobalValue::ExternalLinkage,
+				"printf", mod);
+		stdfunc["printf"].func = func;
 		func_args.clear();
 		// create put_string function
 		func_args.push_back(builder.getInt8Ty());
@@ -294,15 +303,12 @@ Function FunctionAST::codegen(Program &f_list) {
 
 	// append arguments 
 	std::vector<llvm::Type *> arg_types;
-	std::vector<var_t *> arg_variables;
 	std::vector<std::string> arg_names;
-	std::vector<llvm::Value *> arg_vals;
 	for(ast_vector::iterator it = args.begin(); it != args.end(); ++it) {
 		if((*it)->get_type() == AST_VARIABLE) {
 			var_t *v = ((VariableAST *)*it)->append(f, f_list);
 			arg_types.push_back(builder.getInt32Ty());
 			arg_names.push_back(v->name);
-			arg_vals.push_back(v->val);
 		} else if((*it)->get_type() == AST_VARIABLE_DECL) {
 			var_t *v = ((VariableDeclAST *)*it)->append(f, f_list);
 			if(v->type == T_STRING) 
@@ -312,7 +318,6 @@ Function FunctionAST::codegen(Program &f_list) {
 			else
 				arg_types.push_back(builder.getInt32Ty());
 			arg_names.push_back(v->name);
-			arg_vals.push_back(v->val);
 		}
 	}
 
@@ -464,11 +469,12 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, int *ty) {
 			builder.CreateCall(stdfunc["put_ln"].func, std::vector<llvm::Value *>())->setCallingConv(llvm::CallingConv::C); // for new line
 		} else {
 			if(stdfunc[info.name].args == -1) { // vector
-				uint32_t a = 0;
-				for(ast_vector::iterator it = args.begin(); it != args.end(); ++it) {
-					codegen_expression(f, f_list, *it);
-					ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * a++); // mov [esp+a*ADDR_SIZE], eax
-				}
+				llvm::Value *val = codegen_expression(f, f_list, args[0]);
+				std::vector<llvm::Value*> func_args;
+				func_args.push_back(val);
+				for(int n = 1; n < args.size(); ++n)
+					func_args.push_back(codegen_expression(f, f_list, args[n]));
+				builder.CreateCall(stdfunc[info.name].func, func_args);
 			} else { // normal function
 				for(int arg = 0; arg < stdfunc[info.name].args; arg++) {
 					codegen_expression(f, f_list, args[arg]);
