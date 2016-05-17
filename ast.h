@@ -145,7 +145,7 @@ public:
 	std::vector<AST *> args_type;
 	PrototypeAST(func_t, std::vector<AST *>);	
 	virtual int get_type() const { return AST_PROTO; }
-	void append(void *, Program &);
+	void append(llvm::Module *, Program &);
 };
 
 class FunctionCallAST : public AST {

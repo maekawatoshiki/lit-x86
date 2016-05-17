@@ -262,8 +262,6 @@ llvm::Value *codegen_expression(Function &f, Program &f_list, AST *ast, int *ty)
 }
 
 llvm::Value * LibraryAST::codegen(Program &f_list) {
-	void *lib = dlopen(("./lib/" + lib_name + ".so").c_str(), RTLD_LAZY | RTLD_NOW);
-	if(lib == NULL) error("LitSystemError: cannot load library '%s'", lib_name.c_str());
 	/*
 		lib_t l = {
 			.name = name,
@@ -272,13 +270,18 @@ llvm::Value * LibraryAST::codegen(Program &f_list) {
 		};
 		if(l.handle == NULL)
 	 */
+	llvm::SMDiagnostic smd_err;
+	llvm::Module *lib_mod = llvm::ParseIRFile(("./lib/" + lib_name + ".ll"), smd_err, context);
+	std::string msg_err;
+	if(llvm::Linker::LinkModules(mod, lib_mod, llvm::Linker::DestroySource, &msg_err))
+		error("LitSystemError: LLVMError: %s", msg_err.c_str());
 	for(ast_vector::iterator it = proto.begin(); it != proto.end(); ++it) {
-		((PrototypeAST *)*it)->append(lib, f_list);
+		((PrototypeAST *)*it)->append(lib_mod, f_list);
 	}
-	return 0;
+	return NULL;
 }
 
-void PrototypeAST::append(void *lib, Program &f_list) {
+void PrototypeAST::append(llvm::Module *lib_mod, Program &f_list) {
 	Function f;
 	f.info.name = proto.name;
 	f.info.mod_name = "";

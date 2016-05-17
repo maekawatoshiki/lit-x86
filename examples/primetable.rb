@@ -16,6 +16,6 @@ def table prime_list:int[] max
 	count
 end
 
-N = 10000
+N = 10000000
 prime_list = new N int
 puts "found " table(prime_list N) " primes between 2 and " N

@@ -1,6 +1,6 @@
 CFLAGS = -O0  -Wno-strict-aliasing -rdynamic -std=c++11
 CC = clang++ $(CFLAGS) 
-LLVM = `llvm-config --cppflags --ldflags --libs core jit native`
+LLVM = `llvm-config --cppflags --ldflags --libs core all jit native`
 
 lit: main.o lit.o asm.o lex.o var.o expr.o parse.o  token.o option.o util.o library.o func.o ast.o codegen.o exprtype.o
 	$(CC) -o lit -rdynamic -ldl main.o lit.o asm.o lex.o var.o expr.o parse.o \
@@ -62,5 +62,5 @@ install: lit
 	cp -p lit ~/.lit
 
 clean:
-	$(RM) a.out lit *.o lib/*.so
+	$(RM) a.out lit *.o lib/*.so lib/*.ll
 
