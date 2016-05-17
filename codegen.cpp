@@ -358,6 +358,7 @@ Function FunctionAST::codegen(Program &f_list) {
 	return f;
 }
 
+bool has_br = false;
 llvm::Value * IfAST::codegen(Function &f, Program &f_list) {
 	llvm::Value *cond_val = codegen_expression(f, f_list, cond);
 	cond_val = builder.CreateICmpNE(cond_val, llvm::ConstantInt::get(builder.getInt32Ty(), 0), "if_cond");
@@ -372,19 +373,22 @@ llvm::Value * IfAST::codegen(Function &f, Program &f_list) {
 	builder.SetInsertPoint(bb_then);
 
 	llvm::Value *val_then = NULL;
+	has_br = false;
 	for(auto expr : then_block) 
 		val_then = codegen_expression(f, f_list, expr);
 
-	builder.CreateBr(bb_merge);
+	if(!has_br)builder.CreateBr(bb_merge);
 	bb_then = builder.GetInsertBlock();
 
 	func->getBasicBlockList().push_back(bb_else);
 	builder.SetInsertPoint(bb_else);
 
 	llvm::Value *val_else = NULL;
+	has_br = false;
 	for(auto expr : else_block)
 		val_else = codegen_expression(f, f_list, expr);
 
+	if(!has_br)builder.CreateBr(bb_merge);
 	builder.CreateBr(bb_merge);
 	bb_else = builder.GetInsertBlock();
 
@@ -733,6 +737,7 @@ llvm::Value *ReturnAST::codegen(Function &f, Program &f_list) {
 }
 
 llvm::Value * BreakAST::codegen(Function &f, Program &f_list) {
+	has_br = true;
 	builder.CreateBr(f.break_br_list.top());
 	return NULL;
 }
