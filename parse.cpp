@@ -11,9 +11,7 @@
 #include "func.h"
 
 AST *Parser::make_break() {
-	if(tok.skip("break")) {
-		return new BreakAST();
-	}
+	if(tok.skip("break")) return new BreakAST();
 	return NULL;
 }
 
@@ -29,11 +27,11 @@ AST *Parser::expression() {
 	if(tok.skip("def")) return make_func();
 	else if(tok.is("proto")) return make_proto();
 	else if(tok.is("struct")) return make_struct();
-	else if(tok.skip("module")) { blocksCount++;
-		module = tok.tok[tok.pos++].val;
-		eval();
-		module = "";
-	}
+	// else if(tok.skip("module")) { blocksCount++;
+	// 	module = tok.tok[tok.pos++].val;
+	// 	eval();
+	// 	module = "";
+	// }
 	else if(tok.is("lib")) return make_lib();
 	else if(tok.is("for")) return make_for();
 	else if(tok.is("while"))  return make_while();
@@ -93,6 +91,7 @@ int Parser::parser() {
 	append_func("strlen");
 	append_func("len");
 	append_func("puts");
+	append_func("gets");
 
 	ast_vector a = eval();
 	// std::cout << "\n---------- abstract syntax tree ----------" << std::endl;

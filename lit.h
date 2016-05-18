@@ -49,6 +49,7 @@ namespace LitMemory {
 	void gc();
 	void gc_mark();
 	void gc_sweep();
+	uint32_t get_size(void *);
 };
 
 void putNumber(int);

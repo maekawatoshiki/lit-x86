@@ -18,6 +18,7 @@ public:
 	Variable var;
 	llvm::BasicBlock *bb_return;
 	std::stack<llvm::BasicBlock *> break_br_list;
+	std::stack<bool> has_br;
 	uint32_t call(NativeCode_x86 &);
 };
 

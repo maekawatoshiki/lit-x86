@@ -16,9 +16,9 @@ def prime i
 	1
 end
 
-for i in 2..100
+for i in 2...100
 	if prime i
-		puts i, " is prime"
+		puts i " is prime"
 	end
 end
 

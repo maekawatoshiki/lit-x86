@@ -38,9 +38,23 @@ extern "C" {
 		return LitMemory::alloc(size, byte);
 	}
 	char *str_concat(char *a, char *b) {
-		char *t = (char *)calloc(strlen(a) + strlen(b) + 1, 1);
+		char *t = (char *)LitMemory::alloc(strlen(a) + strlen(b) + 1, 1);
 		strcpy(t, a);
 		return strcat(t, b);
+	}
+	char *str_concat_char(char *a, char b) {
+		char *t = (char *)LitMemory::alloc(strlen(a) + 2, 1);
+		t[strlen(strcpy(t, a))] = b;
+		return t;
+	}
+	char *get_string_stdin() {
+		std::string input_from_stdin;
+		std::getline(std::cin, input_from_stdin);
+		char *ret = (char *)LitMemory::alloc(input_from_stdin.size() + 1, sizeof(char));
+		return strcpy(ret, input_from_stdin.c_str());
+	}
+	int get_memory_length(void *ptr) {
+		return LitMemory::get_size(ptr);
 	}
 }
 
@@ -63,7 +77,8 @@ int codegen_entry(ast_vector &program) {
 		stdfunc["put_num_float"] = {"put_num_float", 1, T_VOID};
 		stdfunc["put_char"] = {"put_char", 1, T_VOID};
 		stdfunc["put_string"] = {"put_string", 1, T_VOID};
-		stdfunc["strcat"] = {"strcat", 1, T_STRING};
+		stdfunc["strcat"] = {"strcat", 2, T_STRING};
+		stdfunc["len"] = {"len", 1, T_INT};
 
 		// create put_string function
 		std::vector<llvm::Type *> func_args;
@@ -129,6 +144,28 @@ int codegen_entry(ast_vector &program) {
 				llvm::GlobalValue::ExternalLinkage,
 				"create_array", mod);
 		stdfunc["create_array"].func = func;
+		func_args.clear();
+		// create gets function
+		func = llvm::Function::Create(
+				llvm::FunctionType::get(/*ret*/builder.getInt8PtrTy(), func_args, false),
+				llvm::GlobalValue::ExternalLinkage,
+				"get_string_stdin", mod);
+		stdfunc["gets"].func = func;
+		// create len Function
+		func_args.push_back(builder.getInt32Ty()->getPointerTo());
+		func = llvm::Function::Create(
+				llvm::FunctionType::get(/*ret*/builder.getInt32Ty(), func_args, false),
+				llvm::GlobalValue::ExternalLinkage,
+				"get_memory_length", mod);
+		stdfunc["len"].func = func;
+		func_args.clear();
+		// create str_concat_char Function
+		func_args.push_back(builder.getInt32Ty()->getPointerTo());
+		func = llvm::Function::Create(
+				llvm::FunctionType::get(/*ret*/builder.getInt32Ty(), func_args, false),
+				llvm::GlobalValue::ExternalLinkage,
+				"str_concat_char", mod);
+		stdfunc["concat_char"].func = func;
 		func_args.clear();
 	}
 	std::string module = "";
@@ -358,7 +395,6 @@ Function FunctionAST::codegen(Program &f_list) {
 	return f;
 }
 
-bool has_br = false;
 llvm::Value * IfAST::codegen(Function &f, Program &f_list) {
 	llvm::Value *cond_val = codegen_expression(f, f_list, cond);
 	cond_val = builder.CreateICmpNE(cond_val, llvm::ConstantInt::get(builder.getInt32Ty(), 0), "if_cond");
@@ -373,11 +409,13 @@ llvm::Value * IfAST::codegen(Function &f, Program &f_list) {
 	builder.SetInsertPoint(bb_then);
 
 	llvm::Value *val_then = NULL;
-	has_br = false;
+	bool has_br = false;
+	f.has_br.push(has_br);
 	for(auto expr : then_block) 
 		val_then = codegen_expression(f, f_list, expr);
 
-	if(!has_br)builder.CreateBr(bb_merge);
+	if(!f.has_br.top()) builder.CreateBr(bb_merge);
+	else f.has_br.pop();
 	bb_then = builder.GetInsertBlock();
 
 	func->getBasicBlockList().push_back(bb_else);
@@ -385,11 +423,12 @@ llvm::Value * IfAST::codegen(Function &f, Program &f_list) {
 
 	llvm::Value *val_else = NULL;
 	has_br = false;
+	f.has_br.push(has_br);
 	for(auto expr : else_block)
 		val_else = codegen_expression(f, f_list, expr);
 
-	if(!has_br)builder.CreateBr(bb_merge);
-	builder.CreateBr(bb_merge);
+	if(!f.has_br.top()) builder.CreateBr(bb_merge);
+	else f.has_br.pop();
 	bb_else = builder.GetInsertBlock();
 
 	func->getBasicBlockList().push_back(bb_merge);
@@ -417,8 +456,11 @@ llvm::Value * WhileAST::codegen(Function &f, Program &f_list) {
 
 	builder.SetInsertPoint(bb_loop);
 
-		for(auto expr : block) 
-			codegen_expression(f, f_list, expr);
+	f.break_br_list.push(bb_after_loop);
+	bool has_br = false; f.has_br.push(has_br);
+		for(auto expr : block) codegen_expression(f, f_list, expr);
+	f.has_br.pop();
+	f.break_br_list.pop();
 
 		llvm::Value *cond_val = builder.CreateICmpNE(
 				codegen_expression(f, f_list, cond), llvm::ConstantInt::get(builder.getInt32Ty(), 0));
@@ -437,7 +479,6 @@ llvm::Value * ForAST::codegen(Function &f, Program &f_list) {
 
 	llvm::BasicBlock *bb_loop = llvm::BasicBlock::Create(context, "loop", func);
 	llvm::BasicBlock *bb_after_loop = llvm::BasicBlock::Create(context, "after_loop", func);
-	f.break_br_list.push(bb_after_loop);
 
 	llvm::Value *frst_cond_val = builder.CreateICmpNE(
 			codegen_expression(f, f_list, cond), llvm::ConstantInt::get(builder.getInt32Ty(), 0 ));
@@ -445,18 +486,20 @@ llvm::Value * ForAST::codegen(Function &f, Program &f_list) {
 
 	builder.SetInsertPoint(bb_loop);
 
-		for(auto expr : block) 
-			codegen_expression(f, f_list, expr);
-		
+	f.break_br_list.push(bb_after_loop);
+	bool has_br = false; f.has_br.push(has_br);
+		for(auto expr : block) codegen_expression(f, f_list, expr);
+	f.has_br.pop();
+	f.break_br_list.pop();
+
 		codegen_expression(f, f_list, step);
 
 		llvm::Value *cond_val = builder.CreateICmpNE(
 				codegen_expression(f, f_list, cond), llvm::ConstantInt::get(builder.getInt32Ty(), 0));
 
-	builder.CreateCondBr(cond_val, bb_loop, bb_after_loop);
+	if(!has_br) builder.CreateCondBr(cond_val, bb_loop, bb_after_loop);
 
 	builder.SetInsertPoint(bb_after_loop);
-	f.break_br_list.pop();
 
 	return NULL;
 }
@@ -496,10 +539,10 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, int *ty) {
 					func_args.push_back(codegen_expression(f, f_list, args[n]));
 				builder.CreateCall(stdfunc[info.name].func, func_args);
 			} else { // normal function
-				for(int arg = 0; arg < stdfunc[info.name].args; arg++) {
-					codegen_expression(f, f_list, args[arg]);
-					ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(arg * ADDR_SIZE); // mov [esp+arg*ADDR_SIZE], eax
-				}
+				std::vector<llvm::Value*> func_args;
+				for(auto arg : args)
+					func_args.push_back(codegen_expression(f, f_list, arg));
+				stdfunc_ret_value = builder.CreateCall(stdfunc[info.name].func, func_args);
 			}
 		}
 		*ty = stdfunc[info.name].type;
@@ -563,6 +606,12 @@ llvm::Value * BinaryAST::codegen(Function &f, Program &f_list, int *ty) {
 			func_args.push_back(lhs);
 			func_args.push_back(rhs);
 			llvm::Value *ret = builder.CreateCall(stdfunc["strcat"].func, func_args);
+			return ret;	
+		} else if(ty_l == T_STRING && ty_r == T_CHAR) {
+			std::vector<llvm::Value*> func_args;
+			func_args.push_back(lhs);
+			func_args.push_back(rhs);
+			llvm::Value *ret = builder.CreateCall(stdfunc["concat_char"].func, func_args);
 			return ret;	
 		} else if(ty_l == T_DOUBLE) {
 			return builder.CreateFAdd(lhs, rhs, "addtmp");
@@ -732,12 +781,11 @@ var_t *VariableAST::append(Function &f, Program &f_list) {
 }
 
 llvm::Value *ReturnAST::codegen(Function &f, Program &f_list) {
-	builder.CreateBr(f.bb_return);
-	return NULL;
+	return builder.CreateRet(codegen_expression(f, f_list, expr));
 }
 
 llvm::Value * BreakAST::codegen(Function &f, Program &f_list) {
-	has_br = true;
+	f.has_br.top() = true;
 	builder.CreateBr(f.break_br_list.top());
 	return NULL;
 }
@@ -772,7 +820,8 @@ llvm::Value *StringAST::codegen(Function &f, int *type) {
 }
 
 llvm::Value * CharAST::codegen(Function &f, int *ty) {
-	ntv.genas("mov eax %d", ch);
+	*ty = T_CHAR;
+	return llvm::ConstantInt::get(llvm::Type::getInt8Ty(context), ch);
 }
 
 llvm::Value * NumberAST::codegen(Function &f, int *ty) {
