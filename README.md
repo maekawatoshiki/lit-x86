@@ -2,15 +2,15 @@
 - Lit is a programming language that uses JIT compiling.
 So very faster.
 
-# How to use
+# Language Wiki
 Please look at Wiki.
 
 # Build
-
-- compile
+- Lit generates native codes with LLVM.
+- So when you build, need LLVM and Clang.
 
 ```
-$ make (need clang)
+$ make
 $ ./lit [sourcefile]
 ```
 
