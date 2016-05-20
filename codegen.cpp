@@ -297,16 +297,10 @@ llvm::Value *codegen_expression(Function &f, Program &f_list, AST *ast, int *ty)
 }
 
 llvm::Value * LibraryAST::codegen(Program &f_list) {
-	/*
-		lib_t l = {
-			.name = name,
-			.no = lib.size(),
-			.handle = dlopen(("./lib/" + name + ".so").c_str(), RTLD_LAZY | RTLD_NOW)
-		};
-		if(l.handle == NULL)
-	 */
 	llvm::SMDiagnostic smd_err;
 	llvm::Module *lib_mod = llvm::ParseIRFile(("./lib/" + lib_name + ".ll"), smd_err, context);
+	if(lib_mod == nullptr)
+		error("LitSystemError: LLVMError: %s", smd_err.getMessage().str().c_str());
 	std::string msg_err;
 	if(llvm::Linker::LinkModules(mod, lib_mod, llvm::Linker::DestroySource, &msg_err))
 		error("LitSystemError: LLVMError: %s", msg_err.c_str());
