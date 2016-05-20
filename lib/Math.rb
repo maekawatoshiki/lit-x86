@@ -1,11 +1,11 @@
 lib Math
-	proto Math_gcd a b
-	proto Math_lcm a b
-	proto Math_fact n
-	proto Math_even n
-	proto Math_odd n
-	proto Math_abs n
-	proto Math_rand
+	proto math_gcd a b
+	proto math_lcm a b
+	proto math_fact n
+	proto math_even n
+	proto math_odd n
+	proto math_abs n
+	proto math_rand
 end
 
 lib Prime

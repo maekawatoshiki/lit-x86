@@ -24,12 +24,11 @@ max = 20
 a = new max int
 
 for i in 0..max
-	a[i] = Math_rand % 100
-	printf "%d " a[i]
-end; puts ""
+	a[i] = math_rand % 100
+end
 
-qsort a 0 max
+puts a
 
-for i in 0..max
-	printf "%d " a[i]
-end; puts ""
+qsort a 0 max-1
+
+puts a

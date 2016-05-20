@@ -31,6 +31,14 @@ extern "C" {
 	void put_string(char *s) {
 		printf("%s", s);
 	}
+	void put_array(int *ary) {
+		int size = LitMemory::get_size(ary);
+		if(size == -1) return;
+		printf("[ ");
+		for(int i = 0; i < size; i++)
+			printf("%d ", ary[i]);
+		printf("]");
+	}
 	void put_ln() {
 		putchar('\n');
 	}
@@ -76,6 +84,7 @@ int codegen_entry(ast_vector &program) {
 		stdfunc["put_num"] = {"put_num", 1, T_VOID};
 		stdfunc["put_num_float"] = {"put_num_float", 1, T_VOID};
 		stdfunc["put_char"] = {"put_char", 1, T_VOID};
+		stdfunc["put_array"] = {"put_array", 1, T_VOID};
 		stdfunc["put_string"] = {"put_string", 1, T_VOID};
 		stdfunc["strcat"] = {"strcat", 2, T_STRING};
 		stdfunc["len"] = {"len", 1, T_INT};
@@ -112,6 +121,14 @@ int codegen_entry(ast_vector &program) {
 				llvm::GlobalValue::ExternalLinkage,
 				"put_num", mod);
 		stdfunc["put_num"].func = func;
+		func_args.clear();
+		// create put_array function
+		func_args.push_back(builder.getVoidTy()->getPointerTo());
+		func = llvm::Function::Create(
+				llvm::FunctionType::get(/*ret*/builder.getVoidTy(), func_args, false),
+				llvm::GlobalValue::ExternalLinkage,
+				"put_array", mod);
+		stdfunc["put_array"].func = func;
 		func_args.clear();
 		// create put_num_float function
 		func_args.push_back(builder.getFloatTy());
@@ -519,6 +536,8 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, int *ty) {
 					builder.CreateCall(stdfunc["put_char"].func, func_args)->setCallingConv(llvm::CallingConv::C);
 				} else if(ty == T_DOUBLE) {
 					builder.CreateCall(stdfunc["put_num_float"].func, func_args)->setCallingConv(llvm::CallingConv::C);
+				} else if(ty & T_ARRAY) {
+					builder.CreateCall(stdfunc["put_array"].func, func_args)->setCallingConv(llvm::CallingConv::C);
 				} else {
 					builder.CreateCall(stdfunc["put_num"].func, func_args)->setCallingConv(llvm::CallingConv::C);
 				}
@@ -775,6 +794,7 @@ var_t *VariableAST::append(Function &f, Program &f_list) {
 }
 
 llvm::Value *ReturnAST::codegen(Function &f, Program &f_list) {
+	f.has_br.top() = true;
 	return builder.CreateRet(codegen_expression(f, f_list, expr));
 }
 
@@ -785,24 +805,24 @@ llvm::Value * BreakAST::codegen(Function &f, Program &f_list) {
 }
 
 llvm::Value * ArrayAST::codegen(Function &f, Program &f_list, int *ret_ty) {
-	ntv.genas("mov eax %d", elems.size() * ADDR_SIZE);
-	ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(0 * ADDR_SIZE); // mov [esp+arg*ADDR_SIZE], eax
-	ntv.genas("mov eax 4");
-	ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(1 * ADDR_SIZE); // mov [esp+arg*ADDR_SIZE], eax
-	ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(12); // call malloc
-	ntv.genas("push eax");
+	std::vector<llvm::Value*> func_args;
+	func_args.push_back(llvm::ConstantInt::get(builder.getInt32Ty(), elems.size()));
+	func_args.push_back(llvm::ConstantInt::get(builder.getInt32Ty(), 4));
+	llvm::Value *ary = builder.CreateCall(stdfunc["create_array"].func, func_args);
+	ary = builder.CreateBitCast(ary, builder.getInt32Ty()->getPointerTo(), "bitcast_tmp");
 	uint32_t a = 0;
 	int ty;
 	for(ast_vector::iterator it = elems.begin(); it != elems.end(); ++it) {
-		// ty = codegen_expression(f, f_list, *it);
-		ntv.genas("pop ecx");
-		ntv.genas("mov edx %d", a);
-		ntv.gencode(0x89); ntv.gencode(0x81); ntv.gencode_int32(a); // mov [ecx+a], eax
-		ntv.genas("push ecx");
-		a += 4;
+		int expr_ty;
+		llvm::Value *elem = llvm::GetElementPtrInst::CreateInBounds(
+				ary,
+				llvm::ArrayRef<llvm::Value *>(llvm::ConstantInt::get(builder.getInt32Ty(), a)), "elem_tmp", builder.GetInsertBlock());
+		llvm::Value *val = codegen_expression(f, f_list, *it, &ty);
+		builder.CreateStore(val, elem);
+		a += 1;
 	}
-	ntv.genas("pop eax");
-	// return ty | T_ARRAY;
+	*ret_ty = T_ARRAY | ty;
+	return ary;
 }
 
 llvm::Value *StringAST::codegen(Function &f, int *type) {
