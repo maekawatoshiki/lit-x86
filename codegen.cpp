@@ -371,7 +371,8 @@ Function FunctionAST::codegen(Program &f_list) {
 	}
 
 	// definition the Function
-	llvm::Type *func_ret_type = info.type == T_STRING ? (llvm::Type *)builder.getInt8PtrTy() : (llvm::Type *)builder.getInt32Ty();
+	llvm::Type *func_ret_type = info.type == T_STRING ? (llvm::Type *)builder.getInt8PtrTy() : 
+		(info.type & T_ARRAY) ? (llvm::Type *)builder.getInt32Ty()->getPointerTo() : (llvm::Type *)builder.getInt32Ty();
 	llvm::FunctionType *func_type = llvm::FunctionType::get(func_ret_type, arg_types, false);
 	llvm::Function *func = llvm::Function::Create(func_type, llvm::Function::ExternalLinkage, f.info.name, mod);
 
