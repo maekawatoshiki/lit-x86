@@ -240,7 +240,8 @@ AST *Parser::expr_primary() {
 				};
 				std::vector<AST *> args;
 				if(tok.get().type != TOK_END && 
-						(tok.get().type != TOK_SYMBOL || tok.get().val == "(" || tok.get().val == "[")) {
+						(tok.get().type != TOK_SYMBOL || 
+						 tok.get().val == "(" || tok.get().val == "[" || tok.get().val == "$")) {
 					while(!tok.is(")") && !tok.is(";")) {
 						args.push_back(expr_entry());
 						tok.skip(",");

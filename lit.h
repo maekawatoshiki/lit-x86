@@ -49,6 +49,8 @@ namespace LitMemory {
 	void gc();
 	void gc_mark();
 	void gc_sweep();
+	void append_ptr(void *);
+	void delete_ptr(void *);
 	uint32_t get_size(void *);
 };
 

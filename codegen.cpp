@@ -64,6 +64,12 @@ extern "C" {
 	int get_memory_length(void *ptr) {
 		return LitMemory::get_size(ptr);
 	}
+	void append_addr_for_gc(void *addr) {
+		LitMemory::append_ptr(addr);
+	}
+	void delete_addr_for_gc(void *addr) {
+		LitMemory::delete_ptr(addr);
+	}
 }
 
 llvm::AllocaInst *create_entry_alloca(llvm::Function *TheFunction, std::string &VarName, llvm::Type *type =  NULL) {
@@ -88,6 +94,7 @@ int codegen_entry(ast_vector &program) {
 		stdfunc["put_string"] = {"put_string", 1, T_VOID};
 		stdfunc["strcat"] = {"strcat", 2, T_STRING};
 		stdfunc["len"] = {"len", 1, T_INT};
+		stdfunc["append_addr_for_gc"] = {"append_addr_for_gc", 1, T_VOID};
 
 		// create put_string function
 		std::vector<llvm::Type *> func_args;
@@ -183,6 +190,22 @@ int codegen_entry(ast_vector &program) {
 				llvm::GlobalValue::ExternalLinkage,
 				"str_concat_char", mod);
 		stdfunc["concat_char"].func = func;
+		func_args.clear();
+		// create append_addr_for_gc Function
+		func_args.push_back(builder.getVoidTy()->getPointerTo());
+		func = llvm::Function::Create(
+				llvm::FunctionType::get(/*ret*/builder.getInt32Ty(), func_args, false),
+				llvm::GlobalValue::ExternalLinkage,
+				"append_addr_for_gc", mod);
+		stdfunc["append_addr_for_gc"].func = func;
+		func_args.clear();
+		// create append_addr_for_gc Function
+		func_args.push_back(builder.getVoidTy()->getPointerTo());
+		func = llvm::Function::Create(
+				llvm::FunctionType::get(/*ret*/builder.getInt32Ty(), func_args, false),
+				llvm::GlobalValue::ExternalLinkage,
+				"delete_addr_for_gc", mod);
+		stdfunc["delete_addr_for_gc"].func = func;
 		func_args.clear();
 	}
 	std::string module = "";
@@ -395,9 +418,20 @@ Function FunctionAST::codegen(Program &f_list) {
 	for(ast_vector::iterator it = statement.begin(); it != statement.end(); ++it) { // function body
 		ret_value = codegen_expression(f, f_list, *it);
 	}
+
+	for(auto v = f.var.local.begin(); v != f.var.local.end(); v++) {
+		if(v->val->getType()->getContainedType(0)->isPointerTy()) {
+			std::vector<llvm::Value*> func_args;
+			func_args.push_back(builder.CreateBitCast(v->val, v->val->getType()->getPointerTo())); // get address of var
+			builder.CreateCall(stdfunc["delete_addr_for_gc"].func, func_args);
+		}
+	}
+
 	if(ret_value) {
-		if(ret_value->getType()->getTypeID() != func_ret_type->getTypeID())
+		if(ret_value->getType()->getTypeID() != func_ret_type->getTypeID()) {
 			ret_value = llvm::ConstantInt::get(builder.getInt32Ty(), 0);
+			fprintf(stderr, "warning: type of expression that evaluated last is not match\n");
+		}
 	} else if(func_ret_type->getTypeID() == builder.getInt32Ty()->getTypeID()) {
 		ret_value = llvm::ConstantInt::get(builder.getInt32Ty(), 0);
 	} else error("error: return code of function is incorrect");
@@ -727,8 +761,15 @@ llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, int *ty) {
 	llvm::Value *val = codegen_expression(f, f_list, src, &v_ty);
 	*ty = v_ty;
 	if(v->is_global) {
-		// ntv.gencode(0xa3); f_list.append_addr_of_global_var(v->name, ntv.count); 
-		// ntv.gencode_int32(0x00000000); // GLOBAL_INSERT
+		if(first_decl) {
+			mod->getOrInsertGlobal(v->name, builder.getInt32Ty());
+			llvm::GlobalVariable *gbl = mod->getNamedGlobal(v->name);
+			// gbl->setLinkage(llvm::GlobalValue::CommonLinkage);
+			gbl->setAlignment(4);
+			gbl->setInitializer(llvm::ConstantInt::get(builder.getInt32Ty(), 0));
+			v->val = gbl;
+		}
+		builder.CreateStore(val, v->val);
 	} else {
 		if(var->get_type() == AST_VARIABLE) v->type = v_ty; 
 		if(first_decl) {
@@ -743,6 +784,11 @@ llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, int *ty) {
 				ai = builder.CreateAlloca(llvm::Type::getInt32Ty(context), 0, v->name);
 			}
 			v->val = ai;
+		}
+		if(v->type & T_ARRAY || v->type == T_STRING) {
+			std::vector<llvm::Value*> func_args;
+			func_args.push_back(builder.CreateBitCast(v->val, v->val->getType()->getPointerTo()));
+			builder.CreateCall(stdfunc["append_addr_for_gc"].func, func_args);
 		}
 		builder.CreateStore(val, v->val);
 	}
@@ -773,7 +819,14 @@ llvm::Value * VariableAST::codegen(Function &f, Program &f_list, int *ty) {
 	var_t *v;
 	if(info.is_global) {
 		v = f_list.var_global.get(info.name, info.mod_name);
-		if(v == NULL) v = f_list.append_global_var(info.name, info.type); // global variable can be used if didn't declared
+		if(v == NULL) {
+			v = f_list.append_global_var(info.name, info.type); // global variable can be used if didn't declared
+			mod->getOrInsertGlobal(v->name, builder.getInt32Ty());
+			llvm::GlobalVariable *gbl = mod->getNamedGlobal(v->name);
+			gbl->setAlignment(4);
+			gbl->setInitializer(llvm::ConstantInt::get(builder.getInt32Ty(), 0));
+			v->val = gbl;
+		}
 	} else 
 		v = f.var.get(info.name, info.mod_name);
 	if(v == NULL) error("error: '%s' was not declared", info.name.c_str());
@@ -781,8 +834,8 @@ llvm::Value * VariableAST::codegen(Function &f, Program &f_list, int *ty) {
 		*ty = v->type;
 		return builder.CreateLoad(v->val, "var_tmp");
 	} else { // global
-		ntv.gencode(0xa1); f_list.append_addr_of_global_var(v->name, ntv.count);
-			ntv.gencode_int32(0x00000000); // mov eax GLOBAL_ADDR GLOBAL_INSERT
+		*ty = T_INT;
+		return builder.CreateLoad(v->val, "var_tmp");
 	}
 }
 var_t *VariableAST::get(Function &f, Program &f_list) {

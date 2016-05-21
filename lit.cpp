@@ -55,9 +55,7 @@ namespace LitMemory {
 		return addr;	
 	}
 	void *alloc(uint32_t size, uint32_t byte) {
-		if(current_mem >= max_mem) {
-			gc();
-		}
+		if(current_mem >= max_mem) gc(); // if allocated memory is over max_mem, do GC
 		void *addr = calloc(size, byte);
 		current_mem += size;
 		mem_list[(void *)addr] = new MemoryInfo(addr, size);
@@ -66,7 +64,7 @@ namespace LitMemory {
 
 	uint32_t get_size(void *addr) {
 		MemoryInfo *m = mem_list[(void *)addr];
-		if(m == NULL) return 0;
+		if(m == NULL) return -1;
 		return m->get_size();
 	}
 
@@ -79,12 +77,12 @@ namespace LitMemory {
 	void gc_mark() {
 		for(std::map<void *, bool>::iterator it = root_ptr.begin(); it != root_ptr.end(); ++it) {
 			if(it->second == true) {
-				int *ptr = (int *)it->first;
+				uint64_t *ptr = (uint64_t *)it->first;
 				MemoryInfo *m = mem_list[(void *)*ptr];
 				if(m != NULL) {
 					if(m->is_const()) continue;
 					m->mark();
-					// std::cout << "marked success: " << (uint32_t)m->get_addr() << std::endl;
+					// std::cout << "marked success: " << m->get_addr() << std::endl;
 				} else {
 					mem_list.erase(mem_list.find((void *)*ptr));
 				}
@@ -95,7 +93,7 @@ namespace LitMemory {
 		for(std::map<void *, MemoryInfo *>::iterator it = mem_list.begin(); it != mem_list.end(); ++it) {
 			if(it->second->marked == false) {
 				if(it->second->is_const()) continue;
-				std::cout << "*** freed success: " << (uint64_t)it->second->get_addr() << ", size: " << it->second->get_size() << "bytes ***" << std::endl;
+				// std::cout << "*** freed success: " << it->second->get_addr() << ", size: " << it->second->get_size() << "bytes ***" << std::endl;
 				it->second->free_mem();
 				current_mem -= it->second->get_size();
 				mem_list.erase(it);
@@ -112,7 +110,7 @@ namespace LitMemory {
 	void free_all_mem() {
 		for(std::map<void *, MemoryInfo *>::iterator it = mem_list.begin(); it != mem_list.end(); ++it) {
 			it->second->free_mem();
-			// std::cout << "freed success: " << (uint32_t)it->second->get_addr() << std::endl;
+			// std::cout << "freed success: " << it->second->get_addr() << std::endl;
 		}
 	}
 };

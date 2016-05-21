@@ -1,4 +1,4 @@
-CFLAGS = -O0  -Wno-strict-aliasing -rdynamic -std=c++11
+CFLAGS = -O3 -Wno-strict-aliasing -rdynamic -std=c++11
 CC = clang++ $(CFLAGS) 
 LLVM = `llvm-config --cppflags --ldflags --libs core all jit native`
 
