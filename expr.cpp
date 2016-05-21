@@ -89,7 +89,7 @@ AST *visit(AST *ast) {
 		std::cout << "(vardecl "
 			<< ((VariableDeclAST *)ast)->info.mod_name << "::"
 			<< ((VariableDeclAST *)ast)->info.name << " "
-			<< ((VariableDeclAST *)ast)->info.type << ")";
+			<< ((VariableDeclAST *)ast)->info.type.get().type << ")";
 	} else if(ast->get_type() == AST_ARRAY) {
 		ArrayAST *ary = (ArrayAST *)ast;
 		std::cout << "(array ";

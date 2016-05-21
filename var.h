@@ -4,11 +4,12 @@
 #include <string>
 #include <vector>
 #include "common.h"
+#include "exprtype.h"
 
 typedef struct {
 	std::string name, mod_name;
 	unsigned int id;
-	int type;
+	ExprType type;
 	std::string class_type;
 	bool is_global;
 	std::vector<int> used_location; // for global variables

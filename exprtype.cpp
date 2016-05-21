@@ -15,12 +15,21 @@ bool ExprType::change(std::string ty) {
 	return true;
 }
 
+bool ExprType::change(ExprType &ty) {
+	type.type = ty.type.type;
+	type.user_type = ty.type.user_type;
+	return true;
+}
+
 bool ExprType::is_array() {
 	return type.type & T_ARRAY;
 }
 
-bool ExprType::is_type(int ty) {
-	return type.type & ty;
+bool ExprType::eql_type(int ty, bool is_ary) {
+	if(is_ary) {
+		return (type.type & ty) && (type.type & T_ARRAY);
+	} else 
+		return type.type == ty;
 }
 
 namespace Type {

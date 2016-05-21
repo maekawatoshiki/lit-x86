@@ -2,7 +2,6 @@
 #define _EXPRTYPE_LIT_
 
 #include "common.h"
-#include "var.h"
 
 #define IS_ARRAY(x) ((x) & (T_ARRAY))
 #define IS_TYPE(x, ty)  ((x) == (ty))
@@ -20,8 +19,9 @@ enum {
 
 struct expr_type_t {
 	expr_type_t(int ty=T_INT): type(ty) {};
-	int type;
+	int mode, type;
 	std::string user_type;
+	expr_type_t *expr_type;
 };
 
 namespace Type {
@@ -29,14 +29,16 @@ namespace Type {
 };
 
 class ExprType {
-public:
 	expr_type_t type;
-
+public:
+	ExprType() {};
+	ExprType(int ty) { type.type = ty; }
 	expr_type_t &get();
 	bool change(int);
+	bool change(ExprType &);
 	bool change(std::string);
 	bool is_array();
-	bool is_type(int);
+	bool eql_type(int, bool = false);
 };
 
 #endif

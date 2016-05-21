@@ -297,8 +297,8 @@ bool const_folding(AST *e, int *res) { // TODO: rewrite more beautiful!
 	return true;
 }
 
-llvm::Value *codegen_expression(Function &f, Program &f_list, AST *ast, int *ty) {
-	int buf; if(ty == NULL) ty = &buf;
+llvm::Value *codegen_expression(Function &f, Program &f_list, AST *ast, ExprType *ty) {
+	ExprType buf; if(ty == NULL) ty = &buf;
 	switch(ast->get_type()) {
 	case AST_NUMBER:
 		return ((NumberAST *)ast)->codegen(f, ty);
@@ -383,9 +383,9 @@ Function FunctionAST::codegen(Program &f_list) {
 			arg_names.push_back(v->name);
 		} else if((*it)->get_type() == AST_VARIABLE_DECL) {
 			var_t *v = ((VariableDeclAST *)*it)->append(f, f_list);
-			if(v->type == T_STRING) 
+			if(v->type.eql_type(T_STRING))
 				arg_types.push_back(builder.getInt8PtrTy());
-			else if(v->type & T_ARRAY && v->type & T_INT) 
+			else if(v->type.eql_type(T_INT, true)) // int array? 
 				arg_types.push_back(builder.getInt32Ty()->getPointerTo());
 			else
 				arg_types.push_back(builder.getInt32Ty());
@@ -550,28 +550,28 @@ llvm::Value * ForAST::codegen(Function &f, Program &f_list) {
 	return NULL;
 }
 
-llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, int *ty) {
+llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 	if(stdfunc.count(info.name)) {
 		llvm::Value *stdfunc_ret_value = llvm::ConstantInt::get(builder.getInt32Ty(), 0);
 		if(info.name == "Array") {
 			codegen_expression(f, f_list, args[0]);
 			ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(0 * ADDR_SIZE); // mov [esp+arg*ADDR_SIZE], eax
 			ntv.genas("mov eax 4");
-		ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(1 * ADDR_SIZE); // mov [esp+arg*ADDR_SIZE], eax
+			ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(1 * ADDR_SIZE); // mov [esp+arg*ADDR_SIZE], eax
 			ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(12); // call malloc
 		} else if(info.name == "puts") {
 			for(int n = 0; n < args.size(); n++) {
-				int ty;
+				ExprType ty;
 				llvm::Value *val = codegen_expression(f, f_list, args[n], &ty);
 				std::vector<llvm::Value*> func_args;
 					func_args.push_back(val);
-				if(ty == T_STRING) {
+				if(ty.eql_type(T_STRING)) {
 					builder.CreateCall(stdfunc["put_string"].func, func_args)->setCallingConv(llvm::CallingConv::C);
-				} else if(ty == T_CHAR) {
+				} else if(ty.eql_type(T_CHAR)) {
 					builder.CreateCall(stdfunc["put_char"].func, func_args)->setCallingConv(llvm::CallingConv::C);
-				} else if(ty == T_DOUBLE) {
+				} else if(ty.eql_type(T_DOUBLE)) {
 					builder.CreateCall(stdfunc["put_num_float"].func, func_args)->setCallingConv(llvm::CallingConv::C);
-				} else if(ty & T_ARRAY) {
+				} else if(ty.is_array()) {
 					builder.CreateCall(stdfunc["put_array"].func, func_args)->setCallingConv(llvm::CallingConv::C);
 				} else {
 					builder.CreateCall(stdfunc["put_num"].func, func_args)->setCallingConv(llvm::CallingConv::C);
@@ -593,7 +593,7 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, int *ty) {
 				stdfunc_ret_value = builder.CreateCall(stdfunc[info.name].func, func_args);
 			}
 		}
-		*ty = stdfunc[info.name].type;
+		ty->change(stdfunc[info.name].type);
 		return stdfunc_ret_value;
 	}
 
@@ -608,7 +608,7 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, int *ty) {
 		}
 		ntv.gencode(0xe8); f_list.append_undef(info.name, info.mod_name, ntv.count);
 			ntv.gencode_int32(0x00000000); // call function
-		*ty = T_INT;
+		ty->change(T_INT);
 		return NULL;
 	} else { // defined
 		if(args.size() != function->info.params) error("error: the number of arguments is not same");
@@ -623,45 +623,45 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, int *ty) {
 		for(auto arg = args.begin(); arg != args.end(); ++arg) {
 			callee_args.push_back(codegen_expression(f, f_list, *arg));
 		}
-		*ty = function->info.type;
+		ty->change(function->info.type);
 		return builder.CreateCall(callee, callee_args, "call_tmp");
 	}
 }
 
-llvm::Value * BinaryAST::codegen(Function &f, Program &f_list, int *ty) {
-	int ty_l = T_VOID, ty_r = T_VOID;
+llvm::Value * BinaryAST::codegen(Function &f, Program &f_list, ExprType *ty) {
+	ExprType ty_l(T_VOID), ty_r(T_VOID);
 	llvm::Value *lhs = codegen_expression(f, f_list, left, &ty_l);
 	llvm::Value *rhs = codegen_expression(f, f_list, right, &ty_r);
-	*ty = ty_l;
+	ty->change(ty_l);
 
 	{ // cast float to int when lhs is integer type
-		if(ty_l == T_INT && ty_r == T_DOUBLE) {
+		if(ty_l.eql_type(T_INT) && ty_r.eql_type(T_DOUBLE)) {
 			rhs = builder.CreateFPToSI(rhs, builder.getInt32Ty());
 			ty_l = T_DOUBLE;
-		} else if(ty_l == T_DOUBLE && ty_r == T_INT) {
+		} else if(ty_l.eql_type(T_DOUBLE) && ty_r.eql_type(T_INT)) {
 			rhs = builder.CreateSIToFP(rhs, builder.getFloatTy());
-		} else if(ty_l == T_CHAR) {
+		} else if(ty_l.eql_type(T_CHAR)) {
 			rhs = builder.CreateZExt(rhs, builder.getInt8Ty());
-		} else if(ty_l == T_INT && ty_r != T_INT) {
+		} else if(ty_l.eql_type(T_INT) && !ty_r.eql_type(T_INT)) {
 			rhs = builder.CreateZExt(rhs, builder.getInt32Ty());
 		}
 	}
 
 	// if(ty_l != ty_r) if(op != "+") error("error: type error"); // except string concat
 	if(op == "+") {
-		if(ty_l == T_STRING && ty_r == T_STRING) { // string + string
+		if(ty_l.eql_type(T_STRING) && ty_r.eql_type(T_STRING)) { // string + string
 			std::vector<llvm::Value*> func_args;
 			func_args.push_back(lhs);
 			func_args.push_back(rhs);
 			llvm::Value *ret = builder.CreateCall(stdfunc["strcat"].func, func_args);
 			return ret;	
-		} else if(ty_l == T_STRING && ty_r == T_CHAR) {
+		} else if(ty_l.eql_type(T_STRING) && ty_r.eql_type(T_CHAR)) {
 			std::vector<llvm::Value*> func_args;
 			func_args.push_back(lhs);
 			func_args.push_back(rhs);
 			llvm::Value *ret = builder.CreateCall(stdfunc["concat_char"].func, func_args);
 			return ret;	
-		} else if(ty_l == T_DOUBLE) {
+		} else if(ty_l.eql_type(T_DOUBLE)) {
 			return builder.CreateFAdd(lhs, rhs, "addtmp");
 		} else {
 			return builder.CreateAdd(lhs, rhs, "addtmp");
@@ -719,17 +719,17 @@ llvm::Value * BinaryAST::codegen(Function &f, Program &f_list, int *ty) {
 	return NULL;
 }
 
-llvm::Value * NewAllocAST::codegen(Function &f, Program &f_list, int *ty) {
+llvm::Value * NewAllocAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 	int alloc_type = Type::str_to_type(type);
 	std::vector<llvm::Value*> func_args;
 	func_args.push_back(codegen_expression(f, f_list, size));
 	func_args.push_back(llvm::ConstantInt::get(builder.getInt32Ty(), 4));
 	llvm::Value *ret = builder.CreateCall(stdfunc["create_array"].func, func_args);
-	*ty = alloc_type | T_ARRAY;
+	ty->change(alloc_type | T_ARRAY);
 	return builder.CreateBitCast(ret, builder.getInt32Ty()->getPointerTo());
 }
 
-llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, int *ty) {
+llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 	var_t *v = NULL;
 	bool first_decl = false;
 
@@ -745,21 +745,21 @@ llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, int *ty) {
 		}
 	} else if(var->get_type() == AST_VARIABLE_INDEX) {
 		VariableIndexAST *vidx = (VariableIndexAST *)var;
-		int expr_ty;
+		ExprType expr_ty;
 		llvm::Value *elem = llvm::GetElementPtrInst::CreateInBounds(
 				codegen_expression(f, f_list, vidx->var, &expr_ty),
 				llvm::ArrayRef<llvm::Value *>(codegen_expression(f, f_list, vidx->idx)), "elem_tmp", builder.GetInsertBlock());
 		llvm::Value *val = codegen_expression(f, f_list, src);
-		if(expr_ty == T_STRING) {
+		if(expr_ty.eql_type(T_STRING)) {
 			val = builder.CreateZExt(val, builder.getInt8Ty());
 		}
 		return builder.CreateStore(val, elem);
 	}
 
 	// single assignment
-	int v_ty;
+	ExprType v_ty;
 	llvm::Value *val = codegen_expression(f, f_list, src, &v_ty);
-	*ty = v_ty;
+	ty->change(v_ty.get().type);
 	if(v->is_global) {
 		if(first_decl) {
 			mod->getOrInsertGlobal(v->name, builder.getInt32Ty());
@@ -771,21 +771,21 @@ llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, int *ty) {
 		}
 		builder.CreateStore(val, v->val);
 	} else {
-		if(var->get_type() == AST_VARIABLE) v->type = v_ty; 
+		if(var->get_type() == AST_VARIABLE) v->type = v_ty.get().type; 
 		if(first_decl) {
 			llvm::AllocaInst *ai;
-			if(v_ty == T_STRING) { // string
+			if(v_ty.eql_type(T_STRING)) { // string
 				ai = builder.CreateAlloca(llvm::Type::getInt8PtrTy(context), 0, v->name);
-			} else if(v_ty == T_DOUBLE) {
+			} else if(v_ty.eql_type(T_DOUBLE)) {
 				ai = builder.CreateAlloca(llvm::Type::getFloatTy(context), 0, v->name);
-			} else if(v_ty == (T_INT | T_ARRAY)) { // integer array
+			} else if(v_ty.eql_type(T_INT, true)) { // integer array
 				ai = builder.CreateAlloca(llvm::Type::getInt32PtrTy(context), 0, v->name);
 			} else { // integer
 				ai = builder.CreateAlloca(llvm::Type::getInt32Ty(context), 0, v->name);
 			}
 			v->val = ai;
 		}
-		if(v->type & T_ARRAY || v->type == T_STRING) {
+		if(v->type.is_array() || v->type.eql_type(T_STRING)) {
 			std::vector<llvm::Value*> func_args;
 			func_args.push_back(builder.CreateBitCast(v->val, v->val->getType()->getPointerTo()));
 			builder.CreateCall(stdfunc["append_addr_for_gc"].func, func_args);
@@ -801,26 +801,28 @@ var_t *VariableDeclAST::get(Function &f, Program &f_list) {
 }
 
 var_t *VariableDeclAST::append(Function &f, Program &f_list) {
-	if(info.is_global) return f_list.var_global.append(info.name, info.type, true);
-	return f.var.append(info.name, info.type);
+	if(info.is_global) return f_list.var_global.append(info.name, info.type.get().type, true);
+	return f.var.append(info.name, info.type.get().type);
 }
 
-llvm::Value * VariableIndexAST::codegen(Function &f, Program &f_list, int *ret_ty) {
-	int ty;
+llvm::Value * VariableIndexAST::codegen(Function &f, Program &f_list, ExprType *ret_ty) {
+	ExprType ty;
 	llvm::Value *ret = llvm::GetElementPtrInst::CreateInBounds(
 			codegen_expression(f, f_list, var, &ty), 
 			llvm::ArrayRef<llvm::Value *>(codegen_expression(f, f_list, idx)), "elem_tmp", builder.GetInsertBlock());
 	ret = builder.CreateLoad(ret);
-	*ret_ty = ty & T_INT ? T_INT : ty & T_STRING ? T_CHAR : T_STRING;
+	ret_ty->change(
+			ty.eql_type(T_INT, true) ? T_INT : 
+				ty.eql_type(T_STRING, true) && ty.is_array() ? T_STRING : T_CHAR);
 	return ret;
 }
 
-llvm::Value * VariableAST::codegen(Function &f, Program &f_list, int *ty) {
+llvm::Value * VariableAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 	var_t *v;
 	if(info.is_global) {
 		v = f_list.var_global.get(info.name, info.mod_name);
 		if(v == NULL) {
-			v = f_list.append_global_var(info.name, info.type); // global variable can be used if didn't declared
+			v = f_list.append_global_var(info.name, info.type.get().type); // global variable can be used if didn't declared
 			mod->getOrInsertGlobal(v->name, builder.getInt32Ty());
 			llvm::GlobalVariable *gbl = mod->getNamedGlobal(v->name);
 			gbl->setAlignment(4);
@@ -831,10 +833,10 @@ llvm::Value * VariableAST::codegen(Function &f, Program &f_list, int *ty) {
 		v = f.var.get(info.name, info.mod_name);
 	if(v == NULL) error("error: '%s' was not declared", info.name.c_str());
 	if(info.is_global == false) { // local
-		*ty = v->type;
+		ty->change(v->type);
 		return builder.CreateLoad(v->val, "var_tmp");
 	} else { // global
-		*ty = T_INT;
+		ty->change(T_INT);
 		return builder.CreateLoad(v->val, "var_tmp");
 	}
 }
@@ -843,8 +845,8 @@ var_t *VariableAST::get(Function &f, Program &f_list) {
 	return f.var.get(info.name, info.mod_name);
 }
 var_t *VariableAST::append(Function &f, Program &f_list) {
-	if(info.is_global) return f_list.append_global_var(info.name, info.type);
-	return f.var.append(info.name, info.type);
+	if(info.is_global) return f_list.append_global_var(info.name, info.type.get().type);
+	return f.var.append(info.name, info.type.get().type);
 }
 
 llvm::Value *ReturnAST::codegen(Function &f, Program &f_list) {
@@ -858,14 +860,14 @@ llvm::Value * BreakAST::codegen(Function &f, Program &f_list) {
 	return NULL;
 }
 
-llvm::Value * ArrayAST::codegen(Function &f, Program &f_list, int *ret_ty) {
+llvm::Value * ArrayAST::codegen(Function &f, Program &f_list, ExprType *ret_ty) {
 	std::vector<llvm::Value*> func_args;
 	func_args.push_back(llvm::ConstantInt::get(builder.getInt32Ty(), elems.size()));
 	func_args.push_back(llvm::ConstantInt::get(builder.getInt32Ty(), 4));
 	llvm::Value *ary = builder.CreateCall(stdfunc["create_array"].func, func_args);
 	ary = builder.CreateBitCast(ary, builder.getInt32Ty()->getPointerTo(), "bitcast_tmp");
 	uint32_t a = 0;
-	int ty;
+	ExprType ty;
 	for(ast_vector::iterator it = elems.begin(); it != elems.end(); ++it) {
 		int expr_ty;
 		llvm::Value *elem = llvm::GetElementPtrInst::CreateInBounds(
@@ -875,28 +877,28 @@ llvm::Value * ArrayAST::codegen(Function &f, Program &f_list, int *ret_ty) {
 		builder.CreateStore(val, elem);
 		a += 1;
 	}
-	*ret_ty = T_ARRAY | ty;
+	ret_ty->change(T_ARRAY | ty.get().type);
 	return ary;
 }
 
-llvm::Value *StringAST::codegen(Function &f, int *type) {
+llvm::Value *StringAST::codegen(Function &f, ExprType *ty) {
 	 // llvm::Value *value = builder.CreateGlobalStringPtr(<STRING>);
-	*type = T_STRING;
+	ty->change(T_STRING);
 	char *embed = (char *)LitMemory::alloc_const(str.length() + 1); // TODO: fix!
 	replace_escape(strcpy(embed, str.c_str()));
 	return builder.CreateGlobalStringPtr(str.c_str());
 }
 
-llvm::Value * CharAST::codegen(Function &f, int *ty) {
-	*ty = T_CHAR;
+llvm::Value * CharAST::codegen(Function &f, ExprType *ty) {
+	ty->change(T_CHAR);
 	return llvm::ConstantInt::get(llvm::Type::getInt8Ty(context), ch);
 }
 
-llvm::Value * NumberAST::codegen(Function &f, int *ty) {
-	*ty = T_INT;
+llvm::Value * NumberAST::codegen(Function &f, ExprType *ty) {
+	ty->change(T_INT);
 	return llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), number, true);
 }
-llvm::Value * FloatNumberAST::codegen(Function &f, int *ty) {
-	*ty = T_DOUBLE;
+llvm::Value * FloatNumberAST::codegen(Function &f, ExprType *ty) {
+	ty->change(T_DOUBLE);
 	return llvm::ConstantFP::get(builder.getFloatTy(), number);
 }

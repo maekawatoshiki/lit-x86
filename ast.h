@@ -5,6 +5,7 @@
 #include "var.h"
 #include "func.h"
 #include "asm.h"
+#include "exprtype.h"
 
 enum {
 	AST_NUMBER,
@@ -42,14 +43,14 @@ public:
 	double number;
 	FloatNumberAST(double);
 	virtual int get_type() const { return AST_NUMBER_FLOAT; };
-	llvm::Value *codegen(Function &, int *);
+	llvm::Value *codegen(Function &, ExprType *);
 };
 class NumberAST : public AST {
 public:
 	int32_t number;
 	NumberAST(int);
 	virtual int get_type() const { return AST_NUMBER; };
-	llvm::Value *codegen(Function &, int *);
+	llvm::Value *codegen(Function &, ExprType *);
 };
 
 class CharAST : public AST {
@@ -57,7 +58,7 @@ public:
 	int ch;
 	CharAST(int);
 	virtual int get_type() const { return  AST_CHAR; }
-	llvm::Value *codegen(Function &, int *);
+	llvm::Value *codegen(Function &, ExprType *);
 };
 
 class StringAST : public AST {
@@ -65,7 +66,7 @@ public:
 	std::string str;
 	StringAST(std::string);
 	virtual int get_type() const { return AST_STRING; };
-	llvm::Value *codegen(Function &, int *);
+	llvm::Value *codegen(Function &, ExprType *);
 };
 
 class PostfixAST : public AST {
@@ -83,7 +84,7 @@ public:
 	AST *left, *right;
 	BinaryAST(std::string o, AST *le, AST *re);
 	virtual int get_type() const { return AST_BINARY; }
-	llvm::Value *codegen(Function &, Program &, int *); // ret is type of expr.
+	llvm::Value *codegen(Function &, Program &, ExprType *); // ret is type of expr.
 };
 
 class NewAllocAST : public AST {
@@ -92,7 +93,7 @@ public:
 	AST * size;
 	NewAllocAST(std::string, AST *size);
 	virtual int get_type() const { return AST_NEW; }
-	llvm::Value *codegen(Function &, Program &, int *);
+	llvm::Value *codegen(Function &, Program &, ExprType *);
 };
 
 class VariableAST : public AST {
@@ -100,7 +101,7 @@ public:
 	var_t info;
 	VariableAST(var_t v);
 	virtual int get_type() const { return AST_VARIABLE; }
-	llvm::Value *codegen(Function &, Program &, int *);
+	llvm::Value *codegen(Function &, Program &, ExprType *);
 	var_t *get(Function &, Program &);
 	var_t *append(Function &, Program &);
 };
@@ -119,7 +120,7 @@ public:
 	AST *var, *src;
 	VariableAsgmtAST(AST *, AST *);
 	virtual int get_type() const { return AST_VARIABLE_ASGMT; }
-	llvm::Value * codegen(Function &, Program &, int *);
+	llvm::Value * codegen(Function &, Program &, ExprType *);
 };
 
 class VariableIndexAST : public AST {
@@ -127,7 +128,7 @@ public:
 	AST *var, *idx;
 	VariableIndexAST(AST *, AST *);
 	virtual int get_type() const { return AST_VARIABLE_INDEX; }
-	llvm::Value * codegen(Function &, Program &, int *);
+	llvm::Value * codegen(Function &, Program &, ExprType *);
 };
 
 class LibraryAST : public AST {
@@ -154,7 +155,7 @@ public:
 	std::vector<AST *> args;
 	FunctionCallAST(func_t f, std::vector<AST *> a);
 	virtual int get_type() const { return AST_FUNCTION_CALL; }
-	llvm::Value * codegen(Function &, Program &, int *);
+	llvm::Value * codegen(Function &, Program &, ExprType *);
 };
 
 class FunctionAST : public AST {
@@ -179,7 +180,7 @@ public:
 	std::vector<AST *> elems;
 	ArrayAST(std::vector<AST *>);
 	virtual int get_type() const { return AST_ARRAY; }
-	llvm::Value * codegen(Function &, Program &, int *);
+	llvm::Value * codegen(Function &, Program &, ExprType *);
 };
 
 class IfAST : public AST {
