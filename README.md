@@ -11,10 +11,10 @@ Please look at Wiki.
 
 ```
 $ make
-$ ./lit [sourcefile]
+$ ./lit -h # -h option shows helps
 ```
 
-# Version Info
+# Notes
 - 2015/7/22 : First Commit
 
 # License
