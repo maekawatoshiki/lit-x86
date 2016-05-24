@@ -62,6 +62,10 @@ namespace LitMemory {
 		return addr;	
 	}
 
+	bool is_allocated_addr(void *addr) {
+		return mem_list.count(addr);
+	}
+
 	uint32_t get_size(void *addr) {
 		MemoryInfo *m = mem_list[(void *)addr];
 		if(m == NULL) return -1;

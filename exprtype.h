@@ -33,12 +33,20 @@ class ExprType {
 public:
 	ExprType() {};
 	ExprType(int ty) { type.type = ty; }
+	ExprType(ExprType *et) { 
+		type = et->type; 
+		next = et->next;
+	}
 	expr_type_t &get();
+	ExprType *next = NULL;
 	bool change(int);
-	bool change(ExprType &);
+	bool change(ExprType *);
+	bool change(int, ExprType *);
 	bool change(std::string);
 	bool is_array();
 	bool eql_type(int, bool = false);
+
+	void show();
 };
 
 #endif

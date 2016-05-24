@@ -35,9 +35,13 @@ extern "C" {
 		int size = LitMemory::get_size(ary);
 		if(size == -1) return;
 		printf("[ ");
-		for(int i = 0; i < size; i++)
-			printf("%d ", ary[i]);
-		printf("]");
+		for(int i = 0; i < size; i++) {
+			if(LitMemory::is_allocated_addr((void *)ary[i]))
+				put_array((int *)ary[i]);
+			else
+				printf("%d ", ary[i]);
+		}
+		printf("] ");
 	}
 	void put_ln() {
 		putchar('\n');
@@ -632,7 +636,7 @@ llvm::Value * BinaryAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 	ExprType ty_l(T_VOID), ty_r(T_VOID);
 	llvm::Value *lhs = codegen_expression(f, f_list, left, &ty_l);
 	llvm::Value *rhs = codegen_expression(f, f_list, right, &ty_r);
-	ty->change(ty_l);
+	ty->change(new ExprType(ty_l));
 
 	{ // cast float to int when lhs is integer type
 		if(ty_l.eql_type(T_INT) && ty_r.eql_type(T_DOUBLE)) {
@@ -725,7 +729,7 @@ llvm::Value * NewAllocAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 	func_args.push_back(codegen_expression(f, f_list, size));
 	func_args.push_back(llvm::ConstantInt::get(builder.getInt32Ty(), 4));
 	llvm::Value *ret = builder.CreateCall(stdfunc["create_array"].func, func_args);
-	ty->change(alloc_type | T_ARRAY);
+	ty->change(T_ARRAY, new ExprType(alloc_type));
 	return builder.CreateBitCast(ret, builder.getInt32Ty()->getPointerTo());
 }
 
@@ -759,7 +763,7 @@ llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, ExprType *
 	// single assignment
 	ExprType v_ty;
 	llvm::Value *val = codegen_expression(f, f_list, src, &v_ty);
-	ty->change(v_ty.get().type);
+	ty->change(new ExprType(v_ty));
 	if(v->is_global) {
 		if(first_decl) {
 			mod->getOrInsertGlobal(v->name, builder.getInt32Ty());
@@ -771,14 +775,14 @@ llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, ExprType *
 		}
 		builder.CreateStore(val, v->val);
 	} else {
-		if(var->get_type() == AST_VARIABLE) v->type = v_ty.get().type; 
+		if(var->get_type() == AST_VARIABLE) v->type = v_ty;
 		if(first_decl) {
 			llvm::AllocaInst *ai;
 			if(v_ty.eql_type(T_STRING)) { // string
 				ai = builder.CreateAlloca(llvm::Type::getInt8PtrTy(context), 0, v->name);
 			} else if(v_ty.eql_type(T_DOUBLE)) {
 				ai = builder.CreateAlloca(llvm::Type::getFloatTy(context), 0, v->name);
-			} else if(v_ty.eql_type(T_INT, true)) { // integer array
+			} else if(v_ty.eql_type(T_ARRAY)) { // integer array TODO:FIX
 				ai = builder.CreateAlloca(llvm::Type::getInt32PtrTy(context), 0, v->name);
 			} else { // integer
 				ai = builder.CreateAlloca(llvm::Type::getInt32Ty(context), 0, v->name);
@@ -811,9 +815,7 @@ llvm::Value * VariableIndexAST::codegen(Function &f, Program &f_list, ExprType *
 			codegen_expression(f, f_list, var, &ty), 
 			llvm::ArrayRef<llvm::Value *>(codegen_expression(f, f_list, idx)), "elem_tmp", builder.GetInsertBlock());
 	ret = builder.CreateLoad(ret);
-	ret_ty->change(
-			ty.eql_type(T_INT, true) ? T_INT : 
-				ty.eql_type(T_STRING, true) && ty.is_array() ? T_STRING : T_CHAR);
+	ret_ty->change(new ExprType(ty));
 	return ret;
 }
 
@@ -833,7 +835,7 @@ llvm::Value * VariableAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 		v = f.var.get(info.name, info.mod_name);
 	if(v == NULL) error("error: '%s' was not declared", info.name.c_str());
 	if(info.is_global == false) { // local
-		ty->change(v->type);
+		ty->change(&v->type);
 		return builder.CreateLoad(v->val, "var_tmp");
 	} else { // global
 		ty->change(T_INT);
@@ -869,7 +871,6 @@ llvm::Value * ArrayAST::codegen(Function &f, Program &f_list, ExprType *ret_ty) 
 	uint32_t a = 0;
 	ExprType ty;
 	for(ast_vector::iterator it = elems.begin(); it != elems.end(); ++it) {
-		int expr_ty;
 		llvm::Value *elem = llvm::GetElementPtrInst::CreateInBounds(
 				ary,
 				llvm::ArrayRef<llvm::Value *>(llvm::ConstantInt::get(builder.getInt32Ty(), a)), "elem_tmp", builder.GetInsertBlock());
@@ -877,7 +878,7 @@ llvm::Value * ArrayAST::codegen(Function &f, Program &f_list, ExprType *ret_ty) 
 		builder.CreateStore(val, elem);
 		a += 1;
 	}
-	ret_ty->change(T_ARRAY | ty.get().type);
+	ret_ty->change(T_ARRAY, new ExprType(ty));
 	return ary;
 }
 
