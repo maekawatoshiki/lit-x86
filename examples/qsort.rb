@@ -20,7 +20,7 @@ def qsort a:int[] left right
 	end
 end
 
-max = 20
+max = 5
 a = new max int
 
 for i in 0..max

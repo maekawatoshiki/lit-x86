@@ -398,7 +398,7 @@ Function FunctionAST::codegen(Program &f_list) {
 			var_t *v = ((VariableDeclAST *)*it)->append(f, f_list);
 			if(v->type.eql_type(T_STRING))
 				arg_types.push_back(builder.getInt8PtrTy());
-			else if(v->type.eql_type(T_INT, true)) // int array? 
+			else if(v->type.is_array()) // int array? 
 				arg_types.push_back(builder.getInt32Ty()->getPointerTo());
 			else
 				arg_types.push_back(builder.getInt32Ty());
@@ -408,7 +408,7 @@ Function FunctionAST::codegen(Program &f_list) {
 
 	// definition the Function
 	llvm::Type *func_ret_type = info.type == T_STRING ? (llvm::Type *)builder.getInt8PtrTy() : 
-		(info.type & T_ARRAY) ? (llvm::Type *)builder.getInt32Ty()->getPointerTo() : (llvm::Type *)builder.getInt32Ty();
+		(info.type == T_ARRAY) ? (llvm::Type *)builder.getInt32Ty()->getPointerTo() : (llvm::Type *)builder.getInt32Ty();
 	llvm::FunctionType *func_type = llvm::FunctionType::get(func_ret_type, arg_types, false);
 	llvm::Function *func = llvm::Function::Create(func_type, llvm::Function::ExternalLinkage, f.info.name, mod);
 
@@ -821,8 +821,8 @@ var_t *VariableDeclAST::get(Function &f, Program &f_list) {
 }
 
 var_t *VariableDeclAST::append(Function &f, Program &f_list) {
-	if(info.is_global) return f_list.var_global.append(info.name, info.type.get().type, true);
-	return f.var.append(info.name, info.type.get().type);
+	if(info.is_global) return f_list.var_global.append(info.name, new ExprType(info.type),true);
+	return f.var.append(info.name, new ExprType(info.type));
 }
 
 llvm::Value * VariableIndexAST::codegen(Function &f, Program &f_list, ExprType *ret_ty) {
@@ -868,7 +868,7 @@ var_t *VariableAST::get(Function &f, Program &f_list) {
 }
 var_t *VariableAST::append(Function &f, Program &f_list) {
 	if(info.is_global) return f_list.append_global_var(info.name, info.type.get().type);
-	return f.var.append(info.name, info.type.get().type);
+	return f.var.append(info.name, new ExprType(info.type));
 }
 
 llvm::Value *ReturnAST::codegen(Function &f, Program &f_list) {
@@ -887,7 +887,7 @@ llvm::Value * ArrayAST::codegen(Function &f, Program &f_list, ExprType *ret_ty) 
 	func_args.push_back(llvm::ConstantInt::get(builder.getInt32Ty(), elems.size()));
 	func_args.push_back(llvm::ConstantInt::get(builder.getInt32Ty(), 4));
 	llvm::Value *ary = builder.CreateCall(stdfunc["create_array"].func, func_args);
-	ary = builder.CreateBitCast(ary, builder.getInt8Ty()->getPointerTo()->getPointerTo(), "bitcast_tmp");
+	ary = builder.CreateBitCast(ary, builder.getInt32Ty()->getPointerTo(), "bitcast_tmp");
 	uint32_t a = 0;
 	ExprType ty;
 	for(ast_vector::iterator it = elems.begin(); it != elems.end(); ++it) {

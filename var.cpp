@@ -17,15 +17,15 @@ var_t *Variable::get(std::string name, std::string mod_name) {
 	return NULL;
 }
 
-var_t * Variable::append(std::string name, int type, bool is_global, std::string c_name) {
+var_t * Variable::append(std::string name, ExprType *type, bool is_global, std::string c_name) {
 	uint32_t sz = local.size();
 	var_t v = {
 		.name = name,
-		.type = type,
 		.class_type = c_name,
 		.id = sz + 1, 
 		.is_global = is_global,
 	};
+	v.type.change(type);
 	local.push_back(v);
 	return &local.back();
 }

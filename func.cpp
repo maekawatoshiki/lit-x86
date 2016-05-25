@@ -2,6 +2,7 @@
 #include "parse.h"
 #include "asm.h"
 #include "lit.h"
+#include "exprtype.h"
 
 uint32_t Function::call(NativeCode_x86 &ntv) {
 	if(info.is_lib) {
@@ -55,7 +56,7 @@ bool Program::rep_undef(std::string name, int ntvc) {
 }
 
 var_t *Program::append_global_var(std::string name, int type) {
-	var_t *v = var_global.append(name, type);
+	var_t *v = var_global.append(name, new ExprType(type));
 	v->is_global = true;
 	return v;
 }

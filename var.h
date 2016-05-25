@@ -26,7 +26,7 @@ public:
 	std::vector<var_t> local;
 
 	var_t *get(std::string, std::string);
-	var_t *append(std::string, int, bool = false, std::string = "");
+	var_t *append(std::string, ExprType *,  bool = false, std::string = "");
 	size_t total_size();
 };
 

@@ -95,10 +95,10 @@ int Parser::parser() {
 	append_func("gets");
 
 	ast_vector a = eval();
-	// std::cout << "\n---------- abstract syntax tree ----------" << std::endl;
-	// for(int i = 0; i < a.size(); i++)
-	// 	visit(a[i]), std::cout << std::endl;
-	codegen_entry(a); // start code generating
+	//std::cout << "\n---------- abstract syntax tree ----------" << std::endl;
+	//for(int i = 0; i < a.size(); i++)
+	//	visit(a[i]), std::cout << std::endl;
+	//codegen_entry(a); // start code generating
 	// std::cout << "\n---------- end of abstract syntax tree --" << std::endl;
 	return 1;
 }

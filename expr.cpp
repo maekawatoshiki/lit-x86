@@ -216,7 +216,8 @@ AST *Parser::expr_primary() {
 		return new NumberAST(tok.next().val == "true" ? 1 : 0);
 	} else if(is_ident_tok()) { // variable or inc or dec
 		name = tok.next().val; mod_name = "";
-		int type, is_ary; 
+		int is_ary; 
+		ExprType type;
 		bool is_vardecl = false; 
 		std::string class_name;
 
@@ -225,11 +226,15 @@ AST *Parser::expr_primary() {
 			swap(mod_name, name);
 		} else if(tok.skip(":")) { // variable declaration
 			is_ary = 0;
-			type = Type::str_to_type(tok.next().val);
-			if(tok.skip("[]")) type |= T_ARRAY;
+			type.change(Type::str_to_type(tok.next().val));
+			if(tok.skip("[]")) {
+				int elem_ty = type.get().type;
+				type.change(T_ARRAY);
+				type.next = new ExprType(elem_ty);
+			}
 			is_vardecl = true;
 		} else { 
-			type = T_INT;
+			type.change(T_INT);
 		}
 		
 		{	
@@ -252,10 +257,10 @@ AST *Parser::expr_primary() {
 				var_t v = {
 					.name = name,
 					.mod_name = mod_name == "" ? module : mod_name,
-					.type = type,
 					.class_type = class_name,
 					.is_global = is_global_decl
 				};
+				v.type.change(new ExprType(type));
 				if(is_vardecl)
 					return new VariableDeclAST(v);
 				else
