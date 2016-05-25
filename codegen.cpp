@@ -799,7 +799,7 @@ llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, ExprType *
 				if(elem_ty->eql_type(T_INT))
 					ai = builder.CreateAlloca(llvm::Type::getInt32PtrTy(context), 0, v->name);
 				else if(elem_ty->eql_type(T_STRING)) 
-					ai = builder.CreateAlloca(llvm::Type::getInt8PtrTy(context)->getPointerTo(), 0, v->name);
+					ai = builder.CreateAlloca(llvm::Type::getInt8Ty(context)->getPointerTo()->getPointerTo(), 0, v->name);
 			} else { // integer
 				ai = builder.CreateAlloca(llvm::Type::getInt32Ty(context), 0, v->name);
 			}
@@ -899,6 +899,9 @@ llvm::Value * ArrayAST::codegen(Function &f, Program &f_list, ExprType *ret_ty) 
 		a += 1;
 	}
 	ret_ty->change(T_ARRAY, new ExprType(ty));
+	if(ty.eql_type(T_STRING)) {
+		ary = builder.CreateBitCast(ary, builder.getInt8Ty()->getPointerTo()/* ->getPointerTo()*/, "bitcast_tmp");
+	}
 	return ary;
 }
 
