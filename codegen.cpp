@@ -91,6 +91,7 @@ int codegen_entry(ast_vector &program) {
 		stdfunc["strlen"] = {"strlen", 1, T_INT};
 		stdfunc["printf"] = {"printf", -1, T_VOID};
 		stdfunc["puts"] = {"puts", -1, T_VOID};
+		stdfunc["print"] = {"print", -1, T_VOID};
 		stdfunc["put_num"] = {"put_num", 1, T_VOID};
 		stdfunc["put_num_float"] = {"put_num_float", 1, T_VOID};
 		stdfunc["put_char"] = {"put_char", 1, T_VOID};
@@ -186,6 +187,14 @@ int codegen_entry(ast_vector &program) {
 				llvm::GlobalValue::ExternalLinkage,
 				"get_memory_length", mod);
 		stdfunc["len"].func = func;
+		func_args.clear();
+		// create strlen Function
+		func_args.push_back(builder.getInt8Ty()->getPointerTo());
+		func = llvm::Function::Create(
+				llvm::FunctionType::get(/*ret*/builder.getInt32Ty(), func_args, false),
+				llvm::GlobalValue::ExternalLinkage,
+				"strlen", mod);
+		stdfunc["strlen"].func = func;
 		func_args.clear();
 		// create str_concat_char Function
 		func_args.push_back(builder.getInt32Ty()->getPointerTo());
@@ -563,7 +572,7 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, ExprType *t
 			ntv.genas("mov eax 4");
 			ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(1 * ADDR_SIZE); // mov [esp+arg*ADDR_SIZE], eax
 			ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(12); // call malloc
-		} else if(info.name == "puts") {
+		} else if(info.name == "puts" || info.name == "print") {
 			for(int n = 0; n < args.size(); n++) {
 				ExprType ty;
 				llvm::Value *val = codegen_expression(f, f_list, args[n], &ty);
@@ -581,7 +590,8 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, ExprType *t
 					builder.CreateCall(stdfunc["put_num"].func, func_args)->setCallingConv(llvm::CallingConv::C);
 				}
 			}
-			builder.CreateCall(stdfunc["put_ln"].func, std::vector<llvm::Value *>())->setCallingConv(llvm::CallingConv::C); // for new line
+			if(info.name == "puts")
+				builder.CreateCall(stdfunc["put_ln"].func, std::vector<llvm::Value *>())->setCallingConv(llvm::CallingConv::C); // for new line
 		} else {
 			if(stdfunc[info.name].args == -1) { // vector
 				llvm::Value *val = codegen_expression(f, f_list, args[0]);
@@ -783,7 +793,13 @@ llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, ExprType *
 			} else if(v_ty.eql_type(T_DOUBLE)) {
 				ai = builder.CreateAlloca(llvm::Type::getFloatTy(context), 0, v->name);
 			} else if(v_ty.eql_type(T_ARRAY)) { // integer array TODO:FIX
-				ai = builder.CreateAlloca(llvm::Type::getInt32PtrTy(context), 0, v->name);
+				ExprType *elem_ty = &v_ty;
+				while(elem_ty->eql_type(T_ARRAY)) 
+					elem_ty = elem_ty->next;
+				if(elem_ty->eql_type(T_INT))
+					ai = builder.CreateAlloca(llvm::Type::getInt32PtrTy(context), 0, v->name);
+				else if(elem_ty->eql_type(T_STRING)) 
+					ai = builder.CreateAlloca(llvm::Type::getInt8PtrTy(context)->getPointerTo(), 0, v->name);
 			} else { // integer
 				ai = builder.CreateAlloca(llvm::Type::getInt32Ty(context), 0, v->name);
 			}
@@ -815,7 +831,11 @@ llvm::Value * VariableIndexAST::codegen(Function &f, Program &f_list, ExprType *
 			codegen_expression(f, f_list, var, &ty), 
 			llvm::ArrayRef<llvm::Value *>(codegen_expression(f, f_list, idx)), "elem_tmp", builder.GetInsertBlock());
 	ret = builder.CreateLoad(ret);
-	ret_ty->change(new ExprType(ty));
+	if(ty.eql_type(T_STRING))
+		ret_ty->change(T_CHAR);
+	else {
+		ret_ty->change(ty.next);
+	}
 	return ret;
 }
 
@@ -867,7 +887,7 @@ llvm::Value * ArrayAST::codegen(Function &f, Program &f_list, ExprType *ret_ty) 
 	func_args.push_back(llvm::ConstantInt::get(builder.getInt32Ty(), elems.size()));
 	func_args.push_back(llvm::ConstantInt::get(builder.getInt32Ty(), 4));
 	llvm::Value *ary = builder.CreateCall(stdfunc["create_array"].func, func_args);
-	ary = builder.CreateBitCast(ary, builder.getInt32Ty()->getPointerTo(), "bitcast_tmp");
+	ary = builder.CreateBitCast(ary, builder.getInt8Ty()->getPointerTo()->getPointerTo(), "bitcast_tmp");
 	uint32_t a = 0;
 	ExprType ty;
 	for(ast_vector::iterator it = elems.begin(); it != elems.end(); ++it) {
