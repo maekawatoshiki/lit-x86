@@ -236,15 +236,19 @@ AST *Parser::make_func() {
 		}
 	}
 	if(tok.skip(":")) { 
-		int is_ary = 0, type = T_VOID; 
-		type = Type::str_to_type(tok.next().val);
-		if(tok.skip("[]")) { type |= T_ARRAY; }
+		int is_ary = 0;
+		ExprType type(T_INT);
+		type.change(Type::str_to_type(tok.next().val));
+		if(tok.skip("[]")) { 
+			int elem_ty = type.get().type;
+			type.next = new ExprType(elem_ty);
+			type.change(T_ARRAY);
+		}
 		function.type = type;
 	}
 
 	stmt = eval();
 	if(!tok.skip("end")) { error("error: source %d", __LINE__); }
-
 	return new FunctionAST(function, args, stmt);
 }
 

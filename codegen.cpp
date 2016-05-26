@@ -379,8 +379,8 @@ Function FunctionAST::codegen(Program &f_list) {
 	f.info.name = info.name;
 	f.info.mod_name = "";
 	f.info.address = ntv.count;
-	f.info.params = args.size();
-	f.info.type = info.type;
+	f.info.params = args.size(); 	
+	f.info.type.change(new ExprType(info.type));
 	uint32_t func_bgn = ntv.count;
 
 	f_list.append(f);
@@ -407,8 +407,8 @@ Function FunctionAST::codegen(Program &f_list) {
 	}
 
 	// definition the Function
-	llvm::Type *func_ret_type = info.type == T_STRING ? (llvm::Type *)builder.getInt8PtrTy() : 
-		(info.type == T_ARRAY) ? (llvm::Type *)builder.getInt32Ty()->getPointerTo() : (llvm::Type *)builder.getInt32Ty();
+	llvm::Type *func_ret_type = info.type.eql_type(T_STRING) ? (llvm::Type *)builder.getInt8PtrTy() : 
+		(info.type.eql_type(T_ARRAY)) ? (llvm::Type *)builder.getInt32Ty()->getPointerTo() : (llvm::Type *)builder.getInt32Ty();
 	llvm::FunctionType *func_type = llvm::FunctionType::get(func_ret_type, arg_types, false);
 	llvm::Function *func = llvm::Function::Create(func_type, llvm::Function::ExternalLinkage, f.info.name, mod);
 
@@ -637,7 +637,7 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, ExprType *t
 		for(auto arg = args.begin(); arg != args.end(); ++arg) {
 			callee_args.push_back(codegen_expression(f, f_list, *arg));
 		}
-		ty->change(function->info.type);
+		ty->change(new ExprType(function->info.type));
 		return builder.CreateCall(callee, callee_args, "call_tmp");
 	}
 }

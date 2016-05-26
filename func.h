@@ -7,7 +7,7 @@
 
 struct func_t {
 	uint32_t address, params;
-	int type;
+	ExprType type;
 	bool is_lib;
 	std::string name, mod_name;
 };
