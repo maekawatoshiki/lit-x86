@@ -5,11 +5,6 @@
 #include "exprtype.h"
 
 uint32_t Function::call(NativeCode_x86 &ntv) {
-	if(info.is_lib) {
-		// ntv.gencode(0xe8); ntv.gencode_int32(info.address - (uint32_t)&ntv.code[ntv.count] - ADDR_SIZE);
-	} else {
-		ntv.gencode(0xe8); ntv.gencode_int32(0xFFFFFFFF - (ntv.count - info.address) - 3); // call Function
-	}
 	return info.address;
 }
 

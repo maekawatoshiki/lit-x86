@@ -272,7 +272,7 @@ int codegen_entry(ast_vector &program) {
 
 	void *prog_ptr = exec_engine->getPointerToFunction(mod->getFunction("main"));
 	int (*program_entry)() = (int (*)())(int*)prog_ptr;
-	mod->dump();
+	// mod->dump();
 	
 	program_entry(); // run
 	
@@ -367,7 +367,6 @@ void PrototypeAST::append(llvm::Module *lib_mod, Program &f_list) {
 	Function f;
 	f.info.name = proto.name;
 	f.info.mod_name = "";
-	f.info.is_lib = true;
 	// f.info.address = (uint_t)dlsym(lib, proto.name.c_str());
 	f.info.params = args_type.size();
 	f.info.type = proto.type;
@@ -680,10 +679,22 @@ llvm::Value * BinaryAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 		} else {
 			return builder.CreateAdd(lhs, rhs, "addtmp");
 		}
-	} else if(op == "-") return builder.CreateSub(lhs, rhs, "subtmp");
-	else if(op == "*") return builder.CreateMul(lhs, rhs, "multmp");
-	else if(op == "/") return builder.CreateSDiv(lhs, rhs, "divtmp");
-	else if(op == "%") return builder.CreateSRem(lhs, rhs, "remtmp"); 
+	} else if(op == "-") {
+		if(ty_l.eql_type(T_DOUBLE))
+			return builder.CreateFSub(lhs, rhs, "subtmp");
+		else 
+			return builder.CreateSub(lhs, rhs, "subtmp");
+	} else if(op == "*") {
+		if(ty_l.eql_type(T_DOUBLE))
+			return builder.CreateFMul(lhs, rhs, "multmp");
+		else
+			return builder.CreateMul(lhs, rhs, "multmp");
+	} else if(op == "/") { 
+		if(ty_l.eql_type(T_DOUBLE))
+		return builder.CreateFDiv(lhs, rhs, "divtmp");
+			else
+		return builder.CreateSDiv(lhs, rhs, "divtmp");
+	} else if(op == "%") return builder.CreateSRem(lhs, rhs, "remtmp"); 
 	else if(op == "<" || op == ">" || op == "!=" ||
 			op == "==" || op == "<=" || op == ">=") {
 		bool lt = op == "<", gt = op == ">", ne = op == "!=", eql = op == "==", fle = op == "<=";
@@ -704,19 +715,6 @@ llvm::Value * BinaryAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 		}
 		lhs = builder.CreateZExt(lhs, builder.getInt32Ty());
 		return lhs;
-		// if(ne || eql) {
-		// 	if(ty_l == T_STRING && ty_r == T_STRING) { // string == or != string
-		// 		ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * 0); // mov [esp+0*ADDR_SIZE], eax
-		// 		ntv.gencode(0x89); ntv.gencode(0x5c); ntv.gencode(0x24); ntv.gencode(ADDR_SIZE * 1); // mov [esp+1*ADDR_SIZE], ebx
-		// 		ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(eql ? 80 : 84); // call streql or strne
-		// 		str_cmp = true;
-		// 	}
-		// } 
-		// if(!str_cmp) {
-		// 	ntv.gencode(0x39); ntv.gencode(0xd8); // cmp %eax, %ebx
-		// 	ntv.gencode(0x0f); ntv.gencode(lt ? 0x9c : gt ? 0x9f : ne ? 0x95 : eql ? 0x94 : fle ? 0x9e : 0x9d); ntv.gencode(0xc0); // setX al
-		// 	ntv.gencode(0x0f); ntv.gencode(0xb6); ntv.gencode(0xc0); // movzx eax al
-		// }
 	} else if(op == "and" || op == "&" || op == "or" ||
 			op == "|" || op == "xor" || op == "^") {
 		bool andop = op == "and" || op == "&", orop = op == "or" || op == "|";
