@@ -364,10 +364,10 @@ llvm::Value * LibraryAST::codegen(Program &f_list) {
 
 void PrototypeAST::append(llvm::Module *lib_mod, Program &f_list) {
 	Function f;
-	f.info.name = proto.name;
+	f.info.name = name.empty() ? proto.name : name;
 	f.info.params = args_type.size();
 	f.info.type = proto.type;
-	f.info.func_addr = nullptr; mod->getFunction(proto.name);
+	f.info.func_addr = mod->getFunction(proto.name);
 	std::vector<ExprType *> proto_args_type;
 	for(auto it = args_type.begin(); it != args_type.end(); ++it) {
 		AST *ast = (*it);

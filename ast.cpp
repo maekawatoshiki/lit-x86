@@ -47,8 +47,8 @@ LibraryAST::LibraryAST(std::string nm, std::vector<AST *> p) :
 	lib_name(nm), proto(p) {
 }
 
-PrototypeAST::PrototypeAST(func_t fun, std::vector<AST *> arg) : 
-	proto(fun), args_type(arg) {
+PrototypeAST::PrototypeAST(func_t fun, std::vector<AST *> arg, std::string name_) : 
+	proto(fun), args_type(arg), name(name_) {
 }
 
 FunctionCallAST::FunctionCallAST(func_t f, std::vector<AST *> a) : 

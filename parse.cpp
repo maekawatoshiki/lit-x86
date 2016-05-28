@@ -118,7 +118,6 @@ AST *Parser::make_proto() {
 		std::string func_name = tok.next().val;
 		ast_vector args;
 		func_t function = { .name = func_name, .type = T_INT };
-		append_func(func_name);
 
 		bool is_parentheses = false;
 		if((is_parentheses=tok.skip("(")) || is_ident_tok()) { // get params
@@ -134,7 +133,14 @@ AST *Parser::make_proto() {
 			if(tok.skip("[]")) type |= T_ARRAY;
 			function.type = type;
 		}
-		return new PrototypeAST(function, args);	
+		std::string new_name;
+		if(tok.skip("|")) {
+			new_name = tok.next().val;
+		}
+
+		append_func(new_name.empty() ? func_name : new_name);
+
+		return new PrototypeAST(function, args, new_name);	
 	}
 	return NULL;
 }

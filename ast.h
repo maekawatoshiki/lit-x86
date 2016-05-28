@@ -143,8 +143,9 @@ public:
 class PrototypeAST : public AST {
 public:
 	func_t proto;
+	std::string name;
 	std::vector<AST *> args_type;
-	PrototypeAST(func_t, std::vector<AST *>);	
+	PrototypeAST(func_t, std::vector<AST *>, std::string = "");	
 	virtual int get_type() const { return AST_PROTO; }
 	void append(llvm::Module *, Program &);
 };
