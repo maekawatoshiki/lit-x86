@@ -40,6 +40,19 @@ bool ExprType::eql_type(int ty, bool is_ary) {
 		return type.type == ty;
 }
 
+bool ExprType::eql_type(ExprType *ty) {
+	if(ty->eql_type(type.type)) {
+		if(next && ty->next) {
+			ExprType *_next = this;
+			ty = ty->next;
+			bool res = false;
+			res = ty->eql_type(next);
+			return res;
+		}
+		return true;
+	} else return false;
+}
+
 void ExprType::show() {
 	std::cout << "builtin: " << type.type << " ";
 	if(next && type.type == T_ARRAY) next->show();

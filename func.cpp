@@ -9,12 +9,29 @@ uint32_t Function::call(NativeCode_x86 &ntv) {
 }
 
 bool Program::is(std::string name, std::string mod_name) {
-	return get(name, mod_name) == NULL ? false : true;
+	auto is_declared_func = [&](std::string name) -> Function * {
+		for(std::vector<Function>::iterator it = func.begin(); it != func.end(); it++) {
+			if(it->info.name == name/* && it->mod_name == mod_name*/) {
+				return &(*it);
+			}
+		}
+		return NULL;
+	};
+	return is_declared_func(name) == NULL ? false : true;
 }
 
-Function *Program::get(std::string name, std::string mod_name) {
+Function *Program::get(std::string name, std::vector<ExprType *> args_type, std::string mod_name) {
+	auto is_eql_args_type = [&](Function f) -> bool {
+		if(f.info.args_type.size() == 0 && args_type.size() == 0) return true;
+		auto caller_it = args_type.begin();
+		for(auto it = f.info.args_type.begin(); it != f.info.args_type.end() && caller_it != args_type.end(); ++it) {
+			if(!(*it)->eql_type((*caller_it))) return false;
+			caller_it++;
+		}
+		return true;
+	};
 	for(std::vector<Function>::iterator it = func.begin(); it != func.end(); it++) {
-		if(it->info.name == name/* && it->mod_name == mod_name*/) {
+		if(it->info.name == name && is_eql_args_type(*it)/* && it->mod_name == mod_name*/) {
 			return &(*it);
 		}
 	}

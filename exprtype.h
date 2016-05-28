@@ -37,6 +37,7 @@ public:
 		type = et->type; 
 		next = et->next;
 	}
+	~ExprType() {  }
 	expr_type_t &get();
 	ExprType *next = NULL;
 	bool change(int);
@@ -45,6 +46,7 @@ public:
 	bool change(std::string);
 	bool is_array();
 	bool eql_type(int, bool = false);
+	bool eql_type(ExprType *);
 
 	void show();
 };

@@ -4,11 +4,14 @@
 #include "common.h"
 #include "var.h"
 #include "asm.h"
+#include "exprtype.h"
 
 struct func_t {
 	uint32_t address, params;
 	ExprType type;
+	std::vector<ExprType *> args_type;
 	std::string name, mod_name;
+	llvm::Function *func_addr;
 };
 
 class Function {
@@ -30,7 +33,7 @@ public:
 	
 	Program(std::string &mod): module(mod) { func.reserve(128); }
 	bool is(std::string, std::string);
-	Function *get(std::string, std::string = "");
+	Function *get(std::string, std::vector<ExprType *>, std::string = "");
 	Function *append(Function);
 	
 	Function *append_undef(std::string, std::string, int);

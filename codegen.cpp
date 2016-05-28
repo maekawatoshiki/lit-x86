@@ -272,8 +272,7 @@ int codegen_entry(ast_vector &program) {
 
 	void *prog_ptr = exec_engine->getPointerToFunction(mod->getFunction("main"));
 	int (*program_entry)() = (int (*)())(int*)prog_ptr;
-	// mod->dump();
-	
+	//mod->dump();
 	program_entry(); // run
 	
 	return 0;
@@ -366,10 +365,18 @@ llvm::Value * LibraryAST::codegen(Program &f_list) {
 void PrototypeAST::append(llvm::Module *lib_mod, Program &f_list) {
 	Function f;
 	f.info.name = proto.name;
-	f.info.mod_name = "";
-	// f.info.address = (uint_t)dlsym(lib, proto.name.c_str());
 	f.info.params = args_type.size();
 	f.info.type = proto.type;
+	f.info.func_addr = nullptr; mod->getFunction(proto.name);
+	std::vector<ExprType *> proto_args_type;
+	for(auto it = args_type.begin(); it != args_type.end(); ++it) {
+		AST *ast = (*it);
+		if(ast->get_type() == AST_VARIABLE)
+			proto_args_type.push_back(new ExprType(T_INT));
+		else if(ast->get_type() == AST_VARIABLE_DECL) 
+			proto_args_type.push_back(new ExprType(((VariableDeclAST *)ast)->info.type));
+	}
+	f.info.args_type = proto_args_type;
 	f_list.append(f);
 }
 
@@ -379,20 +386,20 @@ Function FunctionAST::codegen(Program &f_list) {
 	f.info.mod_name = "";
 	f.info.address = ntv.count;
 	f.info.params = args.size(); 	
+	f.info.func_addr = NULL;
 	f.info.type.change(new ExprType(info.type));
 	uint32_t func_bgn = ntv.count;
-
-	f_list.append(f);
-	f_list.rep_undef(f.info.name, func_bgn);
 
 	// append arguments 
 	std::vector<llvm::Type *> arg_types;
 	std::vector<std::string> arg_names;
+	std::vector<ExprType *> args_type_for_overload;
 	for(ast_vector::iterator it = args.begin(); it != args.end(); ++it) {
 		if((*it)->get_type() == AST_VARIABLE) {
 			var_t *v = ((VariableAST *)*it)->append(f, f_list);
 			arg_types.push_back(builder.getInt32Ty());
 			arg_names.push_back(v->name);
+			args_type_for_overload.push_back(new ExprType(T_INT));
 		} else if((*it)->get_type() == AST_VARIABLE_DECL) {
 			var_t *v = ((VariableDeclAST *)*it)->append(f, f_list);
 			if(v->type.eql_type(T_STRING))
@@ -402,8 +409,13 @@ Function FunctionAST::codegen(Program &f_list) {
 			else
 				arg_types.push_back(builder.getInt32Ty());
 			arg_names.push_back(v->name);
+			args_type_for_overload.push_back(new ExprType(v->type));
 		}
 	}
+	f.info.args_type = args_type_for_overload;
+
+	Function *function = f_list.append(f);
+	f_list.rep_undef(f.info.name, func_bgn);
 
 	// definition the Function
 	llvm::Type *func_ret_type = info.type.eql_type(T_STRING) ? (llvm::Type *)builder.getInt8PtrTy() : 
@@ -449,6 +461,8 @@ Function FunctionAST::codegen(Program &f_list) {
 	} else error("error: return code of function is incorrect");
 
 	builder.CreateRet(ret_value);
+
+	function->info.func_addr = func;
 
 	return f;
 }
@@ -565,12 +579,7 @@ llvm::Value * ForAST::codegen(Function &f, Program &f_list) {
 llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 	if(stdfunc.count(info.name)) {
 		llvm::Value *stdfunc_ret_value = llvm::ConstantInt::get(builder.getInt32Ty(), 0);
-		if(info.name == "Array") {
-			codegen_expression(f, f_list, args[0]);
-			ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(0 * ADDR_SIZE); // mov [esp+arg*ADDR_SIZE], eax
-			ntv.genas("mov eax 4");
-			ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(1 * ADDR_SIZE); // mov [esp+arg*ADDR_SIZE], eax
-			ntv.gencode(0xff); ntv.gencode(0x56); ntv.gencode(12); // call malloc
+		if(info.name == "Array") { // TODO: implementation ASAP
 		} else if(info.name == "puts" || info.name == "print") {
 			for(int n = 0; n < args.size(); n++) {
 				ExprType ty;
@@ -610,9 +619,18 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, ExprType *t
 		return stdfunc_ret_value;
 	}
 
-	// user function
-	Function *function = f_list.get(info.name);
-	llvm::Function *callee = mod->getFunction(info.name);
+	// user Function
+		// process args and get args type
+		std::vector<ExprType *> args_type;
+		std::vector<llvm::Value *> callee_args;
+		for(auto arg = args.begin(); arg != args.end(); ++arg) {
+			ExprType ty;
+			callee_args.push_back(codegen_expression(f, f_list, *arg, &ty));
+			args_type.push_back(new ExprType(ty));
+		}
+	Function *function = f_list.get(info.name, args_type);
+	llvm::Function *callee = (function->info.func_addr) ? function->info.func_addr : mod->getFunction(info.name);
+	if(!callee) error("no function: %s", info.name.c_str());
 	if(function == NULL) { // undefined
 		uint32_t a = 3;
 		for(ast_vector::iterator it = args.begin(); it != args.end(); ++it) {
@@ -625,17 +643,6 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, ExprType *t
 		return NULL;
 	} else { // defined
 		if(args.size() != function->info.params) error("error: the number of arguments is not same");
-		// if(function->info.is_lib) {
-		// 	uint32_t a = 0;
-		// 	for(ast_vector::iterator it = args.begin(); it != args.end(); ++it) {
-		// 		codegen_expression(f, f_list, *it);
-		// 		ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(a++ * ADDR_SIZE); // mov [esp+ADDR*a], eax
-		// 	}
-		// } else {
-		std::vector<llvm::Value *> callee_args;
-		for(auto arg = args.begin(); arg != args.end(); ++arg) {
-			callee_args.push_back(codegen_expression(f, f_list, *arg));
-		}
 		ty->change(new ExprType(function->info.type));
 		return builder.CreateCall(callee, callee_args, "call_tmp");
 	}
