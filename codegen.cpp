@@ -642,7 +642,6 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, ExprType *t
 		ty->change(T_INT);
 		return NULL;
 	} else { // defined
-		if(args.size() != function->info.params) error("error: the number of arguments is not same");
 		ty->change(new ExprType(function->info.type));
 		return builder.CreateCall(callee, callee_args, "call_tmp");
 	}

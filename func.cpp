@@ -23,6 +23,7 @@ bool Program::is(std::string name, std::string mod_name) {
 Function *Program::get(std::string name, std::vector<ExprType *> args_type, std::string mod_name) {
 	auto is_eql_args_type = [&](Function f) -> bool {
 		if(f.info.args_type.size() == 0 && args_type.size() == 0) return true;
+		if(f.info.args_type.size() != args_type.size()) return false;
 		auto caller_it = args_type.begin();
 		for(auto it = f.info.args_type.begin(); it != f.info.args_type.end() && caller_it != args_type.end(); ++it) {
 			if(!(*it)->eql_type((*caller_it))) return false;
