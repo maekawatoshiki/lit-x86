@@ -93,6 +93,7 @@ int Parser::parser() {
 	append_func("puts");
 	append_func("print"); // 'print' is almost the same as 'puts' but 'print' doesn't new line
 	append_func("gets");
+	append_func("str_to_int");
 
 	ast_vector a = eval();
 	// std::cout << "\n---------- abstract syntax tree ----------" << std::endl;

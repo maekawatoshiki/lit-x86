@@ -65,6 +65,9 @@ extern "C" {
 		char *ret = (char *)LitMemory::alloc(input_from_stdin.size() + 1, sizeof(char));
 		return strcpy(ret, input_from_stdin.c_str());
 	}
+	int str_to_int(char *str) {
+		return atoi(str);
+	}
 	int get_memory_length(void *ptr) {
 		return LitMemory::get_size(ptr);
 	}
@@ -98,6 +101,7 @@ int codegen_entry(ast_vector &program) {
 		stdfunc["put_array"] = {"put_array", 1, T_VOID};
 		stdfunc["put_string"] = {"put_string", 1, T_VOID};
 		stdfunc["strcat"] = {"strcat", 2, T_STRING};
+		stdfunc["str_to_int"] = {"str_to_int", 1, T_INT};
 		stdfunc["len"] = {"len", 1, T_INT};
 		stdfunc["append_addr_for_gc"] = {"append_addr_for_gc", 1, T_VOID};
 
@@ -164,6 +168,14 @@ int codegen_entry(ast_vector &program) {
 				llvm::GlobalValue::ExternalLinkage,
 				"str_concat", mod);
 		stdfunc["strcat"].func = func;
+		func_args.clear();
+		// create str_to_int function
+		func_args.push_back(builder.getInt8PtrTy());
+		func = llvm::Function::Create(
+				llvm::FunctionType::get(/*ret*/builder.getInt32Ty(), func_args, false),
+				llvm::GlobalValue::ExternalLinkage,
+				"str_to_int", mod);
+		stdfunc["str_to_int"].func = func;
 		func_args.clear();
 		// create create_array function
 		func_args.push_back(builder.getInt32Ty());

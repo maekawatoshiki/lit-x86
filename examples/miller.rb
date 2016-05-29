@@ -1,36 +1,40 @@
-def modPow(b, p, m)
+require "std"
+
+def mod_pow b p m
 	res = 1
 	while p > 0
-		if p % 2 == 1
+		if odd p
 			res = (res * b) % m
 		end
 		b = (b * b) % m
-		p = p / 2
+		p /= 2
 	end
 	res
 end
 
-def prime(n)
+def prime n
 	if n < 2
 		return 0
 	elsif n == 2
 		return 1
-	elsif n % 2 == 0
+	elsif even n
 		return 0
 	end
 
 	d = n - 1
-	while d % 2 == 0; d = d / 2; end
+	while even d
+		d /= 2
+	end
 
-	for q = 0, q < 30, q++
-		a = (Math.rand() % (n - 2)) + 1
+	for q in 0...30
+		a = (random % (n - 2)) + 1
 		t = d
-		y = modPow(a, t, n)
-		while t != n - 1 & y != 1 & y != n - 1
+		y = mod_pow a t n
+		while (t != n - 1) & (y != 1) & (y != n - 1)
 			y = (y * y) % n
-			t = t * 2
+			t *= 2
 		end
-		if y != n - 1 & t % 2 == 0
+		if (y != n - 1) & even d
 			return 0
 		end
 	end
@@ -38,11 +42,11 @@ def prime(n)
 end
 
 isp = 0
-while isp < 100
-	r = Math.rand() % 65536
-	if prime(r)
-		puts r, " is prime"
-		isp++
+while isp < 10
+	r = random % 65536
+	if prime r
+		puts r " is prime"
+		isp += 1
 	end
 end
 
