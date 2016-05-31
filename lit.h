@@ -25,11 +25,11 @@ class Lit {
 	int argc;
 	char **argv;
 
-	int execute(char *); // execute(<source code>)
+	int execute(char *, bool = false); // execute(<source code>, flag<emit-llvm>)
 	int run();
 	
 	void interpret();
-	void run_from_file(char *);
+	void run_from_file(char *, bool = false);
 
 	void show_option();
 	void show_version();

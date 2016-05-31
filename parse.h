@@ -59,7 +59,7 @@ public:
 	ast_vector eval();
 	AST *expression();
 
-	int parser();
+	llvm::Module *parser();
 	int get_string();
 
 	std::map<std::string, bool> function_list;

@@ -1,5 +1,3 @@
-require "String"
-
 def get_num e:string : string
 	num = ""
 	while '0' <= e[$pos] & e[$pos] <= '9'
@@ -48,30 +46,30 @@ def calc e:string
 	puts "input = " e
 	out = addsub e out
 	puts "expr = " out
-	ary = split out "|"
-	ary_len = len ary
-	stack = new 128 int
-	sp = 0
-	for i in 0...ary_len
-		if ary[i] == "+"
-			stack[sp - 2] = stack[sp - 2] + stack[sp - 1]
-			sp -= 1
-		elsif ary[i] == "-"
-			stack[sp - 2] = stack[sp - 2] - stack[sp - 1]
-			sp -= 1
-		elsif ary[i] == "*"
-			stack[sp - 2] = stack[sp - 2] * stack[sp - 1]
-			sp -= 1
-		elsif ary[i] == "/"
-			stack[sp - 2] = stack[sp - 2] / stack[sp - 1]
-			sp -= 1
-		else
-			n = str_to_i ary[i]
-			stack[sp] = n
-			sp += 1
-		end
-	end
-	puts "ans = "stack[0]
+	# ary = split out "|"
+	# ary_len = len ary
+	# stack = new 128 int
+	# sp = 0
+	# for i in 0...ary_len
+	# 	if ary[i] == "+"
+	# 		stack[sp - 2] = stack[sp - 2] + stack[sp - 1]
+	# 		sp -= 1
+	# 	elsif ary[i] == "-"
+	# 		stack[sp - 2] = stack[sp - 2] - stack[sp - 1]
+	# 		sp -= 1
+	# 	elsif ary[i] == "*"
+	# 		stack[sp - 2] = stack[sp - 2] * stack[sp - 1]
+	# 		sp -= 1
+	# 	elsif ary[i] == "/"
+	# 		stack[sp - 2] = stack[sp - 2] / stack[sp - 1]
+	# 		sp -= 1
+	# 	else
+	# 		n = str_to_i ary[i]
+	# 		stack[sp] = n
+	# 		sp += 1
+	# 	end
+	# end
+	# puts "ans = "stack[0]
 end
 
 $pos = 0

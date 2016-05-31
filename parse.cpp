@@ -58,7 +58,7 @@ ast_vector Parser::eval() {
 	return block;
 }
 
-int Parser::parser() {
+llvm::Module *Parser::parser() {
 	tok.pos = ntv.count = 0;
 	blocksCount = 0;
 	op_prec[".."] = 50;
@@ -99,9 +99,9 @@ int Parser::parser() {
 	// std::cout << "\n---------- abstract syntax tree ----------" << std::endl;
 	// for(int i = 0; i < a.size(); i++)
 	// 	visit(a[i]), std::cout << std::endl;
-	codegen_entry(a); // start code generating
+	llvm::Module *program_mod = Codegen::codegen(a); // start code generating
 	// std::cout << "\n---------- end of abstract syntax tree --" << std::endl;
-	return 1;
+	return program_mod;
 }
 
 AST *Parser::make_lib() {

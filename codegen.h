@@ -6,9 +6,11 @@
 #include "ast.h"
 #include "exprtype.h"
 
-int codegen_entry(ast_vector &);
-llvm::Value *codegen_expression(Function &f, Program &f_list, AST *ast, ExprType * = NULL);
-bool const_folding(AST *, int *);
+namespace Codegen {
+	llvm::Module *codegen(ast_vector &);
+	int run(llvm::Module *, bool = false, bool = false);
+	llvm::Value *expression(Function &f, Program &f_list, AST *ast, ExprType * = NULL);
+};
 
 #endif
 
