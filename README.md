@@ -9,6 +9,9 @@ Please look at Wiki.
 - Lit generates native codes with LLVM.
 - So when you build, need LLVM and Clang.
 
+- LLVM Core (== 3.4)
+- make
+
 ```
 $ make
 $ ./lit -h # -h option shows helps
