@@ -753,7 +753,7 @@ llvm::Value * NewAllocAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 	func_args.push_back(llvm::ConstantInt::get(builder.getInt32Ty(), 4));
 	llvm::Value *ret = builder.CreateCall(stdfunc["create_array"].func, func_args);
 	ty->change(T_ARRAY, new ExprType(alloc_type));
-	return builder.CreateBitCast(ret, builder.getInt32Ty()->getPointerTo());
+	return builder.CreateBitCast(ret, alloc_type == T_STRING ? builder.getInt8PtrTy()->getPointerTo() : builder.getInt32Ty()->getPointerTo());
 }
 
 llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, ExprType *ty) {
@@ -900,16 +900,17 @@ llvm::Value * ArrayAST::codegen(Function &f, Program &f_list, ExprType *ret_ty) 
 	func_args.push_back(llvm::ConstantInt::get(builder.getInt32Ty(), elems.size()));
 	func_args.push_back(llvm::ConstantInt::get(builder.getInt32Ty(), 4));
 	llvm::Value *ary = builder.CreateCall(stdfunc["create_array"].func, func_args);
-	ary = builder.CreateBitCast(ary, builder.getInt32Ty()->getPointerTo(), "bitcast_tmp");
-	uint32_t a = 0;
 	ExprType ty;
-	for(ast_vector::iterator it = elems.begin(); it != elems.end(); ++it) {
+	size_t num = 0;
+	for(ast_vector::iterator it = elems.begin(); it != elems.end(); ++num, ++it) {
+		llvm::Value *val = Codegen::expression(f, f_list, *it, &ty);
+		if(it == elems.begin())
+			ary = builder.CreateBitCast(ary, val->getType()->getPointerTo(), "bitcast_tmp");
 		llvm::Value *elem = llvm::GetElementPtrInst::CreateInBounds(
 				ary,
-				llvm::ArrayRef<llvm::Value *>(llvm::ConstantInt::get(builder.getInt32Ty(), a)), "elem_tmp", builder.GetInsertBlock());
-		llvm::Value *val = Codegen::expression(f, f_list, *it, &ty);
+				llvm::ArrayRef<llvm::Value *>(llvm::ConstantInt::get(builder.getInt32Ty(), num)), "elem_tmp", builder.GetInsertBlock());
+		// if(val->getType()->getTypeID() != ary->getType()->getTypeID())
 		builder.CreateStore(val, elem);
-		a += 1;
 	}
 	ret_ty->change(T_ARRAY, new ExprType(ty));
 	if(ty.eql_type(T_STRING)) {
@@ -919,7 +920,6 @@ llvm::Value * ArrayAST::codegen(Function &f, Program &f_list, ExprType *ret_ty) 
 }
 
 llvm::Value *StringAST::codegen(Function &f, ExprType *ty) {
-	// llvm::Value *value = builder.CreateGlobalStringPtr(<STRING>);
 	ty->change(T_STRING);
 	char *embed = (char *)LitMemory::alloc_const(str.length() + 1); // TODO: fix!
 	replace_escape(strcpy(embed, str.c_str()));

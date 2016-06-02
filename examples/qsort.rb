@@ -24,7 +24,7 @@ max = 5
 a = new max int
 
 for i in 0..max
-	a[i] = random % 100
+	a[i] = math_rand % 100
 end
 
 puts a

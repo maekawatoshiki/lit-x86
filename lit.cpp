@@ -115,7 +115,7 @@ namespace LitMemory {
 	void free_all_mem() {
 		for(std::map<void *, MemoryInfo *>::iterator it = mem_list.begin(); it != mem_list.end(); ++it) {
 			it->second->free_mem();
-			// std::cout << "freed success: " << it->second->get_addr() << std::endl;
+			// std::cout << "finalize: freed success: " << it->second->get_addr() << std::endl;
 		}
 	}
 };

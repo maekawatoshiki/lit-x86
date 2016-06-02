@@ -9,4 +9,8 @@ def file_open name:string
 	file_open name "r"
 end
 
+def file_read name:string :string
+	id = file_open name "r"
+	file_read id
+end
 
