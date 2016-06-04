@@ -27,7 +27,7 @@ def prime n
 	end
 
 	for q in 0...30
-		a = (random % (n - 2)) + 1
+		a = (math_rand % (n - 2)) + 1
 		t = d
 		y = mod_pow a t n
 		while (t != n - 1) & (y != 1) & (y != n - 1)
@@ -43,7 +43,7 @@ end
 
 isp = 0
 while isp < 10
-	r = random % 65536
+	r = math_rand % 65536
 	if prime r
 		puts r " is prime"
 		isp += 1
