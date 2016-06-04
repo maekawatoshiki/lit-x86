@@ -3,7 +3,7 @@ require "std"
 def mod_pow b p m
 	res = 1
 	while p > 0
-		if odd p
+		if math_odd p
 			res = (res * b) % m
 		end
 		b = (b * b) % m
@@ -17,12 +17,12 @@ def prime n
 		return 0
 	elsif n == 2
 		return 1
-	elsif even n
+	elsif math_even n
 		return 0
 	end
 
 	d = n - 1
-	while even d
+	while math_even d
 		d /= 2
 	end
 
@@ -34,7 +34,7 @@ def prime n
 			y = (y * y) % n
 			t *= 2
 		end
-		if (y != n - 1) & even d
+		if (y != n - 1) & math_even d
 			return 0
 		end
 	end
