@@ -74,6 +74,12 @@ extern "C" {
 	int str_to_int(char *str) {
 		return atoi(str);
 	}
+	char *int_to_str(int n) {
+		char buf[16], *ret;
+		sprintf(buf, "%d", n);
+		ret = (char *)LitMemory::alloc(strlen(buf)+1, sizeof(char));
+		return strcpy(ret, buf);
+	}
 	int get_memory_length(void *ptr) {
 		return LitMemory::get_size(ptr);
 	}
@@ -110,6 +116,7 @@ namespace Codegen {
 			stdfunc["strcat"] = {"strcat", 2, T_STRING};
 			stdfunc["concat_char_str"] = {"concat_char_str", 2, T_STRING};
 			stdfunc["str_to_int"] = {"str_to_int", 1, T_INT};
+			stdfunc["int_to_str"] = {"int_to_str", 1, T_STRING};
 			stdfunc["len"] = {"len", 1, T_INT};
 			stdfunc["append_addr_for_gc"] = {"append_addr_for_gc", 1, T_VOID};
 
@@ -184,6 +191,14 @@ namespace Codegen {
 					llvm::GlobalValue::ExternalLinkage,
 					"str_to_int", mod);
 			stdfunc["str_to_int"].func = func;
+			func_args.clear();
+			// create int_to_str function
+			func_args.push_back(builder.getInt32Ty());
+			func = llvm::Function::Create(
+					llvm::FunctionType::get(/*ret*/builder.getInt8Ty()->getPointerTo(), func_args, false),
+					llvm::GlobalValue::ExternalLinkage,
+					"int_to_str", mod);
+			stdfunc["int_to_str"].func = func;
 			func_args.clear();
 			// create create_array function
 			func_args.push_back(builder.getInt32Ty());
