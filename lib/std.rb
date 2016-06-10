@@ -28,6 +28,15 @@ def operator+ a:int[] x:int :int[]
 	cpy
 end
 
+def operator+ a:string[] x:string :string[]
+	size = length(a) + 1
+	cpy = new size string
+	for i in 0...size-1
+		cpy[i] = a[i]
+	end
+	cpy[size-1] = x
+	cpy
+end
 
 # operators for string
 def str_eql a:string b:string
@@ -58,3 +67,12 @@ def operator > a:string b:string
 	diff = str_eql a b
 	if diff > 0; 1; else; 0; end
 end
+
+def operator* a:string n:int :string	
+	res = a
+	for i in 0...n-1
+		res += a
+	end
+	res
+end
+
