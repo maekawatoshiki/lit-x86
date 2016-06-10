@@ -53,10 +53,8 @@ bool ExprType::eql_type(ExprType *ty) {
 	} else return false;
 }
 
-void ExprType::show() {
-	std::cout << "builtin: " << type.type << " ";
-	if(next && type.type == T_ARRAY) next->show();
-	std::cout << std::endl;
+std::string ExprType::to_string() {
+	return Type::type_to_str(this);
 }
 
 namespace Type {
@@ -75,5 +73,30 @@ namespace Type {
 		} else {
 			return T_USER_TYPE;
 		}
+	}
+
+	std::string type_to_str(ExprType *type) {
+		std::string str_ty;
+		switch(type->get().type) {
+			case T_INT:
+				str_ty = "int";
+				break;
+			case T_CHAR:
+				str_ty = "char";
+				break;
+			case T_BOOL:// bool is exist but unsupport now..
+				str_ty = "bool";
+				break;
+			case T_STRING:
+				str_ty = "string";
+				break;
+			case T_DOUBLE:
+				str_ty = "double";
+				break;
+			case T_ARRAY:
+				str_ty = "[" + (type->next ? type_to_str(type->next) : "") + "]";
+				break;
+		}
+		return str_ty;
 	}
 };

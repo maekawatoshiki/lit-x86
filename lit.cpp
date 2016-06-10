@@ -45,7 +45,7 @@ namespace LitMemory {
 		void free_mem() { free(addr); }
 	};
 
-	const size_t max_mem = 256 * 1024; // 256KB
+	const size_t max_mem = 1 * 1024 * 1024; // 1MB
 	size_t current_mem = 0;
 	std::map<void *, MemoryInfo *> mem_list;
 	std::map<void *, bool> root_ptr;

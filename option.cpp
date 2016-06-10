@@ -36,10 +36,11 @@ void Lit::show_option() {
 			show_version();
 			puts(
 					"Usage: lit [options] <file>\n\n"
-					" -v		show version\n"
-					" -h		show this help\n"
-					" -i		interpret mode\n"
-					" -e 'command'	one line of script"
+					" -v\t\tshow version\n"
+					" -h\t\tshow this help\n"
+					" -i\t\tinterpret mode\n"
+					" -e 'cmd'\tone line of script\n"
+					" -emit\t\tshow LLVM-IR compiled"
 					);
 		} else if(opt_interpret) interpret();
 		else if(opt_eval) {

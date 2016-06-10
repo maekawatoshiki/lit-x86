@@ -230,8 +230,11 @@ AST *Parser::make_while() {
 
 AST *Parser::make_func() {
 	uint32_t params = 0;
-	std::string func_name = tok.next().val;
 	ast_vector args, stmt;
+	std::string func_name = tok.next().val;
+	if(func_name == "operator") {
+		func_name += tok.next().val; // user-defined operator
+	}
 	func_t function = { .name = func_name, .type = T_INT };
 	append_func(func_name);
 

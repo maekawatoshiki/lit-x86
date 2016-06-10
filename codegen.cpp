@@ -65,6 +65,11 @@ extern "C" {
 		strcpy(&(t[1]), b);
 		return t;
 	}
+	char *str_copy(char *a) {
+		char *t = (char *)LitMemory::alloc(strlen(a) + 1, sizeof(char));
+		if(!t) return NULL;
+		return strcpy(t, a);
+	}
 	char *get_string_stdin() {
 		std::string input_from_stdin;
 		std::getline(std::cin, input_from_stdin);
@@ -118,6 +123,7 @@ namespace Codegen {
 			stdfunc["str_to_int"] = {"str_to_int", 1, T_INT};
 			stdfunc["int_to_str"] = {"int_to_str", 1, T_STRING};
 			stdfunc["len"] = {"len", 1, T_INT};
+			stdfunc["str_copy"] = {"str_copy", 1, T_STRING};
 			stdfunc["append_addr_for_gc"] = {"append_addr_for_gc", 1, T_VOID};
 
 			// create put_string function
@@ -222,6 +228,14 @@ namespace Codegen {
 					llvm::GlobalValue::ExternalLinkage,
 					"get_memory_length", mod);
 			stdfunc["len"].func = func;
+			func_args.clear();
+			// create str_copy Function
+			func_args.push_back(builder.getInt8Ty()->getPointerTo());
+			func = llvm::Function::Create(
+					llvm::FunctionType::get(/*ret*/builder.getInt8PtrTy(), func_args, false),
+					llvm::GlobalValue::ExternalLinkage,
+					"str_copy", mod);
+			stdfunc["str_copy"].func = func;
 			func_args.clear();
 			// create strlen Function
 			func_args.push_back(builder.getInt8Ty()->getPointerTo());
@@ -455,13 +469,24 @@ Function FunctionAST::codegen(Program &f_list) {
 		arg_types_it++; arg_names_it++;
 	}
 
+	for(auto v = f.var.local.begin(); v != f.var.local.end(); v++) {
+		if(v->type.is_array() || v->type.eql_type(T_STRING)) {
+			std::vector<llvm::Value*> func_args;
+			func_args.push_back(builder.CreateBitCast(v->val, v->val->getType()->getPointerTo())); // get address of var
+			builder.CreateCall(stdfunc["append_addr_for_gc"].func, func_args);
+			// if(v->type.eql_type(T_STRING)) {
+			// 	v->val = builder.CreateCall(stdfunc["str_copy"].func, v->val);
+			// }
+		}
+	}
+
 	llvm::Value *ret_value = llvm::ConstantInt::get(builder.getInt32Ty(), 0); // default return code 0
 	for(ast_vector::iterator it = statement.begin(); it != statement.end(); ++it) { // function body
 		ret_value = Codegen::expression(f, f_list, *it);
 	}
 
 	for(auto v = f.var.local.begin(); v != f.var.local.end(); v++) {
-		if(v->val->getType()->getContainedType(0)->isPointerTy()) {
+		if(v->type.is_array() || v->type.eql_type(T_STRING)) {
 			std::vector<llvm::Value*> func_args;
 			func_args.push_back(builder.CreateBitCast(v->val, v->val->getType()->getPointerTo())); // get address of var
 			builder.CreateCall(stdfunc["delete_addr_for_gc"].func, func_args);
@@ -670,6 +695,17 @@ llvm::Value * BinaryAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 	llvm::Value *rhs = Codegen::expression(f, f_list, right, &ty_r);
 	ty->change(new ExprType(ty_l));
 
+	std::vector<ExprType *> args_type;
+	args_type.push_back(&ty_l);
+	args_type.push_back(&ty_r);
+	Function *user_op = f_list.get("operator"+op, args_type);
+	if(user_op) {
+		llvm::Function *callee = user_op->info.func_addr;
+		ty->change(new ExprType(user_op->info.type));
+		llvm::Value *callee_args[] = {lhs, rhs};
+		return builder.CreateCall(callee, callee_args, "call_tmp");
+	}
+
 	{ // cast float to int when lhs is integer type
 		if(ty_l.eql_type(T_INT) && ty_r.eql_type(T_DOUBLE)) {
 			rhs = builder.CreateFPToSI(rhs, builder.getInt32Ty());
@@ -683,7 +719,9 @@ llvm::Value * BinaryAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 		}
 	}
 
-	// if(ty_l != ty_r) if(op != "+") error("error: type error"); // except string concat
+	if(!ty_l.eql_type(&ty_r)) {
+		// std::cout << "warning: different types to each other: " << ty_l.to_string() << ", " << ty_r.to_string() << std::endl;
+	}
 	if(op == "+") {
 		if(ty_l.eql_type(T_STRING) && ty_r.eql_type(T_STRING)) { // string + string
 			std::vector<llvm::Value*> func_args;
@@ -835,9 +873,12 @@ llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, ExprType *
 		}
 		if(v->type.is_array() || v->type.eql_type(T_STRING)) {
 			std::vector<llvm::Value*> func_args;
-			func_args.push_back(builder.CreateBitCast(v->val, v->val->getType()->getPointerTo()));
+			func_args.push_back(builder.CreateBitCast(v->val, v->val->getType()->getPointerTo())); // addr
 			builder.CreateCall(stdfunc["append_addr_for_gc"].func, func_args);
 		}
+		// if(v->type.eql_type(T_STRING)) {
+		// 	val = builder.CreateCall(stdfunc["str_copy"].func, val);
+		// }
 		builder.CreateStore(val, v->val);
 	}
 	return NULL;

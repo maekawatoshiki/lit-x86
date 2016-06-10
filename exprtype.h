@@ -24,10 +24,6 @@ struct expr_type_t {
 	expr_type_t *expr_type;
 };
 
-namespace Type {
-	int str_to_type(std::string);
-};
-
 class ExprType {
 	expr_type_t type;
 public:
@@ -48,8 +44,12 @@ public:
 	bool eql_type(int, bool = false);
 	bool eql_type(ExprType *);
 
-	void show();
+	std::string to_string();
 };
 
+namespace Type {
+	int str_to_type(std::string);
+	std::string type_to_str(ExprType *);
+};
 #endif
 
