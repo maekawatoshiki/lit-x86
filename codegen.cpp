@@ -435,6 +435,8 @@ Function FunctionAST::codegen(Program &f_list) {
 			var_t *v = ((VariableDeclAST *)*it)->append(f, f_list);
 			if(v->type.eql_type(T_STRING))
 				arg_types.push_back(builder.getInt8PtrTy());
+			else if(v->type.is_array() && v->type.next->eql_type(T_STRING)) // string array?
+				arg_types.push_back(builder.getInt8PtrTy()->getPointerTo());
 			else if(v->type.is_array()) // int array? 
 				arg_types.push_back(builder.getInt32Ty()->getPointerTo());
 			else
@@ -449,8 +451,17 @@ Function FunctionAST::codegen(Program &f_list) {
 	f_list.rep_undef(f.info.name, func_bgn);
 
 	// definition the Function
-	llvm::Type *func_ret_type = info.type.eql_type(T_STRING) ? (llvm::Type *)builder.getInt8PtrTy() : 
-		(info.type.eql_type(T_ARRAY)) ? (llvm::Type *)builder.getInt32Ty()->getPointerTo() : (llvm::Type *)builder.getInt32Ty();
+	
+	// set function return type
+	llvm::Type *func_ret_type = 
+		info.type.eql_type(T_STRING) ? 
+		(llvm::Type *)builder.getInt8PtrTy() : 
+		(info.type.eql_type(T_ARRAY)) ? 
+			(info.type.next->eql_type(T_STRING)) ? 
+				(llvm::Type *)builder.getInt8PtrTy()->getPointerTo() : 
+				(llvm::Type *)builder.getInt32Ty()->getPointerTo() : 
+			(llvm::Type *)builder.getInt32Ty();
+
 	llvm::FunctionType *func_type = llvm::FunctionType::get(func_ret_type, arg_types, false);
 	llvm::Function *func = llvm::Function::Create(func_type, llvm::Function::ExternalLinkage, f.info.name, mod);
 
@@ -806,7 +817,10 @@ llvm::Value * NewAllocAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 	func_args.push_back(llvm::ConstantInt::get(builder.getInt32Ty(), 4));
 	llvm::Value *ret = builder.CreateCall(stdfunc["create_array"].func, func_args);
 	ty->change(T_ARRAY, new ExprType(alloc_type));
-	return builder.CreateBitCast(ret, alloc_type == T_STRING ? builder.getInt8PtrTy()->getPointerTo() : builder.getInt32Ty()->getPointerTo());
+	return builder.CreateBitCast(ret, 
+			alloc_type == T_STRING ? 
+			builder.getInt8Ty()->getPointerTo() : 
+			builder.getInt32Ty()->getPointerTo(), "bitcast_tmp");
 }
 
 llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, ExprType *ty) {
@@ -965,13 +979,9 @@ llvm::Value * ArrayAST::codegen(Function &f, Program &f_list, ExprType *ret_ty) 
 		llvm::Value *elem = llvm::GetElementPtrInst::CreateInBounds(
 				ary,
 				llvm::ArrayRef<llvm::Value *>(llvm::ConstantInt::get(builder.getInt32Ty(), num)), "elem_tmp", builder.GetInsertBlock());
-		// if(val->getType()->getTypeID() != ary->getType()->getTypeID())
 		builder.CreateStore(val, elem);
 	}
 	ret_ty->change(T_ARRAY, new ExprType(ty));
-	if(ty.eql_type(T_STRING)) {
-		ary = builder.CreateBitCast(ary, builder.getInt8Ty()->getPointerTo()/* ->getPointerTo()*/, "bitcast_tmp");
-	}
 	return ary;
 }
 
