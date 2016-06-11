@@ -435,12 +435,22 @@ Function FunctionAST::codegen(Program &f_list) {
 			var_t *v = ((VariableDeclAST *)*it)->append(f, f_list);
 			if(v->type.eql_type(T_STRING))
 				arg_types.push_back(builder.getInt8PtrTy());
-			else if(v->type.is_array() && v->type.next->eql_type(T_STRING)) // string array?
-				arg_types.push_back(builder.getInt8PtrTy()->getPointerTo());
-			else if(v->type.is_array()) // int array? 
-				arg_types.push_back(builder.getInt32Ty()->getPointerTo());
-			else
-				arg_types.push_back(builder.getInt32Ty());
+			else if(v->type.is_array()) {
+				int count = 1;
+				llvm::Type *ty;
+				ExprType *next_ = v->type.next;
+				while(next_ && next_->is_array()) {
+					next_ = next_->next;	
+					count++;
+				}
+				ty =
+					next_->eql_type(T_STRING) ? 
+						(llvm::Type *)builder.getInt8PtrTy() : 
+						(llvm::Type *)builder.getInt32Ty();
+				while(count--) ty = ty->getPointerTo();
+				arg_types.push_back(ty);
+			} else arg_types.push_back(builder.getInt32Ty());
+
 			arg_names.push_back(v->name);
 			args_type_for_overload.push_back(new ExprType(v->type));
 		}
@@ -814,7 +824,7 @@ llvm::Value * NewAllocAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 	int alloc_type = Type::str_to_type(type);
 	std::vector<llvm::Value*> func_args;
 	func_args.push_back(Codegen::expression(f, f_list, size));
-	func_args.push_back(llvm::ConstantInt::get(builder.getInt32Ty(), 4));
+	func_args.push_back(llvm::ConstantInt::get(builder.getInt32Ty(), sizeof(void*)));
 	llvm::Value *ret = builder.CreateCall(stdfunc["create_array"].func, func_args);
 	ty->change(T_ARRAY, new ExprType(alloc_type));
 	return builder.CreateBitCast(ret, 
@@ -968,7 +978,7 @@ llvm::Value * BreakAST::codegen(Function &f, Program &f_list) {
 llvm::Value * ArrayAST::codegen(Function &f, Program &f_list, ExprType *ret_ty) {
 	std::vector<llvm::Value*> func_args;
 	func_args.push_back(llvm::ConstantInt::get(builder.getInt32Ty(), elems.size()));
-	func_args.push_back(llvm::ConstantInt::get(builder.getInt32Ty(), 4));
+	func_args.push_back(llvm::ConstantInt::get(builder.getInt32Ty(), sizeof(void*)));
 	llvm::Value *ary = builder.CreateCall(stdfunc["create_array"].func, func_args);
 	ExprType ty;
 	size_t num = 0;

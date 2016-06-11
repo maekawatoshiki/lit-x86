@@ -58,6 +58,7 @@ namespace LitMemory {
 	void *alloc(uint32_t size, uint32_t byte) {
 		if(current_mem >= max_mem) gc(); // if allocated memory is over max_mem, do GC
 		void *addr = calloc(size, byte);
+		if(!addr) error("LitSystemError: No enough memory");
 		current_mem += size;
 		mem_list[(void *)addr] = new MemoryInfo(addr, size);
 		return addr;	
@@ -69,7 +70,7 @@ namespace LitMemory {
 
 	uint32_t get_size(void *addr) {
 		MemoryInfo *m = mem_list[(void *)addr];
-		if(m == NULL) return -1;
+		if(m == NULL) return 0;
 		return m->get_size();
 	}
 
