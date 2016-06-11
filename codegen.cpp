@@ -122,7 +122,7 @@ namespace Codegen {
 			stdfunc["concat_char_str"] = {"concat_char_str", 2, T_STRING};
 			stdfunc["str_to_int"] = {"str_to_int", 1, T_INT};
 			stdfunc["int_to_str"] = {"int_to_str", 1, T_STRING};
-			stdfunc["len"] = {"len", 1, T_INT};
+			stdfunc["builtinlength"] = {"builtinlength", 1, T_INT};
 			stdfunc["str_copy"] = {"str_copy", 1, T_STRING};
 			stdfunc["append_addr_for_gc"] = {"append_addr_for_gc", 1, T_VOID};
 
@@ -227,7 +227,7 @@ namespace Codegen {
 					llvm::FunctionType::get(/*ret*/builder.getInt32Ty(), func_args, false),
 					llvm::GlobalValue::ExternalLinkage,
 					"get_memory_length", mod);
-			stdfunc["len"].func = func;
+			stdfunc["builtinlength"].func = func;
 			func_args.clear();
 			// create str_copy Function
 			func_args.push_back(builder.getInt8Ty()->getPointerTo());

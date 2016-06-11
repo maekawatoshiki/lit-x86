@@ -21,6 +21,6 @@ def qsort a:int[] left right
 end
 
 def sort a:int[] :int[]
-	qsort a 0 len(a)-1
+	qsort a 0 builtinlength(a)-1
 	a
 end

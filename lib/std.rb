@@ -2,11 +2,11 @@ require "algorithm"
 require "File"
 
 def length ary:int[]
-	len ary
+	builtinlength ary
 end
 
 def length ary:string[]
-	len ary
+	builtinlength ary
 end
 
 def length str:string

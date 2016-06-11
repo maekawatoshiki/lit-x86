@@ -89,7 +89,7 @@ llvm::Module *Parser::parser() {
 	append_func("printf");
 	append_func("gets");
 	append_func("strlen");
-	append_func("len");
+	append_func("builtinlength");
 	append_func("puts");
 	append_func("print"); // 'print' is almost the same as 'puts' but 'print' doesn't new line
 	append_func("gets");
