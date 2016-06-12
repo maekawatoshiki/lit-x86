@@ -134,6 +134,12 @@ AST *visit(AST *ast) {
 		std::cout << "(new " << na->type << " ";
 		visit(na->size);
 		std::cout << ")" << std::endl;
+	} else if(ast->get_type() == AST_DOT) {
+		DotOpAST *da = (DotOpAST *)ast;
+		std::cout << "(dot "; 
+			visit(da->var);
+			visit(da->member);
+		std::cout << ")";
 	}
 
 	return ast;
@@ -177,13 +183,24 @@ AST *Parser::expr_entry() {
 
 AST *Parser::expr_index() {
 	AST *l, *r;
-	l = expr_primary();
+	l = expr_dot();
 	if(tok.get().type == TOK_STRING) return l; // skip string tok such as "[" 
 	while(tok.skip("[")) {
 		r = expr_entry();
 		l = new VariableIndexAST(l, r);
 		if(!tok.skip("]"))
 			error("error: %d: expected expression ']'", tok.get().nline);
+	}
+	return l;
+}
+
+AST *Parser::expr_dot() {
+	AST *l, *r;
+	l = expr_primary();
+	if(tok.get().type == TOK_STRING) return l; // skip string tok such as "[" 
+	while(tok.skip(".")) {
+		r = expr_primary();
+		l = new DotOpAST(l, r);
 	}
 	return l;
 }
@@ -214,7 +231,7 @@ AST *Parser::expr_primary() {
 		return new StringAST(tok.next().val);
 	} else if(tok.get().val == "true" || tok.get().val == "false") {
 		return new NumberAST(tok.next().val == "true" ? 1 : 0);
-	} else if(is_ident_tok()) { // variable or inc or dec
+	} else if(is_ident_tok()) { 
 		name = tok.next().val; mod_name = "";
 		int is_ary; 
 		ExprType type;

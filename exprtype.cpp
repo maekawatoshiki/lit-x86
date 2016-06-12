@@ -58,20 +58,20 @@ std::string ExprType::to_string() {
 }
 
 namespace Type {
-	int str_to_type(std::string str) {
+	ExprType *str_to_type(std::string str) {
 		int is_ary = 0;
 		if(str == "int") { 
-			return T_INT;
+			return new ExprType(T_INT);
 		} else if(str == "char") {
-			return T_CHAR;
+			return new ExprType(T_CHAR);
 		} else if(str == "bool") {
-			return T_BOOL;
+			return new ExprType(T_BOOL);
 		} else if(str == "string") { 
-			return T_STRING;
+			return new ExprType(T_STRING);
 		} else if(str == "double") { 
-			return T_DOUBLE;
+			return new ExprType(T_DOUBLE);
 		} else {
-			return T_USER_TYPE;
+			return new ExprType(str);
 		}
 	}
 

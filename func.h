@@ -29,6 +29,7 @@ public:
 	std::string name;
 	std::vector<Function> func, undef_func;
 	Variable var_global; 
+	Struct structs;
 	std::string &module;
 	
 	Program(std::string &mod): module(mod) { func.reserve(128); }

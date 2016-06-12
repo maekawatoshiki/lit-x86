@@ -84,14 +84,12 @@ namespace LitMemory {
 		for(std::map<void *, bool>::iterator it = root_ptr.begin(); it != root_ptr.end(); ++it) {
 			if(it->second == true) {
 				uint64_t *ptr = (uint64_t *)it->first;
-				MemoryInfo *m = mem_list[(void *)*ptr];
-				if(m != NULL) {
+				if(mem_list.count((void*)*ptr)) {
+					MemoryInfo *m = mem_list[(void *)*ptr];
 					if(m->is_const()) continue;
 					m->mark();
 					// std::cout << "marked success: " << m->get_addr() << std::endl;
-				} else {
-					mem_list.erase(mem_list.find((void *)*ptr));
-				}
+				} 
 			}
 		} 
 	}

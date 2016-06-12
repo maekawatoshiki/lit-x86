@@ -94,6 +94,9 @@ extern "C" {
 	void delete_addr_for_gc(void *addr) {
 		LitMemory::delete_ptr(addr);
 	}
+	void run_gc() {
+		LitMemory::gc();
+	}
 }
 
 llvm::AllocaInst *create_entry_alloca(llvm::Function *TheFunction, std::string &VarName, llvm::Type *type =  NULL) {
@@ -124,7 +127,7 @@ namespace Codegen {
 			stdfunc["int_to_str"] = {"int_to_str", 1, T_STRING};
 			stdfunc["builtinlength"] = {"builtinlength", 1, T_INT};
 			stdfunc["str_copy"] = {"str_copy", 1, T_STRING};
-			stdfunc["append_addr_for_gc"] = {"append_addr_for_gc", 1, T_VOID};
+			stdfunc["GC"] = {"GC", 0, T_VOID};
 
 			// create put_string function
 			std::vector<llvm::Type *> func_args;
@@ -279,6 +282,12 @@ namespace Codegen {
 					"delete_addr_for_gc", mod);
 			stdfunc["delete_addr_for_gc"].func = func;
 			func_args.clear();
+			// create GC Function
+			func = llvm::Function::Create(
+					llvm::FunctionType::get(/*ret*/builder.getVoidTy(), func_args, false),
+					llvm::GlobalValue::ExternalLinkage,
+					"run_gc", mod);
+			stdfunc["GC"].func = func;
 		}
 		std::string module = "";
 		Program list(module);
@@ -290,6 +299,8 @@ namespace Codegen {
 				Function f = ((FunctionAST *)*it)->codegen(list);
 			} else if((*it)->get_type() == AST_LIBRARY) {
 				((LibraryAST *)*it)->codegen(list);
+			} else if((*it)->get_type() == AST_STRUCT) {
+				((StructAST *)*it)->codegen(list);
 			} else {
 				main_code.push_back(*it);
 			}
@@ -309,7 +320,6 @@ namespace Codegen {
 		}
 
 		builder.CreateRet(llvm::ConstantInt::get(builder.getInt32Ty(), 0));
-
 		return mod;
 	}
 
@@ -374,6 +384,8 @@ namespace Codegen {
 				return ((BreakAST *)ast)->codegen(f, f_list);
 			case AST_RETURN:
 				return ((ReturnAST *)ast)->codegen(f, f_list);
+			case AST_DOT:
+				return ((DotOpAST *)ast)->codegen(f, f_list, ty);
 		}
 		return NULL;
 	}
@@ -821,16 +833,24 @@ llvm::Value * BinaryAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 }
 
 llvm::Value * NewAllocAST::codegen(Function &f, Program &f_list, ExprType *ty) {
-	int alloc_type = Type::str_to_type(type);
+	ExprType *alloc_type = Type::str_to_type(type);
 	std::vector<llvm::Value*> func_args;
 	func_args.push_back(Codegen::expression(f, f_list, size));
-	func_args.push_back(llvm::ConstantInt::get(builder.getInt32Ty(), sizeof(void*)));
+	func_args.push_back(llvm::ConstantInt::get(builder.getInt32Ty(), 
+				alloc_type->eql_type(T_USER_TYPE) ? 
+					f_list.structs.get_size(alloc_type->get().user_type) : 
+					sizeof(void*)));
 	llvm::Value *ret = builder.CreateCall(stdfunc["create_array"].func, func_args);
-	ty->change(T_ARRAY, new ExprType(alloc_type));
+	if(alloc_type->get().type == T_USER_TYPE)
+		ty->change(alloc_type);
+	else
+		ty->change(T_ARRAY, alloc_type);
 	return builder.CreateBitCast(ret, 
-			alloc_type == T_STRING ? 
-			builder.getInt8Ty()->getPointerTo() : 
-			builder.getInt32Ty()->getPointerTo(), "bitcast_tmp");
+			alloc_type->eql_type(T_USER_TYPE) ? 
+				(llvm::PointerType *)f_list.structs.get(alloc_type->get().user_type)->strct->getPointerTo() :
+				alloc_type->eql_type(T_STRING) ? 
+					builder.getInt8Ty()->getPointerTo() : 
+					builder.getInt32Ty()->getPointerTo(), "bitcast_tmp");
 }
 
 llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, ExprType *ty) {
@@ -847,6 +867,22 @@ llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, ExprType *
 			v = ((VariableDeclAST *)var)->append(f, f_list);
 			first_decl = true;
 		}
+	} else if(var->get_type() == AST_DOT) {
+		DotOpAST *dot = (DotOpAST *)var;
+		ExprType ty;
+		llvm::Value *parent = Codegen::expression(f, f_list, dot->var, &ty);
+		struct_t *strct = f_list.structs.get(ty.get().user_type);
+		if(!strct) error("err");
+		int a = 0;
+		if(dot->member->get_type() != AST_VARIABLE) puts("NG");
+		for(auto it = strct->members.begin(); it != strct->members.end(); ++it){ 
+			if(it->name == ((VariableAST *)dot->member)->info.name)
+				break;
+			a++;
+		}
+		llvm::Value *memb = builder.CreateStructGEP(parent, a);
+		llvm::Value *val = Codegen::expression(f, f_list, src);
+		return builder.CreateStore(val, memb);
 	} else if(var->get_type() == AST_VARIABLE_INDEX) {
 		VariableIndexAST *vidx = (VariableIndexAST *)var;
 		ExprType expr_ty;
@@ -882,7 +918,7 @@ llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, ExprType *
 				ai = builder.CreateAlloca(llvm::Type::getInt8PtrTy(context), 0, v->name);
 			} else if(v_ty.eql_type(T_DOUBLE)) {
 				ai = builder.CreateAlloca(llvm::Type::getFloatTy(context), 0, v->name);
-			} else if(v_ty.eql_type(T_ARRAY)) { // integer array TODO:FIX
+			} else if(v_ty.is_array()) { // integer array TODO:FIX
 				ExprType *elem_ty = &v_ty;
 				while(elem_ty->eql_type(T_ARRAY)) 
 					elem_ty = elem_ty->next;
@@ -890,6 +926,13 @@ llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, ExprType *
 					ai = builder.CreateAlloca(llvm::Type::getInt32PtrTy(context), 0, v->name);
 				else if(elem_ty->eql_type(T_STRING)) 
 					ai = builder.CreateAlloca(llvm::Type::getInt8Ty(context)->getPointerTo()->getPointerTo(), 0, v->name);
+				else if(elem_ty->eql_type(T_USER_TYPE)) {
+					ai = builder.CreateAlloca(
+						llvm::PointerType::get(f_list.structs.get(elem_ty->get().user_type)->strct, 0), 0, v->name);
+				}
+			} else if(v_ty.eql_type(T_USER_TYPE)) {
+				ai = builder.CreateAlloca(
+					f_list.structs.get(v_ty.get().user_type)->strct->getPointerTo(), 0, v->name);
 			} else { // integer
 				ai = builder.CreateAlloca(llvm::Type::getInt32Ty(context), 0, v->name);
 			}
@@ -961,7 +1004,7 @@ var_t *VariableAST::get(Function &f, Program &f_list) {
 }
 var_t *VariableAST::append(Function &f, Program &f_list) {
 	if(info.is_global) return f_list.append_global_var(info.name, info.type.get().type);
-	return f.var.append(info.name, new ExprType(info.type));
+	return f.var.append(info.name, new ExprType(&info.type));
 }
 
 llvm::Value *ReturnAST::codegen(Function &f, Program &f_list) {
@@ -973,6 +1016,73 @@ llvm::Value * BreakAST::codegen(Function &f, Program &f_list) {
 	f.has_br.top() = true;
 	builder.CreateBr(f.break_br_list.top());
 	return NULL;
+}
+
+llvm::Value *StructAST::codegen(Program &f_list) {
+	std::vector<var_t> members;
+	std::vector<llvm::Type *> field;
+	for(auto it = var_decls.begin(); it != var_decls.end(); it++) {
+		AST *member = *it;
+		if(member->get_type() != AST_VARIABLE &&
+				member->get_type() != AST_VARIABLE_DECL) {
+			error("error: syntax error on struct");
+		} else {
+			members.push_back(
+				member->get_type() == AST_VARIABLE ? 
+					((VariableAST *)member)->info : 
+					((VariableDeclAST *)member)->info);
+			ExprType member_ty = 
+				member->get_type() == AST_VARIABLE ? 
+					((VariableAST *)member)->info.type : 
+					((VariableDeclAST *)member)->info.type;
+			auto create_array_ty = [&]() -> llvm::Type * {
+				int count = 1;
+				llvm::Type *ty;
+				ExprType *next_ = member_ty.next;
+				while(next_ && next_->is_array()) {
+					next_ = next_->next;	
+					count++;
+				}
+				ty =
+					next_->eql_type(T_STRING) ? 
+						(llvm::Type *)builder.getInt8PtrTy() : 
+						(llvm::Type *)builder.getInt32Ty();
+				while(count--) ty = ty->getPointerTo();
+				return ty;
+			};
+			field.push_back(
+					member_ty.eql_type(T_STRING) ? 
+						builder.getInt8PtrTy() : 
+						member_ty.is_array() ? 
+							create_array_ty() : 
+							builder.getInt32Ty());
+		}
+	}
+	llvm::StructType *mystruct = llvm::StructType::create(context, field, "struct."+name);
+
+	f_list.structs.append(name, members, mystruct);
+	return NULL;
+}
+
+llvm::Value *DotOpAST::codegen(Function &f, Program &f_list, ExprType *ret_ty) {
+	ExprType ty;
+	llvm::Value *parent = Codegen::expression(f, f_list, var, &ty);
+	struct_t *strct = f_list.structs.get(ty.get().user_type);
+	if(!strct) error("err");
+	int a = 0;
+	ExprType member_ty;
+	if(member->get_type() != AST_VARIABLE) puts("NG");
+	for(auto it = strct->members.begin(); it != strct->members.end(); ++it){ 
+		if(it->name == ((VariableAST *)member)->info.name) {
+			member_ty.change(new ExprType(it->type));
+			break;
+		}
+		a++;
+	}
+	llvm::Value *ret = builder.CreateStructGEP(parent, a);
+	ret = builder.CreateLoad(ret, "load_tmp");
+	ret_ty->change(new ExprType(member_ty));
+	return ret;
 }
 
 llvm::Value * ArrayAST::codegen(Function &f, Program &f_list, ExprType *ret_ty) {

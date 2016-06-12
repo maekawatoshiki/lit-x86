@@ -70,4 +70,3 @@ def calc expr:string
 end
 
 calc gets
-

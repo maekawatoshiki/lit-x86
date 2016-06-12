@@ -86,6 +86,7 @@ llvm::Module *Parser::parser() {
 
 	// append standard functions to a list of declared functions
 	append_func("Array");
+	append_func("GC");
 	append_func("printf");
 	append_func("gets");
 	append_func("strlen");
@@ -131,8 +132,10 @@ AST *Parser::make_proto() {
 		}
 		function.params = args.size();
 		if(tok.skip(":")) { 
-			int type = Type::str_to_type(tok.next().val);
-			if(tok.skip("[]")) type |= T_ARRAY;
+			ExprType *type = Type::str_to_type(tok.next().val);
+			if(tok.skip("[]")) {
+				type->change(T_ARRAY, type);
+			}
 			function.type = type;
 		}
 		std::string new_name;

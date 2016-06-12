@@ -40,6 +40,7 @@ public:
 	int get_op_prec(std::string);
 	AST *expr_entry();
 	AST *expr_index();
+	AST *expr_dot();
 	AST *expr_primary();
 	AST *expr_array();
 	AST *expr_rhs(int, AST *);

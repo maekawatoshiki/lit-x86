@@ -29,6 +29,7 @@ class ExprType {
 public:
 	ExprType() {};
 	ExprType(int ty) { type.type = ty; }
+	ExprType(std::string ty) { type.type = T_USER_TYPE; type.user_type = ty; }
 	ExprType(ExprType *et) { 
 		type = et->type; 
 		next = et->next;
@@ -48,7 +49,7 @@ public:
 };
 
 namespace Type {
-	int str_to_type(std::string);
+	ExprType *str_to_type(std::string);
 	std::string type_to_str(ExprType *);
 };
 #endif

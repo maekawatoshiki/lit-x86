@@ -34,3 +34,25 @@ size_t Variable::total_size() {
 	return local.size() * ADDR_SIZE;
 }
 
+int Struct::get_size(std::string name) {
+	return get(name)->members.size() * sizeof(void*);
+}
+
+struct_t *Struct::get(std::string strct) {
+	for(auto it = structs.begin(); it != structs.end(); ++it) {
+		if(strct == it->name) {
+			return &(*it);
+		}
+	}
+	return NULL;
+}
+
+struct_t *Struct::append(std::string strct, std::vector<var_t> members, llvm::StructType *ty_strct) {
+	struct_t z = {
+		.name = strct,
+		.members = members,
+		.strct = ty_strct
+	};
+	structs.push_back(z);
+	return &structs.back();
+}

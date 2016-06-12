@@ -63,6 +63,10 @@ StructAST::StructAST(std::string _name, std::vector<AST *> _vars) :
 	name(_name), var_decls(_vars) {
 }
 
+DotOpAST::DotOpAST(AST *v, AST *m) : 
+	var(v), member(m) {
+}
+
 ArrayAST::ArrayAST(std::vector<AST *> e) : 
 	elems(e) {
 }

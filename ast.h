@@ -30,6 +30,7 @@ enum {
 	AST_PROTO,
 	AST_NEW,
 	AST_STRUCT,
+	AST_DOT,
 };
 
 class AST {
@@ -174,6 +175,15 @@ public:
 	std::vector<AST *> var_decls;
 	StructAST(std::string, std::vector<AST *>);
 	virtual int get_type() const { return AST_STRUCT; }
+	llvm::Value *codegen(Program &);
+};
+
+class DotOpAST : public AST {
+public:
+	AST *var, *member;
+	DotOpAST(AST *, AST *);
+	virtual int get_type() const { return AST_DOT; }
+	llvm::Value *codegen(Function &, Program &, ExprType *);
 };
 
 class ArrayAST : public AST {
