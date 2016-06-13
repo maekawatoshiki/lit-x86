@@ -132,7 +132,7 @@ AST *visit(AST *ast) {
 	} else if(ast->get_type() == AST_NEW) {
 		NewAllocAST *na = (NewAllocAST *)ast;
 		std::cout << "(new " << na->type << " ";
-		visit(na->size);
+		if(na->size) visit(na->size);
 		std::cout << ")" << std::endl;
 	} else if(ast->get_type() == AST_DOT) {
 		DotOpAST *da = (DotOpAST *)ast;
@@ -157,7 +157,7 @@ AST *Parser::expr_rhs(int prec, AST *lhs) {
 			if(tok_prec < prec) return lhs;
 		} else return lhs;
 		std::string op = tok.next().val;
-		AST *rhs = expr_index();
+		AST *rhs = expr_dot();
 		if(tok.get().type == TOK_SYMBOL) {
 			next_prec = get_op_prec(tok.get().val);
 			if(tok_prec < next_prec) 
@@ -177,13 +177,13 @@ AST *Parser::expr_rhs(int prec, AST *lhs) {
 }
 
 AST *Parser::expr_entry() { 
-	AST *lhs = expr_index();
+	AST *lhs = expr_dot();
 	return expr_rhs(0, lhs);
 }
 
 AST *Parser::expr_index() {
 	AST *l, *r;
-	l = expr_dot();
+	l = expr_primary();
 	if(tok.get().type == TOK_STRING) return l; // skip string tok such as "[" 
 	while(tok.skip("[")) {
 		r = expr_entry();
@@ -196,7 +196,7 @@ AST *Parser::expr_index() {
 
 AST *Parser::expr_dot() {
 	AST *l, *r;
-	l = expr_primary();
+	l = expr_index();
 	if(tok.get().type == TOK_STRING) return l; // skip string tok such as "[" 
 	while(tok.skip(".")) {
 		r = expr_primary();
@@ -215,7 +215,10 @@ AST *Parser::expr_primary() {
 
 	if(tok.get().val == "new") {
 		tok.skip();
-		AST *size = expr_entry();
+		AST *size = NULL;
+		if(tok.get().val != "!") {
+			size = expr_entry();
+		} else tok.skip();
 		std::string type = "int";
 		if(is_ident_tok())
 			type = tok.next().val;

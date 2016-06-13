@@ -91,7 +91,7 @@ int Lexer::lex(char *code) {
 					(code[i]=='-' && code[i+1]=='-') ||
 					(code[i]=='.' && code[i+1]=='.'))
 				str += code[++i];
-			if(code[i+1] == '.') str += code[++i];
+			if(code[i] == '.' && code[i+1] == '.') str += code[++i];
 			tmp_tok.val = str;
 			tmp_tok.nline = line;
 			tmp_tok.type = TOK_SYMBOL;

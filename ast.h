@@ -130,6 +130,7 @@ public:
 	VariableIndexAST(AST *, AST *);
 	virtual int get_type() const { return AST_VARIABLE_INDEX; }
 	llvm::Value * codegen(Function &, Program &, ExprType *);
+	llvm::Value *get_elem(Function &, Program &, ExprType *);
 };
 
 class LibraryAST : public AST {

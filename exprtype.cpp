@@ -93,6 +93,9 @@ namespace Type {
 			case T_DOUBLE:
 				str_ty = "double";
 				break;
+			case T_USER_TYPE:
+				str_ty = type->get().user_type;
+				break;
 			case T_ARRAY:
 				str_ty = "[" + (type->next ? type_to_str(type->next) : "") + "]";
 				break;
