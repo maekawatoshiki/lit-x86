@@ -167,10 +167,21 @@ AST *Parser::expr_rhs(int prec, AST *lhs) {
 				op == "-=" ||
 				op == "*=" ||
 				op == "/=" ||
+				op == "&=" ||
+				op == "|=" ||
+				op == "^=" ||
 				op == "=") {
-			bool add = op == "+=", sub = op == "-=", mul = op == "*=", div = op == "/=", normal = op == "=";
+			bool add = op == "+=", sub = op == "-=", mul = op == "*=", div = op == "/=", 
+					 aand = op == "&=", aor = op == "|=", axor = op == "^=", normal = op == "=";
 			lhs = new VariableAsgmtAST(lhs, normal ? rhs :
-						new BinaryAST(add ? "+" : sub ? "-" : mul ? "*" : div ? "/" : "?", lhs, rhs));	
+						new BinaryAST(
+							add ? "+" : 
+							sub ? "-" : 
+							mul ? "*" : 
+							div ? "/" : 
+							aand? "&" : 
+							aor ? "|" :
+							axor? "^" : "ERROR", lhs, rhs));	
 		} else 
 			lhs = new BinaryAST(op, lhs, rhs);		
 	}

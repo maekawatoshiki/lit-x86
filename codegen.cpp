@@ -23,7 +23,7 @@ extern "C" {
 		printf("%d", n);
 	}
 	void put_num_float(float n) {
-		printf("%g", n);
+		printf("%.16g", n);
 	}
 	void put_char(char ch) {
 		putchar(ch);
@@ -447,6 +447,8 @@ Function FunctionAST::codegen(Program &f_list) {
 			var_t *v = ((VariableDeclAST *)*it)->append(f, f_list);
 			if(v->type.eql_type(T_STRING))
 				arg_types.push_back(builder.getInt8PtrTy());
+			else if(v->type.eql_type(T_DOUBLE))
+				arg_types.push_back(builder.getFloatTy());
 			else if(v->type.eql_type(T_USER_TYPE)) {
 				arg_types.push_back(f_list.structs.get(v->type.get().user_type)->strct->getPointerTo());
 			} else if(v->type.is_array()) {
@@ -480,13 +482,15 @@ Function FunctionAST::codegen(Program &f_list) {
 	llvm::Type *func_ret_type = 
 		info.type.eql_type(T_STRING) ? 
 			(llvm::Type *)builder.getInt8PtrTy() : 
-			info.type.eql_type(T_USER_TYPE) ? 
-				(llvm::Type *)f_list.structs.get(info.type.get().user_type)->strct->getPointerTo() : 
-				(info.type.eql_type(T_ARRAY)) ? 
-					(info.type.next->eql_type(T_STRING)) ? 
-						(llvm::Type *)builder.getInt8PtrTy()->getPointerTo() : 
-						(llvm::Type *)builder.getInt32Ty()->getPointerTo() : 
-				(llvm::Type *)builder.getInt32Ty();
+			info.type.eql_type(T_DOUBLE) ?
+				(llvm::Type *)builder.getFloatTy() : 
+				info.type.eql_type(T_USER_TYPE) ? 
+					(llvm::Type *)f_list.structs.get(info.type.get().user_type)->strct->getPointerTo() : 
+					(info.type.eql_type(T_ARRAY)) ? 
+						(info.type.next->eql_type(T_STRING)) ? 
+							(llvm::Type *)builder.getInt8PtrTy()->getPointerTo() : 
+							(llvm::Type *)builder.getInt32Ty()->getPointerTo() : 
+					(llvm::Type *)builder.getInt32Ty();
 
 	llvm::FunctionType *func_type = llvm::FunctionType::get(func_ret_type, arg_types, false);
 	llvm::Function *func = llvm::Function::Create(func_type, llvm::Function::ExternalLinkage, f.info.name, mod);
@@ -743,7 +747,7 @@ llvm::Value * BinaryAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 	{ // cast float to int when lhs is integer type
 		if(ty_l.eql_type(T_INT) && ty_r.eql_type(T_DOUBLE)) {
 			rhs = builder.CreateFPToSI(rhs, builder.getInt32Ty());
-			ty_l = T_DOUBLE;
+			ty_l = T_INT;
 		} else if(ty_l.eql_type(T_DOUBLE) && ty_r.eql_type(T_INT)) {
 			rhs = builder.CreateSIToFP(rhs, builder.getFloatTy());
 		} else if(ty_l.eql_type(T_CHAR)) {
@@ -803,9 +807,15 @@ llvm::Value * BinaryAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 		bool str_cmp = false;
 		std::string tmp_name = "cmp_tmp";
 		if(op == "<") {
-			lhs = builder.CreateICmpSLT(lhs, rhs, tmp_name);
+			if(ty_l.eql_type(T_DOUBLE))
+				lhs = builder.CreateFCmpULT(lhs, rhs, tmp_name);
+			else
+				lhs = builder.CreateICmpSLT(lhs, rhs, tmp_name);
 		} else if(op == ">") {
-			lhs = builder.CreateICmpSGT(lhs, rhs, tmp_name);
+			if(ty_l.eql_type(T_DOUBLE))
+				lhs = builder.CreateFCmpUGT(lhs, rhs, tmp_name);
+			else
+				lhs = builder.CreateICmpSGT(lhs, rhs, tmp_name);
 		} else if(op == "!=") {
 			lhs = builder.CreateICmpNE(lhs, rhs, tmp_name);
 		} else if(op == "==") {
@@ -816,6 +826,7 @@ llvm::Value * BinaryAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 			lhs = builder.CreateICmpSGE(lhs, rhs, tmp_name);
 		}
 		lhs = builder.CreateZExt(lhs, builder.getInt32Ty());
+		ty->change(T_INT);	
 		return lhs;
 	} else if(op == "and" || op == "&" || op == "or" ||
 			op == "|" || op == "xor" || op == "^") {

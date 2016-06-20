@@ -17,6 +17,14 @@ def geti
 	str_to_int gets
 end
 
+def to_int s:string
+	str_to_int s
+end
+
+def to_float s:string :double
+	0.0 + to_int s
+end
+
 # operators for array
 def operator+ a:int[] x:int :int[]
 	size = length(a) + 1

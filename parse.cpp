@@ -69,6 +69,9 @@ llvm::Module *Parser::parser() {
 	op_prec["*="] = 100;
 	op_prec["/="] = 100;
 	op_prec["%="] = 100;
+	op_prec["^="] = 100;
+	op_prec["|="] = 100;
+	op_prec["&="] = 100;
 	op_prec["=="] = 200;
 	op_prec["!="] = 200;
 	op_prec["<="] = 200;
@@ -80,6 +83,7 @@ llvm::Module *Parser::parser() {
 	op_prec["^"] =  150;
 	op_prec["+"] =  300;
 	op_prec["-"] =  300;
+	op_prec["?"] =  300;
 	op_prec["*"] =  400;
 	op_prec["/"] =  400;
 	op_prec["%"] =  400;

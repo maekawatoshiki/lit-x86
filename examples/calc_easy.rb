@@ -45,7 +45,7 @@ def calc expr:string
 	end
 
 	# VM ( calculate )
-	stack = new 256
+	stack = new 256 int
 	sp = 0
 	for i in 0...length tok_ary
 		s = tok_ary[i]
