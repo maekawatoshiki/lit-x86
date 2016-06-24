@@ -39,6 +39,24 @@ Function *Program::get(std::string name, std::vector<ExprType *> args_type, std:
 	return NULL;
 }
 
+Function *Program::get(std::string name, std::vector<std::string> mod_name, std::vector<ExprType *> args_type) {
+	auto is_eql_args_type = [&](Function f) -> bool {
+		if(f.info.args_type.size() == 0 && args_type.size() == 0) return true;
+		if(f.info.args_type.size() != args_type.size()) return false;
+		auto caller_it = args_type.begin();
+		for(auto it = f.info.args_type.begin(); it != f.info.args_type.end() && caller_it != args_type.end(); ++it) {
+			if(!(*it)->eql_type((*caller_it))) return false;
+			caller_it++;
+		}
+		return true;
+	};
+	for(std::vector<Function>::iterator it = func.begin(); it != func.end(); it++) {
+		if(it->info.name == name && is_eql_args_type(*it) && it->info.mod_name == mod_name) {
+			return &(*it);
+		}
+	}
+	return NULL;
+}
 
 Function *Program::append(Function f) {
 	func.push_back(f);
@@ -49,7 +67,7 @@ Function *Program::append_undef(std::string name, std::string mod_name, int ntvc
 	Function f = {
 		.info = {
 			.address = (uint32_t)ntvc_pos,
-			.mod_name = module,
+			// .mod_name = module,
 			.name = name
 		}
 	};
@@ -60,7 +78,7 @@ Function *Program::append_undef(std::string name, std::string mod_name, int ntvc
 bool Program::rep_undef(std::string name, int ntvc) {
 	bool replaced = false;
 	for(std::vector<Function>::iterator it = undef_func.begin(); it != undef_func.end(); it++) {
-		if(it->info.name == name && it->info.mod_name == module) {
+		if(it->info.name == name/*  && it->info.mod_name == module */) {
 			ntv.gencode_int32_insert(ntvc - it->info.address - 4, it->info.address);
 			replaced = true;
 		}

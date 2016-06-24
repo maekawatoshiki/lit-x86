@@ -299,6 +299,8 @@ namespace Codegen {
 				Function f = ((FunctionAST *)*it)->codegen(list);
 			} else if((*it)->get_type() == AST_LIBRARY) {
 				((LibraryAST *)*it)->codegen(list);
+			} else if((*it)->get_type() == AST_MODULE) {
+				((ModuleAST *)*it)->codegen(list);
 			} else if((*it)->get_type() == AST_STRUCT) {
 				((StructAST *)*it)->codegen(list);
 			} else {
@@ -391,6 +393,16 @@ namespace Codegen {
 	}
 };
 
+void ModuleAST::codegen(Program &f_list) {
+	f_list.cur_mod.push_back(name);
+	for(auto &stmt : statement) {
+		if(stmt->get_type() == AST_FUNCTION) {
+			((FunctionAST *)stmt)->codegen(f_list);
+		}
+	}
+	f_list.cur_mod.pop_back();
+}
+
 llvm::Value * LibraryAST::codegen(Program &f_list) {
 	llvm::SMDiagnostic smd_err;
 	llvm::Module *lib_mod = llvm::ParseIRFile(("./lib/" + lib_name + ".ll"), smd_err, context);
@@ -426,7 +438,7 @@ void PrototypeAST::append(llvm::Module *lib_mod, Program &f_list) {
 Function FunctionAST::codegen(Program &f_list) {
 	Function f;
 	f.info.name = info.name;
-	f.info.mod_name = "";
+	f.info.mod_name = f_list.cur_mod;
 	f.info.address = ntv.count;
 	f.info.params = args.size(); 	
 	f.info.func_addr = NULL;
@@ -708,7 +720,9 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, ExprType *t
 		callee_args.push_back(Codegen::expression(f, f_list, *arg, &ty));
 		args_type.push_back(new ExprType(ty));
 	}
-	Function *function = f_list.get(info.name, args_type);
+	Function *function = f_list.get(info.name, f_list.cur_mod, args_type);
+	if(!function) function = f_list.get(info.name, info.mod_name, args_type);
+	if(!function) error("error: undefined function: '%s'", info.name.c_str());
 	llvm::Function *callee = (function->info.func_addr) ? function->info.func_addr : mod->getFunction(info.name);
 	if(!callee) error("no function: %s", info.name.c_str());
 	if(function == NULL) { // undefined
@@ -717,8 +731,8 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, ExprType *t
 			Codegen::expression(f, f_list, *it);
 			ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(256 - a++ * ADDR_SIZE); // mov [esp+ADDR*a], eax
 		}
-		ntv.gencode(0xe8); f_list.append_undef(info.name, info.mod_name, ntv.count);
-		ntv.gencode_int32(0x00000000); // call function
+		// ntv.gencode(0xe8); f_list.append_undef(info.name, info.mod_name, ntv.count);
+		// ntv.gencode_int32(0x00000000); // call function
 		ty->change(T_INT);
 		return NULL;
 	} else { // defined

@@ -16,6 +16,14 @@ int Parser::is_ident_tok()  { return tok.get().type == TOK_IDENT;  }
 int Parser::is_char_tok() { return tok.get().type == TOK_CHAR; } 
 
 AST *visit(AST *ast) {
+	auto mod_to_string = [](func_t f) -> std::string {
+		std::string out;
+		for(auto it = f.mod_name.begin(); it != f.mod_name.end(); ++it) {
+			out += *it + "::";
+		}
+		return out;
+	};
+
 	if(ast->get_type() == AST_BINARY) {
 		std::cout << "(" << ((BinaryAST *)ast)->op << " ";
 			visit(((BinaryAST *)ast)->left);
@@ -62,7 +70,7 @@ AST *visit(AST *ast) {
 		std::cout << std::endl;
 	} else if(ast->get_type() == AST_FUNCTION) {
 		FunctionAST *fa = ((FunctionAST *) ast);
-		std::cout << "(defunc " << fa->info.mod_name << "::" << fa->info.name << " ("; 
+		std::cout << "(defunc " << mod_to_string(fa->info) << fa->info.name << " ("; 
 		for(int i = 0; i < fa->args.size(); i++) 
 			visit(fa->args[i]);
 		std::cout << ")\n(\n";
@@ -87,7 +95,7 @@ AST *visit(AST *ast) {
 		std::cout << ")";
 	} else if(ast->get_type() == AST_VARIABLE_DECL) {
 		std::cout << "(vardecl "
-			<< ((VariableDeclAST *)ast)->info.mod_name << "::"
+			// << ((VariableDeclAST *)ast)->info.mod_name << "::"
 			<< ((VariableDeclAST *)ast)->info.name << " "
 			<< ((VariableDeclAST *)ast)->info.type.get().type << ")";
 	} else if(ast->get_type() == AST_ARRAY) {
@@ -106,11 +114,11 @@ AST *visit(AST *ast) {
 		std::cout << " \"" << ((StringAST *)ast)->str << "\" ";
 	} else if(ast->get_type() == AST_VARIABLE) {
 		std::cout << "(var " 
-			<< ((VariableAST *)ast)->info.mod_name << "::"
+			// << ((VariableAST *)ast)->info.mod_name << "::"
 			<< ((VariableAST *)ast)->info.name << ") ";
 	} else if(ast->get_type() == AST_FUNCTION_CALL) {
 		std::cout << "(call " 
-			<< ((FunctionCallAST *)ast)->info.mod_name << "::"
+			<< mod_to_string(((FunctionCallAST *)ast)->info) 
 			<< ((FunctionCallAST *)ast)->info.name << " ";
 		for(int i = 0; i < ((FunctionCallAST *)ast)->args.size(); i++) {
 			visit(((FunctionCallAST *)ast)->args[i]);
@@ -140,6 +148,13 @@ AST *visit(AST *ast) {
 			visit(da->var);
 			visit(da->member);
 		std::cout << ")";
+	} else if(ast->get_type() == AST_MODULE) {
+		ModuleAST *ma = (ModuleAST *)ast;
+		std::cout << "(module " << ma->name << " ";
+			for(auto it = ma->statement.begin(); it != ma->statement.end(); ++it) {
+				visit(*it);
+			}
+		std::cout << ")" << std::endl;
 	}
 
 	return ast;
@@ -218,7 +233,8 @@ AST *Parser::expr_dot() {
 
 AST *Parser::expr_primary() {
 	bool is_get_addr = false, ispare = false, is_global_decl = false;
-	std::string name, mod_name = "";
+	std::string name;
+	std::vector<std::string> mod_name;
 	var_t *v = NULL; 
 	
 	if(tok.skip("&")) is_get_addr = true;
@@ -246,15 +262,18 @@ AST *Parser::expr_primary() {
 	} else if(tok.get().val == "true" || tok.get().val == "false") {
 		return new NumberAST(tok.next().val == "true" ? 1 : 0);
 	} else if(is_ident_tok()) { 
-		name = tok.next().val; mod_name = "";
+		name = tok.next().val;
 		int is_ary; 
 		ExprType type;
 		bool is_vardecl = false; 
 		std::string class_name;
 
-		if(tok.skip("::")) { // module?
-			mod_name = tok.next().val;
-			swap(mod_name, name);
+		if(tok.is("::")) { // module?
+			mod_name.push_back(name);
+			name = "";
+			while(tok.skip("::")) mod_name.push_back(tok.next().val);
+			name = mod_name.back();
+			mod_name.pop_back();
 		} else if(tok.skip(":")) { // variable declaration
 			is_ary = 0;
 			type.change(Type::str_to_type(tok.next().val));
@@ -273,6 +292,7 @@ AST *Parser::expr_primary() {
 			if((has_pare=tok.skip("(")) || is_func(name)) { // function
 				func_t f = {
 					.name = name,
+					.mod_name = mod_name
 				};
 				std::vector<AST *> args;
 				if(tok.get().type != TOK_END && 
@@ -287,7 +307,7 @@ AST *Parser::expr_primary() {
 			} else { // variable
 				var_t v = {
 					.name = name,
-					.mod_name = mod_name == "" ? module : mod_name,
+					.mod_name = "",
 					.class_type = class_name,
 					.is_global = is_global_decl
 				};

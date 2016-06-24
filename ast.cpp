@@ -59,6 +59,10 @@ FunctionAST::FunctionAST(func_t f, std::vector<AST *> a, std::vector<AST *> stmt
 	info(f), args(a), statement(stmt) {
 }
 
+ModuleAST::ModuleAST(std::string name_, std::vector<AST *> state_) :
+	name(name_), statement(state_) {
+}
+
 StructAST::StructAST(std::string _name, std::vector<AST *> _vars) : 
 	name(_name), var_decls(_vars) {
 }

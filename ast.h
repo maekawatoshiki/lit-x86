@@ -31,6 +31,7 @@ enum {
 	AST_NEW,
 	AST_STRUCT,
 	AST_DOT,
+	AST_MODULE,
 };
 
 class AST {
@@ -168,6 +169,15 @@ public:
 	FunctionAST(func_t f, std::vector<AST *> a, std::vector<AST *>);
 	virtual int get_type() const { return AST_FUNCTION; }
 	Function codegen(Program &);
+};
+
+class ModuleAST : public AST {
+public:
+	std::string name;
+	std::vector<AST *> statement;
+	ModuleAST(std::string name, std::vector<AST *>);
+	virtual int get_type() const { return AST_MODULE; }
+	void codegen(Program &);
 };
 
 class StructAST : public AST {

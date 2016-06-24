@@ -48,6 +48,7 @@ public:
 // parse.h
 	AST *make_lib();
 	AST *make_proto();
+	AST *make_module();
 	AST *make_if();
 	AST *make_elsif();
 	AST *make_while();

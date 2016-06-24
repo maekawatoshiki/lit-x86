@@ -27,11 +27,7 @@ AST *Parser::expression() {
 	if(tok.skip("def")) return make_func();
 	else if(tok.is("proto")) return make_proto();
 	else if(tok.is("struct")) return make_struct();
-	// else if(tok.skip("module")) { blocksCount++;
-	// 	module = tok.tok[tok.pos++].val;
-	// 	eval();
-	// 	module = "";
-	// }
+	else if(tok.is("module")) return make_module();
 	else if(tok.is("lib")) return make_lib();
 	else if(tok.is("for")) return make_for();
 	else if(tok.is("while"))  return make_while();
@@ -152,6 +148,16 @@ AST *Parser::make_proto() {
 		return new PrototypeAST(function, args, new_name);	
 	}
 	return NULL;
+}
+
+AST *Parser::make_module() {
+	if(tok.skip("module")) {
+		std::string name = tok.next().val;
+		ast_vector body = eval();
+		if(!tok.skip("end")) error("error: %d: expected expression 'end'", tok.get().nline);
+		return new ModuleAST(name, body);
+	}
+	return nullptr;
 }
 
 AST *Parser::make_struct() {

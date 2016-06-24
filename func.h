@@ -10,7 +10,8 @@ struct func_t {
 	uint32_t address, params;
 	ExprType type;
 	std::vector<ExprType *> args_type;
-	std::string name, mod_name;
+	std::string name;
+	std::vector<std::string> mod_name;
 	llvm::Function *func_addr;
 };
 
@@ -28,6 +29,7 @@ class Program {
 public:
 	std::string name;
 	std::vector<Function> func, undef_func;
+	std::vector<std::string> cur_mod;
 	Variable var_global; 
 	Struct structs;
 	std::string &module;
@@ -35,6 +37,7 @@ public:
 	Program(std::string &mod): module(mod) { func.reserve(128); }
 	bool is(std::string, std::string);
 	Function *get(std::string, std::vector<ExprType *>, std::string = "");
+	Function *get(std::string, std::vector<std::string>, std::vector<ExprType*>);
 	Function *append(Function);
 	
 	Function *append_undef(std::string, std::string, int);
