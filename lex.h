@@ -17,6 +17,7 @@ enum {
 class Lexer {
 public:
 	Token &tok;
+	std::map<std::string, bool> required_files;
 
 	Lexer(Token &token)
 		:tok(token) { }

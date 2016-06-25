@@ -49,11 +49,14 @@ int Lexer::lex(char *code) {
 
 			if(tok.tok.back().val == "require") {
 				tok.tok.erase(tok.tok.end());
-				std::ifstream ifs_src(("./lib/" + str + ".rb").c_str());
-				if(!ifs_src) error("LitSystemError: cannot open file '%s'", str.c_str());
-				std::istreambuf_iterator<char> it(ifs_src), last;
-				std::string all(it, last);
-				lex((char *)all.c_str());
+				if(!required_files.count(str)) {
+					required_files[str] = true;
+					std::ifstream ifs_src(("./lib/" + str + ".rb").c_str());
+					if(!ifs_src) error("LitSystemError: cannot open file '%s'", str.c_str());
+					std::istreambuf_iterator<char> it(ifs_src), last;
+					std::string all(it, last);
+					lex((char *)all.c_str());
+				}
 			} else {
 				tmp_tok.val = str;
 				tmp_tok.nline = line;

@@ -1,5 +1,3 @@
-require "Math"
-
 def qsort a:int[] left right
 	l = left; r = right
 	pv = l
