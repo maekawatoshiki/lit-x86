@@ -398,6 +398,8 @@ void ModuleAST::codegen(Program &f_list) {
 	for(auto &stmt : statement) {
 		if(stmt->get_type() == AST_FUNCTION) {
 			((FunctionAST *)stmt)->codegen(f_list);
+		} else if(stmt->get_type() == AST_MODULE) {
+			((ModuleAST *)stmt)->codegen(f_list);
 		}
 	}
 	f_list.cur_mod.pop_back();
