@@ -23,7 +23,7 @@ extern "C" {
 		printf("%d", n);
 	}
 	void put_num_float(float n) {
-		printf("%.16g", n);
+		printf("%.8g", n);
 	}
 	void put_char(char ch) {
 		putchar(ch);
@@ -546,7 +546,7 @@ Function FunctionAST::codegen(Program &f_list) {
 	if(ret_value) {
 		if(ret_value->getType()->getTypeID() != func_ret_type->getTypeID()) {
 			ret_value = llvm::ConstantInt::get(builder.getInt32Ty(), 0);
-			fprintf(stderr, "warning: type of expression that evaluated last is not match\n");
+			// fprintf(stderr, "warning: type of expression that evaluated last is not match\n");
 		}
 	} else if(func_ret_type->getTypeID() == builder.getInt32Ty()->getTypeID()) {
 		ret_value = llvm::ConstantInt::get(builder.getInt32Ty(), 0);
@@ -760,8 +760,8 @@ llvm::Value * BinaryAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 
 	{ // cast float to int when lhs is integer type
 		if(ty_l.eql_type(T_INT) && ty_r.eql_type(T_DOUBLE)) {
-			rhs = builder.CreateFPToSI(rhs, builder.getInt32Ty());
-			ty_l = T_INT;
+			lhs = builder.CreateSIToFP(lhs, builder.getFloatTy());
+			ty_l = T_DOUBLE;
 		} else if(ty_l.eql_type(T_DOUBLE) && ty_r.eql_type(T_INT)) {
 			rhs = builder.CreateSIToFP(rhs, builder.getFloatTy());
 		} else if(ty_l.eql_type(T_CHAR)) {
