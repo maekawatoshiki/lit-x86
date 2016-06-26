@@ -19,7 +19,13 @@ module File
 		file_read id 
 	end
 	def read name:string :string
-		read open name
+		id = open name
+		if id == 0
+			return "error: no such file or directory"
+		end
+		content = read id
+		file_close id
+		content
 	end
 	def close id
 		file_close id

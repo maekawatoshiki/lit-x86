@@ -1,5 +1,5 @@
-require M
-require Sys
+require "std"
 
-puts M:add(2, 3)
-puts M:sub(10, 2)
+a = [1]
+a += 10
+puts length a

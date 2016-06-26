@@ -722,8 +722,8 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, ExprType *t
 		callee_args.push_back(Codegen::expression(f, f_list, *arg, &ty));
 		args_type.push_back(new ExprType(ty));
 	}
-	Function *function = f_list.get(info.name, f_list.cur_mod, args_type);
-	if(!function) function = f_list.get(info.name, info.mod_name, args_type);
+	Function *function = f_list.get(info.name, info.mod_name, args_type);
+	if(!function) function = f_list.get(info.name, f_list.cur_mod, args_type);
 	if(!function) error("error: undefined function: '%s'", info.name.c_str());
 	llvm::Function *callee = (function->info.func_addr) ? function->info.func_addr : mod->getFunction(info.name);
 	if(!callee) error("no function: %s", info.name.c_str());
@@ -731,7 +731,6 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, ExprType *t
 		uint32_t a = 3;
 		for(ast_vector::iterator it = args.begin(); it != args.end(); ++it) {
 			Codegen::expression(f, f_list, *it);
-			ntv.gencode(0x89); ntv.gencode(0x44); ntv.gencode(0x24); ntv.gencode(256 - a++ * ADDR_SIZE); // mov [esp+ADDR*a], eax
 		}
 		// ntv.gencode(0xe8); f_list.append_undef(info.name, info.mod_name, ntv.count);
 		// ntv.gencode_int32(0x00000000); // call function
