@@ -51,6 +51,7 @@ public:
 namespace Type {
 	ExprType *str_to_type(std::string);
 	std::string type_to_str(ExprType *);
+	llvm::Type *type_to_llvmty(ExprType *);
 };
 #endif
 

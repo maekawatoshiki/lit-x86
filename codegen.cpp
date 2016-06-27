@@ -141,7 +141,7 @@ namespace Codegen {
 			// create printf function
 			func_args.push_back(builder.getInt8Ty());
 			func = llvm::Function::Create(
-					llvm::FunctionType::get(/*ret*/builder.getVoidTy(), func_args, true),
+					llvm::FunctionType::get(/*ret*/builder.getInt32Ty(), func_args, true),
 					llvm::GlobalValue::ExternalLinkage,
 					"printf", mod);
 			stdfunc["printf"].func = func;
@@ -336,12 +336,12 @@ namespace Codegen {
 			pass_mgr.add(new llvm::DataLayout(*exec_engine->getDataLayout()));
 			// mem2reg
 			pass_mgr.add(llvm::createPromoteMemoryToRegisterPass());
-			// // Provide basic AliasAnalysis support for GVN.
-			// pass_mgr.add(llvm::createBasicAliasAnalysisPass());
-			// // Do simple "peephole" optimizations and bit-twiddling optzns.
-			// pass_mgr.add(llvm::createInstructionCombiningPass());
-			// // Reassociate expressions.
-			// pass_mgr.add(llvm::createReassociatePass());
+			// Provide basic AliasAnalysis support for GVN.
+			pass_mgr.add(llvm::createBasicAliasAnalysisPass());
+			// Do simple "peephole" optimizations and bit-twiddling optzns.
+			pass_mgr.add(llvm::createInstructionCombiningPass());
+			// Reassociate expressions.
+			pass_mgr.add(llvm::createReassociatePass());
 			pass_mgr.run(*module);
 		}
 		if(enable_emit_llvm) module->dump();
@@ -493,18 +493,18 @@ Function FunctionAST::codegen(Program &f_list) {
 	// definition the Function
 	
 	// set function return type
-	llvm::Type *func_ret_type = 
-		info.type.eql_type(T_STRING) ? 
-			(llvm::Type *)builder.getInt8PtrTy() : 
-			info.type.eql_type(T_DOUBLE) ?
-				(llvm::Type *)builder.getFloatTy() : 
-				info.type.eql_type(T_USER_TYPE) ? 
-					(llvm::Type *)f_list.structs.get(info.type.get().user_type)->strct->getPointerTo() : 
-					(info.type.eql_type(T_ARRAY)) ? 
-						(info.type.next->eql_type(T_STRING)) ? 
-							(llvm::Type *)builder.getInt8PtrTy()->getPointerTo() : 
-							(llvm::Type *)builder.getInt32Ty()->getPointerTo() : 
-					(llvm::Type *)builder.getInt32Ty();
+	llvm::Type *func_ret_type = Type::type_to_llvmty(&info.type);
+		// info.type.eql_type(T_STRING) ? 
+		// 	(llvm::Type *)builder.getInt8PtrTy() : 
+		// 	info.type.eql_type(T_DOUBLE) ?
+		// 		(llvm::Type *)builder.getFloatTy() : 
+		// 		info.type.eql_type(T_USER_TYPE) ? 
+		// 			(llvm::Type *)f_list.structs.get(info.type.get().user_type)->strct->getPointerTo() : 
+		// 			(info.type.eql_type(T_ARRAY)) ? 
+		// 				(info.type.next->eql_type(T_STRING)) ? 
+		// 					(llvm::Type *)builder.getInt8PtrTy()->getPointerTo() : 
+		// 					(llvm::Type *)builder.getInt32Ty()->getPointerTo() : 
+		// 			(llvm::Type *)builder.getInt32Ty();
 
 	llvm::FunctionType *func_type = llvm::FunctionType::get(func_ret_type, arg_types, false);
 	llvm::Function *func = llvm::Function::Create(func_type, llvm::Function::ExternalLinkage, f.info.name, mod);

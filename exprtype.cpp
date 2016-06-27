@@ -102,4 +102,40 @@ namespace Type {
 		}
 		return str_ty;
 	}
+
+	llvm::Type *type_to_llvmty(ExprType *type) {
+		ExprType *ty = type;
+		llvm::Type *out;
+		int ary_count = 0;
+		while(ty->is_array()) {
+			ty = ty->next;
+			ary_count++;
+		}
+		if(ty->eql_type(T_STRING)) {
+			out = llvm::Type::getInt8PtrTy(llvm::getGlobalContext());
+			while(ary_count--) out = out->getPointerTo();	
+		} else if(ty->eql_type(T_DOUBLE)) {
+			out = llvm::Type::getFloatTy(llvm::getGlobalContext());
+			while(ary_count--) out = out->getPointerTo();	
+		} else if(ty->eql_type(T_INT)) {
+			out = llvm::Type::getInt32Ty(llvm::getGlobalContext());
+			while(ary_count--) out = out->getPointerTo();	
+		} else if(ty->eql_type(T_USER_TYPE)) {
+			// out = builder.getInt8PtrTy();
+			// while(ary_count--) out = out->getPointerTo();	
+		}
+		// llvm::Type *func_ret_type = 
+		// 	info.type.eql_type(T_STRING) ? 
+		// 		(llvm::Type *)builder.getInt8PtrTy() : 
+		// 		info.type.eql_type(T_DOUBLE) ?
+		// 			(llvm::Type *)builder.getFloatTy() : 
+		// 			info.type.eql_type(T_USER_TYPE) ? 
+		// 				(llvm::Type *)f_list.structs.get(info.type.get().user_type)->strct->getPointerTo() : 
+		// 				(info.type.eql_type(T_ARRAY)) ? 
+		// 					(info.type.next->eql_type(T_STRING)) ? 
+		// 						(llvm::Type *)builder.getInt8PtrTy()->getPointerTo() : 
+		// 						(llvm::Type *)builder.getInt32Ty()->getPointerTo() : 
+		// 				(llvm::Type *)builder.getInt32Ty();
+		return out;
+	}
 };

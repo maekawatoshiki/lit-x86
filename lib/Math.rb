@@ -12,38 +12,37 @@ end
 
 lib Prime
 	proto Prime_is p | prime_is 
-	proto Prime_table tbl:int[] max | prime_table
 end
 
-module Prime
-	def is p
-		prime_is p
-	end
-	def list max:int :int[]
-		prime_list = new max int
-		for i in 0...max
-			prime_list[i] = 0
+
+module Math
+	module Prime
+		def is p
+			prime_is p
 		end
-		for i = 2, i * i < max, i += 1
-			if prime_list[i] == 0
-				for k = i * 2, k < max, k += i
-					if prime_list[k] == 0
-						prime_list[k] = 1
+		def list max:int :int[]
+			prime_list = new max int
+			for i in 0...max
+				prime_list[i] = 0
+			end
+			for i = 2, i * i < max, i += 1
+				if prime_list[i] == 0
+					for k = i * 2, k < max, k += i
+						if prime_list[k] == 0
+							prime_list[k] = 1
+						end
 					end
 				end
 			end
-		end
-		table = new 0 int
-		for i in 2...max
-			if prime_list[i] == 0
-				table += i
+			table = new 0 int
+			for i in 2...max
+				if prime_list[i] == 0
+					table += i
+				end
 			end
+			table
 		end
-		table
 	end
-end
-
-module Math
 	def gcd a b
 		math_gcd a b
 	end
