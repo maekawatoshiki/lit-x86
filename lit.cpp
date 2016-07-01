@@ -1,5 +1,4 @@
 #include "lit.h"
-#include "asm.h"
 #include "lex.h"
 #include "expr.h"
 #include "parse.h"
@@ -234,9 +233,11 @@ int Lit::run() {
 	// {
 	// 	std::ofstream bin("out", std::ios::binary);
 	// 	bin.write((const char *)ntv.code, ntv.count);
+	//
 	// 	bin.close();
 	// }
-	return ((int (*)(int *, void**))ntv.code)(0, funcTable);
+	// return ((int (*)(int *, void**))ntv.code)(0, funcTable);
+	return 0;
 }
 
 void Lit::interpret() {

@@ -1,6 +1,5 @@
 #include "parse.h"
 #include "lit.h"
-#include "asm.h"
 #include "lex.h"
 #include "expr.h"
 #include "token.h"
@@ -55,7 +54,7 @@ ast_vector Parser::eval() {
 }
 
 llvm::Module *Parser::parser() {
-	tok.pos = ntv.count = 0;
+	tok.pos = 0;
 	blocksCount = 0;
 	op_prec[".."] = 50;
 	op_prec["..."] =50;

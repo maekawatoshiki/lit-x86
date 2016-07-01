@@ -2,8 +2,8 @@ CFLAGS = -O3 -Wno-strict-aliasing -rdynamic -std=c++11
 CC = clang++ $(CFLAGS) 
 LLVM = `llvm-config-3.4 --cppflags --ldflags --libs all`
 
-lit: main.o lit.o asm.o lex.o var.o expr.o parse.o  token.o option.o util.o library.o func.o ast.o codegen.o exprtype.o
-	$(CC) -o lit -rdynamic -ldl main.o lit.o asm.o lex.o var.o expr.o parse.o \
+lit: main.o lit.o lex.o var.o expr.o parse.o  token.o option.o util.o library.o func.o ast.o codegen.o exprtype.o
+	$(CC) -o lit -rdynamic -ldl main.o lit.o lex.o var.o expr.o parse.o \
 		token.o option.o util.o library.o func.o ast.o codegen.o exprtype.o $(LLVM) 
 
 main.o: main.cpp common.h
@@ -11,9 +11,6 @@ main.o: main.cpp common.h
 
 lit.o: lit.h lit.cpp
 	$(CC) -c lit.cpp $(LLVM) 
-
-asm.o: asm.h asm.cpp
-	$(CC) -c asm.cpp $(LLVM) 
 
 lex.o: lex.h lex.cpp
 	$(CC) -c lex.cpp $(LLVM) 

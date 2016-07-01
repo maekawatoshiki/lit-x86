@@ -1,7 +1,6 @@
 #include "var.h"
 #include "parse.h"
 #include "token.h"
-#include "asm.h"
 #include "util.h"
 #include "lit.h"
 #include "func.h"

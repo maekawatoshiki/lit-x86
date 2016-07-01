@@ -1,12 +1,7 @@
 #include "func.h"
 #include "parse.h"
-#include "asm.h"
 #include "lit.h"
 #include "exprtype.h"
-
-uint32_t Function::call(NativeCode_x86 &ntv) {
-	return info.address;
-}
 
 bool Program::is(std::string name, std::string mod_name) {
 	auto is_declared_func = [&](std::string name) -> Function * {
@@ -79,7 +74,6 @@ bool Program::rep_undef(std::string name, int ntvc) {
 	bool replaced = false;
 	for(std::vector<Function>::iterator it = undef_func.begin(); it != undef_func.end(); it++) {
 		if(it->info.name == name/*  && it->info.mod_name == module */) {
-			ntv.gencode_int32_insert(ntvc - it->info.address - 4, it->info.address);
 			replaced = true;
 		}
 	}
@@ -102,8 +96,6 @@ void Program::insert_global_var() {
 	for(std::vector<var_t>::iterator it = var_global.local.begin(); it != var_global.local.end(); ++it) {
 		uint64_t g_addr = (uint64_t)LitMemory::alloc(1, ADDR_SIZE);
 		for(std::vector<int>::iterator pos = it->used_location.begin(); pos != it->used_location.end(); ++pos) {
-			ntv.gencode_int32_insert(g_addr, *pos);
 		}
-		ntv.gencode_int32(0x00000000);
 	}
 }

@@ -4,7 +4,6 @@
 #include "common.h"
 #include "var.h"
 #include "func.h"
-#include "asm.h"
 #include "exprtype.h"
 
 enum {

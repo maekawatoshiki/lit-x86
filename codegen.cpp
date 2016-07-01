@@ -1,6 +1,5 @@
 #include "codegen.h"
 #include "lit.h"
-#include "asm.h"
 #include "expr.h"
 #include "exprtype.h"
 #include "util.h"
@@ -441,11 +440,9 @@ Function FunctionAST::codegen(Program &f_list) {
 	Function f;
 	f.info.name = info.name;
 	f.info.mod_name = f_list.cur_mod;
-	f.info.address = ntv.count;
 	f.info.params = args.size(); 	
 	f.info.func_addr = NULL;
 	f.info.type.change(new ExprType(info.type));
-	uint32_t func_bgn = ntv.count;
 
 	// append arguments 
 	std::vector<llvm::Type *> arg_types;
@@ -488,7 +485,6 @@ Function FunctionAST::codegen(Program &f_list) {
 	f.info.args_type = args_type_for_overload;
 
 	Function *function = f_list.append(f);
-	f_list.rep_undef(f.info.name, func_bgn);
 
 	// definition the Function
 	
@@ -732,8 +728,6 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, ExprType *t
 		for(ast_vector::iterator it = args.begin(); it != args.end(); ++it) {
 			Codegen::expression(f, f_list, *it);
 		}
-		// ntv.gencode(0xe8); f_list.append_undef(info.name, info.mod_name, ntv.count);
-		// ntv.gencode_int32(0x00000000); // call function
 		ty->change(T_INT);
 		return NULL;
 	} else { // defined

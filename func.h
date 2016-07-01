@@ -1,9 +1,7 @@
 #ifndef _FUNC_LIT_
 #define _FUNC_LIT_
 
-#include "common.h"
 #include "var.h"
-#include "asm.h"
 #include "exprtype.h"
 
 struct func_t {
@@ -22,7 +20,6 @@ public:
 	llvm::BasicBlock *bb_return;
 	std::stack<llvm::BasicBlock *> break_br_list;
 	std::stack<bool> has_br;
-	uint32_t call(NativeCode_x86 &);
 };
 
 class Program {

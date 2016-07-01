@@ -1,6 +1,5 @@
 #include "expr.h"
 #include "lit.h"
-#include "asm.h"
 #include "lex.h"
 #include "token.h"
 #include "parse.h"
