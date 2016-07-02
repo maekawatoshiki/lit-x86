@@ -456,27 +456,7 @@ Function FunctionAST::codegen(Program &f_list) {
 			args_type_for_overload.push_back(new ExprType(T_INT));
 		} else if((*it)->get_type() == AST_VARIABLE_DECL) {
 			var_t *v = ((VariableDeclAST *)*it)->append(f, f_list);
-			if(v->type.eql_type(T_STRING))
-				arg_types.push_back(builder.getInt8PtrTy());
-			else if(v->type.eql_type(T_DOUBLE))
-				arg_types.push_back(builder.getFloatTy());
-			else if(v->type.eql_type(T_USER_TYPE)) {
-				arg_types.push_back(f_list.structs.get(v->type.get().user_type)->strct->getPointerTo());
-			} else if(v->type.is_array()) {
-				int count = 1;
-				llvm::Type *ty;
-				ExprType *next_ = v->type.next;
-				while(next_ && next_->is_array()) {
-					next_ = next_->next;	
-					count++;
-				}
-				ty =
-					next_->eql_type(T_STRING) ? 
-						(llvm::Type *)builder.getInt8PtrTy() : 
-						(llvm::Type *)builder.getInt32Ty();
-				while(count--) ty = ty->getPointerTo();
-				arg_types.push_back(ty);
-			} else arg_types.push_back(builder.getInt32Ty());
+			arg_types.push_back(Type::type_to_llvmty(&v->type));
 
 			arg_names.push_back(v->name);
 			args_type_for_overload.push_back(new ExprType(v->type));
