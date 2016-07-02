@@ -31,7 +31,6 @@ module Calc
 	end
 
 	def run expr:string
-		$pos = 0
 		tok_stream = addsub expr
 		puts "reverse polish: " tok_stream
 		tok = ""
@@ -71,6 +70,7 @@ module Calc
 	end
 end
 
+$pos = 0
 print "expression: "
 input = gets
 puts Calc::run input

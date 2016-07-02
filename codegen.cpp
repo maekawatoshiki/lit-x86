@@ -292,18 +292,59 @@ namespace Codegen {
 		Program list(module);
 
 		Function main;
-		std::vector<AST *> main_code;
+		std::vector<AST *> main_code, other_code, gvar_code;
 		for(ast_vector::iterator it = program.begin(); it != program.end(); ++it) {
 			if((*it)->get_type() == AST_FUNCTION) {
-				Function f = ((FunctionAST *)*it)->codegen(list);
+				other_code.push_back(*it);
 			} else if((*it)->get_type() == AST_LIBRARY) {
-				((LibraryAST *)*it)->codegen(list);
+				other_code.push_back(*it);
 			} else if((*it)->get_type() == AST_MODULE) {
-				((ModuleAST *)*it)->codegen(list);
+				other_code.push_back(*it);
 			} else if((*it)->get_type() == AST_STRUCT) {
-				((StructAST *)*it)->codegen(list);
+				other_code.push_back(*it);
+			} else if((*it)->get_type() == AST_VARIABLE_ASGMT) {
+				if(((VariableAsgmtAST *)(*it))->var->get_type() == AST_VARIABLE) {
+					VariableAST *var = (VariableAST *)((VariableAsgmtAST *)(*it))->var;
+					if(var->info.is_global == true) 
+						gvar_code.push_back(*it);
+					else
+						main_code.push_back(*it);
+				} else 
+					main_code.push_back(*it);
 			} else {
 				main_code.push_back(*it);
+			}
+		}
+		llvm::Function *func_init_gvar = llvm::Function::Create(
+				llvm::FunctionType::get(builder.getVoidTy(), std::vector<llvm::Type *>(), false),
+				llvm::Function::ExternalLinkage, "init_gvar", mod);
+		{
+			Function init_gvar;
+			// create entry point of main function
+			llvm::BasicBlock *entry = llvm::BasicBlock::Create(context, "entry", func_init_gvar);
+			builder.SetInsertPoint(entry);
+
+			for(auto g = gvar_code.begin(); g != gvar_code.end(); ++g) {
+				ExprType ty;
+				((VariableAsgmtAST *)*g)->codegen(init_gvar, list, &ty);
+			}
+			builder.CreateRetVoid();
+		}
+		for(auto code = other_code.begin(); code != other_code.end(); ++code) {
+			switch((*code)->get_type()) {
+				case AST_FUNCTION:
+					((FunctionAST *)*code)->codegen(list);
+					break;
+				case AST_LIBRARY: 
+					((LibraryAST *)*code)->codegen(list);
+					break;
+				case AST_MODULE:
+					((ModuleAST *)*code)->codegen(list);
+					break;
+				case AST_STRUCT:
+					((StructAST *)*code)->codegen(list);
+				default:
+					error("what happened?");
 			}
 		}
 		list.append(main);
@@ -315,6 +356,8 @@ namespace Codegen {
 		// create entry point of main function
 		llvm::BasicBlock *entry = llvm::BasicBlock::Create(context, "entry", func_main);
 		builder.SetInsertPoint(entry);
+
+		builder.CreateCall(func_init_gvar);
 
 		for(std::vector<AST *>::iterator it = main_code.begin(); it != main_code.end(); ++it) {
 			expression(main, list, *it);
@@ -470,17 +513,6 @@ Function FunctionAST::codegen(Program &f_list) {
 	
 	// set function return type
 	llvm::Type *func_ret_type = Type::type_to_llvmty(&info.type);
-		// info.type.eql_type(T_STRING) ? 
-		// 	(llvm::Type *)builder.getInt8PtrTy() : 
-		// 	info.type.eql_type(T_DOUBLE) ?
-		// 		(llvm::Type *)builder.getFloatTy() : 
-		// 		info.type.eql_type(T_USER_TYPE) ? 
-		// 			(llvm::Type *)f_list.structs.get(info.type.get().user_type)->strct->getPointerTo() : 
-		// 			(info.type.eql_type(T_ARRAY)) ? 
-		// 				(info.type.next->eql_type(T_STRING)) ? 
-		// 					(llvm::Type *)builder.getInt8PtrTy()->getPointerTo() : 
-		// 					(llvm::Type *)builder.getInt32Ty()->getPointerTo() : 
-		// 			(llvm::Type *)builder.getInt32Ty();
 
 	llvm::FunctionType *func_type = llvm::FunctionType::get(func_ret_type, arg_types, false);
 	llvm::Function *func = llvm::Function::Create(func_type, llvm::Function::ExternalLinkage, f.info.name, mod);
@@ -921,7 +953,8 @@ llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, ExprType *
 	ty->change(new ExprType(v_ty));
 	if(v->is_global) {
 		if(first_decl) {
-			mod->getOrInsertGlobal(v->name, builder.getInt32Ty());
+			v->type = v_ty;
+			mod->getOrInsertGlobal(v->name, Type::type_to_llvmty(&v_ty));
 			llvm::GlobalVariable *gbl = mod->getNamedGlobal(v->name);
 			// gbl->setLinkage(llvm::GlobalValue::CommonLinkage);
 			gbl->setAlignment(4);
@@ -1003,12 +1036,13 @@ llvm::Value * VariableAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 	if(info.is_global) {
 		v = f_list.var_global.get(info.name, info.mod_name);
 		if(v == NULL) {
-			v = f_list.append_global_var(info.name, info.type.get().type); // global variable can be used if didn't declared
-			mod->getOrInsertGlobal(v->name, builder.getInt32Ty());
-			llvm::GlobalVariable *gbl = mod->getNamedGlobal(v->name);
-			gbl->setAlignment(4);
-			gbl->setInitializer(llvm::ConstantInt::get(builder.getInt32Ty(), 0));
-			v->val = gbl;
+			puts("error");
+			// v = f_list.append_global_var(info.name, info.type.get().type); // global variable can be used if didn't declared
+			// mod->getOrInsertGlobal(v->name, builder.getInt32Ty());
+			// llvm::GlobalVariable *gbl = mod->getNamedGlobal(v->name);
+			// gbl->setAlignment(4);
+			// gbl->setInitializer(llvm::ConstantInt::get(builder.getInt32Ty(), 0));
+			// v->val = gbl;
 		}
 	} else 
 		v = f.var.get(info.name, info.mod_name);
@@ -1017,7 +1051,7 @@ llvm::Value * VariableAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 		ty->change(&v->type);
 		return builder.CreateLoad(v->val, "var_tmp");
 	} else { // global
-		ty->change(T_INT);
+		ty->change(&v->type);
 		return builder.CreateLoad(v->val, "var_tmp");
 	}
 }
