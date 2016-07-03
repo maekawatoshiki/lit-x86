@@ -18,3 +18,4 @@ check './lit ./examples/math.rb' 'cat test/math' &
 check './lit ./test/require.rb' 'echo 2' &
 check './lit ./examples/array.rb' 'echo 12345' &
 wait
+exit 0
