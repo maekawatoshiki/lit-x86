@@ -1,6 +1,5 @@
 # Introduction
-- Lit is a programming language that uses JIT compiling.
-So very faster.
+- Lit is a programming language designed fast and light weight with LLVM
 
 # How to use
 Please look at Wiki.
