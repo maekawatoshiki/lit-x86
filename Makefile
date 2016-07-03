@@ -54,9 +54,11 @@ lib: lit
 test: lit lib
 	./test/test.sh
 
-install: lit
+install: test
 	mkdir ~/.lit
 	cp -p lit ~/.lit
+	cp -r ./lib ~/.lit/lib
+	echo "please set path yourself:)"
 
 clean:
 	$(RM) a.out lit *.o lib/*.so lib/*.ll
