@@ -23,7 +23,7 @@ int Lexer::lex(char *code) {
 			tok.tok.push_back(tmp_tok);
 			i--; SKIP_TOK;
 
-		} else if(isalpha(code[i])) { // ident?
+		} else if(code[i] == '_' || isalpha(code[i])) { // ident?
 
 			for(; isalpha(code[i]) || isdigit(code[i]) || code[i] == '_'; i++)
 				str += code[i];
