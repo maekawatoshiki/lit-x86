@@ -119,7 +119,10 @@ namespace Type {
 			while(ary_count--) out = out->getPointerTo();	
 		} else if(ty->eql_type(T_INT)) {
 			out = llvm::Type::getInt32Ty(llvm::getGlobalContext());
-			while(ary_count--) out = out->getPointerTo();	
+			while(ary_count--) out = out->getPointerTo();
+		} else if(ty->eql_type(T_CHAR)) {
+			out = llvm::Type::getInt32Ty(llvm::getGlobalContext());
+			while(ary_count--) out = out->getPointerTo();
 		} else if(ty->eql_type(T_USER_TYPE)) {
 			// out = builder.getInt8PtrTy();
 			// while(ary_count--) out = out->getPointerTo();	

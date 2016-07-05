@@ -966,28 +966,7 @@ llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, ExprType *
 		if(var->get_type() == AST_VARIABLE) v->type = v_ty;
 		if(first_decl) {
 			llvm::AllocaInst *ai;
-			if(v_ty.eql_type(T_STRING)) { // string
-				ai = builder.CreateAlloca(llvm::Type::getInt8PtrTy(context), 0, v->name);
-			} else if(v_ty.eql_type(T_DOUBLE)) {
-				ai = builder.CreateAlloca(llvm::Type::getFloatTy(context), 0, v->name);
-			} else if(v_ty.is_array()) { // integer array TODO:FIX
-				ExprType *elem_ty = &v_ty;
-				while(elem_ty->eql_type(T_ARRAY)) 
-					elem_ty = elem_ty->next;
-				if(elem_ty->eql_type(T_INT))
-					ai = builder.CreateAlloca(llvm::Type::getInt32PtrTy(context), 0, v->name);
-				else if(elem_ty->eql_type(T_STRING)) 
-					ai = builder.CreateAlloca(llvm::Type::getInt8Ty(context)->getPointerTo()->getPointerTo(), 0, v->name);
-				else if(elem_ty->eql_type(T_USER_TYPE)) {
-					ai = builder.CreateAlloca(
-						llvm::PointerType::get(f_list.structs.get(elem_ty->get().user_type)->strct, 0), 0, v->name);
-				}
-			} else if(v_ty.eql_type(T_USER_TYPE)) {
-				ai = builder.CreateAlloca(
-					f_list.structs.get(v_ty.get().user_type)->strct->getPointerTo(), 0, v->name);
-			} else { // integer
-				ai = builder.CreateAlloca(llvm::Type::getInt32Ty(context), 0, v->name);
-			}
+			ai = builder.CreateAlloca(Type::type_to_llvmty(&v_ty));
 			v->val = ai;
 		}
 		if(v->type.is_array() || v->type.eql_type(T_STRING)) {
