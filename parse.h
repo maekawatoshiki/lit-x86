@@ -41,6 +41,7 @@ public:
 	AST *expr_entry();
 	AST *expr_index();
 	AST *expr_dot();
+	AST *expr_unary();
 	AST *expr_primary();
 	AST *expr_array();
 	AST *expr_rhs(int, AST *);

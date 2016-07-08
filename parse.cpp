@@ -296,7 +296,7 @@ char *replace_escape(char *str) {
 		"\\\"",  "\""
 	};
 	for(i = 0; i < 14; i += 2) {
-		while ((pos = strstr(str, escape[i])) != NULL) {
+		while((pos = strstr(str, escape[i])) != NULL) {
 			*pos = escape[i + 1][0];
 			memmove(pos + 1, pos + 2, strlen(str) - 2 + 1);
 		}

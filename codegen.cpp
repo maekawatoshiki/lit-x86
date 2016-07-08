@@ -430,6 +430,8 @@ namespace Codegen {
 				return ((ReturnAST *)ast)->codegen(f, f_list);
 			case AST_DOT:
 				return ((DotOpAST *)ast)->codegen(f, f_list, ty);
+			case AST_CAST:
+				return ((CastAST *)ast)->codegen(f, f_list, ty);
 		}
 		return NULL;
 	}
@@ -865,6 +867,19 @@ llvm::Value * BinaryAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 	return NULL;
 }
 
+llvm::Value *CastAST::codegen(Function &f, Program &f_list, ExprType *ret_ty) {
+	ret_ty->change(Type::str_to_type(type));
+	llvm::Type *to_type = Type::type_to_llvmty(ret_ty);
+	ExprType exp_ty;
+	llvm::Value *exp = Codegen::expression(f, f_list, expr, &exp_ty);
+	if(exp_ty.eql_type(T_INT) && ret_ty->eql_type(T_DOUBLE)) {
+		return builder.CreateSIToFP(exp, builder.getFloatTy());
+	} else if(exp_ty.eql_type(T_DOUBLE) && !ret_ty->eql_type(T_DOUBLE)) {
+		exp = builder.CreateFPToSI(exp, builder.getInt32Ty());
+	}
+	return builder.CreateBitCast(exp, to_type);
+}
+
 llvm::Value * NewAllocAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 	ExprType *alloc_type = Type::str_to_type(type);
 	bool is_user_object = size == NULL;
@@ -1148,9 +1163,10 @@ llvm::Value * ArrayAST::codegen(Function &f, Program &f_list, ExprType *ret_ty) 
 
 llvm::Value *StringAST::codegen(Function &f, ExprType *ty) {
 	ty->change(T_STRING);
-	char *embed = (char *)LitMemory::alloc_const(str.length() + 1); // TODO: fix!
-	replace_escape(strcpy(embed, str.c_str()));
-	return builder.CreateGlobalStringPtr(str.c_str());
+	char *embed = (char *)LitMemory::alloc_const(str.length() * 2); // TODO: fix!
+	embed = strcpy(embed, str.c_str());
+	embed = replace_escape(embed); // TODO: fix implementation
+	return builder.CreateGlobalStringPtr(embed);
 }
 
 llvm::Value * CharAST::codegen(Function &f, ExprType *ty) {

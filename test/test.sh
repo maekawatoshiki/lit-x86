@@ -30,6 +30,8 @@ check './lit ./examples/array.rb' 'echo 12345' &
 pid9=$!
 check './lit ./test/char.rb' 'echo Aello' &
 pid10=$!
+check './lit ./test/cast.rb' 'echo A2' &
+pid11=$!
 status_sum=0
 wait $pid1; status_sum=`expr $status_sum + $?`
 wait $pid2; status_sum=`expr $status_sum + $?`
@@ -41,4 +43,5 @@ wait $pid7; status_sum=`expr $status_sum + $?`
 wait $pid8; status_sum=`expr $status_sum + $?`
 wait $pid9; status_sum=`expr $status_sum + $?`
 wait $pid10; status_sum=`expr $status_sum + $?`
+wait $pid11; status_sum=`expr $status_sum + $?`
 exit $status_sum

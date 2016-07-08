@@ -154,6 +154,11 @@ AST *visit(AST *ast) {
 				visit(*it);
 			}
 		std::cout << ")" << std::endl;
+	} else if(ast->get_type() == AST_CAST) {
+		CastAST *ca = (CastAST *)ast;
+		std::cout << "(cast " << ca->type << " ";
+			visit(ca->expr);
+		std::cout << ")" << std::endl;
 	}
 
 	return ast;
@@ -206,9 +211,20 @@ AST *Parser::expr_entry() {
 	return expr_rhs(0, lhs);
 }
 
+AST *Parser::expr_dot() {
+	AST *l, *r;
+	l = expr_index();
+	if(tok.get().type == TOK_STRING) return l; // skip string tok such as "[" 
+	while(tok.skip(".")) {
+		r = expr_primary();
+		l = new DotOpAST(l, r);
+	}
+	return l;
+}
+
 AST *Parser::expr_index() {
 	AST *l, *r;
-	l = expr_primary();
+	l = expr_unary();
 	if(tok.get().type == TOK_STRING) return l; // skip string tok such as "[" 
 	while(tok.skip("[")) {
 		r = expr_entry();
@@ -219,15 +235,14 @@ AST *Parser::expr_index() {
 	return l;
 }
 
-AST *Parser::expr_dot() {
-	AST *l, *r;
-	l = expr_index();
-	if(tok.get().type == TOK_STRING) return l; // skip string tok such as "[" 
-	while(tok.skip(".")) {
-		r = expr_primary();
-		l = new DotOpAST(l, r);
+AST *Parser::expr_unary() { // TODO: implementation unary minus(-)!!
+	if(tok.skip("<")) { // cast
+		std::string type = tok.next().val;
+		if(!tok.skip(">")) error("error: expected expression '>'");
+		AST *expr = expr_entry();
+		return new CastAST(type, expr);
 	}
-	return l;
+	return expr_primary();
 }
 
 AST *Parser::expr_primary() {
@@ -296,7 +311,8 @@ AST *Parser::expr_primary() {
 				std::vector<AST *> args;
 				if(tok.get().type != TOK_END && 
 						(tok.get().type != TOK_SYMBOL || 
-						 tok.get().val == "(" || tok.get().val == "[" || tok.get().val == "$")) {
+						 tok.get().val == "<" || tok.get().val == "(" || 
+						 tok.get().val == "[" || tok.get().val == "$")) {
 					while(!tok.is(")") && !tok.is(";")) {
 						args.push_back(expr_entry());
 						tok.skip(",");

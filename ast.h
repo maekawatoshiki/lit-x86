@@ -31,6 +31,7 @@ enum {
 	AST_STRUCT,
 	AST_DOT,
 	AST_MODULE,
+	AST_CAST
 };
 
 class AST {
@@ -86,6 +87,15 @@ public:
 	BinaryAST(std::string o, AST *le, AST *re);
 	virtual int get_type() const { return AST_BINARY; }
 	llvm::Value *codegen(Function &, Program &, ExprType *); // ret is type of expr.
+};
+
+class CastAST : public AST {
+public:
+	std::string type;
+	AST *expr;
+	CastAST(std::string, AST *);
+	virtual int get_type() const { return AST_CAST; }
+	llvm::Value *codegen(Function &, Program &, ExprType *);
 };
 
 class NewAllocAST : public AST {
