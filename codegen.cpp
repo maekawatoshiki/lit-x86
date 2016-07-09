@@ -15,6 +15,16 @@ struct stdfunc_t {
 	llvm::Function *func;
 };
 
+struct func_body_t { // To define the function that is used before defining
+	Function *info;
+	std::vector<std::string> arg_names, cur_mod;
+	std::vector<llvm::Type *> arg_types;
+	ast_vector body;
+	llvm::Function *func;
+	llvm::Type *ret_type;
+};
+
+std::vector<func_body_t> funcs_body;
 std::map<std::string, stdfunc_t> stdfunc;
 
 extern "C" {
