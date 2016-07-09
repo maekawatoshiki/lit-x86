@@ -209,7 +209,9 @@ public:
 class ArrayAST : public AST {
 public:
 	std::vector<AST *> elems;
+	ExprType *type = NULL;
 	ArrayAST(std::vector<AST *>);
+	ArrayAST(ExprType *);
 	virtual int get_type() const { return AST_ARRAY; }
 	llvm::Value * codegen(Function &, Program &, ExprType *);
 };

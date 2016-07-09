@@ -79,6 +79,10 @@ ArrayAST::ArrayAST(std::vector<AST *> e) :
 	elems(e) {
 }
 
+ArrayAST::ArrayAST(ExprType *t) : 
+	type(t) {
+}
+
 IfAST::IfAST(AST *c, std::vector<AST *> t, std::vector<AST *> e) : 
 	cond(c), then_block(t), else_block(e) {
 }

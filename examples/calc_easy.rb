@@ -1,7 +1,7 @@
 require "std"
 
 module Calc 
-	def prim input:string :string
+	def prim(input:string):string
 		str = ""
 		if input[$pos] == '('
 			$pos += 1
@@ -17,7 +17,7 @@ module Calc
 		end
 	end
 
-	def muldiv input:string :string
+	def muldiv(input:string):string
 		str = prim input
 		while input[$pos] == '*' | input[$pos] == '/'
 			op = input[$pos]
@@ -27,7 +27,7 @@ module Calc
 		str
 	end
 
-	def addsub input:string :string
+	def addsub(input:string):string
 		str = muldiv input
 		while input[$pos] == '+' | input[$pos] == '-'
 			op = input[$pos]
@@ -37,9 +37,9 @@ module Calc
 		str
 	end
 
-	def run expr:string :double
+	def run(expr:string):double
 		tok_stream = addsub expr
-		puts "reverse polish: " tok_stream
+		puts "reverse polish: ", tok_stream
 		tok = ""
 		tok_ary = new 0 string
 		for pos in 0...length tok_stream
@@ -80,5 +80,5 @@ end
 $pos = 0
 print "expression: "
 input = gets
-puts Calc::run input
+puts "ans: ", Calc::run input
 

@@ -246,12 +246,11 @@ AST *Parser::expr_unary() { // TODO: implementation unary minus(-)!!
 }
 
 AST *Parser::expr_primary() {
-	bool is_get_addr = false, ispare = false, is_global_decl = false;
+	bool is_global_decl = false;
 	std::string name;
 	std::vector<std::string> mod_name;
 	var_t *v = NULL; 
 	
-	if(tok.skip("&")) is_get_addr = true;
 	if(tok.skip("$")) is_global_decl = true;
 
 	if(tok.get().val == "new") {
@@ -357,6 +356,12 @@ AST *Parser::expr_array() {
 			tok.skip(",");
 		}
 		return new ArrayAST(elems);
+	} else if(tok.skip("[]")) { // empty array
+		if(tok.skip(":")) {
+			std::string type_name = tok.next().val;
+			while(tok.skip("[]")) type_name += "[]";
+			return new ArrayAST(Type::str_to_type(type_name));
+		}
 	}
 	return NULL;
 }

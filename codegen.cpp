@@ -593,15 +593,24 @@ Function FunctionAST::codegen(Program &f_list) { // create a prototype of functi
 	llvm::FunctionType *func_type = llvm::FunctionType::get(func_ret_type, arg_types, false);
 	llvm::Function *func = llvm::Function::Create(func_type, llvm::Function::ExternalLinkage, f.info.name, mod);
 
-	func_body_t fb;
-	fb.info = function;
-	fb.arg_names = arg_names;
-	fb.arg_types = arg_types;
-	fb.body = statement;
-	fb.func = func;
-	fb.cur_mod = f_list.cur_mod;	
-	fb.ret_type = func_ret_type;
-	funcs_body.push_back(fb);
+	// func_body_t fb;
+	funcs_body.push_back(func_body_t {
+		.info = function,
+			.arg_names = arg_names,
+			.arg_types = arg_types,
+			.body = statement,
+			.func = func,
+			.cur_mod = f_list.cur_mod,
+			.ret_type = func_ret_type,
+	});
+	// fb.info = function;
+	// fb.arg_names = arg_names;
+	// fb.arg_types = arg_types;
+	// fb.body = statement;
+	// fb.func = func;
+	// fb.cur_mod = f_list.cur_mod;	
+	// fb.ret_type = func_ret_type;
+	// funcs_body.push_back(fb);
 
 	function->info.func_addr = func;
 
@@ -1172,19 +1181,25 @@ llvm::Value *DotOpAST::codegen(Function &f, Program &f_list, ExprType *ret_ty) {
 
 llvm::Value * ArrayAST::codegen(Function &f, Program &f_list, ExprType *ret_ty) {
 	std::vector<llvm::Value*> func_args;
-	func_args.push_back(llvm::ConstantInt::get(builder.getInt32Ty(), elems.size()));
+	bool zero_ary = type != NULL;
+	func_args.push_back(llvm::ConstantInt::get(builder.getInt32Ty(), zero_ary ? 0 : elems.size()));
 	func_args.push_back(llvm::ConstantInt::get(builder.getInt32Ty(), sizeof(void*)));
 	llvm::Value *ary = builder.CreateCall(stdfunc["create_array"].func, func_args);
 	ExprType ty;
-	size_t num = 0;
-	for(ast_vector::iterator it = elems.begin(); it != elems.end(); ++num, ++it) {
-		llvm::Value *val = Codegen::expression(f, f_list, *it, &ty);
-		if(it == elems.begin())
-			ary = builder.CreateBitCast(ary, val->getType()->getPointerTo(), "bitcast_tmp");
-		llvm::Value *elem = llvm::GetElementPtrInst::CreateInBounds(
-				ary,
-				llvm::ArrayRef<llvm::Value *>(llvm::ConstantInt::get(builder.getInt32Ty(), num)), "elem_tmp", builder.GetInsertBlock());
-		builder.CreateStore(val, elem);
+	if(zero_ary) {
+		ary = builder.CreateBitCast(ary, Type::type_to_llvmty(type)->getPointerTo(), "bitcast_tmp");
+		ty = *type;
+	} else {
+		size_t num = 0;
+		for(ast_vector::iterator it = elems.begin(); it != elems.end(); ++num, ++it) {
+			llvm::Value *val = Codegen::expression(f, f_list, *it, &ty);
+			if(it == elems.begin())
+				ary = builder.CreateBitCast(ary, val->getType()->getPointerTo(), "bitcast_tmp");
+			llvm::Value *elem = llvm::GetElementPtrInst::CreateInBounds(
+					ary,
+					llvm::ArrayRef<llvm::Value *>(llvm::ConstantInt::get(builder.getInt32Ty(), num)), "elem_tmp", builder.GetInsertBlock());
+			builder.CreateStore(val, elem);
+		}
 	}
 	ret_ty->change(T_ARRAY, new ExprType(ty));
 	return ary;
