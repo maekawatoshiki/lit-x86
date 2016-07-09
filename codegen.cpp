@@ -78,6 +78,9 @@ extern "C" {
 	int str_to_int(char *str) {
 		return atoi(str);
 	}
+	float str_to_float(char *str) {
+		return atof(str);
+	}
 	char *int_to_str(int n) {
 		char buf[16], *ret;
 		sprintf(buf, "%d", n);
@@ -123,6 +126,7 @@ namespace Codegen {
 			stdfunc["strcat"] = {"strcat", 2, T_STRING};
 			stdfunc["concat_char_str"] = {"concat_char_str", 2, T_STRING};
 			stdfunc["str_to_int"] = {"str_to_int", 1, T_INT};
+			stdfunc["str_to_float"] = {"str_to_float", 1, T_DOUBLE};
 			stdfunc["int_to_str"] = {"int_to_str", 1, T_STRING};
 			stdfunc["builtinlength"] = {"builtinlength", 1, T_INT};
 			stdfunc["str_copy"] = {"str_copy", 1, T_STRING};
@@ -199,6 +203,14 @@ namespace Codegen {
 					llvm::GlobalValue::ExternalLinkage,
 					"str_to_int", mod);
 			stdfunc["str_to_int"].func = func;
+			func_args.clear();
+			// create str_to_float function
+			func_args.push_back(builder.getInt8PtrTy());
+			func = llvm::Function::Create(
+					llvm::FunctionType::get(/*ret*/builder.getFloatTy(), func_args, false),
+					llvm::GlobalValue::ExternalLinkage,
+					"str_to_float", mod);
+			stdfunc["str_to_float"].func = func;
 			func_args.clear();
 			// create int_to_str function
 			func_args.push_back(builder.getInt32Ty());
@@ -347,6 +359,57 @@ namespace Codegen {
 					error("what happened?");
 			}
 		}
+
+		// create functions' body
+		for(auto fn = funcs_body.begin(); fn != funcs_body.end(); ++fn) {
+			list.cur_mod = fn->cur_mod;
+			llvm::BasicBlock *entry = llvm::BasicBlock::Create(context, "entry", fn->func);
+			builder.SetInsertPoint(entry);
+
+			// set argment variable names and store
+			auto arg_types_it = fn->arg_types.begin();
+			auto arg_names_it = fn->arg_names.begin();
+			for(auto arg_it = fn->func->arg_begin(); arg_it != fn->func->arg_end(); ++arg_it) {
+				arg_it->setName(*arg_names_it);
+				llvm::AllocaInst *ainst = create_entry_alloca(fn->func, *arg_names_it, (*arg_types_it));
+				builder.CreateStore(arg_it, ainst);
+				var_t *v = fn->info->var.get(*arg_names_it, "");
+				if(v) v->val = ainst;
+				arg_types_it++; arg_names_it++;
+			}
+
+			for(auto v = fn->info->var.local.begin(); v != fn->info->var.local.end(); v++) {
+				if(v->type.is_array() || v->type.eql_type(T_STRING)) {
+					std::vector<llvm::Value*> func_args;
+					func_args.push_back(builder.CreateBitCast(v->val, v->val->getType()->getPointerTo())); // get address of var
+					builder.CreateCall(stdfunc["append_addr_for_gc"].func, func_args);
+				}
+			}
+
+			llvm::Value *ret_value = llvm::ConstantInt::get(builder.getInt32Ty(), 0); // default return code 0
+			for(ast_vector::iterator it = fn->body.begin(); it != fn->body.end(); ++it) { // function body
+				ret_value = Codegen::expression(*fn->info, list, *it);
+			}
+
+			for(auto v = fn->info->var.local.begin(); v != fn->info->var.local.end(); v++) {
+				if(v->type.is_array() || v->type.eql_type(T_STRING)) {
+					std::vector<llvm::Value*> func_args;
+					func_args.push_back(builder.CreateBitCast(v->val, v->val->getType()->getPointerTo())); // get address of var
+					builder.CreateCall(stdfunc["delete_addr_for_gc"].func, func_args);
+				}
+			}
+
+			if(ret_value) {
+				if(ret_value->getType()->getTypeID() != fn->ret_type->getTypeID()) {
+					ret_value = llvm::ConstantInt::get(builder.getInt32Ty(), 0);
+					// fprintf(stderr, "warning: type of expression that evaluated last is not match\n");
+				}
+			} else if(fn->ret_type->getTypeID() == builder.getInt32Ty()->getTypeID()) {
+				ret_value = llvm::ConstantInt::get(builder.getInt32Ty(), 0);
+			} else error("error: return code of function is incorrect");
+
+			builder.CreateRet(ret_value);
+		}
 		list.append(main);
 
 		// create main function
@@ -364,6 +427,7 @@ namespace Codegen {
 		}
 
 		builder.CreateRet(llvm::ConstantInt::get(builder.getInt32Ty(), 0));
+		// llvm::verifyModule(*mod);
 		return mod;
 	}
 
@@ -481,7 +545,7 @@ void PrototypeAST::append(llvm::Module *lib_mod, Program &f_list) {
 	f_list.append(f);
 }
 
-Function FunctionAST::codegen(Program &f_list) {
+Function FunctionAST::codegen(Program &f_list) { // create a prototype of function, its body will create in Codegen
 	Function f;
 	f.info.name = info.name;
 	f.info.mod_name = f_list.cur_mod;
@@ -519,52 +583,15 @@ Function FunctionAST::codegen(Program &f_list) {
 	llvm::FunctionType *func_type = llvm::FunctionType::get(func_ret_type, arg_types, false);
 	llvm::Function *func = llvm::Function::Create(func_type, llvm::Function::ExternalLinkage, f.info.name, mod);
 
-	llvm::BasicBlock *entry = llvm::BasicBlock::Create(context, "entry", func);
-	builder.SetInsertPoint(entry);
-
-	// set argment variable names and store
-	auto arg_types_it = arg_types.begin();
-	auto arg_names_it = arg_names.begin();
-	for(auto arg_it = func->arg_begin(); arg_it != func->arg_end(); ++arg_it) {
-		arg_it->setName(*arg_names_it);
-		llvm::AllocaInst *ainst = create_entry_alloca(func, *arg_names_it, (*arg_types_it));
-		builder.CreateStore(arg_it, ainst);
-		var_t *v = f.var.get(*arg_names_it, "");
-		if(v) v->val = ainst;
-		arg_types_it++; arg_names_it++;
-	}
-
-	for(auto v = f.var.local.begin(); v != f.var.local.end(); v++) {
-		if(v->type.is_array() || v->type.eql_type(T_STRING)) {
-			std::vector<llvm::Value*> func_args;
-			func_args.push_back(builder.CreateBitCast(v->val, v->val->getType()->getPointerTo())); // get address of var
-			builder.CreateCall(stdfunc["append_addr_for_gc"].func, func_args);
-		}
-	}
-
-	llvm::Value *ret_value = llvm::ConstantInt::get(builder.getInt32Ty(), 0); // default return code 0
-	for(ast_vector::iterator it = statement.begin(); it != statement.end(); ++it) { // function body
-		ret_value = Codegen::expression(f, f_list, *it);
-	}
-
-	for(auto v = f.var.local.begin(); v != f.var.local.end(); v++) {
-		if(v->type.is_array() || v->type.eql_type(T_STRING)) {
-			std::vector<llvm::Value*> func_args;
-			func_args.push_back(builder.CreateBitCast(v->val, v->val->getType()->getPointerTo())); // get address of var
-			builder.CreateCall(stdfunc["delete_addr_for_gc"].func, func_args);
-		}
-	}
-
-	if(ret_value) {
-		if(ret_value->getType()->getTypeID() != func_ret_type->getTypeID()) {
-			ret_value = llvm::ConstantInt::get(builder.getInt32Ty(), 0);
-			// fprintf(stderr, "warning: type of expression that evaluated last is not match\n");
-		}
-	} else if(func_ret_type->getTypeID() == builder.getInt32Ty()->getTypeID()) {
-		ret_value = llvm::ConstantInt::get(builder.getInt32Ty(), 0);
-	} else error("error: return code of function is incorrect");
-
-	builder.CreateRet(ret_value);
+	func_body_t fb;
+	fb.info = function;
+	fb.arg_names = arg_names;
+	fb.arg_types = arg_types;
+	fb.body = statement;
+	fb.func = func;
+	fb.cur_mod = f_list.cur_mod;	
+	fb.ret_type = func_ret_type;
+	funcs_body.push_back(fb);
 
 	function->info.func_addr = func;
 
@@ -1029,15 +1056,7 @@ llvm::Value * VariableAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 	var_t *v;
 	if(info.is_global) {
 		v = f_list.var_global.get(info.name, info.mod_name);
-		if(v == NULL) {
-			puts("error");
-			// v = f_list.append_global_var(info.name, info.type.get().type); // global variable can be used if didn't declared
-			// mod->getOrInsertGlobal(v->name, builder.getInt32Ty());
-			// llvm::GlobalVariable *gbl = mod->getNamedGlobal(v->name);
-			// gbl->setAlignment(4);
-			// gbl->setInitializer(llvm::ConstantInt::get(builder.getInt32Ty(), 0));
-			// v->val = gbl;
-		}
+		if(v == NULL) error("error: undefined global variable '%s'", info.name.c_str());
 	} else 
 		v = f.var.get(info.name, info.mod_name);
 	if(v == NULL) error("error: '%s' was not declared", info.name.c_str());

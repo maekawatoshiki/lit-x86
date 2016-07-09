@@ -3,6 +3,7 @@
 
 #include "var.h"
 #include "exprtype.h"
+#include "common.h"
 
 struct func_t {
 	uint32_t address, params;

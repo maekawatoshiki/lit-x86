@@ -12,5 +12,16 @@ namespace Codegen {
 	llvm::Value *expression(Function &f, Program &f_list, AST *ast, ExprType * = NULL);
 };
 
+struct func_body_t {
+	Function *info;
+	std::vector<std::string> arg_names, cur_mod;
+	std::vector<llvm::Type *> arg_types;
+	ast_vector body;
+	llvm::Function *func;
+	llvm::Type *ret_type;
+};
+
+std::vector<func_body_t> funcs_body;
+
 #endif
 

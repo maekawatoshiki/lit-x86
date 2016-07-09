@@ -3,11 +3,18 @@ require "std"
 module Calc 
 	def prim input:string :string
 		str = ""
-		while '0' <= input[$pos] & input[$pos] <= '9'
-			str += input[$pos]
+		if input[$pos] == '('
 			$pos += 1
+			str = addsub(input)
+			$pos += 1
+			str
+		else
+			while ('0' <= input[$pos] & input[$pos] <= '9') | input[$pos] == '.'
+				str += input[$pos]
+				$pos += 1
+			end
+			str + " "
 		end
-		str + " "
 	end
 
 	def muldiv input:string :string
@@ -30,7 +37,7 @@ module Calc
 		str
 	end
 
-	def run expr:string
+	def run expr:string :double
 		tok_stream = addsub expr
 		puts "reverse polish: " tok_stream
 		tok = ""
@@ -45,7 +52,7 @@ module Calc
 		end
 
 		# VM ( calculate )
-		stack = new 256 int
+		stack = new 256 double
 		sp = 0
 		for i in 0...length tok_ary
 			s = tok_ary[i]
@@ -62,7 +69,7 @@ module Calc
 				stack[sp-2] = stack[sp-2] / stack[sp-1]
 				sp -= 1
 			else
-				stack[sp] = str_to_int s
+				stack[sp] = <double> str_to_float s
 				sp += 1
 			end
 		end
