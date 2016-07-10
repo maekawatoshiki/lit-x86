@@ -603,14 +603,6 @@ Function FunctionAST::codegen(Program &f_list) { // create a prototype of functi
 			.cur_mod = f_list.cur_mod,
 			.ret_type = func_ret_type,
 	});
-	// fb.info = function;
-	// fb.arg_names = arg_names;
-	// fb.arg_types = arg_types;
-	// fb.body = statement;
-	// fb.func = func;
-	// fb.cur_mod = f_list.cur_mod;	
-	// fb.ret_type = func_ret_type;
-	// funcs_body.push_back(fb);
 
 	function->info.func_addr = func;
 
@@ -780,7 +772,14 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, ExprType *t
 	}
 	Function *function = f_list.get(info.name, info.mod_name, args_type);
 	if(!function) function = f_list.get(info.name, f_list.cur_mod, args_type);
-	if(!function) error("error: undefined function: '%s'", info.name.c_str());
+	if(!function) { // not found
+		std::string args_type_str; 
+			// args to string
+			for(auto arg : args_type) 
+				args_type_str += arg->to_string() + ", ";
+			args_type_str.erase(args_type_str.end() - 2, args_type_str.end()); // erase ", "
+		error("error: undefined function: '%s(%s)'", info.name.c_str(), args_type_str.c_str());
+	}
 	llvm::Function *callee = (function->info.func_addr) ? function->info.func_addr : mod->getFunction(info.name);
 	if(!callee) error("no function: %s", info.name.c_str());
 	if(function == NULL) { // undefined

@@ -61,6 +61,9 @@ module Math
 	def abs i
 		math_abs i
 	end
+	def floor f:double :double
+		<double><int>f
+	end
 	def abs f:double :double
 		if f < 0.0
 			0.0 - f
