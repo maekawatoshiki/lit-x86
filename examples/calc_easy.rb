@@ -41,7 +41,7 @@ module Calc
 		tok_stream = addsub expr
 		puts "reverse polish: ", tok_stream
 		tok = ""
-		tok_ary = new 0 string
+		tok_ary = []:string
 		for pos in 0...length tok_stream
 			if tok_stream[pos] == ' '
 				tok_ary += tok

@@ -456,6 +456,10 @@ namespace Codegen {
 			pass_mgr.add(llvm::createBasicAliasAnalysisPass());
 			// Do simple "peephole" optimizations and bit-twiddling optzns.
 			pass_mgr.add(llvm::createInstructionCombiningPass());
+			//
+			pass_mgr.add(llvm::createReassociatePass());
+			//
+			pass_mgr.add(llvm::createCFGSimplificationPass());
 			// Reassociate expressions.
 			pass_mgr.add(llvm::createReassociatePass());
 			pass_mgr.run(*module);
