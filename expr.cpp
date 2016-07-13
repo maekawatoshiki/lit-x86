@@ -181,7 +181,7 @@ AST *Parser::expr_rhs(int prec, AST *lhs) {
 			next_prec = get_op_prec(tok.get().val);
 			if(tok_prec < next_prec) 
 				rhs = expr_rhs(tok_prec + 1, rhs);
-		}
+		} 
 		if(op == "+=" ||
 				op == "-=" ||
 				op == "*=" ||
@@ -214,10 +214,26 @@ AST *Parser::expr_entry() {
 AST *Parser::expr_dot() {
 	AST *l, *r;
 	l = expr_index();
-	if(tok.get().type == TOK_STRING) return l; // skip string tok such as "[" 
+	// if(tok.get().type == TOK_STRING) return l; // skip string tok such as "[" 
 	while(tok.skip(".")) {
-		r = expr_primary();
-		l = new DotOpAST(l, r);
+		std::string name = tok.next().val;
+		if(tok.skip("(")) { // UFCS
+			func_t f = {
+				.name = name,
+				.mod_name = std::vector<std::string>(),
+			};
+			std::vector<AST *> args;
+			args.push_back(l);
+			while(!tok.skip(")") && !tok.is(";")) {
+				args.push_back(expr_entry());
+				tok.skip(",");
+			}
+			l = new FunctionCallAST(f, args);
+		} else { // member of struct
+			tok.prev();
+			r = expr_primary();
+			l = new DotOpAST(l, r);
+		}
 	}
 	return l;
 }
@@ -260,8 +276,11 @@ AST *Parser::expr_primary() {
 			size = expr_entry();
 		} else tok.skip();
 		std::string type = "int";
-		if(is_ident_tok())
+		if(is_ident_tok()) {
 			type = tok.next().val;
+			while(tok.skip("[]"))
+				type += "[]";
+		}
 		return new NewAllocAST(type, size);
 	} else if(is_number_tok()) {
 		if(strstr(tok.get().val.c_str(), ".") != NULL)

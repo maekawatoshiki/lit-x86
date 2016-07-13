@@ -34,6 +34,8 @@ check './lit ./test/cast.rb' 'echo A2' &
 pid11=$!
 check './lit ./test/proto.rb' 'echo 2' &
 pid12=$!
+check './lit ./test/ufcs.rb' 'echo 6' &
+pid13=$!
 status_sum=0
 wait $pid1; status_sum=`expr $status_sum + $?`
 wait $pid2; status_sum=`expr $status_sum + $?`
@@ -47,4 +49,5 @@ wait $pid9; status_sum=`expr $status_sum + $?`
 wait $pid10; status_sum=`expr $status_sum + $?`
 wait $pid11; status_sum=`expr $status_sum + $?`
 wait $pid12; status_sum=`expr $status_sum + $?`
+wait $pid13; status_sum=`expr $status_sum + $?`
 exit $status_sum

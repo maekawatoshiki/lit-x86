@@ -26,7 +26,6 @@ class Lit {
 	char **argv;
 
 	int execute(char *, bool = false); // execute(<source code>, flag<emit-llvm>)
-	int run();
 	
 	void interpret();
 	void run_from_file(char *, bool = false);

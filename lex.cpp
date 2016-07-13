@@ -15,8 +15,10 @@ int Lexer::lex(char *code) {
 		str.clear();
 		if(isdigit(code[i])) { // number?
 
-			for(; isdigit(code[i]) || (code[i] == '.'&&code[i+1]!='.')/*float*/; i++)
+			for(; isdigit(code[i]) || (code[i] == '.'&&code[i+1]!='.')/*float*/; i++) {
+				if(code[i] == '.' && !isdigit(code[i+1])) break;
 				str += code[i];
+			}
 			tmp_tok.val = str;
 			tmp_tok.nline = line;
 			tmp_tok.type = TOK_NUMBER;

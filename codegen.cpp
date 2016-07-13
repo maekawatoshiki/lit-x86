@@ -415,6 +415,7 @@ namespace Codegen {
 					// fprintf(stderr, "warning: type of expression that evaluated last is not match\n");
 				}
 			} else if(fn->ret_type->getTypeID() == builder.getInt32Ty()->getTypeID()) {
+
 				ret_value = llvm::ConstantInt::get(builder.getInt32Ty(), 0);
 			} else error("error: return code of function is incorrect");
 

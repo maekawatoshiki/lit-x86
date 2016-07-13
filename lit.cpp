@@ -211,7 +211,6 @@ Lit::Lit(int ac, char **av)
 
 Lit::~Lit() {
 	LitMemory::free_all_mem();
-	// freeAddr();
 }
 
 int Lit::execute(char *source, bool enable_emit_llvm) {
@@ -224,19 +223,6 @@ int Lit::execute(char *source, bool enable_emit_llvm) {
 	// if(!WIFEXITED(status)) {
 	// 	puts("LitRuntimeError: *** the process was terminated abnormally ***");
 	// }
-	return 0;
-}
-
-int Lit::run() {
-	printf(""); 
-	// this block writes out native code to file
-	// {
-	// 	std::ofstream bin("out", std::ios::binary);
-	// 	bin.write((const char *)ntv.code, ntv.count);
-	//
-	// 	bin.close();
-	// }
-	// return ((int (*)(int *, void**))ntv.code)(0, funcTable);
 	return 0;
 }
 
