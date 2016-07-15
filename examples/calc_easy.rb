@@ -71,5 +71,5 @@ end
 $pos = 0
 print "expression: "
 input = gets
-puts "ans: ", Calc::run input
+puts Calc::run input
 
