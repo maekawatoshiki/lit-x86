@@ -38,18 +38,9 @@ module Calc
 	end
 
 	def run(expr:string):double
-		tok_stream = addsub expr
-		puts "reverse polish: ", tok_stream
-		tok = ""
-		tok_ary = []:string
-		for pos in 0...length tok_stream
-			if tok_stream[pos] == ' '
-				tok_ary += tok
-				tok = ""
-			else
-				tok += tok_stream[pos]
-			end
-		end
+		tok_str = addsub expr
+		puts "reverse polish: ", tok_str
+		tok_ary = tok_str.split(' ')
 
 		# VM ( calculate )
 		stack = new 256 double

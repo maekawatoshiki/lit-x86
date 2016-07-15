@@ -817,22 +817,25 @@ llvm::Value * BinaryAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 		return builder.CreateCall(callee, callee_args, "call_tmp");
 	}
 
-	{ // cast float to int when lhs is integer type
+	{ // cast instructions
 		if(ty_l.eql_type(T_INT) && ty_r.eql_type(T_DOUBLE)) {
 			lhs = builder.CreateSIToFP(lhs, builder.getFloatTy());
 			ty_l = T_DOUBLE;
 		} else if(ty_l.eql_type(T_DOUBLE) && ty_r.eql_type(T_INT)) {
 			rhs = builder.CreateSIToFP(rhs, builder.getFloatTy());
-		} else if(ty_l.eql_type(T_CHAR)) {
-			rhs = builder.CreateZExt(rhs, builder.getInt8Ty());
 		} else if(ty_l.eql_type(T_INT) && !ty_r.eql_type(T_INT)) {
 			rhs = builder.CreateZExt(rhs, builder.getInt32Ty());
 		}
+		// char is the same as int 
+		if(ty_l.eql_type(T_CHAR))
+			lhs = builder.CreateZExt(lhs, builder.getInt32Ty());
+		if(ty_r.eql_type(T_CHAR))
+			rhs = builder.CreateZExt(rhs, builder.getInt32Ty());
 	}
 
-	if(!ty_l.eql_type(&ty_r)) {
-		// std::cout << "warning: different types to each other: " << ty_l.to_string() << ", " << ty_r.to_string() << std::endl;
-	}
+	// if(!ty_l.eql_type(&ty_r)) {
+	// 	std::cout << "warning: different types to each other: " << ty_l.to_string() << ", " << ty_r.to_string() << std::endl;
+	// }
 	if(op == "+") {
 		if(ty_l.eql_type(T_STRING) && ty_r.eql_type(T_STRING)) { // string + string
 			std::vector<llvm::Value*> func_args;

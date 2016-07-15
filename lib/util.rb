@@ -22,6 +22,31 @@ def to_float s:string :double
 	0.0 + to_int s
 end
 
+def substr(str:string, bgn, last):string
+	ret = ""
+	if last < bgn; last = length(str) - 1; end
+	for i in bgn..last
+		ret += str[i]
+	end
+	ret
+end
+
+def split(str:string, ch:char):string[]
+	str_len = length str
+	ret = []:string
+	bgn = 0
+	for i in 0...str_len
+		if ch == str[i]
+			ret += substr(str, bgn, i - 1)
+			bgn = i + 1
+		end
+	end
+	if bgn < str_len
+		ret += substr(str, bgn, 0)
+	end
+	ret
+end
+
 # operators for array
 def operator+ a:int[] x:int :int[]
 	size = length(a) + 1
