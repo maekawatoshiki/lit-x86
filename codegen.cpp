@@ -934,6 +934,7 @@ llvm::Value *CastAST::codegen(Function &f, Program &f_list, ExprType *ret_ty) {
 }
 
 llvm::Value * NewAllocAST::codegen(Function &f, Program &f_list, ExprType *ty) {
+	std::cout << "new "<< type << std::endl;
 	ExprType *alloc_type = Type::str_to_type(type);
 	bool is_user_object = size == NULL;
 	std::vector<llvm::Value*> func_args;

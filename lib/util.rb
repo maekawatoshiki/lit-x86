@@ -10,6 +10,14 @@ def length str:string
 	strlen str
 end
 
+def is_alpha ch:char
+	if ('A' <= ch & ch <= 'Z') | ('a' <= ch & ch <= 'z')
+		1
+	else
+		0
+	end
+end
+
 def geti
 	str_to_int gets
 end
@@ -18,8 +26,12 @@ def to_int s:string
 	str_to_int s
 end
 
+def to_string(i):string
+	int_to_str i
+end
+
 def to_float s:string :double
-	0.0 + to_int s
+	str_to_float s
 end
 
 def substr(str:string, bgn, last):string

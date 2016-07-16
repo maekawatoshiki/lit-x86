@@ -263,7 +263,7 @@ AST *Parser::make_func() {
 		int is_ary = 0;
 		ExprType type(T_INT);
 		type.change(Type::str_to_type(tok.next().val));
-		if(tok.skip("[]")) { 
+		while(tok.skip("[]")) { 
 			int elem_ty = type.get().type;
 			type.next = new ExprType(elem_ty);
 			type.change(T_ARRAY);
