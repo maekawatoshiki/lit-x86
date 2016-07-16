@@ -958,10 +958,9 @@ llvm::Value * NewAllocAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 	} else if(alloc_type->eql_type(T_USER_TYPE)) {
 		ret_val = (llvm::PointerType *)f_list.structs.get(alloc_type->get().user_type)
 			->strct->getPointerTo()->getPointerTo();
-	} else if(alloc_type->eql_type(T_STRING)) {
-		ret_val = builder.getInt8Ty()->getPointerTo();
 	} else {
-		ret_val = builder.getInt32Ty()->getPointerTo();
+		llvm::Type *ltype = Type::type_to_llvmty(alloc_type);
+		ret_val = ltype->getPointerTo();
 	}
 	return builder.CreateBitCast(ret, ret_val, "bitcast_tmp");
 }

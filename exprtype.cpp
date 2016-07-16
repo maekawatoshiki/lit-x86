@@ -60,8 +60,19 @@ std::string ExprType::to_string() {
 namespace Type {
 	ExprType *str_to_type(std::string str) {
 		int is_ary = 0;
-		if(str == "int") { 
-			return new ExprType(T_INT);
+		auto ary = [](std::string str, ExprType *ty) -> ExprType * {
+			size_t p=0;
+			while((p=str.find("[]")) != std::string::npos) {
+				str = str.substr(p);
+				ty->next = new ExprType(ty->get().type);
+				ty->change(T_ARRAY);
+			}
+			return ty;
+		};
+		if(str.find("int") != std::string::npos) { 
+			ExprType *ty = new ExprType(T_INT);
+			ty = ary(str, ty);
+			return ty;
 		} else if(str == "char") {
 			return new ExprType(T_CHAR);
 		} else if(str == "bool") {
