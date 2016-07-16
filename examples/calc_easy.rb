@@ -1,9 +1,27 @@
 require "std"
 
+def isalpha ch:char
+	if ('A' <= ch & ch <= 'Z') | ('a' <= ch & ch <= 'z')
+		1
+	else
+		0
+	end
+end
+
 module Calc 
 	def prim(input:string):string
 		str = ""
-		if input[$pos] == '('
+		if isalpha input[$pos]
+			fname = ""
+			while isalpha input[$pos]
+				fname += input[$pos]
+				$pos += 1
+			end
+			$pos += 1 # (
+			str = addsub(input)
+			$pos += 1 # )
+			str + fname + " "
+		elsif input[$pos] == '('
 			$pos += 1
 			str = addsub(input)
 			$pos += 1
@@ -59,6 +77,8 @@ module Calc
 			elsif s == "/"
 				stack[sp-2] = stack[sp-2] / stack[sp-1]
 				sp -= 1
+			elsif s == "sqrt"
+				stack[sp-1] = Math::sqrt stack[sp-1]
 			else
 				stack[sp] = <double> str_to_float s
 				sp += 1
