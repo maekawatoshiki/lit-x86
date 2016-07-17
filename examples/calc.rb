@@ -1,115 +1,95 @@
-require String
+require "std"
 
-module calc
-	$srcLen = 0
-	$pos = 0
-
-	def atoi(s:string)
-		sum = 0; n = 1
-		for l = 0, String:isdigit(s[pos + l]) == 1, l++; 
-			n = n * 10
-		end
-		for i = 0, i < l, i++
-			n = n / 10
-			sum = sum + n * (s[pos++] - '0')
-		end
-		sum
+def isalpha ch:char
+	if ('A' <= ch & ch <= 'Z') | ('a' <= ch & ch <= 'z')
+		1
+	else
+		0
 	end
+end
 
-	def prim(a:string, out:string)
-		if a[pos] == '('
-			pos++
-				out = addsub(a, out)
-			pos++ # ')'
+module Calc 
+	def prim(input:string):string
+		str = ""
+		if isalpha input[$pos]
+			fname = ""
+			while isalpha input[$pos]
+				fname += input[$pos]
+				$pos += 1
+			end
+			$pos += 1 # (
+			str = addsub(input)
+			$pos += 1 # )
+			str + fname + " "
+		elsif input[$pos] == '('
+			$pos += 1
+			str = addsub(input)
+			$pos += 1
+			str
 		else
-			while String:isdigit(a[pos])
-				out[String:len(out)] = a[pos++]
+			while ('0' <= input[$pos] & input[$pos] <= '9') | input[$pos] == '.'
+				str += input[$pos]
+				$pos += 1
 			end
+			str + " "
 		end
-		out = out ~ ","
 	end
 
-	def muldiv(a:string, out:string)
-		out = prim(a, out)
-		while 1
-			if a[pos] == '*'
-				pos++
-					out = prim(a, out)
-				out = out ~ "*"
-			elsif a[pos] == '/'
-				pos++
-					out = prim(a, out)
-				out = out ~ "/"
-			elsif a[pos] == ' '
-				pos++
+	def muldiv(input:string):string
+		str = prim input
+		while input[$pos] == '*' | input[$pos] == '/'
+			op = input[$pos]
+			$pos += 1
+			str += prim(input) + op + " "
+		end
+		str
+	end
+
+	def addsub(input:string):string
+		str = muldiv input
+		while input[$pos] == '+' | input[$pos] == '-'
+			op = input[$pos]
+			$pos += 1
+			str += muldiv(input) + op + " "
+		end
+		str
+	end
+
+	def run(expr:string):double
+		tok_str = addsub expr
+		puts "reverse polish: ", tok_str
+		tok_ary = tok_str.split(' ')
+
+		# VM ( calculate )
+		stack = new 256 double
+		sp = 0
+		for i in 0...length tok_ary
+			s = tok_ary[i]
+			if s == "+"
+				stack[sp-2] = stack[sp-2] + stack[sp-1]
+				sp -= 1
+			elsif s == "-"
+				stack[sp-2] = stack[sp-2] - stack[sp-1]
+				sp -= 1
+			elsif s == "*"
+				stack[sp-2] = stack[sp-2] * stack[sp-1]
+				sp -= 1
+			elsif s == "/"
+				stack[sp-2] = stack[sp-2] / stack[sp-1]
+				sp -= 1
+			elsif s == "sqrt"
+				stack[sp-1] = Math::sqrt stack[sp-1]
 			else
-				break
+				stack[sp] = <double> str_to_float s
+				sp += 1
 			end
 		end
-		out
-	end
-
-
-	def addsub(a:string, out:string) 
-		out = muldiv(a, out)
-		while pos < srcLen
-			if a[pos] == '+'
-				pos++
-					out = muldiv(a, out)
-				out = out ~ "+"
-			elsif a[pos] == '-'
-				pos++
-					out = muldiv(a, out)
-				out = out ~ "-"
-			elsif a[pos] == ' '
-				pos++
-			else
-				break
-			end
-		end
-		out
-	end
-
-	def calc(a:string)
-		out:string = Array(100)
-		for i = 0, i < 100, i++; out[i] = 0; end
-		srcLen = String:len(a)
-		out = addsub(a, out)
-		String:copy(a, out)
-
-		num:int[] = Array(128); sp = 0
-		len = String:len(a)
-		for pos = 0, pos < len, pos++
-			if a[pos] == '+'
-				num[sp - 2] = num[sp - 2] + num[sp - 1]
-				sp--
-			elsif a[pos] == '-'
-				num[sp - 2] = num[sp - 2] - num[sp - 1]
-				sp--
-			elsif a[pos] == '*'
-				num[sp - 2] = num[sp - 2] * num[sp - 1]
-				sp--
-			elsif a[pos] == '/'
-				num[sp - 2] = num[sp - 2] / num[sp - 1]
-				sp--
-			elsif String:isdigit(a[pos])
-				num[sp++] = atoi a
-			end
-		end
-		num[0]
+		stack[0]
 	end
 end
 
-def input(str:string)
-	f = File:open("/dev/stdin", "w+")
-	File:gets(str, 100, f)
-	str[ String:len(str) - 1 ] = 0
-	File:close(f)
-	str
-end
+$pos = 0
+print "expression: "
+input = gets
+puts Calc::run input
 
-expr:string = Array(100)
-
-input(expr)
-printf "%s\n", expr
-puts calc:calc(expr) 
