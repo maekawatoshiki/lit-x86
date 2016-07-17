@@ -1,13 +1,12 @@
 #include "token.h"
 #include "lit.h"
-#include "asm.h"
 #include "lex.h"
 #include "expr.h"
 #include "parse.h"
 #include "util.h"
 
 bool Token::skip(std::string s) {
-	if(s == tok[pos].val) {
+	if(s == tok[pos].val && tok[pos].type != TOK_STRING) {
 		pos++; return true;
 	}
 	return false;

@@ -1,10 +1,10 @@
 #include "lit.h"
-#include "asm.h"
 #include "lex.h"
 #include "expr.h"
 #include "parse.h"
 #include "token.h"
 #include "util.h"
+#include "codegen.h"
 #include "option.h"
 
 // ---- for native code --- //
@@ -44,64 +44,65 @@ namespace LitMemory {
 		void free_mem() { free(addr); }
 	};
 
-	const size_t max_mem = 256 * 1024; // 256KB
+	const size_t max_mem = 1 * 1024 * 1024; // 1MB
 	size_t current_mem = 0;
-	std::map<uint32_t, MemoryInfo *> mem_list;
-	std::map<uint32_t, bool> root_ptr;
+	std::map<void *, MemoryInfo *> mem_list;
+	std::map<void *, bool> root_ptr;
 
 	void *alloc_const(uint32_t size) { // allocate constant memory(for string)
 		void *addr = alloc(size, 1);
-		mem_list[(uint32_t)addr] = new MemoryInfo(addr, size, true);
+		mem_list[(void *)addr] = new MemoryInfo(addr, size, true);
 		return addr;	
 	}
 	void *alloc(uint32_t size, uint32_t byte) {
-		if(current_mem >= max_mem) {
-			gc();
-		}
+		if(current_mem >= max_mem) gc(); // if allocated memory is over max_mem, do GC
 		void *addr = calloc(size, byte);
+		if(!addr) error("LitSystemError: No enough memory");
 		current_mem += size;
-		mem_list[(uint32_t)addr] = new MemoryInfo(addr, size);
+		mem_list[(void *)addr] = new MemoryInfo(addr, size);
 		return addr;	
 	}
 
+	bool is_allocated_addr(void *addr) {
+		return mem_list.count(addr);
+	}
+
 	uint32_t get_size(void *addr) {
-		MemoryInfo *m = mem_list[(uint32_t)addr];
+		MemoryInfo *m = mem_list[(void *)addr];
 		if(m == NULL) return 0;
 		return m->get_size();
 	}
 
 	void append_ptr(void *ptr) {
-		root_ptr[(uint32_t)ptr] = true;
+		root_ptr[(void *)ptr] = true;
 	}
 	void delete_ptr(void *ptr) {
-		root_ptr[(uint32_t)ptr] = false;
+		root_ptr[(void *)ptr] = false;
 	}
 	void gc_mark() {
-		for(std::map<uint32_t, bool>::iterator it = root_ptr.begin(); it != root_ptr.end(); ++it) {
+		for(std::map<void *, bool>::iterator it = root_ptr.begin(); it != root_ptr.end(); ++it) {
 			if(it->second == true) {
-				int *ptr = (int *)it->first;
-				MemoryInfo *m = mem_list[(uint32_t)*ptr];
-				if(m != NULL) {
+				uint64_t *ptr = (uint64_t *)it->first;
+				if(mem_list.count((void*)*ptr)) {
+					MemoryInfo *m = mem_list[(void *)*ptr];
 					if(m->is_const()) continue;
 					m->mark();
-					// std::cout << "marked success: " << (uint32_t)m->get_addr() << std::endl;
-				} else {
-					mem_list.erase(mem_list.find((uint32_t)*ptr));
-				}
+					// std::cout << "marked success: " << m->get_addr() << std::endl;
+				} 
 			}
 		} 
 	}
 	void gc_sweep() {
-		for(std::map<uint32_t, MemoryInfo *>::iterator it = mem_list.begin(); it != mem_list.end(); ++it) {
+		for(std::map<void *, MemoryInfo *>::iterator it = mem_list.begin(); it != mem_list.end(); ++it) {
 			if(it->second->marked == false) {
 				if(it->second->is_const()) continue;
-				std::cout << "*** freed success: " << (uint32_t)it->second->get_addr() << ", size: " << it->second->get_size() << "bytes ***" << std::endl;
+				// std::cout << "*** freed success: " << it->second->get_addr() << ", size: " << it->second->get_size() << "bytes ***" << std::endl;
 				it->second->free_mem();
 				current_mem -= it->second->get_size();
 				mem_list.erase(it);
 			}
 		} 
-		for(std::map<uint32_t, MemoryInfo *>::iterator it = mem_list.begin(); it != mem_list.end(); ++it) 
+		for(std::map<void *, MemoryInfo *>::iterator it = mem_list.begin(); it != mem_list.end(); ++it) 
 			it->second->marked = false;
 	}
 	void gc() {
@@ -110,9 +111,9 @@ namespace LitMemory {
 	}
 
 	void free_all_mem() {
-		for(std::map<uint32_t, MemoryInfo *>::iterator it = mem_list.begin(); it != mem_list.end(); ++it) {
+		for(std::map<void *, MemoryInfo *>::iterator it = mem_list.begin(); it != mem_list.end(); ++it) {
 			it->second->free_mem();
-			// std::cout << "freed success: " << (uint32_t)it->second->get_addr() << std::endl;
+			// std::cout << "finalize: freed success: " << it->second->get_addr() << std::endl;
 		}
 	}
 };
@@ -152,13 +153,13 @@ uint32_t str_split(char *s, char *t) { // divide s by t, and make them array
 		if(p != NULL)
 			splited.push_back(p);
 	}
-	uint32_t *ary = (uint32_t *)LitMemory::alloc(splited.size(), sizeof(int));
+	uint64_t *ary = (uint64_t *)LitMemory::alloc(splited.size(), sizeof(int64_t));
 	for(int i = 0; i < splited.size(); i++) {
 		char *ss = (char *)LitMemory::alloc(splited[i].size() + 1, sizeof(char));
 		strcpy(ss, splited[i].c_str());
-		ary[i] = (uint32_t)ss;
+		ary[i] = (uint64_t)ss;
 	}
-	return (uint32_t)ary;
+	return (uint64_t)ary;
 }
 char *gets_stdin() {
 	char *str;	
@@ -210,30 +211,19 @@ Lit::Lit(int ac, char **av)
 
 Lit::~Lit() {
 	LitMemory::free_all_mem();
-	// freeAddr();
 }
 
-int Lit::execute(char *source) {
+int Lit::execute(char *source, bool enable_emit_llvm) {
 	lex.lex(source);
-	parser.parser();
-	if((fork()) == 0) run();
-	int status = 0;
-	wait(&status);
-	if(!WIFEXITED(status)) {
-		puts("LitRuntimeError: *** the process was terminated abnormally ***");
-	}
-	return 0;
-}
-
-int Lit::run() {
-	printf(""); 
-	// this block writes out native code to file
-	// {
-	// 	std::ofstream bin("out", std::ios::binary);
-	// 	bin.write((const char *)ntv.code, ntv.count);
-	// 	bin.close();
+	llvm::Module *program = parser.parser();
+	Codegen::run(program, false/*optimize*/, enable_emit_llvm);
+	// if((fork()) == 0) run();
+	// int status = 0;
+	// wait(&status);
+	// if(!WIFEXITED(status)) {
+	// 	puts("LitRuntimeError: *** the process was terminated abnormally ***");
 	// }
-	return ((int (*)(int *, void**))ntv.code)(0, funcTable);
+	return 0;
 }
 
 void Lit::interpret() {
@@ -245,21 +235,21 @@ void Lit::interpret() {
 	}
 
 	clock_t bgn = clock();
-		execute((char *)all.c_str());
+		execute((char *)all.c_str(), false);
 	clock_t end = clock();
 #ifdef DEBUG
 	printf("time: %.3lf\n", (double)(end - bgn) / CLOCKS_PER_SEC);
 #endif
 }
 
-void Lit::run_from_file(char *source) {
+void Lit::run_from_file(char *source, bool enable_emit_llvm) {
 	std::ifstream ifs_src(source);
 	if(!ifs_src) ::error("LitSystemError: cannot open file '%s'", source);
 	std::istreambuf_iterator<char> it(ifs_src);
 	std::istreambuf_iterator<char> last;
 	std::string src_all(it, last);
 	
-	execute((char *)src_all.c_str());
+	execute((char *)src_all.c_str(), enable_emit_llvm);
 }
 
 int Lit::start() {

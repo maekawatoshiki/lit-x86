@@ -17,7 +17,7 @@ namespace LibraryList {
 	int append(std::string);
 	bool is(std::string);
 	lib_t *get(std::string);
-	uint32_t call(std::string, std::string);
+	void *call(std::string, std::string);
 };
 
 #endif // _LIBRARY_LIT_

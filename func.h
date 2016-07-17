@@ -1,36 +1,41 @@
 #ifndef _FUNC_LIT_
 #define _FUNC_LIT_
 
-#include "common.h"
 #include "var.h"
-#include "asm.h"
+#include "exprtype.h"
+#include "common.h"
 
 struct func_t {
 	uint32_t address, params;
-	int type;
-	bool is_lib;
-	std::string name, mod_name;
+	ExprType type;
+	std::vector<ExprType *> args_type;
+	std::string name;
+	std::vector<std::string> mod_name;
+	llvm::Function *func_addr;
 };
 
 class Function {
 public:
 	func_t info;
 	Variable var;
-	std::vector<int> return_list;
-	std::stack< std::vector<int> * > break_list;
-	uint32_t call(NativeCode_x86 &);
+	llvm::BasicBlock *bb_return;
+	std::stack<llvm::BasicBlock *> break_br_list;
+	std::stack<bool> has_br;
 };
 
-class Module {
+class Program {
 public:
 	std::string name;
 	std::vector<Function> func, undef_func;
+	std::vector<std::string> cur_mod;
 	Variable var_global; 
+	Struct structs;
 	std::string &module;
 	
-	Module(std::string &mod): module(mod) { func.reserve(128); }
+	Program(std::string &mod): module(mod) { func.reserve(128); }
 	bool is(std::string, std::string);
-	Function *get(std::string, std::string = "");
+	Function *get(std::string, std::vector<ExprType *>, std::string = "");
+	Function *get(std::string, std::vector<std::string>, std::vector<ExprType*>);
 	Function *append(Function);
 	
 	Function *append_undef(std::string, std::string, int);

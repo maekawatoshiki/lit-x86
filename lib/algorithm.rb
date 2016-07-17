@@ -1,5 +1,3 @@
-require "Math"
-
 def qsort a:int[] left right
 	l = left; r = right
 	pv = l
@@ -20,15 +18,7 @@ def qsort a:int[] left right
 	end
 end
 
-max = 5
-a = new max int
-
-for i in 0..max
-	a[i] = Math::random % 100
+def sort a:int[] :int[]
+	qsort a 0 builtinlength(a)-1
+	a
 end
-
-puts a
-
-qsort a 0 max-1
-
-puts a

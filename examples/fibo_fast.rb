@@ -1,11 +1,9 @@
-require "String"
-
 def mul A:int[] B:int[] :int[]
-	C = new 4 int
+	C = [0, 0, 0, 0]
 	for i in 0...2
 		for k in 0...2
 			for j in 0...2
-				C[2*i+j] = (C[2*i+j] + A[2*i+k] * B[2*k+j]) % $mod
+				C[2*i+j] = (C[2*i+j] + A[2*i+k] * B[2*k+j])
 			end
 		end
 	end
@@ -13,8 +11,7 @@ def mul A:int[] B:int[] :int[]
 end
 
 def pow A:int[] n:int :int[]
-	B = new 4 int
-	B[0] = 1; B[2] = 1
+	B = [1, 0, 1, 0]
 
 	while n > 0
 		if n & 1
@@ -26,10 +23,9 @@ def pow A:int[] n:int :int[]
 	B
 end
 
-$mod = 2000000000
-max = str_to_i gets
+max = str_to_int gets
 for i in 0...max
 	A = [1, 1, 1, 0]
 	A = pow A i
-	puts "fibo(" i ") mod " $mod ": " A[0]
+	puts "fibo(" i ") = " A[0]
 end

@@ -1,6 +1,5 @@
 #include "parse.h"
 #include "lit.h"
-#include "asm.h"
 #include "lex.h"
 #include "expr.h"
 #include "token.h"
@@ -11,9 +10,7 @@
 #include "func.h"
 
 AST *Parser::make_break() {
-	if(tok.skip("break")) {
-		return new BreakAST();
-	}
+	if(tok.skip("break")) return new BreakAST();
 	return NULL;
 }
 
@@ -29,11 +26,7 @@ AST *Parser::expression() {
 	if(tok.skip("def")) return make_func();
 	else if(tok.is("proto")) return make_proto();
 	else if(tok.is("struct")) return make_struct();
-	else if(tok.skip("module")) { blocksCount++;
-		module = tok.tok[tok.pos++].val;
-		eval();
-		module = "";
-	}
+	else if(tok.is("module")) return make_module();
 	else if(tok.is("lib")) return make_lib();
 	else if(tok.is("for")) return make_for();
 	else if(tok.is("while"))  return make_while();
@@ -60,15 +53,20 @@ ast_vector Parser::eval() {
 	return block;
 }
 
-int Parser::parser() {
-	tok.pos = ntv.count = 0;
+llvm::Module *Parser::parser() {
+	tok.pos = 0;
 	blocksCount = 0;
+	op_prec[".."] = 50;
+	op_prec["..."] =50;
 	op_prec["="] =  100;
 	op_prec["+="] = 100;
 	op_prec["-="] = 100;
 	op_prec["*="] = 100;
 	op_prec["/="] = 100;
 	op_prec["%="] = 100;
+	op_prec["^="] = 100;
+	op_prec["|="] = 100;
+	op_prec["&="] = 100;
 	op_prec["=="] = 200;
 	op_prec["!="] = 200;
 	op_prec["<="] = 200;
@@ -78,25 +76,34 @@ int Parser::parser() {
 	op_prec["&"] =  150;
 	op_prec["|"] =  150;
 	op_prec["^"] =  150;
-	op_prec[".."] = 150;
-	op_prec["..."] =150;
 	op_prec["+"] =  300;
 	op_prec["-"] =  300;
+	op_prec["?"] =  300;
 	op_prec["*"] =  400;
 	op_prec["/"] =  400;
 	op_prec["%"] =  400;
 
-	for(int i = 0; i < sizeof(stdfunc) / sizeof(stdfunc[0]); i++) { // append standard functions
-		append_func(stdfunc[i].name);
-	}
-	
+	// append standard functions to a list of declared functions
+	append_func("Array");
+	append_func("GC");
+	append_func("printf");
+	append_func("gets");
+	append_func("strlen");
+	append_func("builtinlength");
+	append_func("puts");
+	append_func("print"); // 'print' is almost the same as 'puts' but 'print' doesn't new line
+	append_func("gets");
+	append_func("str_to_int");
+	append_func("str_to_float");
+	append_func("int_to_str");
+
 	ast_vector a = eval();
 	// std::cout << "\n---------- abstract syntax tree ----------" << std::endl;
 	// for(int i = 0; i < a.size(); i++)
-	//	visit(a[i]), std::cout << std::endl;
-	codegen_entry(a); // start code generating
+	// 	visit(a[i]), std::cout << std::endl;
+	llvm::Module *program_mod = Codegen::codegen(a); // start code generating
 	// std::cout << "\n---------- end of abstract syntax tree --" << std::endl;
-	return 1;
+	return program_mod;
 }
 
 AST *Parser::make_lib() {
@@ -114,7 +121,6 @@ AST *Parser::make_proto() {
 		std::string func_name = tok.next().val;
 		ast_vector args;
 		func_t function = { .name = func_name, .type = T_INT };
-		append_func(func_name);
 
 		bool is_parentheses = false;
 		if((is_parentheses=tok.skip("(")) || is_ident_tok()) { // get params
@@ -126,13 +132,32 @@ AST *Parser::make_proto() {
 		}
 		function.params = args.size();
 		if(tok.skip(":")) { 
-			int type = Type::str_to_type(tok.next().val);
-			if(tok.skip("[]")) type |= T_ARRAY;
+			ExprType *type = Type::str_to_type(tok.next().val);
+			if(tok.skip("[]")) {
+				type->change(T_ARRAY, type);
+			}
 			function.type = type;
 		}
-		return new PrototypeAST(function, args);	
+		std::string new_name;
+		if(tok.skip("|")) {
+			new_name = tok.next().val;
+		}
+
+		append_func(new_name.empty() ? func_name : new_name);
+
+		return new PrototypeAST(function, args, new_name);	
 	}
 	return NULL;
+}
+
+AST *Parser::make_module() {
+	if(tok.skip("module")) {
+		std::string name = tok.next().val;
+		ast_vector body = eval();
+		if(!tok.skip("end")) error("error: %d: expected expression 'end'", tok.get().nline);
+		return new ModuleAST(name, body);
+	}
+	return nullptr;
 }
 
 AST *Parser::make_struct() {
@@ -218,8 +243,11 @@ AST *Parser::make_while() {
 
 AST *Parser::make_func() {
 	uint32_t params = 0;
-	std::string func_name = tok.next().val;
 	ast_vector args, stmt;
+	std::string func_name = tok.next().val;
+	if(func_name == "operator") {
+		func_name += tok.next().val; // user-defined operator
+	}
 	func_t function = { .name = func_name, .type = T_INT };
 	append_func(func_name);
 
@@ -232,15 +260,19 @@ AST *Parser::make_func() {
 		}
 	}
 	if(tok.skip(":")) { 
-		int is_ary = 0, type = T_VOID; 
-		type = Type::str_to_type(tok.next().val);
-		if(tok.skip("[]")) { type |= T_ARRAY; }
+		int is_ary = 0;
+		ExprType type(T_INT);
+		type.change(Type::str_to_type(tok.next().val));
+		while(tok.skip("[]")) { 
+			int elem_ty = type.get().type;
+			type.next = new ExprType(elem_ty);
+			type.change(T_ARRAY);
+		}
 		function.type = type;
 	}
 
 	stmt = eval();
 	if(!tok.skip("end")) { error("error: source %d", __LINE__); }
-
 	return new FunctionAST(function, args, stmt);
 }
 
@@ -265,7 +297,7 @@ char *replace_escape(char *str) {
 		"\\\"",  "\""
 	};
 	for(i = 0; i < 14; i += 2) {
-		while ((pos = strstr(str, escape[i])) != NULL) {
+		while((pos = strstr(str, escape[i])) != NULL) {
 			*pos = escape[i + 1][0];
 			memmove(pos + 1, pos + 2, strlen(str) - 2 + 1);
 		}

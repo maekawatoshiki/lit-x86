@@ -1,6 +1,5 @@
 #include "lex.h"
 #include "lit.h"
-#include "asm.h"
 #include "expr.h"
 #include "parse.h"
 #include "util.h"
@@ -16,15 +15,17 @@ int Lexer::lex(char *code) {
 		str.clear();
 		if(isdigit(code[i])) { // number?
 
-			for(; isdigit(code[i]); i++)
+			for(; isdigit(code[i]) || (code[i] == '.'&&code[i+1]!='.')/*float*/; i++) {
+				if(code[i] == '.' && !isdigit(code[i+1])) break;
 				str += code[i];
+			}
 			tmp_tok.val = str;
 			tmp_tok.nline = line;
 			tmp_tok.type = TOK_NUMBER;
 			tok.tok.push_back(tmp_tok);
 			i--; SKIP_TOK;
 
-		} else if(isalpha(code[i])) { // ident?
+		} else if(code[i] == '_' || isalpha(code[i])) { // ident?
 
 			for(; isalpha(code[i]) || isdigit(code[i]) || code[i] == '_'; i++)
 				str += code[i];
@@ -49,11 +50,14 @@ int Lexer::lex(char *code) {
 
 			if(tok.tok.back().val == "require") {
 				tok.tok.erase(tok.tok.end());
-				std::ifstream ifs_src(("./lib/" + str + ".rb").c_str());
-				if(!ifs_src) error("LitSystemError: cannot open file '%s'", str.c_str());
-				std::istreambuf_iterator<char> it(ifs_src), last;
-				std::string all(it, last);
-				lex((char *)all.c_str());
+				if(!required_files.count(str)) {
+					required_files[str] = true;
+					std::ifstream ifs_src(("./lib/" + str + ".rb").c_str());
+					if(!ifs_src) error("LitSystemError: cannot open file '%s'", str.c_str());
+					std::istreambuf_iterator<char> it(ifs_src), last;
+					std::string all(it, last);
+					lex((char *)all.c_str());
+				}
 			} else {
 				tmp_tok.val = str;
 				tmp_tok.nline = line;
@@ -89,9 +93,10 @@ int Lexer::lex(char *code) {
 					(code[i]=='[' && code[i+1]==']') ||
 					(code[i]=='+' && code[i+1]=='+') ||
 					(code[i]=='-' && code[i+1]=='-') ||
+					(code[i]=='*' && code[i+1]=='*') ||
 					(code[i]=='.' && code[i+1]=='.'))
 				str += code[++i];
-			if(code[i+1] == '.') str += code[++i];
+			if(code[i] == '.' && code[i+1] == '.') str += code[++i];
 			tmp_tok.val = str;
 			tmp_tok.nline = line;
 			tmp_tok.type = TOK_SYMBOL;

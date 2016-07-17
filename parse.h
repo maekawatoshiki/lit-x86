@@ -40,6 +40,8 @@ public:
 	int get_op_prec(std::string);
 	AST *expr_entry();
 	AST *expr_index();
+	AST *expr_dot();
+	AST *expr_unary();
 	AST *expr_primary();
 	AST *expr_array();
 	AST *expr_rhs(int, AST *);
@@ -47,6 +49,7 @@ public:
 // parse.h
 	AST *make_lib();
 	AST *make_proto();
+	AST *make_module();
 	AST *make_if();
 	AST *make_elsif();
 	AST *make_while();
@@ -59,7 +62,7 @@ public:
 	ast_vector eval();
 	AST *expression();
 
-	int parser();
+	llvm::Module *parser();
 	int get_string();
 
 	std::map<std::string, bool> function_list;

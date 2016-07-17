@@ -1,6 +1,7 @@
-def table prime_list:int[] max
+def table max
 	count = max - 2
-	for i in 0..max-1
+	prime_list = new max int
+	for i in 0...max
 		prime_list[i] = 0
 	end
 	for i = 2, i * i < max, i += 1
@@ -17,5 +18,4 @@ def table prime_list:int[] max
 end
 
 N = 10000000
-prime_list = new N int
-puts "found " table(prime_list N) " primes between 2 and " N
+puts "found " table(N) " primes between 2 and " N

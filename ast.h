@@ -4,10 +4,11 @@
 #include "common.h"
 #include "var.h"
 #include "func.h"
-#include "asm.h"
+#include "exprtype.h"
 
 enum {
 	AST_NUMBER,
+	AST_NUMBER_FLOAT,
 	AST_STRING,
 	AST_CHAR,
 	AST_POSTFIX,
@@ -28,6 +29,9 @@ enum {
 	AST_PROTO,
 	AST_NEW,
 	AST_STRUCT,
+	AST_DOT,
+	AST_MODULE,
+	AST_CAST
 };
 
 class AST {
@@ -36,12 +40,19 @@ public:
 	virtual ~AST() {};
 };
 
+class FloatNumberAST : public AST {
+public:
+	double number;
+	FloatNumberAST(double);
+	virtual int get_type() const { return AST_NUMBER_FLOAT; };
+	llvm::Value *codegen(Function &, ExprType *);
+};
 class NumberAST : public AST {
 public:
 	int32_t number;
 	NumberAST(int);
 	virtual int get_type() const { return AST_NUMBER; };
-	void codegen(Function &, NativeCode_x86 &);
+	llvm::Value *codegen(Function &, ExprType *);
 };
 
 class CharAST : public AST {
@@ -49,7 +60,7 @@ public:
 	int ch;
 	CharAST(int);
 	virtual int get_type() const { return  AST_CHAR; }
-	void codegen(Function &, NativeCode_x86 &);
+	llvm::Value *codegen(Function &, ExprType *);
 };
 
 class StringAST : public AST {
@@ -57,7 +68,7 @@ public:
 	std::string str;
 	StringAST(std::string);
 	virtual int get_type() const { return AST_STRING; };
-	void codegen(Function &, NativeCode_x86 &);
+	llvm::Value *codegen(Function &, ExprType *);
 };
 
 class PostfixAST : public AST {
@@ -75,7 +86,16 @@ public:
 	AST *left, *right;
 	BinaryAST(std::string o, AST *le, AST *re);
 	virtual int get_type() const { return AST_BINARY; }
-	int codegen(Function &, Module &, NativeCode_x86 &); // ret is type of expr.
+	llvm::Value *codegen(Function &, Program &, ExprType *); // ret is type of expr.
+};
+
+class CastAST : public AST {
+public:
+	std::string type;
+	AST *expr;
+	CastAST(std::string, AST *);
+	virtual int get_type() const { return AST_CAST; }
+	llvm::Value *codegen(Function &, Program &, ExprType *);
 };
 
 class NewAllocAST : public AST {
@@ -84,7 +104,7 @@ public:
 	AST * size;
 	NewAllocAST(std::string, AST *size);
 	virtual int get_type() const { return AST_NEW; }
-	int codegen(Function &, Module &, NativeCode_x86 &);
+	llvm::Value *codegen(Function &, Program &, ExprType *);
 };
 
 class VariableAST : public AST {
@@ -92,9 +112,9 @@ public:
 	var_t info;
 	VariableAST(var_t v);
 	virtual int get_type() const { return AST_VARIABLE; }
-	void codegen(Function &, Module &, NativeCode_x86 &);
-	var_t *get(Function &, Module &);
-	var_t *append(Function &, Module &);
+	llvm::Value *codegen(Function &, Program &, ExprType *);
+	var_t *get(Function &, Program &);
+	var_t *append(Function &, Program &);
 };
 
 class VariableDeclAST : public AST {
@@ -102,8 +122,8 @@ public:
 	var_t info;
 	VariableDeclAST(var_t);
 	virtual int get_type() const { return AST_VARIABLE_DECL; }
-	var_t *get(Function &, Module &);
-	var_t *append(Function &, Module &);
+	var_t *get(Function &, Program &);
+	var_t *append(Function &, Program &);
 };
 
 class VariableAsgmtAST : public AST {
@@ -111,7 +131,7 @@ public:
 	AST *var, *src;
 	VariableAsgmtAST(AST *, AST *);
 	virtual int get_type() const { return AST_VARIABLE_ASGMT; }
-	void codegen(Function &, Module &, NativeCode_x86 &);
+	llvm::Value * codegen(Function &, Program &, ExprType *);
 };
 
 class VariableIndexAST : public AST {
@@ -119,7 +139,8 @@ public:
 	AST *var, *idx;
 	VariableIndexAST(AST *, AST *);
 	virtual int get_type() const { return AST_VARIABLE_INDEX; }
-	int codegen(Function &, Module &, NativeCode_x86 &);
+	llvm::Value * codegen(Function &, Program &, ExprType *);
+	llvm::Value *get_elem(Function &, Program &, ExprType *);
 };
 
 class LibraryAST : public AST {
@@ -128,16 +149,17 @@ public:
 	std::vector<AST *> proto;
 	LibraryAST(std::string, std::vector<AST *>);
 	virtual int get_type() const { return AST_LIBRARY; }
-	int codegen(Module &, NativeCode_x86 &);
+	llvm::Value * codegen(Program &);
 };
 
 class PrototypeAST : public AST {
 public:
 	func_t proto;
+	std::string name;
 	std::vector<AST *> args_type;
-	PrototypeAST(func_t, std::vector<AST *>);	
+	PrototypeAST(func_t, std::vector<AST *>, std::string = "");	
 	virtual int get_type() const { return AST_PROTO; }
-	void append(void *, Module &);
+	void append(llvm::Module *, Program &);
 };
 
 class FunctionCallAST : public AST {
@@ -146,7 +168,7 @@ public:
 	std::vector<AST *> args;
 	FunctionCallAST(func_t f, std::vector<AST *> a);
 	virtual int get_type() const { return AST_FUNCTION_CALL; }
-	int codegen(Function &, Module &, NativeCode_x86 &);
+	llvm::Value * codegen(Function &, Program &, ExprType *);
 };
 
 class FunctionAST : public AST {
@@ -155,7 +177,16 @@ public:
 	std::vector<AST *> args, statement;
 	FunctionAST(func_t f, std::vector<AST *> a, std::vector<AST *>);
 	virtual int get_type() const { return AST_FUNCTION; }
-	Function codegen(Module &);
+	Function codegen(Program &);
+};
+
+class ModuleAST : public AST {
+public:
+	std::string name;
+	std::vector<AST *> statement;
+	ModuleAST(std::string name, std::vector<AST *>);
+	virtual int get_type() const { return AST_MODULE; }
+	void codegen(Program &);
 };
 
 class StructAST : public AST {
@@ -164,14 +195,25 @@ public:
 	std::vector<AST *> var_decls;
 	StructAST(std::string, std::vector<AST *>);
 	virtual int get_type() const { return AST_STRUCT; }
+	llvm::Value *codegen(Program &);
+};
+
+class DotOpAST : public AST {
+public:
+	AST *var, *member;
+	DotOpAST(AST *, AST *);
+	virtual int get_type() const { return AST_DOT; }
+	llvm::Value *codegen(Function &, Program &, ExprType *);
 };
 
 class ArrayAST : public AST {
 public:
 	std::vector<AST *> elems;
+	ExprType *type = NULL;
 	ArrayAST(std::vector<AST *>);
+	ArrayAST(ExprType *);
 	virtual int get_type() const { return AST_ARRAY; }
-	int codegen(Function &, Module &, NativeCode_x86 &);
+	llvm::Value * codegen(Function &, Program &, ExprType *);
 };
 
 class IfAST : public AST {
@@ -180,7 +222,7 @@ public:
 	std::vector<AST *> then_block, else_block;
 	IfAST(AST *, std::vector<AST*>, std::vector<AST *>);
 	virtual int get_type() const { return AST_IF; }
-	void codegen(Function &, Module &, NativeCode_x86 &);
+	llvm::Value * codegen(Function &, Program &);
 };
 
 class WhileAST : public AST {
@@ -189,7 +231,7 @@ public:
 	std::vector<AST *> block;
 	WhileAST(AST *, std::vector<AST *>);
 	virtual int get_type() const { return AST_WHILE; }
-	void codegen(Function &, Module &, NativeCode_x86 &);
+	llvm::Value * codegen(Function &, Program &);
 };
 
 class ForAST : public AST {
@@ -199,13 +241,13 @@ public:
 	std::vector<AST *> block;
 	ForAST(AST *, AST *, AST *, std::vector<AST *>); // assignment, condition, step, body
 	virtual int get_type() const { return AST_FOR; }
-	void codegen(Function &, Module &, NativeCode_x86 &);
+	llvm::Value * codegen(Function &, Program &);
 };
 
 class BreakAST : public AST {
 public:
 	virtual int get_type() const { return AST_BREAK; }
-	void codegen(Function &, Module &, NativeCode_x86 &);
+	llvm::Value * codegen(Function &, Program &);
 };
 
 class ReturnAST : public AST {
@@ -213,7 +255,7 @@ public:
 	AST *expr;
 	ReturnAST(AST *);
 	virtual int get_type() const { return AST_RETURN; }
-	void codegen(Function &, Module &, NativeCode_x86 &);
+	llvm::Value * codegen(Function &, Program &);
 };
 
 typedef std::vector<AST *> ast_vector;

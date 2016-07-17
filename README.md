@@ -1,20 +1,25 @@
-# Introduction
-- Lit is a programming language designed fast and light weight with LLVM
+# Lit
+[![Build Status](https://travis-ci.org/maekawatoshiki/lit-x86.svg?branch=llvm)](https://travis-ci.org/maekawatoshiki/lit-x86)
 
-# How to use
-Please look at Wiki.
+- Lit is a programming language designed fast & light weight with LLVM :bulb:
 
-# Build
+## Language Wiki
+- Please look at Wiki.
 
-- compile
+## Build
+- Lit generates native codes with LLVM.
+- So when you build, need LLVM and Clang.
+
+- LLVM Core (== 3.4)
+- make
 
 ```
-$ make (need clang)
-$ ./lit [sourcefile]
+$ make
+$ ./lit -h # -h option shows helps
 ```
 
-# Version Info
+## Notes
 - 2015/7/22 : First Commit
 
-# License
+## License
 - BSD

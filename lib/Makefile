@@ -1,28 +1,25 @@
-CFLAGS = -shared -m32 -lm -O0 
+CFLAGS = -lm -O1 -S -emit-llvm -c
 CC = clang $(CFLAGS) 
 
-all: lib/M.so lib/Math.so lib/Prime.so lib/String.so lib/Sys.so lib/Time.so lib/File.so
+all: lib/M.ll lib/Math.ll lib/Prime.ll  lib/Sys.ll lib/Time.ll lib/File.ll
 
-lib/M.so: lib/M.c
-	$(CC) -o lib/M.so lib/M.c
+lib/M.ll: lib/M.c
+	$(CC) -o lib/M.ll lib/M.c
 
-lib/Math.so: lib/Math.c
-	$(CC) -o lib/Math.so lib/Math.c
+lib/Math.ll: lib/Math.c
+	$(CC) -o lib/Math.ll lib/Math.c
 
-lib/Prime.so: lib/Prime.c
-	$(CC) -o lib/Prime.so lib/Prime.c
+lib/Prime.ll: lib/Prime.c
+	$(CC) -o lib/Prime.ll lib/Prime.c
 
-lib/String.so: lib/String.c
-	$(CC) -o lib/String.so lib/String.c
+lib/Sys.ll: lib/Sys_linux.c
+	$(CC) -o lib/Sys.ll lib/Sys_linux.c
 
-lib/Sys.so: lib/Sys_linux.c
-	$(CC) -o lib/Sys.so lib/Sys_linux.c
+lib/Time.ll: lib/Time.c
+	$(CC) -o lib/Time.ll lib/Time.c
 
-lib/Time.so: lib/Time.c
-	$(CC) -o lib/Time.so lib/Time.c
-
-lib/File.so: lib/File.c
-	$(CC) -o lib/File.so lib/File.c
+lib/File.ll: lib/File.c
+	$(CC) -o lib/File.ll lib/File.c
 
 clean: all
-	$(RM) *.so
+	$(RM) *.ll

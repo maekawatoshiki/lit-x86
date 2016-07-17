@@ -25,11 +25,10 @@ class Lit {
 	int argc;
 	char **argv;
 
-	int execute(char *); // execute(<source code>)
-	int run();
+	int execute(char *, bool = false); // execute(<source code>, flag<emit-llvm>)
 	
 	void interpret();
-	void run_from_file(char *);
+	void run_from_file(char *, bool = false);
 
 	void show_option();
 	void show_version();
@@ -49,6 +48,10 @@ namespace LitMemory {
 	void gc();
 	void gc_mark();
 	void gc_sweep();
+	void append_ptr(void *);
+	void delete_ptr(void *);
+	uint32_t get_size(void *);
+	bool is_allocated_addr(void *);
 };
 
 void putNumber(int);

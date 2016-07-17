@@ -1,6 +1,5 @@
 #include "expr.h"
 #include "lit.h"
-#include "asm.h"
 #include "lex.h"
 #include "token.h"
 #include "parse.h"
@@ -16,6 +15,14 @@ int Parser::is_ident_tok()  { return tok.get().type == TOK_IDENT;  }
 int Parser::is_char_tok() { return tok.get().type == TOK_CHAR; } 
 
 AST *visit(AST *ast) {
+	auto mod_to_string = [](func_t f) -> std::string {
+		std::string out;
+		for(auto it = f.mod_name.begin(); it != f.mod_name.end(); ++it) {
+			out += *it + "::";
+		}
+		return out;
+	};
+
 	if(ast->get_type() == AST_BINARY) {
 		std::cout << "(" << ((BinaryAST *)ast)->op << " ";
 			visit(((BinaryAST *)ast)->left);
@@ -62,7 +69,7 @@ AST *visit(AST *ast) {
 		std::cout << std::endl;
 	} else if(ast->get_type() == AST_FUNCTION) {
 		FunctionAST *fa = ((FunctionAST *) ast);
-		std::cout << "(defunc " << fa->info.mod_name << "::" << fa->info.name << " ("; 
+		std::cout << "(defunc " << mod_to_string(fa->info) << fa->info.name << " ("; 
 		for(int i = 0; i < fa->args.size(); i++) 
 			visit(fa->args[i]);
 		std::cout << ")\n(\n";
@@ -87,9 +94,9 @@ AST *visit(AST *ast) {
 		std::cout << ")";
 	} else if(ast->get_type() == AST_VARIABLE_DECL) {
 		std::cout << "(vardecl "
-			<< ((VariableDeclAST *)ast)->info.mod_name << "::"
+			// << ((VariableDeclAST *)ast)->info.mod_name << "::"
 			<< ((VariableDeclAST *)ast)->info.name << " "
-			<< ((VariableDeclAST *)ast)->info.type << ")";
+			<< ((VariableDeclAST *)ast)->info.type.get().type << ")";
 	} else if(ast->get_type() == AST_ARRAY) {
 		ArrayAST *ary = (ArrayAST *)ast;
 		std::cout << "(array ";
@@ -98,17 +105,19 @@ AST *visit(AST *ast) {
 		std::cout << ")";
 	} else if(ast->get_type() == AST_NUMBER) {
 		std::cout << " " << ((NumberAST *)ast)->number << " ";
+	} else if(ast->get_type() == AST_NUMBER_FLOAT) {
+		std::cout << " " << ((FloatNumberAST *)ast)->number << " ";
 	} else if(ast->get_type() == AST_CHAR) {
 		std::cout << " " << ((CharAST *)ast)->ch << " ";
 	} else if(ast->get_type() == AST_STRING) {
 		std::cout << " \"" << ((StringAST *)ast)->str << "\" ";
 	} else if(ast->get_type() == AST_VARIABLE) {
 		std::cout << "(var " 
-			<< ((VariableAST *)ast)->info.mod_name << "::"
+			// << ((VariableAST *)ast)->info.mod_name << "::"
 			<< ((VariableAST *)ast)->info.name << ") ";
 	} else if(ast->get_type() == AST_FUNCTION_CALL) {
 		std::cout << "(call " 
-			<< ((FunctionCallAST *)ast)->info.mod_name << "::"
+			<< mod_to_string(((FunctionCallAST *)ast)->info) 
 			<< ((FunctionCallAST *)ast)->info.name << " ";
 		for(int i = 0; i < ((FunctionCallAST *)ast)->args.size(); i++) {
 			visit(((FunctionCallAST *)ast)->args[i]);
@@ -130,7 +139,25 @@ AST *visit(AST *ast) {
 	} else if(ast->get_type() == AST_NEW) {
 		NewAllocAST *na = (NewAllocAST *)ast;
 		std::cout << "(new " << na->type << " ";
-		visit(na->size);
+		if(na->size) visit(na->size);
+		std::cout << ")" << std::endl;
+	} else if(ast->get_type() == AST_DOT) {
+		DotOpAST *da = (DotOpAST *)ast;
+		std::cout << "(dot "; 
+			visit(da->var);
+			visit(da->member);
+		std::cout << ")";
+	} else if(ast->get_type() == AST_MODULE) {
+		ModuleAST *ma = (ModuleAST *)ast;
+		std::cout << "(module " << ma->name << " ";
+			for(auto it = ma->statement.begin(); it != ma->statement.end(); ++it) {
+				visit(*it);
+			}
+		std::cout << ")" << std::endl;
+	} else if(ast->get_type() == AST_CAST) {
+		CastAST *ca = (CastAST *)ast;
+		std::cout << "(cast " << ca->type << " ";
+			visit(ca->expr);
 		std::cout << ")" << std::endl;
 	}
 
@@ -149,34 +176,72 @@ AST *Parser::expr_rhs(int prec, AST *lhs) {
 			if(tok_prec < prec) return lhs;
 		} else return lhs;
 		std::string op = tok.next().val;
-		AST *rhs = expr_index();
+		AST *rhs = expr_dot();
 		if(tok.get().type == TOK_SYMBOL) {
 			next_prec = get_op_prec(tok.get().val);
 			if(tok_prec < next_prec) 
 				rhs = expr_rhs(tok_prec + 1, rhs);
-		}
+		} 
 		if(op == "+=" ||
 				op == "-=" ||
 				op == "*=" ||
 				op == "/=" ||
+				op == "&=" ||
+				op == "|=" ||
+				op == "^=" ||
 				op == "=") {
-			bool add = op == "+=", sub = op == "-=", mul = op == "*=", div = op == "/=", normal = op == "=";
+			bool add = op == "+=", sub = op == "-=", mul = op == "*=", div = op == "/=", 
+					 aand = op == "&=", aor = op == "|=", axor = op == "^=", normal = op == "=";
 			lhs = new VariableAsgmtAST(lhs, normal ? rhs :
-						new BinaryAST(add ? "+" : sub ? "-" : mul ? "*" : div ? "/" : "?", lhs, rhs));	
+						new BinaryAST(
+							add ? "+" : 
+							sub ? "-" : 
+							mul ? "*" : 
+							div ? "/" : 
+							aand? "&" : 
+							aor ? "|" :
+							axor? "^" : "ERROR", lhs, rhs));	
 		} else 
 			lhs = new BinaryAST(op, lhs, rhs);		
 	}
 }
 
 AST *Parser::expr_entry() { 
-	AST *lhs = expr_index();
+	AST *lhs = expr_dot();
 	return expr_rhs(0, lhs);
+}
+
+AST *Parser::expr_dot() {
+	AST *l, *r;
+	l = expr_index();
+	// if(tok.get().type == TOK_STRING) return l; // skip string tok such as "[" 
+	while(tok.skip(".")) {
+		std::string name = tok.next().val;
+		if(tok.skip("(")) { // UFCS
+			func_t f = {
+				.name = name,
+				.mod_name = std::vector<std::string>(),
+			};
+			std::vector<AST *> args;
+			args.push_back(l);
+			while(!tok.skip(")") && !tok.is(";")) {
+				args.push_back(expr_entry());
+				tok.skip(",");
+			}
+			l = new FunctionCallAST(f, args);
+		} else { // member of struct
+			tok.prev();
+			r = expr_primary();
+			l = new DotOpAST(l, r);
+		}
+	}
+	return l;
 }
 
 AST *Parser::expr_index() {
 	AST *l, *r;
-	l = expr_primary();
-	if(tok.get().type == TOK_STRING) return l;
+	l = expr_unary();
+	if(tok.get().type == TOK_STRING) return l; // skip string tok such as "[" 
 	while(tok.skip("[")) {
 		r = expr_entry();
 		l = new VariableIndexAST(l, r);
@@ -186,45 +251,72 @@ AST *Parser::expr_index() {
 	return l;
 }
 
+AST *Parser::expr_unary() { // TODO: implementation unary minus(-)!!
+	if(tok.skip("<")) { // cast
+		std::string type = tok.next().val;
+		if(!tok.skip(">")) error("error: expected expression '>'");
+		AST *expr = expr_entry();
+		return new CastAST(type, expr);
+	}
+	return expr_primary();
+}
+
 AST *Parser::expr_primary() {
-	bool is_get_addr = false, ispare = false, is_global_decl = false;
-	std::string name, mod_name = "";
+	bool is_global_decl = false;
+	std::string name;
+	std::vector<std::string> mod_name;
 	var_t *v = NULL; 
 	
-	if(tok.skip("&")) is_get_addr = true;
 	if(tok.skip("$")) is_global_decl = true;
 
 	if(tok.get().val == "new") {
 		tok.skip();
-		AST *size = expr_entry();
+		AST *size = NULL;
+		if(tok.get().val != "!") {
+			size = expr_entry();
+		} else tok.skip();
 		std::string type = "int";
-		if(is_ident_tok())
+		if(is_ident_tok()) {
 			type = tok.next().val;
+			while(tok.skip("[]"))
+				type += "[]";
+		}
 		return new NewAllocAST(type, size);
 	} else if(is_number_tok()) {
-		return new NumberAST(atoi(tok.next().val.c_str()));
+		if(strstr(tok.get().val.c_str(), ".") != NULL)
+			return new FloatNumberAST(atof(tok.next().val.c_str()));
+		else
+			return new NumberAST(atoi(tok.next().val.c_str()));
 	} else if(is_char_tok()) { 
 		return new CharAST(tok.next().val.c_str()[0]);
 	} else if(is_string_tok()) {
 		return new StringAST(tok.next().val);
 	} else if(tok.get().val == "true" || tok.get().val == "false") {
 		return new NumberAST(tok.next().val == "true" ? 1 : 0);
-	} else if(is_ident_tok()) { // variable or inc or dec
-		name = tok.next().val; mod_name = "";
-		int type, is_ary; 
+	} else if(is_ident_tok()) { 
+		name = tok.next().val;
+		int is_ary; 
+		ExprType type;
 		bool is_vardecl = false; 
 		std::string class_name;
 
-		if(tok.skip("::")) { // module?
-			mod_name = tok.next().val;
-			swap(mod_name, name);
+		if(tok.is("::")) { // module?
+			mod_name.push_back(name);
+			name = "";
+			while(tok.skip("::")) mod_name.push_back(tok.next().val);
+			name = mod_name.back();
+			mod_name.pop_back();
 		} else if(tok.skip(":")) { // variable declaration
 			is_ary = 0;
-			type = Type::str_to_type(tok.next().val);
-			if(tok.skip("[]")) type |= T_ARRAY;
+			type.change(Type::str_to_type(tok.next().val));
+			if(tok.skip("[]")) {
+				int elem_ty = type.get().type;
+				type.change(T_ARRAY);
+				type.next = new ExprType(elem_ty);
+			}
 			is_vardecl = true;
 		} else { 
-			type = T_INT;
+			type.change(T_INT);
 		}
 		
 		{	
@@ -232,9 +324,13 @@ AST *Parser::expr_primary() {
 			if((has_pare=tok.skip("(")) || is_func(name)) { // function
 				func_t f = {
 					.name = name,
+					.mod_name = mod_name
 				};
 				std::vector<AST *> args;
-				if(tok.get().type != TOK_END && tok.get().type != TOK_SYMBOL) {
+				if(tok.get().type != TOK_END && 
+						(tok.get().type != TOK_SYMBOL || 
+						 tok.get().val == "<" || tok.get().val == "(" || 
+						 tok.get().val == "[" || tok.get().val == "$")) {
 					while(!tok.is(")") && !tok.is(";")) {
 						args.push_back(expr_entry());
 						tok.skip(",");
@@ -244,11 +340,11 @@ AST *Parser::expr_primary() {
 			} else { // variable
 				var_t v = {
 					.name = name,
-					.mod_name = mod_name == "" ? module : mod_name,
-					.type = type,
+					.mod_name = "",
 					.class_type = class_name,
 					.is_global = is_global_decl
 				};
+				v.type.change(new ExprType(type));
 				if(is_vardecl)
 					return new VariableDeclAST(v);
 				else
@@ -279,6 +375,12 @@ AST *Parser::expr_array() {
 			tok.skip(",");
 		}
 		return new ArrayAST(elems);
+	} else if(tok.skip("[]")) { // empty array
+		if(tok.skip(":")) {
+			std::string type_name = tok.next().val;
+			while(tok.skip("[]")) type_name += "[]";
+			return new ArrayAST(Type::str_to_type(type_name));
+		}
 	}
 	return NULL;
 }
