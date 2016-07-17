@@ -52,6 +52,18 @@ extern "C" {
 		}
 		printf("] ");
 	}
+	void put_array_str(char *ary[]) {
+		int size = LitMemory::get_size(ary);
+		if(size == -1) return;
+		printf("[ ");
+		for(int i = 0; i < size; i++) {
+			if(LitMemory::is_allocated_addr((void *)ary[i]))
+				put_array_str((char **)ary[i]);
+			else
+				printf("%s ", ary[i]);
+		}
+		printf("] ");
+	}
 	void put_ln() {
 		putchar('\n');
 	}
@@ -132,6 +144,7 @@ namespace Codegen {
 			stdfunc["put_num_float"] = {"put_num_float", 1, T_VOID};
 			stdfunc["put_char"] = {"put_char", 1, T_VOID};
 			stdfunc["put_array"] = {"put_array", 1, T_VOID};
+			stdfunc["put_array_str"] = {"put_array_str", 1, T_VOID};
 			stdfunc["put_string"] = {"put_string", 1, T_VOID};
 			stdfunc["strcat"] = {"strcat", 2, T_STRING};
 			stdfunc["concat_char_str"] = {"concat_char_str", 2, T_STRING};
@@ -176,12 +189,20 @@ namespace Codegen {
 			stdfunc["put_num"].func = func;
 			func_args.clear();
 			// create put_array function
-			func_args.push_back(builder.getVoidTy()->getPointerTo());
+			func_args.push_back(builder.getInt32Ty()->getPointerTo());
 			func = llvm::Function::Create(
 					llvm::FunctionType::get(/*ret*/builder.getVoidTy(), func_args, false),
 					llvm::GlobalValue::ExternalLinkage,
 					"put_array", mod);
 			stdfunc["put_array"].func = func;
+			func_args.clear();
+			// create put_array_str function
+			func_args.push_back(builder.getInt8PtrTy()->getPointerTo());
+			func = llvm::Function::Create(
+					llvm::FunctionType::get(/*ret*/builder.getVoidTy(), func_args, false),
+					llvm::GlobalValue::ExternalLinkage,
+					"put_array_str", mod);
+			stdfunc["put_array_str"].func = func;
 			func_args.clear();
 			// create put_num_float function
 			func_args.push_back(builder.getFloatTy());
@@ -739,8 +760,10 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, ExprType *t
 					builder.CreateCall(stdfunc["put_char"].func, func_args)->setCallingConv(llvm::CallingConv::C);
 				} else if(ty.eql_type(T_DOUBLE)) {
 					builder.CreateCall(stdfunc["put_num_float"].func, func_args)->setCallingConv(llvm::CallingConv::C);
-				} else if(ty.is_array()) {
+				} else if(ty.is_array() && ty.next->eql_type(T_INT)) {
 					builder.CreateCall(stdfunc["put_array"].func, func_args)->setCallingConv(llvm::CallingConv::C);
+				} else if(ty.is_array() && ty.next->eql_type(T_STRING)) {
+					builder.CreateCall(stdfunc["put_array_str"].func, func_args)->setCallingConv(llvm::CallingConv::C);
 				} else {
 					builder.CreateCall(stdfunc["put_num"].func, func_args)->setCallingConv(llvm::CallingConv::C);
 				}
@@ -1168,10 +1191,10 @@ llvm::Value *DotOpAST::codegen(Function &f, Program &f_list, ExprType *ret_ty) {
 	} else parent = Codegen::expression(f, f_list, var, &ty);
 
 	struct_t *strct = f_list.structs.get(ty.get().user_type);
-	if(!strct) error("err");
+	if(!strct) error("error in DotOpAST");
 	int a = 0;
 	ExprType member_ty;
-	if(member->get_type() != AST_VARIABLE) puts("NG");
+	if(member->get_type() != AST_VARIABLE) puts("error in DotOpAST");
 	for(auto it = strct->members.begin(); it != strct->members.end(); ++it){ 
 		if(it->name == ((VariableAST *)member)->info.name) {
 			member_ty.change(new ExprType(it->type));
