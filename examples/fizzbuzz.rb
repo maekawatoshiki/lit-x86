@@ -1,13 +1,15 @@
-for i = 1, i < 30, i = i + 1
+def fizzbuzz i
 	if i % 15 == 0
-		puts "fizzbuzz"
+		puts "FizzBuzz" 
 	elsif i % 5 == 0
-		puts "buzz"
+		puts "Buzz" 
 	elsif i % 3 == 0
-		puts "fizz"
+		puts "Fizz" 
 	else
 		puts i 
 	end
 end
 
-
+for i in 1...20
+	i.fizzbuzz()
+end
