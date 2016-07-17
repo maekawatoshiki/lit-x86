@@ -1,3 +1,6 @@
+# CAUTION
+- **NOW I'M DEVELOPING ON 'LLVM BRANCH. SO MASTER BRANCH IS NOT LATEST!!**
+
 # Introduction
 - Lit is a programming language designed fast and light weight with LLVM
 
