@@ -61,7 +61,8 @@ module Calc
 		tok_ary = tok_str.split(' ')
 
 		# VM ( calculate )
-		stack = new 256 double
+		cur_stack_sz = 256
+		stack = new cur_stack_sz double
 		sp = 0
 		for i in 0...length tok_ary
 			s = tok_ary[i]

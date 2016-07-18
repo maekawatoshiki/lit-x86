@@ -32,7 +32,7 @@ extern "C" {
 		printf("%d", n);
 	}
 	void put_num_float(float n) {
-		printf("%.8g", n);
+		printf("%.12g", n);
 	}
 	void put_char(char ch) {
 		putchar(ch);
