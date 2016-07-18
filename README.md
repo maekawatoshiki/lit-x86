@@ -14,7 +14,7 @@
 - make
 
 ```
-$ make
+$ make test
 $ ./lit -h # -h option shows helps
 ```
 
