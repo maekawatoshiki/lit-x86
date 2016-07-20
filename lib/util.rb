@@ -80,6 +80,36 @@ def operator+ a:string[] x:string :string[]
 	cpy
 end
 
+def operator + (a:int[], b:int[]):int[]
+	for i in 0...length b
+		a += b[i]
+	end
+	a
+end
+
+def operator + (a:string[], b:string[]):string[]
+	for i in 0...length b
+		a += b[i]
+	end
+	a
+end
+
+def operator * (a:int[], n):int[]
+	t = a
+	for i in 0...n-1
+		a += t
+	end
+	a
+end
+
+def operator * (a:string[], n):string[]
+	t = a
+	for i in 0...n-1
+		a += t
+	end
+	a
+end
+
 # operators for string
 def str_eql a:string b:string
 	a_len = length a

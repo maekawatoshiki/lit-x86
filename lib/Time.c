@@ -3,6 +3,7 @@
 #include <math.h>
 #include <string.h>
 #include <time.h>
+#include <unistd.h>
 
 unsigned int Time_time() { return time(NULL); }
 
@@ -11,4 +12,8 @@ char *Time_strtime() {
 	time(&t); time_s = ctime(&t); 
 	time_s[strlen(time_s) - 1] = '\0';
 	return time_s;
+}
+
+void Time_sleep(float sec) {
+	usleep(1000000 * sec);
 }
