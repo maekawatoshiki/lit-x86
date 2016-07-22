@@ -16,8 +16,7 @@ bool ExprType::change(std::string ty) {
 }
 
 bool ExprType::change(ExprType *ty) {
-	type.type = ty->type.type;
-	type.user_type = ty->type.user_type;
+	type= ty->type;
 	next = ty->next;
 	return true;
 }
@@ -31,6 +30,13 @@ bool ExprType::change(int ary, ExprType *ty) {
 bool ExprType::is_array() {
 	if(type.type == T_ARRAY) return true;
 	else return false;
+}
+
+bool ExprType::is_ref() {
+	return type.ref;
+}
+void ExprType::set_ref(bool b) {
+	type.ref = b;
 }
 
 bool ExprType::eql_type(int ty, bool is_ary) {

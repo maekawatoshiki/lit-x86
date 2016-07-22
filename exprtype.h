@@ -19,6 +19,7 @@ enum {
 
 struct expr_type_t {
 	expr_type_t(int ty=T_INT): type(ty) {};
+	bool ref = false;
 	int mode, type;
 	std::string user_type;
 	expr_type_t *expr_type;
@@ -42,6 +43,8 @@ public:
 	bool change(int, ExprType *);
 	bool change(std::string);
 	bool is_array();
+	bool is_ref();
+	void set_ref(bool = true);
 	bool eql_type(int, bool = false);
 	bool eql_type(ExprType *);
 

@@ -419,7 +419,7 @@ namespace Codegen {
 
 			llvm::Value *ret_value = llvm::ConstantInt::get(builder.getInt32Ty(), 0); // default return code 0
 			for(ast_vector::iterator it = fn->body.begin(); it != fn->body.end(); ++it) { // function body
-				ret_value = Codegen::expression(*fn->info, list, *it);
+				ret_value = Codegen::expression(*(fn->info), list, *it);
 			}
 
 			for(auto v = fn->info->var.local.begin(); v != fn->info->var.local.end(); v++) {
@@ -474,7 +474,7 @@ namespace Codegen {
 			pass_mgr.add(new llvm::DataLayout(*exec_engine->getDataLayout()));
 			// mem2reg
 			pass_mgr.add(llvm::createPromoteMemoryToRegisterPass());
-			// Provide basic AliasAnalysis support for GVN.
+			/// Provide basic AliasAnalysis support for GVN.
 			pass_mgr.add(llvm::createBasicAliasAnalysisPass());
 			// Do simple "peephole" optimizations and bit-twiddling optzns.
 			pass_mgr.add(llvm::createInstructionCombiningPass());
@@ -596,15 +596,26 @@ Function FunctionAST::codegen(Program &f_list) { // create a prototype of functi
 	for(ast_vector::iterator it = args.begin(); it != args.end(); ++it) {
 		if((*it)->get_type() == AST_VARIABLE) {
 			var_t *v = ((VariableAST *)*it)->append(f, f_list);
-			arg_types.push_back(builder.getInt32Ty());
+			llvm::Type *llvm_type = builder.getInt32Ty();
+			ExprType *type = new ExprType(T_INT);
+			if(v->type.is_ref()) {
+				llvm_type = llvm_type->getPointerTo();
+				type->set_ref();
+			}
+			arg_types.push_back(llvm_type);
 			arg_names.push_back(v->name);
-			args_type_for_overload.push_back(new ExprType(T_INT));
+			args_type_for_overload.push_back(type);
 		} else if((*it)->get_type() == AST_VARIABLE_DECL) {
 			var_t *v = ((VariableDeclAST *)*it)->append(f, f_list);
-			arg_types.push_back(Type::type_to_llvmty(&v->type));
-
+			llvm::Type *llvm_type = Type::type_to_llvmty(&v->type);
+			ExprType *type = new ExprType(v->type);
+			if(v->type.is_ref()) {
+				llvm_type = llvm_type->getPointerTo();
+				type->set_ref();
+			}
+			arg_types.push_back(llvm_type);
 			arg_names.push_back(v->name);
-			args_type_for_overload.push_back(new ExprType(v->type));
+			args_type_for_overload.push_back(type);
 		}
 	}
 	f.info.args_type = args_type_for_overload;
@@ -619,7 +630,6 @@ Function FunctionAST::codegen(Program &f_list) { // create a prototype of functi
 	llvm::FunctionType *func_type = llvm::FunctionType::get(func_ret_type, arg_types, false);
 	llvm::Function *func = llvm::Function::Create(func_type, llvm::Function::ExternalLinkage, f.info.name, mod);
 
-	// func_body_t fb;
 	funcs_body.push_back(func_body_t {
 		.info = function,
 			.arg_names = arg_names,
@@ -806,7 +816,16 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, ExprType *t
 			for(auto arg : args_type) 
 				args_type_str += arg->to_string() + ", ";
 			args_type_str.erase(args_type_str.end() - 2, args_type_str.end()); // erase ", "
-		error("error: undefined function: '%s(%s)'", info.name.c_str(), args_type_str.c_str());
+			error("error: undefined function: '%s(%s)'", info.name.c_str(), args_type_str.c_str());
+	}
+	auto func_args = function->info.args_type;
+	for(auto arg = args.begin(); arg != args.end(); ++arg) {
+		int count = arg - args.begin();
+		if(func_args[count]->is_ref()) {
+			VariableAST *vast = (VariableAST *)*arg;
+			var_t *v = vast->get(f, f_list);
+			callee_args[count] = (v->val);
+		}
 	}
 	llvm::Function *callee = (function->info.func_addr) ? function->info.func_addr : mod->getFunction(info.name);
 	if(!callee) error("no function: %s", info.name.c_str());
@@ -1053,7 +1072,11 @@ llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, ExprType *
 		}
 		builder.CreateStore(val, v->val);
 	} else {
-		if(var->get_type() == AST_VARIABLE) v->type = v_ty;
+		if(var->get_type() == AST_VARIABLE) {
+			bool ref = v->type.is_ref();
+			v->type = v_ty;
+			v->type.set_ref(ref);
+		}
 		if(first_decl) {
 			llvm::AllocaInst *ai;
 			ai = builder.CreateAlloca(Type::type_to_llvmty(&v_ty));
@@ -1064,7 +1087,10 @@ llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, ExprType *
 			func_args.push_back(builder.CreateBitCast(v->val, v->val->getType()->getPointerTo())); // addr
 			builder.CreateCall(stdfunc["append_addr_for_gc"].func, func_args);
 		}
-		builder.CreateStore(val, v->val);
+		if(v->type.is_ref())
+			builder.CreateStore(val, builder.CreateLoad(v->val));
+		else
+			builder.CreateStore(val, v->val);
 	}
 	return NULL;
 }
@@ -1110,6 +1136,10 @@ llvm::Value * VariableAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 	if(v == NULL) error("error: '%s' was not declared", info.name.c_str());
 	if(info.is_global == false) { // local
 		ty->change(&v->type);
+		if(ty->is_ref()) 
+			return builder.CreateLoad(builder.CreateLoad(v->val), "var_tmp");
+		else
+			return builder.CreateLoad(v->val, "var_tmp");
 		return builder.CreateLoad(v->val, "var_tmp");
 	} else { // global
 		ty->change(&v->type);

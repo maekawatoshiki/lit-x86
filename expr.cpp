@@ -262,12 +262,13 @@ AST *Parser::expr_unary() { // TODO: implementation unary minus(-)!!
 }
 
 AST *Parser::expr_primary() {
-	bool is_global_decl = false;
+	bool is_global_decl = false, is_ref = false;
 	std::string name;
 	std::vector<std::string> mod_name;
 	var_t *v = NULL; 
 	
 	if(tok.skip("$")) is_global_decl = true;
+	if(tok.skip("ref")) is_ref = true;
 
 	if(tok.get().val == "new") {
 		tok.skip();
@@ -345,6 +346,7 @@ AST *Parser::expr_primary() {
 					.is_global = is_global_decl
 				};
 				v.type.change(new ExprType(type));
+				v.type.set_ref(is_ref);
 				if(is_vardecl)
 					return new VariableDeclAST(v);
 				else
