@@ -34,9 +34,13 @@ def to_float s:string :double
 	str_to_float s
 end
 
+def substr(str:string, bgn):string
+	str.substr(bgn, length(str)-bgn)
+end
+
 def substr(str:string, bgn, last):string
 	ret = ""
-	if last == 0; last = length(str)-bgn; end
+	if last < 0; return ret; end
 	for i in bgn..bgn+last
 		ret += str[i]
 	end
@@ -54,7 +58,7 @@ def split(str:string, ch:char):string[]
 		end
 	end
 	if bgn < str_len
-		ret += substr(str, bgn, 0)
+		ret += substr(str, bgn)
 	end
 	ret
 end
@@ -82,7 +86,7 @@ def replace(base:string from:string to:string):string
 	idx = base.find(from)
 	if idx < 0; return 0; end
 	a = base.substr(0, idx-1)
-	b = base.substr(idx+length(from), 0)
+	b = base.substr(idx+length(from))
 	a + to + b
 end
 
