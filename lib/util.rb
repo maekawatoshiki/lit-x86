@@ -36,8 +36,8 @@ end
 
 def substr(str:string, bgn, last):string
 	ret = ""
-	if last < bgn; last = length(str) - 1; end
-	for i in bgn..last
+	if last == 0; last = length(str)-bgn; end
+	for i in bgn..bgn+last
 		ret += str[i]
 	end
 	ret
@@ -49,7 +49,7 @@ def split(str:string, ch:char):string[]
 	bgn = 0
 	for i in 0...str_len
 		if ch == str[i]
-			ret += substr(str, bgn, i - 1)
+			ret += substr(str, bgn, bgn + i - 1)
 			bgn = i + 1
 		end
 	end
@@ -59,6 +59,43 @@ def split(str:string, ch:char):string[]
 	ret
 end
 
+def find base:string s:string # find s from base. if found, return index of base
+	base_len = length base
+	s_len = length s
+	for i in 0...base_len
+		if base[i] == s[0]
+			flg = 1
+			for k in 0...s_len
+				if base[i+k] != s[k]
+					flg = 0
+				end
+			end
+			if flg
+				return i
+			end
+		end
+	end
+	0-1
+end
+
+def replace(base:string from:string to:string):string
+	idx = base.find(from)
+	if idx < 0; return 0; end
+	a = base.substr(0, idx-1)
+	b = base.substr(idx+length(from), 0)
+	a + to + b
+end
+
+def replace_all(base:string from:string to:string):string
+	while 1
+		t = base.replace(from, to)
+		if t == 0
+			return base
+		end
+		base = t
+	end
+	base
+end
 # operators for array
 def operator+ a:int[] x:int :int[]
 	size = length(a) + 1
