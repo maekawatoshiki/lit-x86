@@ -132,7 +132,7 @@ namespace Type {
 			out = llvm::Type::getInt8PtrTy(llvm::getGlobalContext());
 			while(ary_count--) out = out->getPointerTo();	
 		} else if(ty->eql_type(T_DOUBLE)) {
-			out = llvm::Type::getFloatTy(llvm::getGlobalContext());
+			out = llvm::Type::getDoubleTy(llvm::getGlobalContext());
 			while(ary_count--) out = out->getPointerTo();	
 		} else if(ty->eql_type(T_INT)) {
 			out = llvm::Type::getInt32Ty(llvm::getGlobalContext());
@@ -148,7 +148,7 @@ namespace Type {
 		// 	info.type.eql_type(T_STRING) ? 
 		// 		(llvm::Type *)builder.getInt8PtrTy() : 
 		// 		info.type.eql_type(T_DOUBLE) ?
-		// 			(llvm::Type *)builder.getFloatTy() : 
+		// 			(llvm::Type *)builder.getDoubleTy() : 
 		// 			info.type.eql_type(T_USER_TYPE) ? 
 		// 				(llvm::Type *)f_list.structs.get(info.type.get().user_type)->strct->getPointerTo() : 
 		// 				(info.type.eql_type(T_ARRAY)) ? 

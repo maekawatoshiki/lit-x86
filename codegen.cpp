@@ -31,7 +31,7 @@ extern "C" {
 	void put_num(int n) {
 		printf("%d", n);
 	}
-	void put_num_float(float n) {
+	void put_num_float(double n) {
 		printf("%.12g", n);
 	}
 	void put_char(char ch) {
@@ -100,7 +100,7 @@ extern "C" {
 	int str_to_int(char *str) {
 		return atoi(str);
 	}
-	float str_to_float(char *str) {
+	double str_to_float(char *str) {
 		return atof(str);
 	}
 	char *int_to_str(int n) {
@@ -205,7 +205,7 @@ namespace Codegen {
 			stdfunc["put_array_str"].func = func;
 			func_args.clear();
 			// create put_num_float function
-			func_args.push_back(builder.getFloatTy());
+			func_args.push_back(builder.getDoubleTy());
 			func = llvm::Function::Create(
 					llvm::FunctionType::get(builder.getVoidTy(), func_args, false),
 					llvm::GlobalValue::ExternalLinkage,
@@ -238,7 +238,7 @@ namespace Codegen {
 			// create str_to_float function
 			func_args.push_back(builder.getInt8PtrTy());
 			func = llvm::Function::Create(
-					llvm::FunctionType::get(/*ret*/builder.getFloatTy(), func_args, false),
+					llvm::FunctionType::get(/*ret*/builder.getDoubleTy(), func_args, false),
 					llvm::GlobalValue::ExternalLinkage,
 					"str_to_float", mod);
 			stdfunc["str_to_float"].func = func;
@@ -438,7 +438,7 @@ namespace Codegen {
 			} else if(fn->ret_type->getTypeID() == builder.getInt32Ty()->getTypeID()) {
 
 				ret_value = llvm::ConstantInt::get(builder.getInt32Ty(), 0);
-			} else error("error: return code of function is incorrect");
+			} else error("error: return code of function is incorrect '%s'", fn->info->info.name.c_str());
 
 			builder.CreateRet(ret_value);
 		}
@@ -861,10 +861,10 @@ llvm::Value * BinaryAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 
 	{ // cast instructions
 		if(ty_l.eql_type(T_INT) && ty_r.eql_type(T_DOUBLE)) {
-			lhs = builder.CreateSIToFP(lhs, builder.getFloatTy());
+			lhs = builder.CreateSIToFP(lhs, builder.getDoubleTy());
 			ty_l = T_DOUBLE;
 		} else if(ty_l.eql_type(T_DOUBLE) && ty_r.eql_type(T_INT)) {
-			rhs = builder.CreateSIToFP(rhs, builder.getFloatTy());
+			rhs = builder.CreateSIToFP(rhs, builder.getDoubleTy());
 		} else if(ty_l.eql_type(T_INT) && !ty_r.eql_type(T_INT)) {
 			rhs = builder.CreateZExt(rhs, builder.getInt32Ty());
 		}
@@ -968,7 +968,7 @@ llvm::Value *CastAST::codegen(Function &f, Program &f_list, ExprType *ret_ty) {
 	ExprType exp_ty;
 	llvm::Value *exp = Codegen::expression(f, f_list, expr, &exp_ty);
 	if(exp_ty.eql_type(T_INT) && ret_ty->eql_type(T_DOUBLE)) {
-		return builder.CreateSIToFP(exp, builder.getFloatTy());
+		return builder.CreateSIToFP(exp, builder.getDoubleTy());
 	} else if(exp_ty.eql_type(T_DOUBLE) && !ret_ty->eql_type(T_DOUBLE)) {
 		exp = builder.CreateFPToSI(exp, builder.getInt32Ty());
 	}
@@ -1283,6 +1283,6 @@ llvm::Value * NumberAST::codegen(Function &f, ExprType *ty) {
 }
 llvm::Value * FloatNumberAST::codegen(Function &f, ExprType *ty) {
 	ty->change(T_DOUBLE);
-	return llvm::ConstantFP::get(builder.getFloatTy(), number);
+	return llvm::ConstantFP::get(builder.getDoubleTy(), number);
 }
 
