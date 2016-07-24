@@ -49,6 +49,20 @@ namespace LitMemory {
 	std::map<void *, MemoryInfo *> mem_list;
 	std::map<void *, bool> root_ptr;
 
+	std::string byte_with_unit(uint32_t byte) {
+		std::string unit[] = {"B", "KB", "MB", "GB"};
+		uint32_t b = 1;
+		std::stringstream ss;
+		for(int i = 0; i < 4; i++) {
+			if(byte < b*1024) {
+				ss << (double)byte/b << unit[i];
+				break;
+			}
+			b *= 1024;
+		}
+		return ss.str().c_str();
+	}
+
 	void *alloc_const(uint32_t size) { // allocate constant memory(for string)
 		void *addr = alloc(size, 1);
 		mem_list[(void *)addr] = new MemoryInfo(addr, size, true);
@@ -96,7 +110,7 @@ namespace LitMemory {
 		for(std::map<void *, MemoryInfo *>::iterator it = mem_list.begin(); it != mem_list.end(); ++it) {
 			if(it->second->marked == false) {
 				if(it->second->is_const()) continue;
-				// std::cout << "*** freed success: " << it->second->get_addr() << ", size: " << it->second->get_size() << "bytes ***" << std::endl;
+				// std::cout << "*** freed success: " << it->second->get_addr() << ", size: " << byte_with_unit(it->second->get_size()) << "bytes ***" << std::endl;
 				it->second->free_mem();
 				current_mem -= it->second->get_size();
 				mem_list.erase(it);
