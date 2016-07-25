@@ -1102,10 +1102,13 @@ llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, ExprType *
 			func_args.push_back(builder.CreateBitCast(v->val, v->val->getType()->getPointerTo())); // addr
 			builder.CreateCall(stdfunc["append_addr_for_gc"].func, func_args);
 		}
-		if(v->type.is_ref())
+		if(v->type.is_ref()) {
 			builder.CreateStore(val, builder.CreateLoad(v->val));
-		else
+			return builder.CreateLoad(builder.CreateLoad(v->val));
+		} else {
 			builder.CreateStore(val, v->val);
+			return builder.CreateLoad(v->val);
+		}
 	}
 	return NULL;
 }

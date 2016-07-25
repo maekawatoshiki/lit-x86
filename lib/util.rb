@@ -95,11 +95,7 @@ def replace(base:string from:string to:string):string
 end
 
 def replace_all(base:string from:string to:string):string
-	while 1
-		t = base.replace(from, to)
-		if t == 0
-			return base
-		end
+	while (t = base.replace(from, to)) != 0
 		base = t
 	end
 	base

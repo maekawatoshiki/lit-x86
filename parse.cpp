@@ -99,9 +99,9 @@ llvm::Module *Parser::parser() {
 	append_func("float_to_str");
 
 	ast_vector a = eval();
-	// std::cout << "\n---------- abstract syntax tree ----------" << std::endl;
-	// for(int i = 0; i < a.size(); i++)
-	// 	visit(a[i]), std::cout << std::endl;
+	//std::cout << "\n---------- abstract syntax tree ----------" << std::endl;
+	//for(int i = 0; i < a.size(); i++)
+	//	visit(a[i]), std::cout << std::endl;
 	llvm::Module *program_mod = Codegen::codegen(a); // start code generating
 	// std::cout << "\n---------- end of abstract syntax tree --" << std::endl;
 	return program_mod;
