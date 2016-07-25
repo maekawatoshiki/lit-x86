@@ -96,6 +96,7 @@ llvm::Module *Parser::parser() {
 	append_func("str_to_int");
 	append_func("str_to_float");
 	append_func("int_to_str");
+	append_func("float_to_str");
 
 	ast_vector a = eval();
 	// std::cout << "\n---------- abstract syntax tree ----------" << std::endl;

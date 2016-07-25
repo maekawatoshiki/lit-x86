@@ -30,6 +30,10 @@ def to_string(i):string
 	int_to_str i
 end
 
+def to_string(f:double):string
+	float_to_str f
+end
+
 def to_float s:string :double
 	str_to_float s
 end
@@ -100,6 +104,13 @@ def replace_all(base:string from:string to:string):string
 	end
 	base
 end
+
+def swap!(ref a, ref b)
+	t = a
+	a = b
+	b = t
+end
+
 # operators for array
 def operator+ a:int[] x:int :int[]
 	size = length(a) + 1
@@ -189,3 +200,23 @@ def operator* a:string n:int :string
 	res
 end
 
+def operator % (str:string, n):string
+	bgn = str.find("{}")
+	a = str.substr(0, bgn-1)
+	b = str.substr(bgn+length("{}"))
+	a + n.to_string() + b
+end
+
+def operator % (str:string, n:string):string
+	bgn = str.find("{}")
+	a = str.substr(0, bgn-1)
+	b = str.substr(bgn+length("{}"))
+	a + n + b
+end
+
+def operator % (str:string, n:double):string
+	bgn = str.find("{}")
+	a = str.substr(0, bgn-1)
+	b = str.substr(bgn+length("{}"))
+	a + n.to_string() + b
+end

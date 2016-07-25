@@ -109,6 +109,12 @@ extern "C" {
 		ret = (char *)LitMemory::alloc(strlen(buf)+1, sizeof(char));
 		return strcpy(ret, buf);
 	}
+	char *float_to_str(double f) {
+		char buf[16], *ret;
+		sprintf(buf, "%.12g", f);
+		ret = (char *)LitMemory::alloc(strlen(buf)+1, sizeof(char));
+		return strcpy(ret, buf);
+	}
 	int get_memory_length(void *ptr) {
 		return LitMemory::get_size(ptr);
 	}
@@ -151,6 +157,7 @@ namespace Codegen {
 			stdfunc["str_to_int"] = {"str_to_int", 1, T_INT};
 			stdfunc["str_to_float"] = {"str_to_float", 1, T_DOUBLE};
 			stdfunc["int_to_str"] = {"int_to_str", 1, T_STRING};
+			stdfunc["float_to_str"] = {"float_to_str", 1, T_STRING};
 			stdfunc["builtinlength"] = {"builtinlength", 1, T_INT};
 			stdfunc["str_copy"] = {"str_copy", 1, T_STRING};
 			stdfunc["GC"] = {"GC", 0, T_VOID};
@@ -250,6 +257,14 @@ namespace Codegen {
 					llvm::GlobalValue::ExternalLinkage,
 					"int_to_str", mod);
 			stdfunc["int_to_str"].func = func;
+			func_args.clear();
+			// create float_to_str function
+			func_args.push_back(builder.getDoubleTy());
+			func = llvm::Function::Create(
+					llvm::FunctionType::get(/*ret*/builder.getInt8Ty()->getPointerTo(), func_args, false),
+					llvm::GlobalValue::ExternalLinkage,
+					"float_to_str", mod);
+			stdfunc["float_to_str"].func = func;
 			func_args.clear();
 			// create create_array function
 			func_args.push_back(builder.getInt32Ty());
