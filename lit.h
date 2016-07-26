@@ -15,7 +15,7 @@
 	#include <sys/wait.h>
 #endif
 
-#define _LIT_VERSION_ "0.1.1"
+#define _LIT_VERSION_ "0.2.0"
 
 
 class Lit {
