@@ -877,6 +877,7 @@ llvm::Value * BinaryAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 	{ // cast instructions
 		if(ty_l.eql_type(T_INT) && ty_r.eql_type(T_DOUBLE)) {
 			lhs = builder.CreateSIToFP(lhs, builder.getDoubleTy());
+			ty->change(new ExprType(T_DOUBLE));
 			ty_l = T_DOUBLE;
 		} else if(ty_l.eql_type(T_DOUBLE) && ty_r.eql_type(T_INT)) {
 			rhs = builder.CreateSIToFP(rhs, builder.getDoubleTy());
