@@ -52,6 +52,15 @@ extern "C" {
 		}
 		printf("] ");
 	}
+	void put_array_float(double *ary) {
+		int size = LitMemory::get_size(ary);
+		if(size == -1) return;
+		printf("[ ");
+		for(int i = 0; i < size; i++) {
+			printf("%.12g ", ary[i]);
+		}
+		printf("] ");
+	}
 	void put_array_str(char *ary[]) {
 		int size = LitMemory::get_size(ary);
 		if(size == -1) return;
@@ -150,6 +159,7 @@ namespace Codegen {
 			stdfunc["put_num_float"] = {"put_num_float", 1, T_VOID};
 			stdfunc["put_char"] = {"put_char", 1, T_VOID};
 			stdfunc["put_array"] = {"put_array", 1, T_VOID};
+			stdfunc["put_array_float"] = {"put_array_float", 1, T_VOID};
 			stdfunc["put_array_str"] = {"put_array_str", 1, T_VOID};
 			stdfunc["put_string"] = {"put_string", 1, T_VOID};
 			stdfunc["strcat"] = {"strcat", 2, T_STRING};
@@ -202,6 +212,14 @@ namespace Codegen {
 					llvm::GlobalValue::ExternalLinkage,
 					"put_array", mod);
 			stdfunc["put_array"].func = func;
+			func_args.clear();
+			// create put_array_float function
+			func_args.push_back(builder.getInt32Ty()->getPointerTo());
+			func = llvm::Function::Create(
+					llvm::FunctionType::get(/*ret*/builder.getVoidTy(), func_args, false),
+					llvm::GlobalValue::ExternalLinkage,
+					"put_array_float", mod);
+			stdfunc["put_array_float"].func = func;
 			func_args.clear();
 			// create put_array_str function
 			func_args.push_back(builder.getInt8PtrTy()->getPointerTo());
@@ -787,6 +805,8 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, ExprType *t
 					builder.CreateCall(stdfunc["put_num_float"].func, func_args)->setCallingConv(llvm::CallingConv::C);
 				} else if(ty.is_array() && ty.next->eql_type(T_INT)) {
 					builder.CreateCall(stdfunc["put_array"].func, func_args)->setCallingConv(llvm::CallingConv::C);
+				} else if(ty.is_array() && ty.next->eql_type(T_DOUBLE)) {
+					builder.CreateCall(stdfunc["put_array_float"].func, func_args)->setCallingConv(llvm::CallingConv::C);
 				} else if(ty.is_array() && ty.next->eql_type(T_STRING)) {
 					builder.CreateCall(stdfunc["put_array_str"].func, func_args)->setCallingConv(llvm::CallingConv::C);
 				} else {

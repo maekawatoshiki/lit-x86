@@ -2,6 +2,10 @@ def length ary:int[]
 	builtinlength ary
 end
 
+def length ary:double[]
+	builtinlength ary
+end
+
 def length ary:string[]
 	builtinlength ary
 end
@@ -36,6 +40,22 @@ end
 
 def to_float s:string :double
 	str_to_float s
+end
+
+def to_int(s:string[]):int[]
+	out = []:int
+	for i in 0...length s
+		out += s[i].to_int()
+	end
+	out
+end
+
+def to_float(s:string[]):double[]
+	out = []:double
+	for i in 0...length s
+		out += s[i].to_float()
+	end
+	out
 end
 
 def substr(str:string, bgn):string
@@ -111,6 +131,16 @@ end
 def operator+ a:int[] x:int :int[]
 	size = length(a) + 1
 	cpy = new size
+	for i in 0...size-1
+		cpy[i] = a[i]
+	end
+	cpy[size-1] = x
+	cpy
+end
+
+def operator+ a:double[] x:double :double[]
+	size = length(a) + 1
+	cpy = new size double
 	for i in 0...size-1
 		cpy[i] = a[i]
 	end

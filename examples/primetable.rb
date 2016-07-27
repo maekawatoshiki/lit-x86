@@ -1,9 +1,6 @@
 def table max
 	count = max - 2
 	prime_list = new max int
-	for i in 0...max
-		prime_list[i] = 0
-	end
 	for i = 2, i * i < max, i += 1
 		if prime_list[i] == 0
 			for k = i * 2, k < max, k += i
