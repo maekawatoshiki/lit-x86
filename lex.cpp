@@ -41,6 +41,7 @@ int Lexer::lex(char *code) {
 		} else if(code[i] == '\"') { // string?
 
 			for(i++; ; i++) {
+				if(code[i] == '\0') error("error: missing charactor '\"'");
 				if(code[i] == '\\' && code[i+1] == '"') {
 					str += code[i++]; str += code[i];
 				} else if(code[i] == '"') break;
