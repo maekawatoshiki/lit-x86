@@ -65,7 +65,7 @@ end
 def substr(str:string, bgn, last):string
 	ret = ""
 	if last < 0; return ret; end
-	for i in bgn..bgn+last
+	for i in bgn...bgn+last
 		ret += str[i]
 	end
 	ret
@@ -77,7 +77,7 @@ def split(str:string, ch:char):string[]
 	bgn = 0
 	for i in 0...str_len
 		if ch == str[i]
-			ret += substr(str, bgn, bgn + i - 1)
+			ret += substr(str, bgn, bgn + i)
 			bgn = i + 1
 		end
 	end
@@ -109,7 +109,7 @@ end
 def replace(base:string from:string to:string):string
 	idx = base.find(from)
 	if idx < 0; return 0; end
-	a = base.substr(0, idx-1)
+	a = base.substr(0, idx)
 	b = base.substr(idx+length(from))
 	a + to + b
 end
@@ -228,21 +228,21 @@ end
 
 def operator % (str:string, n):string
 	bgn = str.find("{}")
-	a = str.substr(0, bgn-1)
+	a = str.substr(0, bgn)
 	b = str.substr(bgn+length("{}"))
 	a + n.to_string() + b
 end
 
 def operator % (str:string, n:string):string
 	bgn = str.find("{}")
-	a = str.substr(0, bgn-1)
+	a = str.substr(0, bgn)
 	b = str.substr(bgn+length("{}"))
 	a + n + b
 end
 
 def operator % (str:string, n:double):string
 	bgn = str.find("{}")
-	a = str.substr(0, bgn-1)
+	a = str.substr(0, bgn)
 	b = str.substr(bgn+length("{}"))
 	a + n.to_string() + b
 end
