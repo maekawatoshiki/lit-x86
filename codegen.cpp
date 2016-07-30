@@ -32,7 +32,7 @@ extern "C" {
 		printf("%d", n);
 	}
 	void put_num_float(double n) {
-		printf("%.12g", n);
+		printf("%.10g", n);
 	}
 	void put_char(char ch) {
 		putchar(ch);
@@ -57,7 +57,7 @@ extern "C" {
 		if(size == -1) return;
 		printf("[ ");
 		for(int i = 0; i < size; i++) {
-			printf("%.12g ", ary[i]);
+			printf("%.10g ", ary[i]);
 		}
 		printf("] ");
 	}
@@ -66,9 +66,9 @@ extern "C" {
 		if(size == -1) return;
 		printf("[ ");
 		for(int i = 0; i < size; i++) {
-			if(LitMemory::is_allocated_addr((void *)ary[i]))
-				put_array_str((char **)ary[i]);
-			else
+			// if(LitMemory::is_allocated_addr((void *)ary[i]))
+			// 	put_array_str((char **)ary[i]);
+			// else
 				printf("%s ", ary[i]);
 		}
 		printf("] ");
@@ -120,7 +120,7 @@ extern "C" {
 	}
 	char *float_to_str(double f) {
 		char buf[16], *ret;
-		sprintf(buf, "%.12g", f);
+		sprintf(buf, "%.10g", f);
 		ret = (char *)LitMemory::alloc(strlen(buf)+1, sizeof(char));
 		return strcpy(ret, buf);
 	}

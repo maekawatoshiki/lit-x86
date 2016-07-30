@@ -77,7 +77,7 @@ def split(str:string, ch:char):string[]
 	bgn = 0
 	for i in 0...str_len
 		if ch == str[i]
-			ret += substr(str, bgn, bgn + i)
+			ret += substr(str, bgn, i-bgn)
 			bgn = i + 1
 		end
 	end
