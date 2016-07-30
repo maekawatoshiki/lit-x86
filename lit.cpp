@@ -73,6 +73,7 @@ namespace LitMemory {
 		void *addr = calloc(size, byte);
 		if(!addr) error("LitSystemError: No enough memory");
 		current_mem += size;
+		// std::cout << "*** allocated addr: " << addr << std::endl;
 		mem_list[(void *)addr] = new MemoryInfo(addr, size);
 		return addr;	
 	}
@@ -101,7 +102,18 @@ namespace LitMemory {
 					MemoryInfo *m = mem_list[(void *)*ptr];
 					if(m->is_const()) continue;
 					m->mark();
-					// std::cout << "marked success: " << m->get_addr() << std::endl;
+					// std::cout << "*** marked success: " << m->get_addr() << std::endl;
+					ptr = (uint64_t *)m->get_addr();
+					if(mem_list.count((void *)*ptr)) {
+						m = mem_list[(void *)*ptr];
+						if(m->is_const()) continue;
+						m->mark();
+						for(;mem_list.count((void*)*ptr); ptr++) {
+							m = mem_list[(void*)*ptr];
+							if(m->is_const()) continue;
+							m->mark();
+						}
+					}
 				} 
 			}
 		} 
@@ -120,8 +132,10 @@ namespace LitMemory {
 			it->second->marked = false;
 	}
 	void gc() {
+		// std::cout << "before: " << byte_with_unit(current_mem) << std::endl;
 		gc_mark();
 		gc_sweep();
+		// std::cout << "after: " << byte_with_unit(current_mem) << std::endl;
 	}
 
 	void free_all_mem() {

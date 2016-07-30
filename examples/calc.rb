@@ -59,7 +59,6 @@ module Calc
 		tok_str = addsub expr
 		puts "reverse polish: ", tok_str
 		tok_ary = tok_str.split(' ')
-
 		# VM ( calculate )
 		cur_stack_sz = 256
 		stack = new cur_stack_sz double
