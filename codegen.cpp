@@ -48,8 +48,8 @@ extern "C" {
 		if(size == -1) return;
 		printf("[ ");
 		for(int i = 0; i < size; i++) {
-			if(LitMemory::is_allocated_addr((void *)ary[i]))
-				put_array((int *)ary[i]);
+			if(LitMemory::is_allocated_addr(reinterpret_cast<void *>(ary[i])))
+				put_array(reinterpret_cast<int *>(ary[i]));
 			else
 				printf("%d ", ary[i]);
 		}
