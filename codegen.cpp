@@ -116,10 +116,12 @@ extern "C" {
 		return atof(str);
 	}
 	char *int_to_str(int n) {
-		char buf[16], *ret;
-		sprintf(buf, "%d", n);
-		ret = (char *)LitMemory::alloc(strlen(buf)+1, sizeof(char));
-		return strcpy(ret, buf);
+		char buf[16]; sprintf(buf, "%d", n);
+		return strcpy((char *)LitMemory::alloc(strlen(buf)+1, sizeof(char)), buf);
+	}
+	char *int64_to_str(long long int n) {
+		char buf[32]; sprintf(buf, "%lld", n);
+		return strcpy((char *)LitMemory::alloc(strlen(buf)+1, sizeof(char)), buf);
 	}
 	char *float_to_str(double f) {
 		char buf[16], *ret;
@@ -287,6 +289,14 @@ namespace Codegen {
 					llvm::GlobalValue::ExternalLinkage,
 					"int_to_str", mod);
 			stdfunc["int_to_str"].func = func;
+			func_args.clear();
+			// create int64_to_str function
+			func_args.push_back(builder.getInt64Ty());
+			func = llvm::Function::Create(
+					llvm::FunctionType::get(/*ret*/builder.getInt8Ty()->getPointerTo(), func_args, false),
+					llvm::GlobalValue::ExternalLinkage,
+					"int64_to_str", mod);
+			stdfunc["int64_to_str"].func = func;
 			func_args.clear();
 			// create float_to_str function
 			func_args.push_back(builder.getDoubleTy());

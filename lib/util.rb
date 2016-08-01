@@ -34,6 +34,10 @@ def to_string(i):string
 	int_to_str i
 end
 
+def to_string(i:int64):string
+	int64_to_str i
+end
+
 def to_string(f:double):string
 	float_to_str f
 end

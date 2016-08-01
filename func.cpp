@@ -21,7 +21,7 @@ Function *Program::get(std::string name, std::vector<ExprType *> args_type, std:
 		if(f.info.args_type.size() != args_type.size()) return false;
 		auto caller_it = args_type.begin();
 		for(auto it = f.info.args_type.begin(); it != f.info.args_type.end() && caller_it != args_type.end(); ++it) {
-			if(!(*it)->eql_type((*caller_it))) return false;
+			if(!(*it)->eql_type(*caller_it)) return false;
 			caller_it++;
 		}
 		return true;
@@ -40,10 +40,7 @@ Function *Program::get(std::string name, std::vector<std::string> mod_name, std:
 		if(f.info.args_type.size() != args_type.size()) return false;
 		auto caller_it = args_type.begin();
 		for(auto it = f.info.args_type.begin(); it != f.info.args_type.end() && caller_it != args_type.end(); ++it) {
-			if(
-					(!(*it)->eql_type((*caller_it))) &&
-					((*it)->get().type != T_INT64 && (*caller_it)->get().type != T_INT)
-				) return false;
+			if(!(*it)->eql_type((*caller_it))) return false;
 			caller_it++;
 		}
 		return true;
