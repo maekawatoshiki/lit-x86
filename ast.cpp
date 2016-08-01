@@ -1,6 +1,6 @@
 #include "ast.h"
 
-NumberAST::NumberAST(int n) : 
+NumberAST::NumberAST(std::string n) : 
 	number(n) {
 }
 FloatNumberAST::FloatNumberAST(double f) : 

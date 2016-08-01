@@ -287,13 +287,13 @@ AST *Parser::expr_primary() {
 		if(strstr(tok.get().val.c_str(), ".") != NULL)
 			return new FloatNumberAST(atof(tok.next().val.c_str()));
 		else
-			return new NumberAST(atoi(tok.next().val.c_str()));
+			return new NumberAST(tok.next().val);
 	} else if(is_char_tok()) { 
 		return new CharAST(tok.next().val.c_str()[0]);
 	} else if(is_string_tok()) {
 		return new StringAST(tok.next().val);
 	} else if(tok.get().val == "true" || tok.get().val == "false") {
-		return new NumberAST(tok.next().val == "true" ? 1 : 0);
+		return new NumberAST(tok.next().val == "true" ? "1" :"0");
 	} else if(is_ident_tok()) { 
 		name = tok.next().val;
 		int is_ary; 

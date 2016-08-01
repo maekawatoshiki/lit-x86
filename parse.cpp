@@ -219,7 +219,7 @@ AST *Parser::make_for() {
 				asgmt = new VariableAsgmtAST(asgmt, cond_bin->left);
 				cond = new BinaryAST(cond_bin->op == ".." ? "<=" : /* op=... */ "<", var, cond_bin->right);
 				step = new VariableAsgmtAST(var, 
-								new BinaryAST("+", var, new NumberAST(1))
+								new BinaryAST("+", var, new NumberAST("1"))
 						);
 			} else error("error: %d: invalid expression", tok.get().nline);
 			ast_vector block = eval();

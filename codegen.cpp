@@ -31,6 +31,9 @@ extern "C" {
 	void put_num(int n) {
 		printf("%d", n);
 	}
+	void put_num64(long long int n) {
+		printf("%lld", n);
+	}
 	void put_num_float(double n) {
 		printf("%.10g", n);
 	}
@@ -156,6 +159,7 @@ namespace Codegen {
 			stdfunc["puts"] = {"puts", -1, T_VOID};
 			stdfunc["print"] = {"print", -1, T_VOID};
 			stdfunc["put_num"] = {"put_num", 1, T_VOID};
+			stdfunc["put_num64"] = {"put_num64", 1, T_VOID};
 			stdfunc["put_num_float"] = {"put_num_float", 1, T_VOID};
 			stdfunc["put_char"] = {"put_char", 1, T_VOID};
 			stdfunc["put_array"] = {"put_array", 1, T_VOID};
@@ -204,6 +208,14 @@ namespace Codegen {
 					llvm::GlobalValue::ExternalLinkage,
 					"put_num", mod);
 			stdfunc["put_num"].func = func;
+			func_args.clear();
+			// create put_num64 function
+			func_args.push_back(builder.getInt64Ty());
+			func = llvm::Function::Create(
+					llvm::FunctionType::get(/*ret*/builder.getVoidTy(), func_args, false),
+					llvm::GlobalValue::ExternalLinkage,
+					"put_num64", mod);
+			stdfunc["put_num64"].func = func;
 			func_args.clear();
 			// create put_array function
 			func_args.push_back(builder.getInt32Ty()->getPointerTo());
@@ -809,6 +821,8 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, ExprType *t
 					builder.CreateCall(stdfunc["put_array_float"].func, func_args)->setCallingConv(llvm::CallingConv::C);
 				} else if(ty.is_array() && ty.next->eql_type(T_STRING)) {
 					builder.CreateCall(stdfunc["put_array_str"].func, func_args)->setCallingConv(llvm::CallingConv::C);
+				} else if(ty.eql_type(T_INT64)) {
+					builder.CreateCall(stdfunc["put_num64"].func, func_args)->setCallingConv(llvm::CallingConv::C);
 				} else {
 					builder.CreateCall(stdfunc["put_num"].func, func_args)->setCallingConv(llvm::CallingConv::C);
 				}
@@ -854,7 +868,7 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, ExprType *t
 			error("error: undefined function: '%s(%s)'", info.name.c_str(), args_type_str.c_str());
 	}
 	auto func_args = function->info.args_type;
-	for(auto arg = args.begin(); arg != args.end(); ++arg) {
+	for(auto arg = args.begin(); arg != args.end(); ++arg) { // reference?
 		int count = arg - args.begin();
 		if(func_args[count]->is_ref()) {
 			VariableAST *vast = (VariableAST *)*arg;
@@ -901,6 +915,10 @@ llvm::Value * BinaryAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 			ty_l = T_DOUBLE;
 		} else if(ty_l.eql_type(T_DOUBLE) && ty_r.eql_type(T_INT)) {
 			rhs = builder.CreateSIToFP(rhs, builder.getDoubleTy());
+		} else if(ty_l.eql_type(T_INT64) && ty_r.eql_type(T_INT)) {
+			rhs = builder.CreateSExt(rhs, builder.getInt64Ty());
+		} else if(ty_l.eql_type(T_INT) && ty_r.eql_type(T_INT64)) {
+			lhs = builder.CreateSExt(lhs, builder.getInt64Ty());
 		} else if(ty_l.eql_type(T_INT) && !ty_r.eql_type(T_INT)) {
 			rhs = builder.CreateZExt(rhs, builder.getInt32Ty());
 		}
@@ -1007,6 +1025,8 @@ llvm::Value *CastAST::codegen(Function &f, Program &f_list, ExprType *ret_ty) {
 		return builder.CreateSIToFP(exp, builder.getDoubleTy());
 	} else if(exp_ty.eql_type(T_DOUBLE) && !ret_ty->eql_type(T_DOUBLE)) {
 		exp = builder.CreateFPToSI(exp, builder.getInt32Ty());
+	} else if(ret_ty->eql_type(T_INT64)) {
+		return builder.CreateSExt(exp, builder.getInt64Ty());
 	}
 	return builder.CreateBitCast(exp, to_type);
 }
@@ -1317,8 +1337,14 @@ llvm::Value * CharAST::codegen(Function &f, ExprType *ty) {
 }
 
 llvm::Value * NumberAST::codegen(Function &f, ExprType *ty) {
-	ty->change(T_INT);
-	return llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), number, true);
+	long long int n = std::atoll(number.c_str());
+	if(n > INT_MAX) {
+		ty->change(T_INT64);
+		return llvm::ConstantInt::get(llvm::Type::getInt64Ty(context), n, true);
+	} else {
+		ty->change(T_INT);
+		return llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), (int)n, true);
+	}
 }
 llvm::Value * FloatNumberAST::codegen(Function &f, ExprType *ty) {
 	ty->change(T_DOUBLE);

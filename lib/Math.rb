@@ -1,4 +1,5 @@
 require "util"
+require "Time"
 
 lib Math
 	proto math_gcd a b
@@ -8,6 +9,7 @@ lib Math
 	proto math_odd n
 	proto math_abs n
 	proto math_rand 
+	proto math_rand_set n
 end
 
 lib Prime
@@ -55,14 +57,25 @@ module Math
 	def even i
 		math_even i
 	end
+	def even i:int64
+		if i % 2 == 0
+			1
+		else
+			0
+		end
+	end
 	def odd i
 		math_odd i
 	end
+	def odd i:int64
+		if i % 2
+			1
+		else
+			0
+		end
+	end
 	def abs i
 		math_abs i
-	end
-	def floor f:double :double
-		<double><int>f
 	end
 	def abs f:double :double
 		if f < 0.0
@@ -71,8 +84,31 @@ module Math
 			f
 		end
 	end
+	def floor f:double :double
+		<double><int>f
+	end
 	def random 
 		math_rand
+	end
+	def random_init n
+		math_rand_set n
+	end
+	def random_init
+		math_rand_set Time::time
+	end
+	def pow(b:int64, p:int64):int64
+		pow b p 9223372036854775807
+	end
+	def pow(b:int64, p:int64, m:int64):int64
+		res = <int64> 1
+		while p > 0
+			if p % 2 == 1
+				res = (res * b) % m
+			end
+			b = (b * b) % m
+			p /= 2
+		end
+		res
 	end
 
 	def sqrt f:double :double

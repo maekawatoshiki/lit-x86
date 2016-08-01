@@ -10,11 +10,12 @@ enum {
 	T_VOID			 = 1 << 1,
 	T_BOOL			 = 1 << 2,
 	T_INT 			 = 1 << 3,
-	T_STRING		 = 1 << 4,
-	T_CHAR			 = 1 << 5,
-	T_DOUBLE		 = 1 << 6,
-	T_USER_TYPE	 = 1 << 7,
-	T_ARRAY			 = 1 << 8
+	T_INT64			 = 1 << 4,
+	T_STRING		 = 1 << 5,
+	T_CHAR			 = 1 << 6,
+	T_DOUBLE		 = 1 << 7,
+	T_USER_TYPE	 = 1 << 8,
+	T_ARRAY			 = 1 << 9
 };
 
 struct expr_type_t {

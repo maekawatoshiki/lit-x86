@@ -58,6 +58,38 @@ def to_float(s:string[]):double[]
 	out
 end
 
+def reverse(str:string):string
+	out = ""
+	for i = length(str)-1, i >= 0, i -= 1
+		out += str[i]
+	end
+	out
+end
+
+def reverse(a:int[]):int[]
+	out = []:int
+	for i = length(a)-1, i >= 0, i -= 1
+		out += a[i]
+	end
+	out
+end
+
+def reverse(a:double[]):double[]
+	out = []:double
+	for i = length(a)-1, i >= 0, i -= 1
+		out += a[i]
+	end
+	out
+end
+
+def reverse(a:string[]):string[]
+	out = []:string
+	for i = length(a)-1, i >= 0, i -= 1
+		out += a[i]
+	end
+	out
+end
+
 def substr(str:string, bgn):string
 	str.substr(bgn, length(str)-bgn)
 end

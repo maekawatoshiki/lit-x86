@@ -49,8 +49,8 @@ public:
 };
 class NumberAST : public AST {
 public:
-	int32_t number;
-	NumberAST(int);
+	std::string number;
+	NumberAST(std::string);
 	virtual int get_type() const { return AST_NUMBER; };
 	llvm::Value *codegen(Function &, ExprType *);
 };

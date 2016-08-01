@@ -75,7 +75,11 @@ namespace Type {
 			}
 			return ty;
 		};
-		if(str.find("int") != std::string::npos) { 
+		if(str.find("int64") != std::string::npos) { 
+			ExprType *ty = new ExprType(T_INT64);
+			ty = ary(str, ty);
+			return ty;
+		} else if(str.find("int") != std::string::npos) { 
 			ExprType *ty = new ExprType(T_INT);
 			ty = ary(str, ty);
 			return ty;
@@ -97,6 +101,9 @@ namespace Type {
 		switch(type->get().type) {
 			case T_INT:
 				str_ty = "int";
+				break;
+			case T_INT64:
+				str_ty = "int64";
 				break;
 			case T_CHAR:
 				str_ty = "char";
@@ -136,6 +143,9 @@ namespace Type {
 			while(ary_count--) out = out->getPointerTo();	
 		} else if(ty->eql_type(T_INT)) {
 			out = llvm::Type::getInt32Ty(llvm::getGlobalContext());
+			while(ary_count--) out = out->getPointerTo();
+		} else if(ty->eql_type(T_INT64)) {
+			out = llvm::Type::getInt64Ty(llvm::getGlobalContext());
 			while(ary_count--) out = out->getPointerTo();
 		} else if(ty->eql_type(T_CHAR)) {
 			out = llvm::Type::getInt32Ty(llvm::getGlobalContext());
