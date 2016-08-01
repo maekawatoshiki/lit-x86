@@ -37,7 +37,7 @@ module Calc
 
 	def muldiv(input:string):string
 		str = prim input
-		while input[$pos] == '*' | input[$pos] == '/'
+		while input[$pos] == '*' | input[$pos] == '/' | input[$pos] == '^'
 			op = input[$pos]
 			$pos += 1
 			str += prim(input) + op + " "
@@ -76,6 +76,9 @@ module Calc
 				sp -= 1
 			elsif s == "/"
 				stack[sp-2] = stack[sp-2] / stack[sp-1]
+				sp -= 1
+			elsif s == "^"
+				stack[sp-2] = Math::pow stack[sp-2] stack[sp-1]
 				sp -= 1
 			elsif s == "sqrt"
 				stack[sp-1] = Math::sqrt stack[sp-1]

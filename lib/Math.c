@@ -34,3 +34,6 @@ int math_rand() { // xorshift128
 	t=(x^(x<<11));x=y;y=z;z=w; return (int)(w=(w^(w>>19))^(t^(t>>8))); 
 } 
 void math_rand_set(int s) { w = s; }
+double math_log(double x) { return log(x); }
+double math_exp(double x) { return exp(x); }
+double math_pow(double x, double y) { return pow(x, y); }

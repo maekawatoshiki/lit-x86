@@ -10,12 +10,14 @@ lib Math
 	proto math_abs n
 	proto math_rand 
 	proto math_rand_set n
+	proto math_log x:double :double
+	proto math_exp x:double :double
+	proto math_pow x:double y:double :double
 end
 
 lib Prime
 	proto Prime_is p | prime_is 
 end
-
 
 module Math
 	module Prime
@@ -95,6 +97,15 @@ module Math
 	end
 	def random_init
 		math_rand_set Time::time
+	end
+	def log x:double :double
+		math_log x
+	end
+	def exp x:double :double
+		math_exp x
+	end
+	def pow(a:double, b:double):double
+		math_pow a b
 	end
 	def pow(b:int64, p:int64):int64
 		pow b p 9223372036854775807
