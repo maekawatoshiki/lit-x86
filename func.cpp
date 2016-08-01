@@ -6,7 +6,7 @@
 bool Program::is(std::string name, std::string mod_name) {
 	auto is_declared_func = [&](std::string name) -> Function * {
 		for(std::vector<Function>::iterator it = func.begin(); it != func.end(); it++) {
-			if(it->info.name == name/* && it->mod_name == mod_name*/) {
+			if(it->info.name == name) {
 				return &(*it);
 			}
 		}
@@ -40,7 +40,10 @@ Function *Program::get(std::string name, std::vector<std::string> mod_name, std:
 		if(f.info.args_type.size() != args_type.size()) return false;
 		auto caller_it = args_type.begin();
 		for(auto it = f.info.args_type.begin(); it != f.info.args_type.end() && caller_it != args_type.end(); ++it) {
-			if(!(*it)->eql_type((*caller_it))) return false;
+			if(
+					(!(*it)->eql_type((*caller_it))) &&
+					((*it)->get().type != T_INT64 && (*caller_it)->get().type != T_INT)
+				) return false;
 			caller_it++;
 		}
 		return true;

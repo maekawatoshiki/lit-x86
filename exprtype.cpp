@@ -42,8 +42,9 @@ void ExprType::set_ref(bool b) {
 bool ExprType::eql_type(int ty, bool is_ary) {
 	if(is_ary) {
 		return (type.type & ty) && (type.type & T_ARRAY);
-	} else 
+	} else {
 		return type.type == ty;
+	}
 }
 
 bool ExprType::eql_type(ExprType *ty) {
