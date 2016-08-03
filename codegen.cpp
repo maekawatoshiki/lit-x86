@@ -100,7 +100,7 @@ extern "C" {
 	}
 	char *str_copy(char *a) {
 		char *t = (char *)LitMemory::alloc(strlen(a) + 1, sizeof(char));
-		if(!t) return NULL;
+		if(!t) return nullptr;
 		return strcpy(t, a);
 	}
 	char *get_string_stdin() {
@@ -143,10 +143,10 @@ extern "C" {
 	}
 }
 
-llvm::AllocaInst *create_entry_alloca(llvm::Function *TheFunction, std::string &VarName, llvm::Type *type =  NULL) {
+llvm::AllocaInst *create_entry_alloca(llvm::Function *TheFunction, std::string &VarName, llvm::Type *type =  nullptr) {
 	llvm::IRBuilder<> TmpB(&TheFunction->getEntryBlock(),
 			TheFunction->getEntryBlock().begin());
-	return TmpB.CreateAlloca(type == NULL ? llvm::Type::getInt32Ty(context) : type, 0, VarName.c_str());
+	return TmpB.CreateAlloca(type == nullptr ? llvm::Type::getInt32Ty(context) : type, 0, VarName.c_str());
 }
 
 namespace Codegen {
@@ -441,6 +441,7 @@ namespace Codegen {
 					break;
 				case AST_STRUCT:
 					((StructAST *)*code)->codegen(list);
+					break;
 				default:
 					error("what happened?");
 			}
@@ -549,7 +550,7 @@ namespace Codegen {
 	}
 
 	llvm::Value *expression(Function &f, Program &f_list, AST *ast, ExprType *ty) {
-		ExprType buf; if(ty == NULL) ty = &buf;
+		ExprType buf; if(ty == nullptr) ty = &buf;
 		switch(ast->get_type()) {
 			case AST_NUMBER:
 				return ((NumberAST *)ast)->codegen(f, ty);
@@ -588,7 +589,7 @@ namespace Codegen {
 			case AST_CAST:
 				return ((CastAST *)ast)->codegen(f, f_list, ty);
 		}
-		return NULL;
+		return nullptr;
 	}
 };
 
@@ -615,7 +616,7 @@ llvm::Value * LibraryAST::codegen(Program &f_list) {
 	for(ast_vector::iterator it = proto.begin(); it != proto.end(); ++it) {
 		((PrototypeAST *)*it)->append(lib_mod, f_list);
 	}
-	return NULL;
+	return nullptr;
 }
 
 void PrototypeAST::append(llvm::Module *lib_mod, Program &f_list) {
@@ -641,7 +642,7 @@ Function FunctionAST::codegen(Program &f_list) { // create a prototype of functi
 	f.info.name = info.name;
 	f.info.mod_name = f_list.cur_mod;
 	f.info.params = args.size(); 	
-	f.info.func_addr = NULL;
+	f.info.func_addr = nullptr;
 	f.info.type.change(new ExprType(info.type));
 
 	// append arguments 
@@ -662,7 +663,13 @@ Function FunctionAST::codegen(Program &f_list) { // create a prototype of functi
 			args_type_for_overload.push_back(type);
 		} else if((*it)->get_type() == AST_VARIABLE_DECL) {
 			var_t *v = ((VariableDeclAST *)*it)->append(f, f_list);
-			llvm::Type *llvm_type = Type::type_to_llvmty(&v->type);
+			llvm::Type *llvm_type;
+			if(v->type.eql_type(T_USER_TYPE)) {
+				llvm_type = f_list.structs.get(v->type.get().user_type)
+					->strct->getPointerTo();
+			} else {
+				llvm_type = Type::type_to_llvmty(&v->type);
+			}
 			ExprType *type = new ExprType(v->type);
 			if(v->type.is_ref()) {
 				llvm_type = llvm_type->getPointerTo();
@@ -713,7 +720,7 @@ llvm::Value * IfAST::codegen(Function &f, Program &f_list) {
 	builder.CreateCondBr(cond_val, bb_then, bb_else);
 	builder.SetInsertPoint(bb_then);
 
-	llvm::Value *val_then = NULL;
+	llvm::Value *val_then = nullptr;
 	bool has_br = false;
 	f.has_br.push(has_br);
 	for(auto expr : then_block) 
@@ -726,7 +733,7 @@ llvm::Value * IfAST::codegen(Function &f, Program &f_list) {
 	func->getBasicBlockList().push_back(bb_else);
 	builder.SetInsertPoint(bb_else);
 
-	llvm::Value *val_else = NULL;
+	llvm::Value *val_else = nullptr;
 	has_br = false;
 	f.has_br.push(has_br);
 	for(auto expr : else_block)
@@ -738,14 +745,14 @@ llvm::Value * IfAST::codegen(Function &f, Program &f_list) {
 
 	func->getBasicBlockList().push_back(bb_merge);
 	builder.SetInsertPoint(bb_merge);
-	if(val_then != NULL && val_else != NULL && val_then->getType()->getTypeID() == val_else->getType()->getTypeID()) {
+	if(val_then != nullptr && val_else != nullptr && val_then->getType()->getTypeID() == val_else->getType()->getTypeID()) {
 		llvm::PHINode *pnode = builder.CreatePHI(val_then->getType(), 2, "if_tmp");
 
 		pnode->addIncoming(val_then, bb_then);
 		pnode->addIncoming(val_else, bb_else);
 		return pnode;
 	}
-	return NULL;
+	return nullptr;
 }
 
 llvm::Value * WhileAST::codegen(Function &f, Program &f_list) {
@@ -775,7 +782,7 @@ llvm::Value * WhileAST::codegen(Function &f, Program &f_list) {
 	builder.SetInsertPoint(bb_after_loop);
 	f.break_br_list.pop();
 
-	return NULL;
+	return nullptr;
 }
 
 llvm::Value * ForAST::codegen(Function &f, Program &f_list) {
@@ -806,7 +813,7 @@ llvm::Value * ForAST::codegen(Function &f, Program &f_list) {
 
 	builder.SetInsertPoint(bb_after_loop);
 
-	return NULL;
+	return nullptr;
 }
 
 llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, ExprType *ty) {
@@ -888,13 +895,13 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, ExprType *t
 	}
 	llvm::Function *callee = (function->info.func_addr) ? function->info.func_addr : mod->getFunction(info.name);
 	if(!callee) error("no function: %s", info.name.c_str());
-	if(function == NULL) { // undefined
+	if(function == nullptr) { // undefined
 		uint32_t a = 3;
 		for(ast_vector::iterator it = args.begin(); it != args.end(); ++it) {
 			Codegen::expression(f, f_list, *it);
 		}
 		ty->change(T_INT);
-		return NULL;
+		return nullptr;
 	} else { // defined
 		ty->change(new ExprType(function->info.type));
 		return builder.CreateCall(callee, callee_args, "call_tmp");
@@ -1023,7 +1030,7 @@ llvm::Value * BinaryAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 		lhs = builder.CreateZExt(lhs, builder.getInt32Ty());
 		return lhs;
 	}
-	return NULL;
+	return nullptr;
 }
 
 llvm::Value *CastAST::codegen(Function &f, Program &f_list, ExprType *ret_ty) {
@@ -1043,7 +1050,7 @@ llvm::Value *CastAST::codegen(Function &f, Program &f_list, ExprType *ret_ty) {
 
 llvm::Value * NewAllocAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 	ExprType *alloc_type = Type::str_to_type(type);
-	bool is_user_object = size == NULL;
+	bool is_user_object = size == nullptr;
 	std::vector<llvm::Value*> func_args;
 	func_args.push_back(
 			is_user_object ? 
@@ -1074,23 +1081,23 @@ llvm::Value * NewAllocAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 }
 
 llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, ExprType *ty) {
-	var_t *v = NULL;
+	var_t *v = nullptr;
 	bool first_decl = false;
 
 	if(var->get_type() == AST_VARIABLE) {
-		if((v = ((VariableAST *)var)->get(f, f_list)) == NULL) {
+		if((v = ((VariableAST *)var)->get(f, f_list)) == nullptr) {
 			v = ((VariableAST *)var)->append(f, f_list);
 			first_decl = true;
 		}
 	} else if(var->get_type() == AST_VARIABLE_DECL) {
-		if((v = ((VariableDeclAST *)var)->get(f, f_list)) == NULL) {
+		if((v = ((VariableDeclAST *)var)->get(f, f_list)) == nullptr) {
 			v = ((VariableDeclAST *)var)->append(f, f_list);
 			first_decl = true;
 		}
 	} else if(var->get_type() == AST_DOT) {
 		DotOpAST *dot = (DotOpAST *)var;
 		ExprType ty;
-		llvm::Value *parent = NULL;
+		llvm::Value *parent = nullptr;
 		AST *obj = dot->var;
 		if(obj->get_type() == AST_VARIABLE_INDEX) {
 			VariableIndexAST *viast = (VariableIndexAST *)obj;
@@ -1114,10 +1121,10 @@ llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, ExprType *
 		VariableIndexAST *vidx = (VariableIndexAST *)var;
 		ExprType expr_ty;
 		llvm::Value *elem = llvm::GetElementPtrInst::CreateInBounds(
-				Codegen::expression(f, f_list, vidx->var, &expr_ty),
+				Codegen::expression(f, f_list, vidx->var, ty),
 				llvm::ArrayRef<llvm::Value *>(Codegen::expression(f, f_list, vidx->idx)), "elem_tmp", builder.GetInsertBlock());
 		llvm::Value *val = Codegen::expression(f, f_list, src);
-		if(expr_ty.eql_type(T_STRING))
+		if(ty->eql_type(T_STRING))
 			val = builder.CreateZExt(val, builder.getInt8Ty());
 		return builder.CreateStore(val, elem);
 	}
@@ -1126,7 +1133,7 @@ llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, ExprType *
 	ExprType v_ty;
 	llvm::Value *val = Codegen::expression(f, f_list, src, &v_ty);
 	ty->change(new ExprType(v_ty));
-	if(v->is_global) {
+	if(v->is_global) { // assignment to the global variable
 		if(first_decl) {
 			v->type = v_ty;
 			mod->getOrInsertGlobal(v->name, Type::type_to_llvmty(&v_ty));
@@ -1143,9 +1150,34 @@ llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, ExprType *
 			v->type = v_ty;
 			v->type.set_ref(ref);
 		}
+	// struct_t *strct = f_list.structs.get(ty.get().user_type);
+	// if(!strct) error("error in DotOpAST");
+	// int a = 0;
+	// ExprType member_ty;
+	// if(member->get_type() != AST_VARIABLE) puts("error in DotOpAST");
+	// for(auto it = strct->members.begin(); it != strct->members.end(); ++it){ 
+	// 	if(it->name == ((VariableAST *)member)->info.name) {
+	// 		member_ty.change(new ExprType(it->type));
+	// 		break;
+	// 	}
+	// 	a++;
+	// }
+	// llvm::Value *ret = builder.CreateStructGEP(parent, a);
+	// ret = builder.CreateLoad(ret, "load_tmp");
+	// ret_ty->change(new ExprType(member_ty));
 		if(first_decl) {
 			llvm::AllocaInst *ai;
-			ai = builder.CreateAlloca(Type::type_to_llvmty(&v_ty));
+			llvm::Type *decl_type = Type::type_to_llvmty(&v_ty);
+			if(decl_type== nullptr) {// user type
+				int ary_count = 0;
+				while(v_ty.is_array()) {
+					v_ty = *v_ty.next;
+					ary_count++;
+				}
+				decl_type = f_list.structs.get(v_ty.get().user_type)->strct->getPointerTo();
+				while(ary_count--) decl_type = decl_type->getPointerTo();
+			}
+			ai = builder.CreateAlloca(decl_type);
 			v->val = ai;
 		}
 		if(v->type.is_array() || v->type.eql_type(T_STRING)) {
@@ -1161,7 +1193,7 @@ llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, ExprType *
 			return builder.CreateLoad(v->val);
 		}
 	}
-	return NULL;
+	return nullptr;
 }
 
 var_t *VariableDeclAST::get(Function &f, Program &f_list) {
@@ -1199,10 +1231,10 @@ llvm::Value * VariableAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 	var_t *v;
 	if(info.is_global) {
 		v = f_list.var_global.get(info.name, info.mod_name);
-		if(v == NULL) error("error: undefined global variable '%s'", info.name.c_str());
+		if(v == nullptr) error("error: undefined global variable '%s'", info.name.c_str());
 	} else 
 		v = f.var.get(info.name, info.mod_name);
-	if(v == NULL) error("error: '%s' was not declared", info.name.c_str());
+	if(v == nullptr) error("error: '%s' was not declared", info.name.c_str());
 	if(info.is_global == false) { // local
 		ty->change(&v->type);
 		if(ty->is_ref()) 
@@ -1232,7 +1264,7 @@ llvm::Value *ReturnAST::codegen(Function &f, Program &f_list) {
 llvm::Value * BreakAST::codegen(Function &f, Program &f_list) {
 	f.has_br.top() = true;
 	builder.CreateBr(f.break_br_list.top());
-	return NULL;
+	return nullptr;
 }
 
 llvm::Value *StructAST::codegen(Program &f_list) {
@@ -1278,17 +1310,17 @@ llvm::Value *StructAST::codegen(Program &f_list) {
 	llvm::StructType *mystruct = llvm::StructType::create(context, field, "struct."+name);
 
 	f_list.structs.append(name, members, mystruct);
-	return NULL;
+	return nullptr;
 }
 
 llvm::Value *DotOpAST::codegen(Function &f, Program &f_list, ExprType *ret_ty) {
 	ExprType ty;
-	llvm::Value *parent = NULL; 
+	llvm::Value *parent = nullptr; 
 	if(var->get_type() == AST_VARIABLE_INDEX) {
 		VariableIndexAST *viast = (VariableIndexAST *)var;
 		parent = viast->get_elem(f, f_list, &ty);
 	} else parent = Codegen::expression(f, f_list, var, &ty);
-
+	if(!parent) error("dotopast: error");
 	struct_t *strct = f_list.structs.get(ty.get().user_type);
 	if(!strct) error("error in DotOpAST");
 	int a = 0;
@@ -1309,7 +1341,7 @@ llvm::Value *DotOpAST::codegen(Function &f, Program &f_list, ExprType *ret_ty) {
 
 llvm::Value * ArrayAST::codegen(Function &f, Program &f_list, ExprType *ret_ty) {
 	std::vector<llvm::Value*> func_args;
-	bool zero_ary = type != NULL;
+	bool zero_ary = type != nullptr;
 	func_args.push_back(llvm::ConstantInt::get(builder.getInt32Ty(), zero_ary ? 0 : elems.size()));
 	func_args.push_back(llvm::ConstantInt::get(builder.getInt32Ty(), sizeof(void*)));
 	llvm::Value *ary = builder.CreateCall(stdfunc["create_array"].func, func_args);

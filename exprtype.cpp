@@ -152,6 +152,7 @@ namespace Type {
 			out = llvm::Type::getInt32Ty(llvm::getGlobalContext());
 			while(ary_count--) out = out->getPointerTo();
 		} else if(ty->eql_type(T_USER_TYPE)) {
+			return nullptr;
 			// out = builder.getInt8PtrTy();
 			// while(ary_count--) out = out->getPointerTo();	
 		}
