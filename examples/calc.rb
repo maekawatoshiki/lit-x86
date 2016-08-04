@@ -78,7 +78,7 @@ module Calc
 				stack[sp-2] = stack[sp-2] / stack[sp-1]
 				sp -= 1
 			elsif s == "^"
-				stack[sp-2] = Math::pow stack[sp-2] stack[sp-1]
+				stack[sp-2] = Math::pow stack[sp-2], stack[sp-1]
 				sp -= 1
 			elsif s == "sqrt"
 				stack[sp-1] = Math::sqrt stack[sp-1]

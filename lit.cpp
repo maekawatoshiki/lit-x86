@@ -44,8 +44,9 @@ namespace LitMemory {
 		void free_mem() { free(addr); }
 	};
 
-	const size_t max_mem = 1 * 1024 * 1024; // 1MB
+	const size_t max_mem = 10*1024*1024; // 10MB
 	size_t current_mem = 0;
+	void *newest_ptr = nullptr;
 	std::map<void *, MemoryInfo *> mem_list;
 	std::map<void *, bool> root_ptr;
 
@@ -75,6 +76,7 @@ namespace LitMemory {
 		current_mem += size;
 		// std::cout << "*** allocated addr: " << addr << std::endl;
 		mem_list[(void *)addr] = new MemoryInfo(addr, size);
+		newest_ptr = addr;
 		return addr;	
 	}
 
@@ -92,9 +94,11 @@ namespace LitMemory {
 		root_ptr[(void *)ptr] = true;
 	}
 	void delete_ptr(void *ptr) {
-		root_ptr[(void *)ptr] = false;
+		root_ptr.erase(ptr);
 	}
 	void gc_mark() {
+		mem_list[newest_ptr]->mark();
+
 		for(std::map<void *, bool>::iterator it = root_ptr.begin(); it != root_ptr.end(); ++it) {
 			if(it->second == true) {
 				uint64_t *ptr = (uint64_t *)it->first;
@@ -131,10 +135,14 @@ namespace LitMemory {
 			it->second->marked = false;
 	}
 	void gc() {
-		// std::cout << "before: " << byte_with_unit(current_mem) << std::endl;
+		// uint32_t mem_before_gc = current_mem;
 		gc_mark();
 		gc_sweep();
-		// std::cout << "after: " << byte_with_unit(current_mem) << std::endl;
+		// std::cerr << "after: " 
+		// 	<< byte_with_unit(current_mem) 
+		// 	<< ", deleted: "
+		// 		<< byte_with_unit(mem_before_gc - current_mem)
+		// 	<< std::endl;
 	}
 
 	void free_all_mem() {

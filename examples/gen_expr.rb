@@ -18,7 +18,7 @@ def gen_expr(len):string
 	expr
 end
 
-$OP = "+-*/"
-$MAX_NUM = 1000
-puts gen_expr 50
-
+$OP = "+-*"
+$MAX_NUM = 100
+Math::random_init 
+puts gen_expr 100

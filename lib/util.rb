@@ -228,7 +228,10 @@ end
 def str_eql a:string b:string
 	a_len = length a
 	b_len = length b
-	for i = 0, i < a_len & i < b_len, i += 1
+	if a_len != b_len
+		return 1
+	end
+	for i in 0...a_len
 		if a[i] != b[i]
 			return a[i] - b[i]
 		end
