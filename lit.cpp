@@ -103,17 +103,16 @@ namespace LitMemory {
 					if(m->is_const()) continue;
 					m->mark();
 					// std::cout << "*** marked success: " << m->get_addr() << std::endl;
-					ptr = (uint64_t *)m->get_addr();
-					if(mem_list.count((void *)*ptr)) {
-						m = mem_list[(void *)*ptr];
-						if(m->is_const()) continue;
-						m->mark();
+					std::function<void(uint64_t *)> rec_mark = [&](uint64_t *ptr) {
 						for(;mem_list.count((void*)*ptr); ptr++) {
 							m = mem_list[(void*)*ptr];
 							if(m->is_const()) continue;
 							m->mark();
+							rec_mark((uint64_t*)m->get_addr());
 						}
-					}
+					};
+					ptr = (uint64_t *)m->get_addr();
+					rec_mark(ptr);
 				} 
 			}
 		} 
