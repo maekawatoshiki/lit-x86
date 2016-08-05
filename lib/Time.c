@@ -14,6 +14,6 @@ char *Time_strtime() {
 	return time_s;
 }
 
-void Time_sleep(float sec) {
+void Time_sleep(double sec) {
 	usleep(1000000 * sec);
 }
