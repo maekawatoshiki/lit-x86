@@ -13,6 +13,7 @@
 #include "llvm/IR/Module.h"
 #include "llvm/Support/SourceMgr.h"
 #include "llvm/Linker.h"
+#include <llvm/Support/MemoryBuffer.h>
 #include "llvm/IRReader/IRReader.h"
 #include "llvm/PassManager.h"
 #include "llvm/Support/TargetSelect.h"

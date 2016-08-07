@@ -607,7 +607,9 @@ void ModuleAST::codegen(Program &f_list) {
 
 llvm::Value * LibraryAST::codegen(Program &f_list) {
 	llvm::SMDiagnostic smd_err;
-	llvm::Module *lib_mod = llvm::ParseIRFile(("./lib/" + lib_name + ".ll"), smd_err, context);
+	llvm::OwningPtr<llvm::MemoryBuffer> buf;
+	llvm::MemoryBuffer::getFile(("./lib/" + lib_name + ".ll"), buf);
+	llvm::Module *lib_mod = llvm::ParseBitcodeFile(buf.get(), context);
 	if(lib_mod == nullptr)
 		error("LitSystemError: LLVMError: %s", smd_err.getMessage().str().c_str());
 	std::string msg_err;
