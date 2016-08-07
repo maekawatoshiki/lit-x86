@@ -17,7 +17,7 @@ def prime n
 	for q in 0...30
 		a = (Math::random % (n - 2)) + 1
 		t = d
-		y = Math::pow a, t, n
+		y = Math::pow <int64>a, <int64>t, <int64>n
 		while (t != n - 1) & (y != 1) & (y != n - 1)
 			y = (y * y) % n
 			t *= 2
