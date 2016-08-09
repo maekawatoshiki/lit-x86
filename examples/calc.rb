@@ -1,19 +1,11 @@
 require "std"
 
-def isalpha ch:char
-	if ('A' <= ch & ch <= 'Z') | ('a' <= ch & ch <= 'z')
-		1
-	else
-		0
-	end
-end
-
 module Calc 
 	def prim(input:string):string
 		str = ""
-		if isalpha input[$pos]
+		if alpha? input[$pos]
 			fname = ""
-			while isalpha input[$pos]
+			while alpha? input[$pos]
 				fname += input[$pos]
 				$pos += 1
 			end

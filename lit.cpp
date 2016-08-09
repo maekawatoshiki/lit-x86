@@ -136,13 +136,14 @@ namespace LitMemory {
 	}
 	void gc() {
 		// uint32_t mem_before_gc = current_mem;
+		// clock_t bgn = clock();
 		gc_mark();
 		gc_sweep();
-		// std::cerr << "after: " 
+		// std::cerr << "*** GC(" << (((double)clock() - bgn) / CLOCKS_PER_SEC) << "s) after: " 
 		// 	<< byte_with_unit(current_mem) 
 		// 	<< ", deleted: "
 		// 		<< byte_with_unit(mem_before_gc - current_mem)
-		// 	<< std::endl;
+		// 	<< " ***" << std::endl;
 	}
 
 	void free_all_mem() {

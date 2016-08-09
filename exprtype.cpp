@@ -70,7 +70,7 @@ namespace Type {
 		auto ary = [](std::string str, ExprType *ty) -> ExprType * {
 			size_t p=0;
 			while((p=str.find("[]")) != std::string::npos) {
-				str = str.substr(p);
+				str = str.substr(p+1);
 				ty->next = new ExprType(ty->get().type);
 				ty->change(T_ARRAY);
 			}

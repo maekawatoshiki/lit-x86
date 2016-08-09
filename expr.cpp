@@ -292,7 +292,7 @@ AST *Parser::expr_primary() {
 		return new CharAST(tok.next().val.c_str()[0]);
 	} else if(is_string_tok()) {
 		return new StringAST(tok.next().val);
-	} else if(tok.get().val == "true" || tok.get().val == "false") {
+	} else if(tok.get().val == "true" || tok.get().val == "false" || tok.get().val == "nil") {
 		return new NumberAST(tok.next().val == "true" ? "1" :"0");
 	} else if(is_ident_tok()) { 
 		name = tok.next().val;

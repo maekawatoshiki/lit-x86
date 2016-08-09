@@ -2,6 +2,7 @@
 #define _EXPRTYPE_LIT_
 
 #include "common.h"
+#include "util.h"
 
 #define IS_ARRAY(x) ((x) & (T_ARRAY))
 #define IS_TYPE(x, ty)  ((x) == (ty))

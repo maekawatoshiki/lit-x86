@@ -1,3 +1,5 @@
+require "std"
+
 def mul A:int[] B:int[] :int[]
 	C = [0, 0, 0, 0]
 	for i in 0...2
@@ -12,7 +14,6 @@ end
 
 def pow A:int[] n:int :int[]
 	B = [1, 0, 1, 0]
-
 	while n > 0
 		if n & 1
 			B = mul B A
@@ -23,7 +24,7 @@ def pow A:int[] n:int :int[]
 	B
 end
 
-max = str_to_int gets
+max = gets.to_int()
 for i in 0...max
 	A = [1, 1, 1, 0]
 	A = pow A i

@@ -27,7 +27,8 @@ int Lexer::lex(char *code) {
 
 		} else if(code[i] == '_' || isalpha(code[i])) { // ident?
 
-			for(; isalpha(code[i]) || isdigit(code[i]) || code[i] == '_' || code[i] == '!'; i++)
+			for(; isalpha(code[i]) || isdigit(code[i]) || 
+					code[i] == '_' || code[i] == '!' || code[i] == '?'; i++)
 				str += code[i];
 			tmp_tok.val = str;
 			tmp_tok.nline = line;

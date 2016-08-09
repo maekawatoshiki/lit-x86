@@ -62,6 +62,22 @@ def to_float(s:string[]):double[]
 	out
 end
 
+def alpha? ch:char
+	if ('A' <= ch & ch <= 'Z') | ('a' <= ch & ch <= 'z')
+		true
+	else
+		false
+	end
+end
+
+def digit? ch:char
+	if '0' <= ch & ch <= '9'
+		true
+	else
+		false
+	end
+end
+
 def reverse(str:string):string
 	out = ""
 	for i = length(str)-1, i >= 0, i -= 1
