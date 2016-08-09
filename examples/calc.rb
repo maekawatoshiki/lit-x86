@@ -3,9 +3,9 @@ require "std"
 module Calc 
 	def prim(input:string):string
 		str = ""
-		if alpha? input[$pos]
+		if input[$pos].alpha? # function (sqrt..)
 			fname = ""
-			while alpha? input[$pos]
+			while input[$pos].alpha?
 				fname += input[$pos]
 				$pos += 1
 			end
@@ -19,7 +19,7 @@ module Calc
 			$pos += 1
 			str
 		else
-			while ('0' <= input[$pos] & input[$pos] <= '9') | input[$pos] == '.'
+			while input[$pos].digit? | input[$pos] == '.'
 				str += input[$pos]
 				$pos += 1
 			end
@@ -75,7 +75,7 @@ module Calc
 			elsif s == "sqrt"
 				stack[sp-1] = Math::sqrt stack[sp-1]
 			else
-				stack[sp] = <double> str_to_float s
+				stack[sp] = s.to_float
 				sp += 1
 			end
 		end
@@ -85,6 +85,5 @@ end
 
 $pos = 0
 print "expression: "
-input = gets
-puts Calc::run input
+puts Calc::run gets
 

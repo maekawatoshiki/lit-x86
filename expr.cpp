@@ -214,20 +214,25 @@ AST *Parser::expr_entry() {
 AST *Parser::expr_dot() {
 	AST *l, *r;
 	l = expr_index();
-	// if(tok.get().type == TOK_STRING) return l; // skip string tok such as "[" 
 	while(tok.skip(".")) {
 		std::string name = tok.next().val;
-		if(tok.skip("(")) { // UFCS
+		bool has_pare = false;
+		if((has_pare=tok.skip("(")) || is_func(name)) { // UFCS
 			func_t f = {
 				.name = name,
 				.mod_name = std::vector<std::string>(),
 			};
 			std::vector<AST *> args;
 			args.push_back(l);
-			while(!tok.skip(")") && !tok.is(";")) {
-				args.push_back(expr_entry());
-				tok.skip(",");
-			}
+			if(tok.get().type != TOK_END && 
+					(tok.get().type != TOK_SYMBOL || 
+					 tok.get().val == "<" || tok.get().val == "(" || 
+					 tok.get().val == "[" || tok.get().val == "$")) {
+				while(!tok.is(")") && !tok.is(";")) {
+					args.push_back(expr_entry());
+					tok.skip(",");
+				}
+			} if(has_pare) tok.skip(")");
 			l = new FunctionCallAST(f, args);
 		} else { // member of struct
 			tok.prev();
