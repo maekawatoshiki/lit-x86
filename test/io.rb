@@ -1,4 +1,4 @@
 require "File"
 
-puts File::read "test/io"
+print File::read "test/io"
 
