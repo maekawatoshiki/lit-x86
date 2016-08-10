@@ -689,7 +689,11 @@ Function FunctionAST::codegen(Program &f_list) { // create a prototype of functi
 	// definition the Function
 	
 	// set function return type
-	llvm::Type *func_ret_type = Type::type_to_llvmty(&info.type);
+	llvm::Type *func_ret_type = nullptr;
+	if(info.type.get().type == T_USER_TYPE) {
+		func_ret_type = f_list.structs.get(info.type.get().user_type)
+			->strct->getPointerTo();
+	} else func_ret_type = Type::type_to_llvmty(&info.type);
 
 	llvm::FunctionType *func_type = llvm::FunctionType::get(func_ret_type, arg_types, false);
 	llvm::Function *func = llvm::Function::Create(func_type, llvm::Function::ExternalLinkage, f.info.name, mod);
@@ -1116,7 +1120,7 @@ llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, ExprType *
 				break;
 			a++;
 		}
-		llvm::Value *memb = builder.CreateConstGEP2_32(parent, 0, a, "gep");
+		llvm::Value *memb = builder.CreateStructGEP(parent, a, "gep");
 		llvm::Value *val = Codegen::expression(f, f_list, src);
 		return builder.CreateStore(val, memb);
 	} else if(var->get_type() == AST_VARIABLE_INDEX) {

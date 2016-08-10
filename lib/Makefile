@@ -1,4 +1,4 @@
-CFLAGS = -lm -O1  -emit-llvm -c
+CFLAGS = -lm -O1 -emit-llvm -c
 CC = clang $(CFLAGS) 
 
 all: lib/Math.ll lib/Prime.ll  lib/Sys.ll lib/Time.ll lib/File.ll
