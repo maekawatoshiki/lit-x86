@@ -40,6 +40,8 @@ check './lit ./test/ref.rb' 'echo 10' &
 pid14=$!
 check './lit ./test/str.rb' 'echo He11oWorld' &
 pid15=$!
+check 'sh ./test/calc.sh' 'echo 6' &
+pid16=$!
 status_sum=0
 wait $pid1; status_sum=`expr $status_sum + $?`
 wait $pid2; status_sum=`expr $status_sum + $?`
@@ -56,4 +58,5 @@ wait $pid12; status_sum=`expr $status_sum + $?`
 wait $pid13; status_sum=`expr $status_sum + $?`
 wait $pid14; status_sum=`expr $status_sum + $?`
 wait $pid15; status_sum=`expr $status_sum + $?`
+wait $pid16; status_sum=`expr $status_sum + $?`
 exit $status_sum

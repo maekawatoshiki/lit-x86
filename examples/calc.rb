@@ -52,7 +52,7 @@ module Calc
 
 	def run(expr:string):double
 		tok_str = addsub expr
-		puts "reverse polish: ", tok_str
+		# puts "reverse polish: ", tok_str
 		tok_ary = tok_str.split(' ')
 		# VM ( calculate )
 		cur_stack_sz = 256
@@ -87,6 +87,5 @@ module Calc
 end
 
 $pos = 0
-print "expression: "
-puts Calc::run gets
+puts Calc::run gets # input the expression
 

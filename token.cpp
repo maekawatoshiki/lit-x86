@@ -6,7 +6,9 @@
 #include "util.h"
 
 bool Token::skip(std::string s) {
-	if(s == tok[pos].val && tok[pos].type != TOK_STRING) {
+	if(s == tok[pos].val && 
+			tok[pos].type != TOK_STRING && 
+			tok[pos].type != TOK_CHAR) {
 		pos++; return true;
 	}
 	return false;
