@@ -159,7 +159,13 @@ AST *visit(AST *ast) {
 		std::cout << "(cast " << ca->type << " ";
 			visit(ca->expr);
 		std::cout << ")" << std::endl;
+	} else if(ast->get_type() == AST_MINUS) {
+		UnaryMinusAST *ua = (UnaryMinusAST *)ast;
+		std::cout << "(minus ";
+			visit(ua->expr);
+		std::cout << ")" << std::endl;
 	}
+
 
 	return ast;
 }
@@ -262,7 +268,10 @@ AST *Parser::expr_unary() { // TODO: implementation unary minus(-)!!
 		if(!tok.skip(">")) error("error: expected expression '>'");
 		AST *expr = expr_entry();
 		return new CastAST(type, expr);
-	}
+	} else if(tok.skip("-")) {
+		AST *expr = expr_entry();
+		return new UnaryMinusAST(expr);
+	}	
 	return expr_primary();
 }
 
@@ -334,7 +343,7 @@ AST *Parser::expr_primary() {
 				};
 				std::vector<AST *> args;
 				if(tok.get().type != TOK_END && 
-						(tok.get().type != TOK_SYMBOL || 
+						(tok.get().type != TOK_SYMBOL || tok.get().val == "-" || 
 						 tok.get().val == "<" || tok.get().val == "(" || 
 						 tok.get().val == "[" || tok.get().val == "$")) {
 					while(!tok.is(")") && !tok.is(";")) {

@@ -19,6 +19,10 @@ CastAST::CastAST(std::string _type, AST *_expr) :
 	type(_type), expr(_expr) {
 }
 
+UnaryMinusAST::UnaryMinusAST(AST *_expr) : 
+	expr(_expr) {
+}
+
 CharAST::CharAST(int c) : 
 	ch(c) {
 }

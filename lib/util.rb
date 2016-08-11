@@ -22,6 +22,14 @@ def is_alpha ch:char
 	end
 end
 
+def not x
+	if x == 0
+		1
+	else
+		0
+	end
+end
+
 def geti
 	str_to_int gets
 end

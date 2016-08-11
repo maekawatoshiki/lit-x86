@@ -588,6 +588,8 @@ namespace Codegen {
 				return ((DotOpAST *)ast)->codegen(f, f_list, ty);
 			case AST_CAST:
 				return ((CastAST *)ast)->codegen(f, f_list, ty);
+			case AST_MINUS:
+				return ((UnaryMinusAST *)ast)->codegen(f, f_list, ty);
 		}
 		return nullptr;
 	}
@@ -1052,6 +1054,18 @@ llvm::Value *CastAST::codegen(Function &f, Program &f_list, ExprType *ret_ty) {
 		return builder.CreateSExt(exp, builder.getInt64Ty());
 	}
 	return builder.CreateBitCast(exp, to_type);
+}
+
+llvm::Value *UnaryMinusAST::codegen(Function &f, Program &f_list, ExprType *ret_ty) {
+	llvm::Value *e = Codegen::expression(f, f_list, expr, ret_ty);
+	if(ret_ty->eql_type(T_DOUBLE)) {
+		return builder.CreateFSub(
+				llvm::ConstantFP::get(llvm::Type::getDoubleTy(context), 0.0),
+				e);
+	} else 
+		return builder.CreateSub(
+				llvm::ConstantInt::get(llvm::Type::getInt32Ty(context), 0, true),
+				e);
 }
 
 llvm::Value * NewAllocAST::codegen(Function &f, Program &f_list, ExprType *ty) {
