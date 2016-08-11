@@ -1,27 +1,30 @@
 require "std"
 
 module Calc 
+	def skip
+		$pos += 1
+	end
 	def prim(input:string):string
 		str = ""
 		if input[$pos].alpha? # function (sqrt..)
 			fname = ""
 			while input[$pos].alpha?
 				fname += input[$pos]
-				$pos += 1
+				skip
 			end
-			$pos += 1 # (
+			skip # (
 			str = addsub(input)
-			$pos += 1 # )
+			skip # )
 			str + fname + " "
 		elsif input[$pos] == '('
-			$pos += 1
+			skip
 			str = addsub(input)
-			$pos += 1
+			skip
 			str
 		else
 			while input[$pos].digit? | input[$pos] == '.'
 				str += input[$pos]
-				$pos += 1
+				skip
 			end
 			str + " "
 		end
@@ -31,7 +34,7 @@ module Calc
 		str = prim input
 		while input[$pos] == '*' | input[$pos] == '/' | input[$pos] == '^'
 			op = input[$pos]
-			$pos += 1
+			skip
 			str += prim(input) + op + " "
 		end
 		str
@@ -41,7 +44,7 @@ module Calc
 		str = muldiv input
 		while input[$pos] == '+' | input[$pos] == '-'
 			op = input[$pos]
-			$pos += 1
+			skip
 			str += muldiv(input) + op + " "
 		end
 		str

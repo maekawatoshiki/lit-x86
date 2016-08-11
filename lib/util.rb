@@ -288,6 +288,13 @@ def operator % (str:string, n):string
 	a + n.to_string() + b
 end
 
+def operator % (str:string, n:int64):string
+	bgn = str.find("{}")
+	a = str.substr(0, bgn)
+	b = str.substr(bgn+length("{}"))
+	a + n.to_string() + b
+end
+
 def operator % (str:string, n:string):string
 	bgn = str.find("{}")
 	a = str.substr(0, bgn)
