@@ -9,6 +9,7 @@ struct func_t {
 	uint32_t address, params;
 	ExprType type;
 	std::vector<ExprType *> args_type;
+	std::vector<std::string> args_name;
 	std::string name;
 	std::vector<std::string> mod_name;
 	llvm::Function *func_addr;

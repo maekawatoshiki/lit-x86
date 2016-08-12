@@ -497,8 +497,9 @@ namespace Codegen {
 			} else error("error: return code of function is incorrect '%s'", fn->info->info.name.c_str());
 
 			builder.CreateRet(ret_value);
-		}
+		} 
 		list.append(main);
+		int count_temp_func = funcs_body.size();
 
 		// create main function
 		llvm::Function *func_main = llvm::Function::Create(
@@ -516,6 +517,59 @@ namespace Codegen {
 
 		builder.CreateRet(llvm::ConstantInt::get(builder.getInt32Ty(), 0));
 		// llvm::verifyModule(*mod);
+		
+		// create template function
+		count_temp_func = funcs_body.size() - count_temp_func;
+		for(auto fn = funcs_body.end() - count_temp_func; fn != funcs_body.end(); ++fn) {
+			list.cur_mod = fn->cur_mod;
+			llvm::BasicBlock *entry = llvm::BasicBlock::Create(context, "entry", fn->func);
+			builder.SetInsertPoint(entry);
+
+			// set argment variable names and store
+			auto arg_types_it = fn->arg_types.begin();
+			auto arg_names_it = fn->arg_names.begin();
+			for(auto arg_it = fn->func->arg_begin(); arg_it != fn->func->arg_end(); ++arg_it) {
+				arg_it->setName(*arg_names_it);
+				llvm::AllocaInst *ainst = create_entry_alloca(fn->func, *arg_names_it, (*arg_types_it));
+				builder.CreateStore(arg_it, ainst);
+				var_t *v = fn->info->var.get(*arg_names_it, "");
+				if(v) v->val = ainst;
+				arg_types_it++; arg_names_it++;
+			}
+
+			for(auto v = fn->info->var.local.begin(); v != fn->info->var.local.end(); v++) {
+				if(v->type.is_array() || v->type.eql_type(T_STRING)) {
+					std::vector<llvm::Value*> func_args;
+					func_args.push_back(builder.CreateBitCast(v->val, v->val->getType()->getPointerTo())); // get address of var
+					builder.CreateCall(stdfunc["append_addr_for_gc"].func, func_args);
+				}
+			}
+
+			llvm::Value *ret_value = llvm::ConstantInt::get(builder.getInt32Ty(), 0); // default return code 0
+			for(ast_vector::iterator it = fn->body.begin(); it != fn->body.end(); ++it) { // function body
+				ret_value = Codegen::expression(*(fn->info), list, *it);
+			}
+
+			for(auto v = fn->info->var.local.begin(); v != fn->info->var.local.end(); v++) {
+				if(v->type.is_array() || v->type.eql_type(T_STRING)) {
+					std::vector<llvm::Value*> func_args;
+					func_args.push_back(builder.CreateBitCast(v->val, v->val->getType()->getPointerTo())); // get address of var
+					builder.CreateCall(stdfunc["delete_addr_for_gc"].func, func_args);
+				}
+			}
+
+			if(ret_value) {
+				if(ret_value->getType()->getTypeID() != fn->ret_type->getTypeID()) {
+					ret_value = llvm::ConstantInt::get(builder.getInt32Ty(), 0);
+					// fprintf(stderr, "warning: type of expression that evaluated last is not match\n");
+				}
+			} else if(fn->ret_type->getTypeID() == builder.getInt32Ty()->getTypeID()) {
+
+				ret_value = llvm::ConstantInt::get(builder.getInt32Ty(), 0);
+			} else error("error: return code of function is incorrect '%s'", fn->info->info.name.c_str());
+
+			builder.CreateRet(ret_value);
+		} 
 		return mod;
 	}
 
@@ -684,6 +738,7 @@ Function FunctionAST::codegen(Program &f_list) { // create a prototype of functi
 			args_type_for_overload.push_back(type);
 		}
 	}
+	f.info.args_name = arg_names;
 	f.info.args_type = args_type_for_overload;
 
 	Function *function = f_list.append(f);
@@ -886,11 +941,70 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, ExprType *t
 	if(!function) function = f_list.get(info.name, f_list.cur_mod, args_type);
 	if(!function) { // not found
 		std::string args_type_str; 
-			// args to string
-			for(auto arg : args_type) 
-				args_type_str += arg->to_string() + ", ";
-			args_type_str.erase(args_type_str.end() - 2, args_type_str.end()); // erase ", "
-			error("error: undefined function: '%s(%s)'", info.name.c_str(), args_type_str.c_str());
+		// args to string
+		for(auto arg : args_type) 
+			args_type_str += arg->to_string() + ", ";
+		args_type_str.erase(args_type_str.end() - 2, args_type_str.end()); // erase ", "
+		error("error: undefined function: '%s(%s)'", info.name.c_str(), args_type_str.c_str());
+	}
+	if(info.name.find("template") != std::string::npos) {
+		auto has_all_eql_type = [&]() -> bool {
+			for(int i = 0; i < args_type.size(); i++) {
+				if(!function->info.args_type[i]->eql_type((args_type[i]))) return false;
+			}
+			return true;
+		};
+		if(has_all_eql_type() == false) {
+			Function f;
+			f.info.name = function->info.name;
+			f.info.mod_name = function->info.mod_name;
+			f.info.params = function->info.params;
+			f.info.func_addr = nullptr;
+			f.info.type.change(&function->info.type);
+
+			// append arguments
+			std::vector<llvm::Type *> arg_types;
+			for(auto &t : args_type)
+				arg_types.push_back(Type::type_to_llvmty(t));
+			std::vector<std::string> arg_names = function->info.args_name;
+			std::vector<ExprType *> args_type_for_overload = args_type;
+			f.info.args_type = args_type_for_overload;
+			f.info.args_name = arg_names;
+
+			Function *function1 = f_list.append(f);
+
+			for(int i = 0; i < arg_names.size(); i++) {
+				function1->var.append(arg_names[i], args_type_for_overload[i]);
+			}
+
+			// definition the Function
+
+			// set function return type
+			llvm::Type *func_ret_type = Type::type_to_llvmty(&function->info.type);
+
+			llvm::FunctionType *func_type = llvm::FunctionType::get(func_ret_type, arg_types, false);
+			llvm::Function *func = llvm::Function::Create(func_type, llvm::Function::ExternalLinkage, f.info.name, mod);
+
+			std::vector<AST *> fbody;
+			for(auto &fb : funcs_body) {
+				if(fb.info->info.name == f.info.name) {
+					fbody = fb.body;
+					break;
+				}
+			}
+			funcs_body.push_back(func_body_t {
+				.info = function1,
+				.arg_names = arg_names,
+				.arg_types = arg_types,
+				.body = fbody,
+				.func = func,
+				.cur_mod = f_list.cur_mod,
+				.ret_type = func_ret_type,
+			});
+
+			function1->info.func_addr = func;
+			function = function1;
+		}
 	}
 	auto func_args = function->info.args_type;
 	for(auto arg = args.begin(); arg != args.end(); ++arg) { // reference?
