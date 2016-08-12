@@ -38,6 +38,10 @@ def to_int s:string
 	str_to_int s
 end
 
+def to_string(s:string):string
+	s
+end
+
 def to_string(i):string
 	int_to_str i
 end

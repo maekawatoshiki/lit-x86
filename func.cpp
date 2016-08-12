@@ -38,7 +38,7 @@ Function *Program::get(std::string name, std::vector<std::string> mod_name, std:
 	auto is_eql_args_type = [&](Function f, bool temp=false) -> bool {
 		if(f.info.args_type.size() == 0 && args_type.size() == 0) return true;
 		if(f.info.args_type.size() != args_type.size()) return false;
-		if(temp && f.info.name.find("template") != std::string::npos) return true;
+		if(temp && f.info.is_template) return true;
 		auto caller_it = args_type.begin();
 		for(auto it = f.info.args_type.begin(); it != f.info.args_type.end() && caller_it != args_type.end(); ++it) {
 			if(!(*it)->eql_type((*caller_it))) return false;
@@ -46,16 +46,12 @@ Function *Program::get(std::string name, std::vector<std::string> mod_name, std:
 		}
 		return true;
 	};
-	for(std::vector<Function>::iterator it = func.begin(); it != func.end(); it++) {
-		if(it->info.name == name && is_eql_args_type(*it) && it->info.mod_name == mod_name) {
+	for(std::vector<Function>::iterator it = func.begin(); it != func.end(); it++) 
+		if(it->info.name == name && is_eql_args_type(*it) && it->info.mod_name == mod_name)
 			return &(*it);
-		}
-	}
-	for(std::vector<Function>::iterator it = func.begin(); it != func.end(); it++) {
-		if(it->info.name == name && is_eql_args_type(*it, true) && it->info.mod_name == mod_name) {
+	for(std::vector<Function>::iterator it = func.begin(); it != func.end(); it++) // search the template function
+		if(it->info.name == name && is_eql_args_type(*it, true) && it->info.mod_name == mod_name) 
 			return &(*it);
-		}
-	}
 	return NULL;
 }
 

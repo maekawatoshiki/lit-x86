@@ -13,6 +13,7 @@ struct func_t {
 	std::string name;
 	std::vector<std::string> mod_name;
 	llvm::Function *func_addr;
+	bool is_template;
 };
 
 class Function {

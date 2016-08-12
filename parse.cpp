@@ -247,10 +247,18 @@ AST *Parser::make_func() {
 	uint32_t params = 0;
 	ast_vector args, stmt;
 	std::string func_name = tok.next().val;
+	bool is_template = false;
 	if(func_name == "operator") {
 		func_name += tok.next().val; // user-defined operator
+	} else if(func_name == "template") { // template function
+		func_name = tok.next().val; 
+		is_template = true;
 	}
-	func_t function = { .name = func_name, .type = T_INT };
+	func_t function = { 
+		.name = func_name,
+		.is_template = is_template,
+		.type = T_INT
+	};
 	append_func(func_name);
 
 	bool is_parentheses = false;
