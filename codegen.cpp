@@ -993,12 +993,12 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, ExprType *t
 			// definition the Function
 
 			// set function return type
-			llvm::Type *func_ret_type = 
+			function1->info.type.change(
 				(function1->info.type.get().user_type == "T") ? 
-					arg_types[0] :
-					Type::type_to_llvmty(&function->info.type);
+					args_type[0] :
+					&function->info.type);
+			llvm::Type *func_ret_type = Type::type_to_llvmty(&function1->info.type);
 
-			function1->info.type.change(args_type[0]);
 			llvm::FunctionType *func_type = llvm::FunctionType::get(func_ret_type, arg_types, false);
 			llvm::Function *func = llvm::Function::Create(func_type, llvm::Function::ExternalLinkage, f.info.name, mod);
 

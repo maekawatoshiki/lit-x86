@@ -150,6 +150,17 @@ def substr(str:string, bgn, last):string
 	ret
 end
 
+def template join(a, s):string
+	ret = ""
+	for i in 0...length(a)-1
+		ret += a[i].to_string() + s
+	end
+	if 0 < length a
+		ret += a[length(a)-1].to_string
+	end
+	ret
+end
+
 def split(str:string, ch:char):string[]
 	str_len = length str
 	ret = []:string
