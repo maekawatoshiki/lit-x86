@@ -16,7 +16,8 @@ enum {
 	T_CHAR			 = 1 << 6,
 	T_DOUBLE		 = 1 << 7,
 	T_USER_TYPE	 = 1 << 8,
-	T_ARRAY			 = 1 << 9
+	T_TEMPLATE	 = 1 << 9,
+	T_ARRAY			 = 1 << 10
 };
 
 struct expr_type_t {

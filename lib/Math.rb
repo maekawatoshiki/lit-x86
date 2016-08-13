@@ -24,14 +24,14 @@ module Math
 		def is p
 			prime_is p
 		end
-		def list max:int :int[]
-			prime_list = new max int
-			for i in 0...max
+		def list maxsize:int :int[]
+			prime_list = new maxsize int
+			for i in 0...maxsize
 				prime_list[i] = 0
 			end
-			for i = 2, i * i < max, i += 1
+			for i = 2, i * i < maxsize, i += 1
 				if prime_list[i] == 0
-					for k = i * 2, k < max, k += i
+					for k = i * 2, k < maxsize, k += i
 						if prime_list[k] == 0
 							prime_list[k] = 1
 						end
@@ -39,7 +39,7 @@ module Math
 				end
 			end
 			table = new 0 int
-			for i in 2...max
+			for i in 2...maxsize
 				if prime_list[i] == 0
 					table += i
 				end

@@ -14,6 +14,21 @@ def length str:string
 	strlen str
 end
 
+def template max(a, b):T
+	if a < b
+		b
+	else
+		a
+	end
+end
+def template min(a, b):T
+	if a < b
+		a
+	else
+		b
+	end
+end
+
 def is_alpha ch:char
 	if ('A' <= ch & ch <= 'Z') | ('a' <= ch & ch <= 'z')
 		1
@@ -256,9 +271,7 @@ end
 def str_eql a:string b:string
 	a_len = length a
 	b_len = length b
-	if a_len != b_len
-		return 1
-	end
+	a_len = min a_len, b_len
 	for i in 0...a_len
 		if a[i] != b[i]
 			return a[i] - b[i]

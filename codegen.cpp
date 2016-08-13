@@ -712,7 +712,12 @@ Function FunctionAST::codegen(Program &f_list) { // create a prototype of functi
 	std::vector<std::string> arg_names;
 	std::vector<ExprType *> args_type_for_overload;
 	for(ast_vector::iterator it = args.begin(); it != args.end(); ++it) {
-		if((*it)->get_type() == AST_VARIABLE) {
+		if(f.info.is_template) {
+			var_t *v = ((VariableAST *)*it)->append(f, f_list);
+			arg_types.push_back(builder.getInt32Ty());
+			arg_names.push_back(v->name);
+			args_type_for_overload.push_back(new ExprType(T_TEMPLATE));
+		} else if((*it)->get_type() == AST_VARIABLE) {
 			var_t *v = ((VariableAST *)*it)->append(f, f_list);
 			llvm::Type *llvm_type = builder.getInt32Ty();
 			ExprType *type = new ExprType(T_INT);
@@ -752,8 +757,11 @@ Function FunctionAST::codegen(Program &f_list) { // create a prototype of functi
 	// set function return type
 	llvm::Type *func_ret_type = nullptr;
 	if(info.type.get().type == T_USER_TYPE) {
-		func_ret_type = f_list.structs.get(info.type.get().user_type)
-			->strct->getPointerTo();
+		if(info.type.get().user_type == "T") 
+			func_ret_type = builder.getInt32Ty();
+		else
+			func_ret_type = f_list.structs.get(info.type.get().user_type)
+				->strct->getPointerTo();
 	} else func_ret_type = Type::type_to_llvmty(&info.type);
 
 	llvm::FunctionType *func_type = llvm::FunctionType::get(func_ret_type, arg_types, false);
@@ -985,8 +993,12 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, ExprType *t
 			// definition the Function
 
 			// set function return type
-			llvm::Type *func_ret_type = Type::type_to_llvmty(&function->info.type);
+			llvm::Type *func_ret_type = 
+				(function1->info.type.get().user_type == "T") ? 
+					arg_types[0] :
+					Type::type_to_llvmty(&function->info.type);
 
+			function1->info.type.change(args_type[0]);
 			llvm::FunctionType *func_type = llvm::FunctionType::get(func_ret_type, arg_types, false);
 			llvm::Function *func = llvm::Function::Create(func_type, llvm::Function::ExternalLinkage, f.info.name, mod);
 
