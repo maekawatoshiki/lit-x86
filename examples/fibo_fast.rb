@@ -1,7 +1,7 @@
 require "std"
 
-def mul A:int[] B:int[] :int[]
-	C = [0, 0, 0, 0]
+def mul(A:int64[], B:int64[]):int64[]
+	C = [<int64>0, <int64>0, <int64>0, <int64>0]
 	for i in 0...2
 		for k in 0...2
 			for j in 0...2
@@ -12,8 +12,8 @@ def mul A:int[] B:int[] :int[]
 	C
 end
 
-def pow A:int[] n:int :int[]
-	B = [1, 0, 1, 0]
+def pow(A:int64[], n):int64[]
+	B = [<int64>1, <int64>0, <int64>1, <int64>0]
 	while n > 0
 		if n & 1
 			B = mul B A
@@ -26,7 +26,7 @@ end
 
 max = gets.to_int()
 for i in 0...max
-	A = [1, 1, 1, 0]
-	A = pow A i
+	A = [<int64>1, <int64>1, <int64>1, <int64>0]
+	A = pow A, i
 	puts "fibo(" i ") = " A[0]
 end

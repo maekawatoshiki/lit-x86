@@ -84,20 +84,20 @@ llvm::Module *Parser::parser() {
 	op_prec["%"] =  400;
 
 	// append standard functions to a list of declared functions
-	append_func("Array");
-	append_func("GC");
-	append_func("printf");
-	append_func("gets");
-	append_func("strlen");
-	append_func("builtinlength");
-	append_func("puts");
-	append_func("print"); // 'print' is almost the same as 'puts' but 'print' doesn't new line
-	append_func("gets");
-	append_func("str_to_int");
-	append_func("str_to_float");
-	append_func("int_to_str");
-	append_func("int64_to_str");
-	append_func("float_to_str");
+	append_func(std::vector<std::string>(1, "Array"));
+	append_func(std::vector<std::string>(1, "GC"));
+	append_func(std::vector<std::string>(1, "printf"));
+	append_func(std::vector<std::string>(1, "gets"));
+	append_func(std::vector<std::string>(1, "strlen"));
+	append_func(std::vector<std::string>(1, "builtinlength"));
+	append_func(std::vector<std::string>(1, "puts"));
+	append_func(std::vector<std::string>(1, "print")); // 'print' is almost the same as 'puts' but 'print' doesn't new line
+	append_func(std::vector<std::string>(1, "gets"));
+	append_func(std::vector<std::string>(1, "str_to_int"));
+	append_func(std::vector<std::string>(1, "str_to_float"));
+	append_func(std::vector<std::string>(1, "int_to_str"));
+	append_func(std::vector<std::string>(1, "int64_to_str"));
+	append_func(std::vector<std::string>(1, "float_to_str"));
 
 	ast_vector a = eval();
 	// std::cout << "\n---------- abstract syntax tree ----------" << std::endl;
@@ -145,7 +145,7 @@ AST *Parser::make_proto() {
 			new_name = tok.next().val;
 		}
 
-		append_func(new_name.empty() ? func_name : new_name);
+		append_func(std::vector<std::string>(1, new_name.empty() ? func_name : new_name));
 
 		return new PrototypeAST(function, args, new_name);	
 	}
@@ -155,7 +155,9 @@ AST *Parser::make_proto() {
 AST *Parser::make_module() {
 	if(tok.skip("module")) {
 		std::string name = tok.next().val;
+		module.push_back(name);
 		ast_vector body = eval();
+		module.pop_back();
 		if(!tok.skip("end")) error("error: %d: expected expression 'end'", tok.get().nline);
 		return new ModuleAST(name, body);
 	}
@@ -259,7 +261,11 @@ AST *Parser::make_func() {
 		.is_template = is_template,
 		.type = T_INT
 	};
-	append_func(func_name);
+	{
+		std::vector<std::string> realname = module;
+		realname.push_back(func_name);
+		append_func(realname);
+	}
 
 	bool is_parentheses = false;
 	if((is_parentheses=tok.skip("(")) || is_ident_tok()) { // get params
@@ -286,11 +292,11 @@ AST *Parser::make_func() {
 	return new FunctionAST(function, args, stmt);
 }
 
-bool Parser::is_func(std::string name) {
+bool Parser::is_func(std::vector<std::string> name) {
 	return function_list.count(name) != 0 ? true : false;
 }
 
-void Parser::append_func(std::string name) {
+void Parser::append_func(std::vector<std::string> name) {
 	function_list[name] = true;
 }
 

@@ -223,7 +223,7 @@ AST *Parser::expr_dot() {
 	while(tok.skip(".")) {
 		std::string name = tok.next().val;
 		bool has_pare = false;
-		if((has_pare=tok.skip("(")) || is_func(name)) { // UFCS
+		if((has_pare=tok.skip("(")) || is_func(std::vector<std::string>(1, name))) { // UFCS
 			func_t f = {
 				.name = name,
 				.mod_name = std::vector<std::string>(),
@@ -265,6 +265,7 @@ AST *Parser::expr_index() {
 AST *Parser::expr_unary() { // TODO: implementation unary minus(-)!!
 	if(tok.skip("<")) { // cast
 		std::string type = tok.next().val;
+		while(tok.skip("[]")) type += "[]";
 		if(!tok.skip(">")) error("error: expected expression '>'");
 		AST *expr = expr_entry();
 		return new CastAST(type, expr);
@@ -336,7 +337,10 @@ AST *Parser::expr_primary() {
 		
 		{	
 			bool has_pare = false;
-			if((has_pare=tok.skip("(")) || is_func(name)) { // function
+				std::vector<std::string> func_name = module;
+				func_name.push_back(name);
+				if(!is_func(func_name)) { func_name = mod_name; func_name.push_back(name); }
+			if((has_pare=tok.skip("(")) || is_func(func_name)) { // function
 				func_t f = {
 					.name = name,
 					.mod_name = mod_name

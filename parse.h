@@ -25,7 +25,7 @@ class Parser {
 public:
 	Token &tok;
 	int blocksCount;
-	std::string module;
+	std::vector<std::string> module;
 
 	Parser(Token &token)
 		:tok(token) { }
@@ -65,9 +65,9 @@ public:
 	llvm::Module *parser();
 	int get_string();
 
-	std::map<std::string, bool> function_list;
-	bool is_func(std::string);
-	void append_func(std::string);
+	std::map<std::vector<std::string>, bool> function_list;
+	bool is_func(std::vector<std::string>);
+	void append_func(std::vector<std::string>);
 };
 
 char *replace_escape(char *);
