@@ -210,6 +210,13 @@ def swap!(ref a, ref b)
 	b = t
 end
 
+def back(a:int[])
+	a[length(a)-1]
+end
+def back(a:string[]):string
+	a[length(a)-1]
+end
+
 # operators for array
 def operator+ a:int[] x:int :int[]
 	size = length(a) + 1
