@@ -34,7 +34,7 @@ void Lit::show_option() {
 		else if(opt_help) {
 			show_version();
 			puts(
-					"Usage: lit [options] <file>\n\n"
+					"Usage: lit [options] <file>\n"
 					" -v\t\tshow version\n"
 					" -h\t\tshow this help\n"
 					" -i\t\tinterpret mode\n"

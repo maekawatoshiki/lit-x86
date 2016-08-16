@@ -3,6 +3,7 @@ lib File
 	proto File_write(id str:string) | file_write
 	proto File_read(id):string | file_read
 	proto File_close(id) | file_close
+	proto File_dir_list(dir:string):string
 end
 
 module File
@@ -26,6 +27,20 @@ module File
 		content = read id
 		file_close id
 		content
+	end
+	def dir_list_one(dir:string):string
+		File_dir_list dir
+	end
+	def dir_list(dir:string):string[]
+		list = []:string
+		while true
+			dir = File::dir_list_one "."
+			if dir == nil
+				break
+			end
+			list += dir
+		end
+		list
 	end
 	def close id
 		file_close id

@@ -8,8 +8,11 @@ module Time
 	def time
 		_lib_time_time
 	end
-	def to_str:string
+	def strtime:string
 		_lib_time_strtime
+	end
+	def sleep sec
+		_lib_time_sleep <double>sec
 	end
 	def sleep sec:double
 		_lib_time_sleep sec
