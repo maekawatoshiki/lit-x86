@@ -150,6 +150,18 @@ llvm::AllocaInst *create_entry_alloca(llvm::Function *TheFunction, std::string &
 	return TmpB.CreateAlloca(type == nullptr ? llvm::Type::getInt32Ty(context) : type, 0, VarName.c_str());
 }
 
+llvm::Type *type_to_llvmty(Program &f_list, ExprType *ty) {
+	llvm::Type *llvm_type = Type::type_to_llvmty(ty);
+	if(!llvm_type) {
+		ExprType *tt = ty; int arg_count = 0;
+		while(tt->is_array()) { tt = tt->next; arg_count++; }
+		llvm_type = f_list.structs.get(tt->get().user_type)
+			->strct->getPointerTo();
+		while(arg_count--) llvm_type = llvm_type->getPointerTo();
+	}
+	return llvm_type;
+}
+
 namespace Codegen {
 	llvm::Module *codegen(ast_vector &program) {
 		llvm::InitializeNativeTarget();
@@ -731,11 +743,14 @@ Function FunctionAST::codegen(Program &f_list) { // create a prototype of functi
 		} else if((*it)->get_type() == AST_VARIABLE_DECL) {
 			var_t *v = ((VariableDeclAST *)*it)->append(f, f_list);
 			llvm::Type *llvm_type;
-			if(v->type.eql_type(T_USER_TYPE)) {
-				llvm_type = f_list.structs.get(v->type.get().user_type)
+			llvm_type = type_to_llvmty(f_list, &v->type);
+			if(!llvm_type) {
+				ExprType *tt = &v->type; int arg_count = 0;
+				std::cout << tt->to_string() << std::endl;
+				while(tt->is_array()) { tt = tt->next; arg_count++; }
+				llvm_type = f_list.structs.get(tt->get().user_type)
 					->strct->getPointerTo();
-			} else {
-				llvm_type = Type::type_to_llvmty(&v->type);
+				while(arg_count--) llvm_type = llvm_type->getPointerTo();
 			}
 			ExprType *type = new ExprType(v->type);
 			if(v->type.is_ref()) {
@@ -762,7 +777,9 @@ Function FunctionAST::codegen(Program &f_list) { // create a prototype of functi
 		else
 			func_ret_type = f_list.structs.get(info.type.get().user_type)
 				->strct->getPointerTo();
-	} else func_ret_type = Type::type_to_llvmty(&info.type);
+	} else { 
+		func_ret_type = type_to_llvmty(f_list, &info.type);
+	}
 
 	llvm::FunctionType *func_type = llvm::FunctionType::get(func_ret_type, arg_types, false);
 	llvm::Function *func = llvm::Function::Create(func_type, llvm::Function::ExternalLinkage, f.info.name, mod);
@@ -978,7 +995,7 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, ExprType *t
 			// append arguments
 			std::vector<llvm::Type *> arg_types;
 			for(auto &t : args_type)
-				arg_types.push_back(Type::type_to_llvmty(t));
+				arg_types.push_back(type_to_llvmty(f_list, t));
 			std::vector<std::string> arg_names = function->info.args_name;
 			std::vector<ExprType *> args_type_for_overload = args_type;
 			f.info.args_type = args_type_for_overload;
@@ -997,7 +1014,7 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, ExprType *t
 				(function1->info.type.get().user_type == "T") ? 
 					args_type[0] :
 					&function->info.type);
-			llvm::Type *func_ret_type = Type::type_to_llvmty(&function1->info.type);
+			llvm::Type *func_ret_type = type_to_llvmty(f_list, &function1->info.type);
 
 			llvm::FunctionType *func_type = llvm::FunctionType::get(func_ret_type, arg_types, false);
 			llvm::Function *func = llvm::Function::Create(func_type, llvm::Function::ExternalLinkage, f.info.name, mod);
@@ -1175,7 +1192,7 @@ llvm::Value * BinaryAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 
 llvm::Value *CastAST::codegen(Function &f, Program &f_list, ExprType *ret_ty) {
 	ret_ty->change(Type::str_to_type(type));
-	llvm::Type *to_type = Type::type_to_llvmty(ret_ty);
+	llvm::Type *to_type = type_to_llvmty(f_list, ret_ty);
 	ExprType exp_ty;
 	llvm::Value *exp = Codegen::expression(f, f_list, expr, &exp_ty);
 	if(exp_ty.eql_type(T_INT) && ret_ty->eql_type(T_DOUBLE)) {
@@ -1226,7 +1243,7 @@ llvm::Value * NewAllocAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 		ret_val = (llvm::PointerType *)f_list.structs.get(alloc_type->get().user_type)
 			->strct->getPointerTo()->getPointerTo();
 	} else {
-		llvm::Type *ltype = Type::type_to_llvmty(alloc_type);
+		llvm::Type *ltype = type_to_llvmty(f_list, alloc_type);
 		ret_val = ltype->getPointerTo();
 	}
 	return builder.CreateBitCast(ret, ret_val, "bitcast_tmp");
@@ -1288,7 +1305,7 @@ llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, ExprType *
 	if(v->is_global) { // assignment to the global variable
 		if(first_decl) {
 			v->type = v_ty;
-			mod->getOrInsertGlobal(v->name, Type::type_to_llvmty(&v_ty));
+			mod->getOrInsertGlobal(v->name, type_to_llvmty(f_list, &v_ty));
 			llvm::GlobalVariable *gbl = mod->getNamedGlobal(v->name);
 			// gbl->setLinkage(llvm::GlobalValue::CommonLinkage);
 			gbl->setAlignment(4);
@@ -1319,7 +1336,7 @@ llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, ExprType *
 	// ret_ty->change(new ExprType(member_ty));
 		if(first_decl) {
 			llvm::AllocaInst *ai;
-			llvm::Type *decl_type = Type::type_to_llvmty(&v_ty);
+			llvm::Type *decl_type = type_to_llvmty(f_list, &v_ty);
 			if(decl_type== nullptr) {// user type
 				int ary_count = 0;
 				while(v_ty.is_array()) {
@@ -1500,7 +1517,7 @@ llvm::Value * ArrayAST::codegen(Function &f, Program &f_list, ExprType *ret_ty) 
 	llvm::Value *ary = builder.CreateCall(stdfunc["create_array"].func, func_args);
 	ExprType ty;
 	if(zero_ary) {
-		ary = builder.CreateBitCast(ary, Type::type_to_llvmty(type)->getPointerTo(), "bitcast_tmp");
+		ary = builder.CreateBitCast(ary, type_to_llvmty(f_list, type)->getPointerTo(), "bitcast_tmp");
 		ty = *type;
 	} else {
 		size_t num = 0;

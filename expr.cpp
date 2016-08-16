@@ -326,9 +326,9 @@ AST *Parser::expr_primary() {
 			is_ary = 0;
 			type.change(Type::str_to_type(tok.next().val));
 			if(tok.skip("[]")) {
-				int elem_ty = type.get().type;
+				ExprType *elem_ty = new ExprType(type);
 				type.change(T_ARRAY);
-				type.next = new ExprType(elem_ty);
+				type.next = elem_ty;
 			}
 			is_vardecl = true;
 		} else { 
