@@ -1253,7 +1253,7 @@ llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, ExprType *
 		AST *obj = dot->var;
 		if(obj->get_type() == AST_VARIABLE_INDEX) {
 			VariableIndexAST *viast = (VariableIndexAST *)obj;
-			parent = viast->get_elem(f, f_list, &ty);
+			parent = builder.CreateLoad(viast->get_elem(f, f_list, &ty));
 		} else {
 			parent = Codegen::expression(f, f_list, obj, &ty);
 		}
@@ -1266,7 +1266,7 @@ llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, ExprType *
 				break;
 			a++;
 		}
-		llvm::Value *memb = builder.CreateStructGEP(parent, a, "gep");
+		llvm::Value *memb = builder.CreateConstGEP2_32(parent, 0, a, "gep");
 		llvm::Value *val = Codegen::expression(f, f_list, src);
 		return builder.CreateStore(val, memb);
 	} else if(var->get_type() == AST_VARIABLE_INDEX) {
@@ -1391,7 +1391,7 @@ llvm::Value * VariableAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 		ty->change(&v->type);
 		if(ty->is_ref()) 
 			return builder.CreateLoad(builder.CreateLoad(v->val), "var_tmp");
-		else
+		else 
 			return builder.CreateLoad(v->val, "var_tmp");
 		return builder.CreateLoad(v->val, "var_tmp");
 	} else { // global
@@ -1471,6 +1471,7 @@ llvm::Value *DotOpAST::codegen(Function &f, Program &f_list, ExprType *ret_ty) {
 	if(var->get_type() == AST_VARIABLE_INDEX) {
 		VariableIndexAST *viast = (VariableIndexAST *)var;
 		parent = viast->get_elem(f, f_list, &ty);
+		parent = builder.CreateLoad(parent);
 	} else parent = Codegen::expression(f, f_list, var, &ty);
 	if(!parent) error("dotopast: error");
 	struct_t *strct = f_list.structs.get(ty.get().user_type);
