@@ -50,6 +50,6 @@ def bigFact(a:int[], max):int[]
 end
 
 $max = 100000
-A = new $max
+A = new int $max
 bigPrint( bigFact(A, 200) )
 

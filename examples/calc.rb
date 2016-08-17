@@ -6,9 +6,9 @@ module Calc
 	end
 	def prim(input:string):string
 		str = ""
-		if input[$pos].alpha? # function (sqrt..)
+		if input[$pos].alpha?() # function (sqrt..)
 			fname = ""
-			while input[$pos].alpha?
+			while input[$pos].alpha?()
 				fname += input[$pos]
 				skip
 			end
@@ -22,7 +22,7 @@ module Calc
 			skip
 			str
 		else
-			while input[$pos].digit? | input[$pos] == '.'
+			while input[$pos].digit?() | input[$pos] == '.'
 				str += input[$pos]
 				skip
 			end
@@ -56,7 +56,7 @@ module Calc
 		tok_ary = tok_str.split(' ')
 		# VM ( calculate )
 		cur_stack_sz = 256
-		stack = new cur_stack_sz double
+		stack = new double cur_stack_sz
 		sp = 0
 		for i in 0...length tok_ary
 			s = tok_ary[i]
@@ -78,7 +78,7 @@ module Calc
 			elsif s == "sqrt"
 				stack[sp-1] = Math::sqrt stack[sp-1]
 			else
-				stack[sp] = s.to_float
+				stack[sp] = s.to_float()
 				sp += 1
 			end
 		end

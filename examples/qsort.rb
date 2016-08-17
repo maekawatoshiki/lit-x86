@@ -21,7 +21,7 @@ def qsort a:int[] left right
 end
 
 max = 5
-a = new max int
+a = new int max
 
 for i in 0..max
 	a[i] = Math::random % 100

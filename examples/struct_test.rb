@@ -4,7 +4,7 @@ struct User
 	from:string
 end
 
-person = new 1 User
+person = new User
 
 person.name = "Lit"
 person.age = 2

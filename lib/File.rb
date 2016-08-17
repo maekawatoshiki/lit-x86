@@ -14,7 +14,7 @@ end
 
 module File
 	def new:FILE
-		new ! FILE
+		new FILE
 	end
 	def open name:string mode:string
 		file_open name mode

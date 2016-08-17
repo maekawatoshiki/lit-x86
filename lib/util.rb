@@ -220,7 +220,7 @@ end
 # operators for array
 def operator+ a:int[] x:int :int[]
 	size = length(a) + 1
-	cpy = new size
+	cpy = new int size
 	for i in 0...size-1
 		cpy[i] = a[i]
 	end
@@ -230,7 +230,7 @@ end
 
 def operator+ a:double[] x:double :double[]
 	size = length(a) + 1
-	cpy = new size double
+	cpy = new double size
 	for i in 0...size-1
 		cpy[i] = a[i]
 	end
@@ -240,7 +240,7 @@ end
 
 def operator+ a:string[] x:string :string[]
 	size = length(a) + 1
-	cpy = new size string
+	cpy = new string size
 	for i in 0...size-1
 		cpy[i] = a[i]
 	end

@@ -25,7 +25,7 @@ module Math
 			prime_is p
 		end
 		def list maxsize:int :int[]
-			prime_list = new maxsize int
+			prime_list = new int maxsize
 			for i in 0...maxsize
 				prime_list[i] = 0
 			end
@@ -38,7 +38,7 @@ module Math
 					end
 				end
 			end
-			table = new 0 int
+			table = []:int
 			for i in 2...maxsize
 				if prime_list[i] == 0
 					table += i

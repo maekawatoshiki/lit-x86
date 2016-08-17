@@ -281,16 +281,15 @@ AST *Parser::expr_primary() {
 
 	if(tok.get().val == "new") {
 		tok.skip();
-		AST *size = NULL;
-		if(tok.get().val != "!") {
-			size = expr_entry();
-		} else tok.skip();
 		std::string type = "int";
 		if(is_ident_tok()) {
 			type = tok.next().val;
 			while(tok.skip("[]"))
 				type += "[]";
 		}
+		AST *size = NULL;
+		if(tok.get().type != TOK_END)
+			size = expr_entry();
 		return new NewAllocAST(type, size);
 	} else if(is_number_tok()) {
 		if(strstr(tok.get().val.c_str(), ".") != NULL)

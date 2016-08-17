@@ -1299,7 +1299,8 @@ llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, ExprType *
 		llvm::Value *val = Codegen::expression(f, f_list, src);
 		if(ty->eql_type(T_STRING))
 			val = builder.CreateZExt(val, builder.getInt8Ty());
-		return builder.CreateStore(val, elem);
+		builder.CreateStore(val, elem);
+		return builder.CreateLoad(elem);
 	}
 
 	// single assignment
