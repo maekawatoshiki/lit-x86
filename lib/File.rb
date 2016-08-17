@@ -6,7 +6,16 @@ lib File
 	proto File_dir_list(dir:string):string
 end
 
+struct FILE
+	id
+	name:string
+	use?
+end
+
 module File
+	def new:FILE
+		new ! FILE
+	end
 	def open name:string mode:string
 		file_open name mode
 	end
@@ -47,3 +56,26 @@ module File
 	end
 end
 
+
+def open(ref file:FILE, name:string, mode:string):FILE
+	if file.use?
+		file.close()
+	end
+	file.id = File::open name, mode
+	file.name = name
+	file.use? = true
+	file
+end
+def open(ref file:FILE, name:string):FILE
+	open(file, name, "r")
+end
+def read(ref file:FILE):string
+	File::read file.id
+end
+def write(ref file:FILE, content:string)
+	File::write file.id, content
+end
+def close(ref file:FILE)
+	File::close file.id
+	file.use? = false
+end

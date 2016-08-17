@@ -1047,7 +1047,11 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, ExprType *t
 		if(func_args[count]->is_ref()) {
 			VariableAST *vast = (VariableAST *)*arg;
 			var_t *v = vast->get(f, f_list);
-			callee_args[count] = (v->val);
+			if(!v) getchar();
+			if(v->type.is_ref())
+				callee_args[count] = builder.CreateLoad(v->val);
+			else
+				callee_args[count] = (v->val);
 		}
 	}
 	llvm::Function *callee = (function->info.func_addr) ? function->info.func_addr : mod->getFunction(info.name);
