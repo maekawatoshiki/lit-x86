@@ -4,6 +4,7 @@ lib File
 	proto File_read(id):string | file_read
 	proto File_close(id) | file_close
 	proto File_dir_list(dir:string):string
+	proto File_size_by_id(id)
 end
 
 struct FILE
@@ -54,6 +55,9 @@ module File
 	def close id
 		file_close id
 	end
+	def size id
+		File_size_by_id id 
+	end
 end
 
 
@@ -78,4 +82,7 @@ end
 def close(ref file:FILE)
 	File::close file.id
 	file.use? = false
+end
+def size(ref file:FILE)
+	File::size file.id
 end

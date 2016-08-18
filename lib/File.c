@@ -1,6 +1,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/stat.h>
 #include <sys/types.h>
 #include <dirent.h>
 
@@ -16,12 +17,10 @@ struct files_t {
 } files;
 
 int File_size(char *name) {
-	FILE *fp = fopen(name, "rb");
-	fseek(fp, 0, SEEK_END);
-	int sz = ftell(fp);
-	fseek(fp, 0, SEEK_SET);
-	fclose(fp);
-	return sz;
+	struct stat st;
+	if(!stat(name, &st)) 
+		return st.st_size;
+	return -1;
 }
 int File_size_by_id(int id) {
 	if(id < files.cur_files)

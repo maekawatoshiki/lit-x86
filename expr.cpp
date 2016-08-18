@@ -333,7 +333,15 @@ AST *Parser::expr_primary() {
 				std::vector<std::string> func_name = module;
 				func_name.push_back(name);
 				if(!is_func(func_name)) { func_name = mod_name; func_name.push_back(name); }
-			if((has_pare=tok.skip("(")) || is_func(func_name)) { // function
+			if((has_pare=tok.skip("(")) || 
+					(is_func(func_name) &&
+					 tok.get().val != "=" &&
+					 tok.get().val != "+=" &&
+					 tok.get().val != "-=" && 
+					 tok.get().val != "*=" && 
+					 tok.get().val != "/=" && 
+					 tok.get().val != "%=" &&
+					 !is_local_var(name))) { // function
 				func_t f = {
 					.name = name,
 					.mod_name = mod_name
@@ -358,6 +366,7 @@ AST *Parser::expr_primary() {
 				};
 				v.type.change(new ExprType(type));
 				v.type.set_ref(is_ref);
+				append_local_var(name);
 				if(is_vardecl)
 					return new VariableDeclAST(v);
 				else
@@ -398,3 +407,9 @@ AST *Parser::expr_array() {
 	return NULL;
 }
 
+bool Parser::is_local_var(std::string name) {
+	return local_var_list.count(name) ? true : false;
+}
+void Parser::append_local_var(std::string name) {
+	local_var_list[name] = true;
+}

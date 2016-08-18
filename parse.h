@@ -68,6 +68,9 @@ public:
 	std::map<std::vector<std::string>, bool> function_list;
 	bool is_func(std::vector<std::string>);
 	void append_func(std::vector<std::string>);
+	std::map<std::string, bool> local_var_list;
+	bool is_local_var(std::string);
+	void append_local_var(std::string);
 };
 
 char *replace_escape(char *);
