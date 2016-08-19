@@ -143,7 +143,7 @@ def substr(str:string, bgn, last):string
 	if last < 0; return ret; end
 	ret = ret.add_addr(bgn)
 	ret[last] = 0
-	ret
+	"" + ret
 end
 
 def template join(a, s):string
