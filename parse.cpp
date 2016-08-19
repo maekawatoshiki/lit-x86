@@ -289,6 +289,7 @@ AST *Parser::make_func() {
 
 	stmt = eval();
 	if(!tok.skip("end")) { error("error: source %d", __LINE__); }
+	local_var_list.clear();
 	return new FunctionAST(function, args, stmt);
 }
 
