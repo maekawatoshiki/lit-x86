@@ -130,16 +130,19 @@ def reverse(a:string[]):string[]
 	out
 end
 
+lib String
+	proto String_addtoaddr(s:string, add):string | add_addr
+end
+
 def substr(str:string, bgn):string
 	str.substr(bgn, length(str)-bgn)
 end
 
 def substr(str:string, bgn, last):string
-	ret = ""
+	ret = "" + str
 	if last < 0; return ret; end
-	for i in bgn...bgn+last
-		ret += str[i]
-	end
+	ret = ret.add_addr(bgn)
+	ret[last] = 0
 	ret
 end
 
