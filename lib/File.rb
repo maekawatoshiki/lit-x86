@@ -5,6 +5,7 @@ lib File
 	proto File_close(id) | file_close
 	proto File_dir_list(dir:string):string
 	proto File_size_by_id(id)
+	proto File_ctime(id):TIME
 end
 
 struct FILE
@@ -48,7 +49,7 @@ module File
 			if dir == nil
 				break
 			end
-			list += dir
+			list += "" + dir
 		end
 		list
 	end
@@ -57,6 +58,19 @@ module File
 	end
 	def size id
 		File_size_by_id id 
+	end
+	def ctime(id):TIME
+		File_ctime id
+	end
+
+	def exist?(name:string)
+		a = File::open name
+		if a == 0
+			false
+		else
+			File::close a
+			true
+		end
 	end
 end
 
@@ -68,21 +82,28 @@ def open(ref file:FILE, name:string, mode:string):FILE
 	file.id = File::open name, mode
 	file.name = name
 	file.use? = true
-	file
+	if file.id == 0
+		<FILE>nil
+	else
+		file
+	end
 end
 def open(ref file:FILE, name:string):FILE
 	open(file, name, "r")
 end
-def read(ref file:FILE):string
+def read(file:FILE):string
 	File::read file.id
 end
-def write(ref file:FILE, content:string)
+def write(file:FILE, content:string)
 	File::write file.id, content
 end
 def close(ref file:FILE)
 	File::close file.id
 	file.use? = false
 end
-def size(ref file:FILE)
+def size(file:FILE)
 	File::size file.id
+end
+def ctime(file:FILE):TIME
+	File::ctime file.id
 end

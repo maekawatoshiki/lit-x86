@@ -96,7 +96,7 @@ module Math
 		math_rand_set n
 	end
 	def random_init
-		math_rand_set Time::time
+		math_rand_set Time::time.tm_sec
 	end
 	def log x:double :double
 		math_log x

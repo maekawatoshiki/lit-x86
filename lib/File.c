@@ -4,6 +4,7 @@
 #include <sys/stat.h>
 #include <sys/types.h>
 #include <dirent.h>
+#include <time.h>
 
 typedef struct {
 	FILE *fp;
@@ -27,6 +28,12 @@ int File_size_by_id(int id) {
 		return files.file[id]->size;
 	return -1;
 }
+struct tm *File_ctime(int id) {
+	struct stat st;
+	if(!stat(files.file[id]->name, &st)) {
+		return localtime(&st.st_ctim.tv_sec);
+	} else return NULL;
+}
 int File_open(char *name, char *mode) {
 	file_t *f = malloc(sizeof(file_t));
 	f->fp = fopen(name, mode);
@@ -37,6 +44,7 @@ int File_open(char *name, char *mode) {
 		files.file = calloc(2, sizeof(file_t));
 		files.cur_files = 1;
 	} else files.file = realloc(files.file, (1+files.cur_files)*sizeof(file_t));
+	if(files.file == NULL) perror("error in File_open");
 	files.file[files.cur_files++] = f;
 	return files.cur_files - 1;
 }
