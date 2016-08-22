@@ -2,7 +2,7 @@
 #define COMMON
 
 #include "llvm/Analysis/Passes.h"
-#include "llvm/Analysis/Verifier.h"
+#include "llvm/IR/Verifier.h"
 #include "llvm/ExecutionEngine/ExecutionEngine.h"
 #include "llvm/ExecutionEngine/JIT.h"
 #include "llvm/IR/DataLayout.h"
@@ -12,7 +12,7 @@
 #include "llvm/IR/GlobalVariable.h"
 #include "llvm/IR/Module.h"
 #include "llvm/Support/SourceMgr.h"
-#include "llvm/Linker.h"
+#include "llvm/Linker/Linker.h"
 #include <llvm/Support/MemoryBuffer.h>
 #include "llvm/IRReader/IRReader.h"
 #include "llvm/PassManager.h"

@@ -1,7 +1,7 @@
-CFLAGS = -O3 -Wno-strict-aliasing -std=c++11
-CC = clang++ $(CFLAGS) 
-LLVM = `llvm-config-3.4 --cppflags `
-LLVM_LIB = `llvm-config-3.4 --cppflags --ldflags --libs all`
+CFLAGS = -O3 -Wno-strict-aliasing -std=c++11 -ltinfo 
+CC = clang++-3.5 $(CFLAGS) 
+LLVM = `llvm-config-3.5 --cppflags `
+LLVM_LIB = `llvm-config-3.5 --system-libs --cppflags --ldflags --libs all`
 
 lit: main.o lit.o lex.o var.o expr.o parse.o  token.o option.o util.o func.o ast.o codegen.o exprtype.o
 	$(CC) -o lit -rdynamic -ldl main.o lit.o lex.o var.o expr.o parse.o \

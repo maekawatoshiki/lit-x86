@@ -595,7 +595,8 @@ namespace Codegen {
 		{ // optimize 
 			llvm::PassManager pass_mgr;
 			// target lays out data structures.
-			pass_mgr.add(new llvm::DataLayout(*exec_engine->getDataLayout()));
+			mod->setDataLayout(exec_engine->getDataLayout());
+			pass_mgr.add(new llvm::DataLayoutPass(mod));
 			// mem2reg
 			pass_mgr.add(llvm::createPromoteMemoryToRegisterPass());
 			/// Provide basic AliasAnalysis support for GVN.
@@ -677,9 +678,8 @@ void ModuleAST::codegen(Program &f_list) {
 
 llvm::Value * LibraryAST::codegen(Program &f_list) {
 	llvm::SMDiagnostic smd_err;
-	llvm::OwningPtr<llvm::MemoryBuffer> buf;
-	llvm::MemoryBuffer::getFile(("./lib/" + lib_name + ".ll"), buf);
-	llvm::Module *lib_mod = llvm::ParseBitcodeFile(buf.get(), context);
+	llvm::ErrorOr< std::unique_ptr<llvm::MemoryBuffer> > buf = llvm::MemoryBuffer::getFile(("./lib/" + lib_name + ".ll"));
+	llvm::Module *lib_mod = llvm::parseBitcodeFile(buf.get().get(), context).get();
 	if(lib_mod == nullptr)
 		error("LitSystemError: LLVMError: %s", smd_err.getMessage().str().c_str());
 	std::string msg_err;
