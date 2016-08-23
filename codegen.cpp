@@ -1444,6 +1444,7 @@ llvm::Value * BreakAST::codegen(Function &f, Program &f_list) {
 llvm::Value *StructAST::codegen(Program &f_list) {
 	std::vector<var_t> members;
 	std::vector<llvm::Type *> field;
+	llvm::StructType *mystruct = llvm::StructType::create(context, "struct."+name);
 	for(auto it = var_decls.begin(); it != var_decls.end(); it++) {
 		AST *member = *it;
 		if(member->get_type() != AST_VARIABLE &&
@@ -1481,7 +1482,7 @@ llvm::Value *StructAST::codegen(Program &f_list) {
 							builder.getInt32Ty());
 		}
 	}
-	llvm::StructType *mystruct = llvm::StructType::create(context, field, "struct."+name);
+	mystruct->setBody(field, false);
 
 	f_list.structs.append(name, members, mystruct);
 	return nullptr;
