@@ -238,6 +238,12 @@ AST *Parser::expr_dot() {
 			tok.prev();
 			r = expr_primary();
 			l = new DotOpAST(l, r);
+			while(tok.skip("[")) {
+				r = expr_entry();
+				l = new VariableIndexAST(l, r);
+				if(!tok.skip("]"))
+					error("error: %d: expected expression ']'", tok.get().nline);
+			}
 		}
 	}
 	return l;
