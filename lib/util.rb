@@ -219,6 +219,22 @@ end
 def back(a:string[]):string
 	a[length(a)-1]
 end
+def pop_back(ref a:int[])
+	aln = length a
+	c = new int aln-1
+	for i in 0...aln-1
+		c[i] = a[i]
+	end
+	a = c
+end
+def pop_back(ref a:string[])
+	aln = length a
+	c = new int aln-1
+	for i in 0...aln-1
+		c[i] = a[i]
+	end
+	a = c
+end
 
 # operators for array
 def operator+ a:int[] x:int :int[]
