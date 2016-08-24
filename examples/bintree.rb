@@ -1,65 +1,76 @@
 require "std"
 
-struct Tree
+struct HASH
 	use
 	key
 	val
-	left:Tree
-	right:Tree
+	a:HASH
+	b:HASH
 end
 
-def set(a:Tree, key, val, n):Tree
-	puts "n:",n
-	puts "key:", key
-	puts "use:", a.use
-	if a.use == false
-		a.key = key
+def set(a:HASH, key, val):HASH
+	if a.use == 0
 		a.val = val
-		a.use = true
-	elsif key < a.key 
-		if nil == a.left
-			a.left = new Tree
-		end
-		a.left = set(a.left, key, val, n+1)
+		a.key = key
+		a.use = 1
 	elsif a.key < key
-		if nil == a.right
-			a.right = new Tree
+		if a.b == nil
+			a.b = new HASH
 		end
-		a.right = set(a.right, key, val, n+1)
+		a.b = set(a.b, key, val)
+	elsif key < a.key
+		if a.a == nil
+			a.a = new HASH
+		end
+		a.a = set(a.a, key, val)
 	end
 	a
 end
-
-def get(a:Tree, key)
-	if a.key == key
+def get(a:HASH, key)
+	if key == a.key
 		return a.val
-	elsif key < a.key 
-		if a.left
-			return get(a.left, key)
-		end
 	elsif a.key < key
-		if a.right
-			return get(a.right, key)
-		end
+		return get(a.b, key)
+	elsif key < a.key
+		return get(a.a, key)
 	end
-	nil
 end
 
-def show(a:Tree, n)
+def rotateL(a:HASH):HASH
+	l = a.a
+	a.a = l.b
+	l.b = a
+	l
+end
+def rotateR(a:HASH):HASH
+	r = a.b
+	a.b = r.a
+	r.a = a
+	r
+end
+
+def show(a:HASH, n)
 	puts a.key
-	if a.left
-		print " " * n, "L:"
-		show a.left, n+1
+	if a.a
+		print " " * n, "L"
+		show(a.a, n+1)
 	end
-	if a.right
-		print " " * n, "R:"
-		show a.right, n+1
+	if a.b
+		print " " * n, "R"
+		show(a.b, n+1)
 	end
 end
 
-a = new Tree
-a = a.set(5, 3, 1)
-a = a.set(2, 8, 1)
-a = a.set(9, 2, 1)
-a = a.set(8, 2, 1)
+
+a = new HASH
+a = a.set(5, 0)
+a = a.set(2, 1)
+a = a.set(8, 2)
+a = a.set(1, 3)
+a = a.set(9, 4)
+show(a, 1)
+puts a.get(8)
+a = rotateR(a)
+show a, 1
+a = rotateL(a)
 show a, 1

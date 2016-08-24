@@ -1230,7 +1230,7 @@ llvm::Value * NewAllocAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 				llvm::ConstantInt::get(builder.getInt32Ty(), 1) : 
 				Codegen::expression(f, f_list, size));
 	func_args.push_back(llvm::ConstantInt::get(builder.getInt32Ty(), 
-				alloc_type->eql_type(T_USER_TYPE) && !is_user_object?
+				alloc_type->eql_type(T_USER_TYPE) ?
 					f_list.structs.get_size(alloc_type->get().user_type) : 
 					sizeof(void*)));
 	llvm::Value *ret = builder.CreateCall(stdfunc["create_array"].func, func_args);
