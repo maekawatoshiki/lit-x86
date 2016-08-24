@@ -6,20 +6,23 @@
 ## Language Wiki
 - Please look at Wiki.
 
+## Try it on Docker
+```sh
+$ docker build -t="lit-lang" .
+$ docker run -i -t "lit-lang"
+```
+
 ## Build
 - Lit generates native codes with LLVM.
-- So when you build, need LLVM and Clang.
+- When you build, need LLVM and Clang.
 
-- LLVM Core (== 3.4)
+- LLVM Core (== 3.5) (detail in Dockerfile)
 - make
 
 ```
 $ make test
 $ ./lit -h # -h option shows helps
 ```
-
-## Notes
-- 2015/7/22 : First Commit
 
 ## License
 - BSD
