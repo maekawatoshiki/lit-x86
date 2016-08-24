@@ -107,10 +107,6 @@ end
 
 a = new HASH
 Math::random_init
-a = a.set(3, 5)
-a = a.set(7, 2)
-a = a.set(5, 2)
-a.set(1, 9)
 for i in 0...20000
 	a = a.set(Math::random % 10000, Math::random % 1000)
 end
