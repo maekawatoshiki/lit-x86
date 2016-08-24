@@ -34,7 +34,7 @@ public:
 	Struct structs;
 	std::string &module;
 	
-	Program(std::string &mod): module(mod) { func.reserve(128); }
+	Program(std::string &mod): module(mod) { func.reserve(1280); }
 	bool is(std::string, std::string);
 	Function *get(std::string, std::vector<ExprType *>, std::string = "");
 	Function *get(std::string, std::vector<std::string>, std::vector<ExprType*>);

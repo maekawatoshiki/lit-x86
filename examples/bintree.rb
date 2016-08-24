@@ -4,15 +4,18 @@ struct HASH
 	use
 	key
 	val
+	height
 	a:HASH
 	b:HASH
 end
 
 def set(a:HASH, key, val):HASH
-	if a.use == 0
+	if a.use == false
 		a.val = val
 		a.key = key
-		a.use = 1
+		a.height = 1
+		a.use = true
+		return a
 	elsif a.key < key
 		if a.b == nil
 			a.b = new HASH
@@ -24,33 +27,73 @@ def set(a:HASH, key, val):HASH
 		end
 		a.a = set(a.a, key, val)
 	end
-	a
+	balance(a)
 end
 def get(a:HASH, key)
 	if key == a.key
 		return a.val
 	elsif a.key < key
-		return get(a.b, key)
+		if a.b
+			return get(a.b, key)
+		end
 	elsif key < a.key
-		return get(a.a, key)
+		if a.a
+			return get(a.a, key)
+		end
 	end
+	nil
+end
+def diff_height(a:HASH)
+	get_height(a.b) - get_height(a.a)
+end
+def get_height(a:HASH)
+	if a
+		a.height
+	else
+		0
+	end
+end
+def fix_height(a:HASH)
+	l = get_height(a.a)
+	r = get_height(a.b)
+	a.height = util::max l + 1, r + 1
+end
+
+def balance(a:HASH):HASH
+	fix_height(a)
+	if diff_height(a) == 2
+		if diff_height(a.b) < 0
+			a.b = rotateR(a.b)
+		end
+		return rotateL(a)
+	elsif diff_height(a) == -2
+		if diff_height(a.a) > 0
+			a.a = rotateL(a.a)
+		end
+		return rotateR(a)
+	end
+	a
 end
 
 def rotateL(a:HASH):HASH
-	l = a.a
-	a.a = l.b
-	l.b = a
+	l = a.b
+	a.b = l.a
+	l.a = a
+	fix_height(a)
+	fix_height(l)
 	l
 end
 def rotateR(a:HASH):HASH
-	r = a.b
-	a.b = r.a
-	r.a = a
+	r = a.a
+	a.a = r.b ##err
+	r.b = a
+	fix_height(a)
+	fix_height(r)
 	r
 end
 
 def show(a:HASH, n)
-	puts a.key
+	puts a.key, "({})" % (a.height)
 	if a.a
 		print " " * n, "L"
 		show(a.a, n+1)
@@ -63,14 +106,14 @@ end
 
 
 a = new HASH
-a = a.set(5, 0)
-a = a.set(2, 1)
-a = a.set(8, 2)
-a = a.set(1, 3)
-a = a.set(9, 4)
+Math::random_init
+a = a.set(3, 5)
+a = a.set(7, 2)
+a = a.set(5, 2)
+a.set(1, 9)
+for i in 0...20000
+	a = a.set(Math::random % 10000, Math::random % 1000)
+end
 show(a, 1)
-puts a.get(8)
-a = rotateR(a)
-show a, 1
-a = rotateL(a)
-show a, 1
+
+

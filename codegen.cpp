@@ -40,6 +40,7 @@ extern "C" {
 	}
 	void put_char(char ch) {
 		putchar(ch);
+		fflush(stdout);
 	}
 	void put_string(char *s) {
 		printf("%s", s);
@@ -169,6 +170,7 @@ namespace Codegen {
 		{ // initialize standard functions
 			stdfunc["create_array"] = {"create_array", 1, T_ARRAY};
 			stdfunc["gets"] = {"gets", 0, T_STRING};
+			stdfunc["getc"] = {"getc", 0, T_CHAR};
 			stdfunc["strlen"] = {"strlen", 1, T_INT};
 			stdfunc["printf"] = {"printf", -1, T_VOID};
 			stdfunc["puts"] = {"puts", -1, T_VOID};
@@ -334,6 +336,12 @@ namespace Codegen {
 					llvm::GlobalValue::ExternalLinkage,
 					"get_string_stdin", mod);
 			stdfunc["gets"].func = func;
+			// create getc function
+			func = llvm::Function::Create(
+					llvm::FunctionType::get(/*ret*/builder.getInt8Ty(), func_args, false),
+					llvm::GlobalValue::ExternalLinkage,
+					"getchar", mod);
+			stdfunc["getc"].func = func;
 			// create len Function
 			func_args.push_back(builder.getInt32Ty()->getPointerTo());
 			func = llvm::Function::Create(
@@ -1205,6 +1213,8 @@ llvm::Value *CastAST::codegen(Function &f, Program &f_list, ExprType *ret_ty) {
 		exp = builder.CreateFPToSI(exp, builder.getInt32Ty());
 	} else if(ret_ty->eql_type(T_INT64)) {
 		return builder.CreateSExt(exp, builder.getInt64Ty());
+	} else if(exp_ty.eql_type(T_CHAR) && ret_ty->eql_type(T_INT)) {
+		return builder.CreateSExt(exp, builder.getInt32Ty());
 	}
 	return builder.CreateBitCast(exp, to_type);
 }

@@ -88,6 +88,7 @@ llvm::Module *Parser::parser() {
 	append_func(std::vector<std::string>(1, "GC"));
 	append_func(std::vector<std::string>(1, "printf"));
 	append_func(std::vector<std::string>(1, "gets"));
+	append_func(std::vector<std::string>(1, "getc"));
 	append_func(std::vector<std::string>(1, "strlen"));
 	append_func(std::vector<std::string>(1, "builtinlength"));
 	append_func(std::vector<std::string>(1, "puts"));
