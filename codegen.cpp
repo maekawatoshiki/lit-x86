@@ -1230,7 +1230,7 @@ llvm::Value * NewAllocAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 				llvm::ConstantInt::get(builder.getInt32Ty(), 1) : 
 				Codegen::expression(f, f_list, size));
 	func_args.push_back(llvm::ConstantInt::get(builder.getInt32Ty(), 
-				alloc_type->eql_type(T_USER_TYPE) && !is_user_object? 
+				alloc_type->eql_type(T_USER_TYPE) && !is_user_object?
 					f_list.structs.get_size(alloc_type->get().user_type) : 
 					sizeof(void*)));
 	llvm::Value *ret = builder.CreateCall(stdfunc["create_array"].func, func_args);
@@ -1443,6 +1443,7 @@ llvm::Value * BreakAST::codegen(Function &f, Program &f_list) {
 
 llvm::Value *StructAST::codegen(Program &f_list) {
 	std::vector<var_t> members;
+	std::vector<ExprType> members_ty;
 	std::vector<llvm::Type *> field;
 	llvm::StructType *mystruct = llvm::StructType::create(context, "struct."+name);
 	for(auto it = var_decls.begin(); it != var_decls.end(); it++) {
@@ -1459,32 +1460,15 @@ llvm::Value *StructAST::codegen(Program &f_list) {
 				member->get_type() == AST_VARIABLE ? 
 					((VariableAST *)member)->info.type : 
 					((VariableDeclAST *)member)->info.type;
-			auto create_array_ty = [&]() -> llvm::Type * {
-				int count = 1;
-				llvm::Type *ty;
-				ExprType *next_ = member_ty.next;
-				while(next_ && next_->is_array()) {
-					next_ = next_->next;	
-					count++;
-				}
-				ty =
-					next_->eql_type(T_STRING) ? 
-						(llvm::Type *)builder.getInt8PtrTy() : 
-						(llvm::Type *)builder.getInt32Ty();
-				while(count--) ty = ty->getPointerTo();
-				return ty;
-			};
-			field.push_back(
-					member_ty.eql_type(T_STRING) ? 
-						builder.getInt8PtrTy() : 
-						member_ty.is_array() ? 
-							create_array_ty() : 
-							builder.getInt32Ty());
+			members_ty.push_back(member_ty);
 		}
 	}
-	mystruct->setBody(field, false);
-
 	f_list.structs.append(name, members, mystruct);
+	for(auto &m : members_ty) {
+		field.push_back(type_to_llvmty(f_list, &m));
+	}
+	if(mystruct->isOpaque())
+		mystruct->setBody(field, false);
 	return nullptr;
 }
 

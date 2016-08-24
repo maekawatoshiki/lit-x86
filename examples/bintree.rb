@@ -1,28 +1,31 @@
 require "std"
 
 struct Tree
-	use?
+	use
 	key
 	val
 	left:Tree
 	right:Tree
 end
 
-def set(a:Tree, key, val):Tree
-	if a.use? == false
+def set(a:Tree, key, val, n):Tree
+	puts "n:",n
+	puts "key:", key
+	puts "use:", a.use
+	if a.use == false
 		a.key = key
 		a.val = val
-		a.use? = true
+		a.use = true
 	elsif key < a.key 
 		if nil == a.left
 			a.left = new Tree
 		end
-		set(a.left, key, val)
+		a.left = set(a.left, key, val, n+1)
 	elsif a.key < key
 		if nil == a.right
 			a.right = new Tree
 		end
-		set(a.right, key, val)
+		a.right = set(a.right, key, val, n+1)
 	end
 	a
 end
@@ -55,8 +58,8 @@ def show(a:Tree, n)
 end
 
 a = new Tree
-Math::random_init
-for i in 0...20
-	a = a.set(Math::random % 100, Math::random % 100)
-end
+a = a.set(5, 3, 1)
+a = a.set(2, 8, 1)
+a = a.set(9, 2, 1)
+a = a.set(8, 2, 1)
 show a, 1
