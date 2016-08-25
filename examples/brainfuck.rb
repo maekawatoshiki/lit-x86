@@ -1,35 +1,17 @@
 require "std"
 
-struct HASH
-	use
+struct Hash
 	key
 	val
 	height
-	a:HASH
-	b:HASH
+	a:Hash
+	b:Hash
 end
 
-def set(a:HASH, key, val):HASH
-	if a.use == false
-		a.val = val
-		a.key = key
-		a.height = 1
-		a.use = true
-		return a
-	elsif a.key < key
-		if a.b == nil
-			a.b = new HASH
-		end
-		a.b = set(a.b, key, val)
-	elsif key < a.key
-		if a.a == nil
-			a.a = new HASH
-		end
-		a.a = set(a.a, key, val)
-	end
-	balance(a)
+def insert(ref a:Hash, key, val):Hash
+	a = set_hash(a, key, val)
 end
-def get(a:HASH, key)
+def get(a:Hash, key)
 	if key == a.key
 		return a.val
 	elsif a.key < key
@@ -43,23 +25,38 @@ def get(a:HASH, key)
 	end
 	nil
 end
-def diff_height(a:HASH)
+
+def set_hash(a:Hash, key, val):Hash
+	if a == nil
+		a = new Hash
+		a.val = val
+		a.key = key
+		a.height = 1
+		return a
+	elsif a.key < key
+		a.b = set_hash(a.b, key, val)
+	elsif key < a.key
+		a.a = set_hash(a.a, key, val)
+	end
+	balance(a)
+end
+def diff_height(a:Hash)
 	get_height(a.b) - get_height(a.a)
 end
-def get_height(a:HASH)
+def get_height(a:Hash)
 	if a
 		a.height
 	else
 		0
 	end
 end
-def fix_height(a:HASH)
+def fix_height(a:Hash)
 	l = get_height(a.a)
 	r = get_height(a.b)
 	a.height = util::max l + 1, r + 1
 end
 
-def balance(a:HASH):HASH
+def balance(a:Hash):Hash
 	fix_height(a)
 	if diff_height(a) == 2
 		if diff_height(a.b) < 0
@@ -75,7 +72,7 @@ def balance(a:HASH):HASH
 	a
 end
 
-def rotateL(a:HASH):HASH
+def rotateL(a:Hash):Hash
 	l = a.b
 	a.b = l.a
 	l.a = a
@@ -83,7 +80,7 @@ def rotateL(a:HASH):HASH
 	fix_height(l)
 	l
 end
-def rotateR(a:HASH):HASH
+def rotateR(a:Hash):Hash
 	r = a.a
 	a.a = r.b ##err
 	r.b = a
@@ -92,11 +89,24 @@ def rotateR(a:HASH):HASH
 	r
 end
 
+struct Token
+	ch:char
+	num
+	jmp
+end
+def operator + (a:Token[], tok:Token):Token[]
+	size = builtinlength(a) + 1
+	cpy = new Token size
+	for i in 0...size-1
+		cpy[i] = a[i]
+	end
+	cpy[size-1] = tok
+	cpy
+end
+
 print "file name of brainfuck you want to run: "
 s = File::read gets
-jmp = new HASH
-tape = new int 1000
-pos = 0
+jmp = new Hash
 brackets = []:int
 slen = length s
 for i in 0...slen
@@ -105,11 +115,13 @@ for i in 0...slen
 	elsif s[i] == ']'
 		a = brackets.back()
 		brackets.pop_back()
-		jmp = jmp.set(i, a)
-		jmp = jmp.set(a, i)
+		jmp.insert(i, a)
+		jmp.insert(a, i)
 	end
 end
 
+tape = new int 1000
+pos = 0
 for i in 0...slen
 	if s[i] == '+'
 		tape[pos] += 1

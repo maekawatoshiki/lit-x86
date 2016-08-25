@@ -752,14 +752,6 @@ Function FunctionAST::codegen(Program &f_list) { // create a prototype of functi
 			var_t *v = ((VariableDeclAST *)*it)->append(f, f_list);
 			llvm::Type *llvm_type;
 			llvm_type = type_to_llvmty(f_list, &v->type);
-			if(!llvm_type) {
-				ExprType *tt = &v->type; int arg_count = 0;
-				std::cout << tt->to_string() << std::endl;
-				while(tt->is_array()) { tt = tt->next; arg_count++; }
-				llvm_type = f_list.structs.get(tt->get().user_type)
-					->strct->getPointerTo();
-				while(arg_count--) llvm_type = llvm_type->getPointerTo();
-			}
 			ExprType *type = new ExprType(v->type);
 			if(v->type.is_ref()) {
 				llvm_type = llvm_type->getPointerTo();
@@ -1334,21 +1326,6 @@ llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, ExprType *
 			v->type = v_ty;
 			v->type.set_ref(ref);
 		}
-	// struct_t *strct = f_list.structs.get(ty.get().user_type);
-	// if(!strct) error("error in DotOpAST");
-	// int a = 0;
-	// ExprType member_ty;
-	// if(member->get_type() != AST_VARIABLE) puts("error in DotOpAST");
-	// for(auto it = strct->members.begin(); it != strct->members.end(); ++it){ 
-	// 	if(it->name == ((VariableAST *)member)->info.name) {
-	// 		member_ty.change(new ExprType(it->type));
-	// 		break;
-	// 	}
-	// 	a++;
-	// }
-	// llvm::Value *ret = builder.CreateStructGEP(parent, a);
-	// ret = builder.CreateLoad(ret, "load_tmp");
-	// ret_ty->change(new ExprType(member_ty));
 		if(first_decl) {
 			llvm::AllocaInst *ai;
 			llvm::Type *decl_type = type_to_llvmty(f_list, &v_ty);
