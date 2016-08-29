@@ -623,14 +623,7 @@ namespace Codegen {
 
 		void *prog_ptr = exec_engine->getPointerToFunction(module->getFunction("main"));
 		int (*program_entry)() = (int (*)())(int*)prog_ptr;
-		if(fork() == 0) {
-			program_entry(); // run
-		}
-		int status;
-		wait(&status);
-		if(!WIFEXITED(status)) {
-			printf("** process terminated (%04x) **\n", status);
-		}
+		program_entry(); // run
 		return 0;
 	}
 
