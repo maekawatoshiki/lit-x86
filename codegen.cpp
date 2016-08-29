@@ -623,7 +623,15 @@ namespace Codegen {
 
 		void *prog_ptr = exec_engine->getPointerToFunction(module->getFunction("main"));
 		int (*program_entry)() = (int (*)())(int*)prog_ptr;
-		return program_entry(); // run
+		if(fork() == 0) {
+			program_entry(); // run
+		}
+		int status;
+		wait(&status);
+		if(!WIFEXITED(status)) {
+			printf("** process terminated (%04x) **\n", status);
+		}
+		return 0;
 	}
 
 	llvm::Value *expression(Function &f, Program &f_list, AST *ast, ExprType *ty) {
@@ -1315,18 +1323,17 @@ llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, ExprType *
 			mod->getOrInsertGlobal(v->name, type_to_llvmty(f_list, &v_ty));
 			llvm::GlobalVariable *gbl = mod->getNamedGlobal(v->name);
 			// gbl->setLinkage(llvm::GlobalValue::CommonLinkage);
-			gbl->setAlignment(4);
+			gbl->setAlignment(sizeof(void *));
 			gbl->setInitializer(llvm::ConstantInt::get(builder.getInt32Ty(), 0));
 			v->val = gbl;
 		}
 		builder.CreateStore(val, v->val);
 	} else {
-		if(var->get_type() == AST_VARIABLE) {
+		if(first_decl) {
 			bool ref = v->type.is_ref();
 			v->type = v_ty;
 			v->type.set_ref(ref);
-		}
-		if(first_decl) {
+
 			llvm::AllocaInst *ai;
 			llvm::Type *decl_type = type_to_llvmty(f_list, &v_ty);
 			if(decl_type== nullptr) {// user type

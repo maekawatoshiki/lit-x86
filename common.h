@@ -76,4 +76,10 @@
 #include <valarray>
 #include <vector>
 
+// LINUX
+#include <unistd.h>
+#include <sys/types.h>
+#include <sys/wait.h>
+
+
 #endif
