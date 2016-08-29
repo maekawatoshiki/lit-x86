@@ -3,7 +3,7 @@ def f1
 end
 
 def f2 x
-	puts x
+	puts(x)
 end
 
-f1
+f1()

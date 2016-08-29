@@ -1,3 +1,3 @@
 require "std"
 
-puts "He{}o{}" % 11 % "World"
+puts("He{}o{}" % 11 % "World")

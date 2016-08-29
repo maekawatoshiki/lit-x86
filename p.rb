@@ -17,8 +17,8 @@ def prime i
 end
 
 for i in 2...100
-	if prime i
-		puts i " is prime"
+	if prime(i)
+		puts(i, " is prime")
 	end
 end
 

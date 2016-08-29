@@ -6,4 +6,4 @@ def fibo n
 	end		
 end
 
-puts fibo 40
+puts(fibo(40))

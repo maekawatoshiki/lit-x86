@@ -339,29 +339,16 @@ AST *Parser::expr_primary() {
 				std::vector<std::string> func_name = module;
 				func_name.push_back(name);
 				if(!is_func(func_name)) { func_name = mod_name; func_name.push_back(name); }
-			if((has_pare=tok.skip("(")) || 
-					(is_func(func_name) &&
-					 tok.get().val != "=" &&
-					 tok.get().val != "+=" &&
-					 tok.get().val != "-=" && 
-					 tok.get().val != "*=" && 
-					 tok.get().val != "/=" && 
-					 tok.get().val != "%=" &&
-					 !is_local_var(name))) { // function
+			if(tok.skip("(")) { // function
 				func_t f = {
 					.name = name,
 					.mod_name = mod_name
 				};
 				std::vector<AST *> args;
-				if(tok.get().type != TOK_END && 
-						(tok.get().type != TOK_SYMBOL || tok.get().val == "-" ||
-						 tok.get().val == "<" || tok.get().val == "(" || 
-						 tok.get().val == "[" || tok.get().val == "$")) {
-					while(!tok.is(")") && !tok.is(";")) {
-						args.push_back(expr_entry());
-						tok.skip(",");
-					}
-				} if(has_pare) tok.skip(")");
+				while(!tok.skip(")") && !tok.is(";")) {
+					args.push_back(expr_entry());
+					tok.skip(",");
+				}
 				return new FunctionCallAST(f, args);
 			} else { // variable
 				var_t v = {

@@ -9,9 +9,9 @@ def bigPrint(a:int[])
 	end
 
 	for i = bgn, i >= 0, i -= 1
-		printf "%d", a[i]
+		printf("%d", a[i])
 	end 
-	puts
+	puts()
 end
 
 def bigSet(a:int[], b)

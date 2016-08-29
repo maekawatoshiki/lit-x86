@@ -53,7 +53,7 @@ end
 def fix_height(a:Hash)
 	l = get_height(a.a)
 	r = get_height(a.b)
-	a.height = util::max l + 1, r + 1
+	a.height = util::max(l + 1, r + 1)
 end
 
 def balance(a:Hash):Hash
@@ -90,21 +90,21 @@ def rotateR(a:Hash):Hash
 end
 
 def show(a:Hash, n)
-	puts a.key, "({})" % (a.height)
+	puts(a.key, "({})" % (a.height))
 	if a.a
-		print " " * n, "L"
+		print(" " * n, "L")
 		show(a.a, n+1)
 	end
 	if a.b
-		print " " * n, "R"
+		print(" " * n, "R")
 		show(a.b, n+1)
 	end
 end
 
 a = new Hash
-Math::random_init
+Math::random_init()
 for i in 0...20
-	a.insert(Math::random % 10000, Math::random % 1000)
+	a.insert(Math::random() % 10000, Math::random() % 1000)
 end
 show(a, 1)
 

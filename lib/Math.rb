@@ -22,7 +22,7 @@ end
 module Math
 	module Prime
 		def is p
-			prime_is p
+			prime_is(p)
 		end
 		def list maxsize:int :int[]
 			prime_list = new int maxsize
@@ -48,16 +48,16 @@ module Math
 		end
 	end
 	def gcd a b
-		math_gcd a b
+		math_gcd(a b)
 	end
 	def lcm a b
-		math_lcm a b
+		math_lcm(a b)
 	end
 	def factorial i
-		math_fact i
+		math_fact(i)
 	end
 	def even i
-		math_even i
+		math_even(i)
 	end
 	def even i:int64
 		if i % 2 == 0
@@ -67,7 +67,7 @@ module Math
 		end
 	end
 	def odd i
-		math_odd i
+		math_odd(i)
 	end
 	def odd i:int64
 		if i % 2
@@ -77,7 +77,7 @@ module Math
 		end
 	end
 	def abs i
-		math_abs i
+		math_abs(i)
 	end
 	def abs f:double :double
 		if f < 0.0
@@ -90,25 +90,25 @@ module Math
 		<double><int>f
 	end
 	def random 
-		math_rand
+		math_rand()
 	end
 	def random_init n
-		math_rand_set n
+		math_rand_set(n)
 	end
 	def random_init
-		math_rand_set Time::time.tm_sec
+		math_rand_set(Time::time().tm_sec)
 	end
 	def log x:double :double
-		math_log x
+		math_log(x)
 	end
 	def exp x:double :double
-		math_exp x
+		math_exp(x)
 	end
 	def pow(a:double, b:double):double
-		math_pow a b
+		math_pow(a b)
 	end
 	def pow(b:int64, p:int64):int64
-		pow b p 9223372036854775807
+		pow(b p 9223372036854775807)
 	end
 	def pow(b:int64, p:int64, m:int64):int64
 		res = <int64> 1

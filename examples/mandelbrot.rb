@@ -20,13 +20,13 @@ def m c_x:double, c_y:double, n
 end
 def print_density d
 	if d > 8
-		print ' '
+		print(' ')
 	elsif d > 4
-		print '.'
+		print('.')
 	elsif d > 2
-		print '*'
+		print('*')
 	else
-		print '+'
+		print('+')
 	end
 end
 
@@ -42,7 +42,7 @@ y = 0.0
 x_length = ($x_max - $x_min) / $dx;
 for y = $y_max, y > $y_min, y -= $dy
 	for x = $x_min, x < $x_max, x += $dx 
-		print_density m(x, y, 300)
+		print_density(m(x, y, 300))
 	end
-	puts
+	puts()
 end

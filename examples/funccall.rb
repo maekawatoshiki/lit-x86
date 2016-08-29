@@ -9,13 +9,13 @@ def one
 end
 
 def calc x y
-	x + y + one
+	x + y + one()
 end
 
 def no_use
-	puts 'A'
+	puts('A')
 end
 
-a = calc 1, 2
-a = a + calc 2, 3
-puts a - Calc::calc 2 3
+a = calc(1, 2)
+a = a + calc(2, 3)
+puts(a - Calc::calc(2, 3))

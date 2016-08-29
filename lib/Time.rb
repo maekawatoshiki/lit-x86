@@ -17,21 +17,21 @@ end
 
 module Time
 	def new:TIME
-		_lib_time_time
+		_lib_time_time()
 	end
 	def time:TIME
-		_lib_time_time
+		_lib_time_time()
 	end
 	def sleep sec
-		_lib_time_sleep <double>sec
+		_lib_time_sleep(<double>sec)
 	end
 	def sleep sec:double
-		_lib_time_sleep sec
+		_lib_time_sleep(sec)
 	end
 end
 
 def get(ref t:TIME):TIME
-	t = Time::time
+	t = Time::time()
 end
 def to_string(t:TIME):string
 	"{}-{}-{} {}:{}:{}" % (1900+t.tm_year) % (1+t.tm_mon) % t.tm_mday % t.tm_hour % t.tm_min % t.tm_sec

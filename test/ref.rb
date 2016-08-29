@@ -6,6 +6,6 @@ end
 
 a = 1
 if a == 1
-	set10 a
-	puts a
+	set10(a)
+	puts(a)
 end

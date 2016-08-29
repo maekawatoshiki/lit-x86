@@ -20,11 +20,11 @@ def pi
       a[b] = d % g
       d = d / g
     end
-		printf "%04d " e + d / f
+		printf("%04d ", e + d / f)
 		if c % 112 == 0
-			puts ""
+			puts()
 		end
   end
 end
 
-puts pi
+puts(pi())

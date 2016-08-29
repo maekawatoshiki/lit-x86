@@ -53,7 +53,7 @@ end
 def fix_height(a:Hash)
 	l = get_height(a.a)
 	r = get_height(a.b)
-	a.height = util::max l + 1, r + 1
+	a.height = util::max(l + 1, r + 1)
 end
 
 def balance(a:Hash):Hash
@@ -89,26 +89,11 @@ def rotateR(a:Hash):Hash
 	r
 end
 
-struct Token
-	ch:char
-	num
-	jmp
-end
-def operator + (a:Token[], tok:Token):Token[]
-	size = builtinlength(a) + 1
-	cpy = new Token size
-	for i in 0...size-1
-		cpy[i] = a[i]
-	end
-	cpy[size-1] = tok
-	cpy
-end
-
-print "file name of brainfuck you want to run: "
-s = File::read gets
+print("file name of brainfuck you want to run: ")
+s = File::read(gets())
 jmp = new Hash
 brackets = []:int
-slen = length s
+slen = s.length()
 for i in 0...slen
 	if s[i] == '['
 		brackets += i
@@ -132,23 +117,17 @@ for i in 0...slen
 	elsif s[i] == '<'
 		pos -= 1
 	elsif s[i] == '.'
-		print <char>tape[pos]
+		print(<char>tape[pos])
 	elsif s[i] == ','
-		tape[pos] = <int>getc
+		tape[pos] = <int>getc()
 	elsif s[i] == '['
 		if tape[pos] == 0
 			i = jmp.get(i)
-			# i = jmplabel[i]
 		end
 	elsif s[i] == ']'
 		if tape[pos] != 0
 			i = jmp.get(i)
-			# i = jmplabel[i]
 			i -= 1
 		end
 	end
 end
-
-
-
-

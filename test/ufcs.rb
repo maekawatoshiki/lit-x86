@@ -2,7 +2,7 @@ require "std"
 
 def sum a:int[]
 	all = 0
-	for i in 0...length a
+	for i in 0...length(a)
 		all += a[i]
 	end
 	all

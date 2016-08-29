@@ -6,6 +6,6 @@ def fact(n)
 	end
 end
 
-puts fact(10)
+puts(fact(10))
 
 

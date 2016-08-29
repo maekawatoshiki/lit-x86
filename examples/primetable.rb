@@ -15,4 +15,4 @@ def table max
 end
 
 N = 10000000
-puts "found " table(N) " primes between 2 and " N
+puts("found ", table(N), " primes between 2 and ", N)

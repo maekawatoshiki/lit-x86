@@ -19,33 +19,33 @@ module File
 		new FILE
 	end
 	def open name:string mode:string
-		file_open name mode
+		file_open(name mode)
 	end
 	def open name:string
-		file_open name "r"
+		file_open(name "r")
 	end
 	def write id str:string
-		file_write id str
+		file_write(id str)
 	end
 	def read id:int :string
-		file_read id 
+		file_read(id)
 	end
 	def read name:string :string
-		id = open name
+		id = open(name)
 		if id == 0
 			return "error: no such file or directory"
 		end
-		content = read id
-		file_close id
+		content = read(id)
+		file_close(id)
 		content
 	end
 	def dir_list_one(dir:string):string
-		File_dir_list dir
+		File_dir_list(dir)
 	end
 	def dir_list(dir:string):string[]
 		list = []:string
 		while true
-			dir = File::dir_list_one "."
+			dir = File::dir_list_one(".")
 			if dir == nil
 				break
 			end
@@ -54,21 +54,21 @@ module File
 		list
 	end
 	def close id
-		file_close id
+		file_close(id)
 	end
 	def size id
-		File_size_by_id id 
+		File_size_by_id(id)
 	end
 	def ctime(id):TIME
-		File_ctime id
+		File_ctime(id)
 	end
 
 	def exist?(name:string)
-		a = File::open name
+		a = File::open(name)
 		if a == 0
 			false
 		else
-			File::close a
+			File::close(a)
 			true
 		end
 	end
@@ -79,7 +79,7 @@ def open(ref file:FILE, name:string, mode:string):FILE
 	if file.use?
 		file.close()
 	end
-	file.id = File::open name, mode
+	file.id = File::open(name, mode)
 	file.name = name
 	file.use? = true
 	if file.id == 0
@@ -92,18 +92,18 @@ def open(ref file:FILE, name:string):FILE
 	open(file, name, "r")
 end
 def read(file:FILE):string
-	File::read file.id
+	File::read(file.id)
 end
 def write(file:FILE, content:string)
-	File::write file.id, content
+	File::write(file.id, content)
 end
 def close(ref file:FILE)
-	File::close file.id
+	File::close(file.id)
 	file.use? = false
 end
 def size(file:FILE)
-	File::size file.id
+	File::size(file.id)
 end
 def ctime(file:FILE):TIME
-	File::ctime file.id
+	File::ctime(file.id)
 end

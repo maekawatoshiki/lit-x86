@@ -1,17 +1,17 @@
 def length ary:int[]
-	builtinlength ary
+	builtinlength(ary)
 end
 
 def length ary:double[]
-	builtinlength ary
+	builtinlength(ary)
 end
 
 def length ary:string[]
-	builtinlength ary
+	builtinlength(ary)
 end
 
 def length str:string
-	strlen str
+	strlen(str)
 end
 
 module util
@@ -30,7 +30,7 @@ module util
 		end
 	end
 	def geti
-		str_to_int gets
+		str_to_int(gets())
 	end
 end
 
@@ -43,7 +43,7 @@ def not x
 end
 
 def to_int s:string
-	str_to_int s
+	str_to_int(s)
 end
 
 def to_string(s:string):string
@@ -51,24 +51,24 @@ def to_string(s:string):string
 end
 
 def to_string(i):string
-	int_to_str i
+	int_to_str(i)
 end
 
 def to_string(i:int64):string
-	int64_to_str i
+	int64_to_str(i)
 end
 
 def to_string(f:double):string
-	float_to_str f
+	float_to_str(f)
 end
 
 def to_float s:string :double
-	str_to_float s
+	str_to_float(s)
 end
 
 def to_int(s:string[]):int[]
 	out = []:int
-	for i in 0...length s
+	for i in 0...length(s)
 		out += s[i].to_int()
 	end
 	out
@@ -76,7 +76,7 @@ end
 
 def to_float(s:string[]):double[]
 	out = []:double
-	for i in 0...length s
+	for i in 0...length(s)
 		out += s[i].to_float()
 	end
 	out
@@ -152,13 +152,13 @@ def template join(a, s):string
 		ret += a[i].to_string() + s
 	end
 	if 0 < length a
-		ret += a[length(a)-1].to_string
+		ret += a[length(a)-1].to_string()
 	end
 	ret
 end
 
 def split(str:string, ch:char):string[]
-	str_len = length str
+	str_len = length(str)
 	ret = []:string
 	bgn = 0
 	for i in 0...str_len
@@ -174,8 +174,8 @@ def split(str:string, ch:char):string[]
 end
 
 def find base:string s:string # find s from base. if found, return index of base
-	base_len = length base
-	s_len = length s
+	base_len = length(base)
+	s_len = length(s)
 	for i in 0...base_len
 		if base[i] == s[0]
 			flg = 1
@@ -220,7 +220,7 @@ def back(a:string[]):string
 	a[length(a)-1]
 end
 def pop_back(ref a:int[])
-	aln = length a
+	aln = length(a)
 	c = new int aln-1
 	for i in 0...aln-1
 		c[i] = a[i]
@@ -228,7 +228,7 @@ def pop_back(ref a:int[])
 	a = c
 end
 def pop_back(ref a:string[])
-	aln = length a
+	aln = length(a)
 	c = new int aln-1
 	for i in 0...aln-1
 		c[i] = a[i]
@@ -268,14 +268,14 @@ def operator+ a:string[] x:string :string[]
 end
 
 def operator + (a:int[], b:int[]):int[]
-	for i in 0...length b
+	for i in 0...length(b)
 		a += b[i]
 	end
 	a
 end
 
 def operator + (a:string[], b:string[]):string[]
-	for i in 0...length b
+	for i in 0...length(b)
 		a += b[i]
 	end
 	a
@@ -299,9 +299,9 @@ end
 
 # operators for string
 def str_eql a:string b:string
-	a_len = length a
-	b_len = length b
-	a_len = util::min a_len, b_len
+	a_len = length(a)
+	b_len = length(b)
+	a_len = util::min(a_len, b_len)
 	for i in 0...a_len
 		if a[i] != b[i]
 			return a[i] - b[i]
@@ -311,20 +311,20 @@ def str_eql a:string b:string
 end
 
 def operator == a:string b:string
-	if str_eql a b; false; else; true; end
+	if str_eql(a b); false; else; true; end
 end
 
 def operator != a:string b:string
-	if str_eql a b; true; else; false; end
+	if str_eql(a b); true; else; false; end
 end
 
 def operator < a:string b:string
-	diff = str_eql a b
+	diff = str_eql(a b)
 	if diff < 0; 1; else; 0; end
 end
 
 def operator > a:string b:string
-	diff = str_eql a b
+	diff = str_eql(a b)
 	if diff > 0; 1; else; 0; end
 end
 
