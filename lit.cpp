@@ -11,22 +11,6 @@
 
 char *File_read(char *s, int len, FILE *fp) { fread(s, 1, len, fp); return s; }
 
-void putNumber(int32_t n) {
-	printf("%d", n);
-}
-void putString(int32_t *n) {
-	printf("%s", (char *)n);
-}
-void putln() { printf("\n"); }
-
-void ssleep(uint32_t t) {
-#if defined(WIN32) || defined(WINDOWS)
-	Sleep(t * CLOCKS_PER_SEC / 1000);
-#else
-	usleep(t * CLOCKS_PER_SEC / 1000);
-#endif
-}
-
 namespace LitMemory {
 	class MemoryInfo {
 		void *addr;
@@ -153,90 +137,6 @@ namespace LitMemory {
 		}
 	}
 };
-
-char *rea_concat(char *a, char *b) {
-	char *t = (char *)LitMemory::alloc(strlen(a) + strlen(b) + 1, 1);
-	strcpy(t, a);
-	return strcat(t, b);
-}
-char *rea_concat_char(char *a, int b) {
-	char *t = (char *)LitMemory::alloc(strlen(a) + 2, 1);
-	strcpy(t, a);
-	t[strlen(t)] = b;
-	return t;
-}
-char *str_replace(char *s, char *b, char *a) { // replace from b to a in s
-	std::string str = s;
-	std::string from = b;
-	std::string to = a;
-	std::string::size_type pos = str.find(from);
-	while(pos != std::string::npos){
-		str.replace(pos, from.size(), to);
-		pos = str.find(from, pos + to.size());
-	}
-	char *ret = (char *)LitMemory::alloc(str.size() + 1, sizeof(char));
-	strcpy(ret, str.c_str());
-	return ret;
-}
-uint32_t str_split(char *s, char *t) { // divide s by t, and make them array  
-	std::vector<std::string> splited;
-	char *str = (char *)malloc(strlen(s) + 1);
-	strcpy(str, s);
-	char *p = strtok(str, t);
-	splited.push_back(p);
-	while(p != NULL) {
-		p = strtok(NULL, t);
-		if(p != NULL)
-			splited.push_back(p);
-	}
-	uint64_t *ary = (uint64_t *)LitMemory::alloc(splited.size(), sizeof(int64_t));
-	for(int i = 0; i < splited.size(); i++) {
-		char *ss = (char *)LitMemory::alloc(splited[i].size() + 1, sizeof(char));
-		strcpy(ss, splited[i].c_str());
-		ary[i] = (uint64_t)ss;
-	}
-	return (uint64_t)ary;
-}
-char *gets_stdin() {
-	char *str;	
-	std::string input;
-	std::getline(std::cin, input);
-	str = (char *)LitMemory::alloc(input.size() + 1, ADDR_SIZE);
-	strcpy(str, input.c_str());
-	return str;
-}
-int streql(char *a, char *b) { return strcmp(a, b) == 0 ? 1 : 0; }
-int strne(char *a, char *b) { return strcmp(a, b) != 0 ? 1 : 0; }
-char *str_copy(char *_s) { return strcpy((char *)LitMemory::alloc(strlen(_s) + 1, sizeof(char)), _s); }
-
-void *funcTable[] = {
-	(void *) putNumber, // 0
-	(void *) putString, // 4
-	(void *) putln,			// 8
-	(void *) LitMemory::alloc, 		// 12
-	(void *) printf, 		// 16
-	(void *) LitMemory::delete_ptr,// 20
-	(void *) ssleep, 		// 24
-	(void *) fopen, 		// 28
-	(void *) fprintf, 	// 32
-	(void *) fclose,		// 36
-	(void *) File_read,	// 40
-	(void *) LitMemory::append_ptr,	// 44
-	(void *) LitMemory::free_all_mem,	// 48
-	(void *) gets_stdin, 		// 52
-	(void *) rea_concat,// 56
-	(void *) putchar,			// 60
-	(void *) strlen,		// 64
-	(void *) LitMemory::get_size, // 68
-	(void *) LitMemory::gc,	// 72
-	(void *) rea_concat_char, // 76
-	(void *) streql,		// 80
-	(void *) strne, 		// 84
-	(void *) str_replace,	// 88
-	(void *) str_split,		// 92
-	(void *) str_copy,		// 96
-};
-
 
 // Lit class is from here
 

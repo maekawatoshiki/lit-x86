@@ -54,7 +54,4 @@ namespace LitMemory {
 	bool is_allocated_addr(void *);
 };
 
-void putNumber(int);
-void putString(int *);
-void putln();
 #endif
