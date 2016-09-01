@@ -34,7 +34,8 @@ module Base64
 	end
 	def fixstr(str:string):string
 		n = str.length() % 4;
-		if n > 0; n = 4 - n; end
+		if n == 0; return str; end
+		n = 4 - n
 		str + "=" * n
 	end
 

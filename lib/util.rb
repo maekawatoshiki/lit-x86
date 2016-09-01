@@ -329,8 +329,8 @@ def operator > a:string b:string
 end
 
 def operator* a:string n:int :string	
-	res = a
-	for i in 0...n-1
+	res = ""
+	for i in 0...n
 		res += a
 	end
 	res
