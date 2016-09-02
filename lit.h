@@ -51,6 +51,8 @@ namespace LitMemory {
 	void append_ptr(void *);
 	void delete_ptr(void *);
 	uint32_t get_size(void *);
+	uint32_t get_real_size(void *);
+	void set_size(void *, int);
 	bool is_allocated_addr(void *);
 };
 

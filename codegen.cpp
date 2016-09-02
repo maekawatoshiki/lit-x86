@@ -81,6 +81,7 @@ extern "C" {
 	void put_ln() {
 		putchar('\n');
 	}
+	//***********************************************************************************/
 	void *create_array(uint32_t size, uint32_t byte) {
 		return LitMemory::alloc(size, byte);
 	}
@@ -99,6 +100,20 @@ extern "C" {
 		t[0] = a;
 		strcpy(&(t[1]), b);
 		return t;
+	}
+	int *int_array_push_int(int *a, int n) {
+		int size = LitMemory::get_size(a), realsize = LitMemory::get_real_size(a);
+		if(size + 1 > realsize) {
+			size = size + 1;
+			int *mem = (int *)LitMemory::alloc(size, sizeof(int));
+			memcpy(mem, a, sizeof(int) * (size-1));
+			mem[size-1] = n;
+			LitMemory::set_size(mem, size );
+			return mem;
+		}
+		a[size] = n;
+		LitMemory::set_size(a, size + 1);
+		return a;
 	}
 	char *str_copy(char *a) {
 		char *t = (char *)LitMemory::alloc(strlen(a) + 1, sizeof(char));
@@ -185,6 +200,7 @@ namespace Codegen {
 			stdfunc["put_string"] = {"put_string", 1, T_VOID};
 			stdfunc["strcat"] = {"strcat", 2, T_STRING};
 			stdfunc["concat_char_str"] = {"concat_char_str", 2, T_STRING};
+			stdfunc["int_array_push_int"] = {"int_array_push_int", 2, T_ARRAY};
 			stdfunc["str_to_int"] = {"str_to_int", 1, T_INT};
 			stdfunc["str_to_float"] = {"str_to_float", 1, T_DOUBLE};
 			stdfunc["int_to_str"] = {"int_to_str", 1, T_STRING};
@@ -383,6 +399,15 @@ namespace Codegen {
 					llvm::GlobalValue::ExternalLinkage,
 					"str_concat_char_str", mod);
 			stdfunc["concat_char_str"].func = func;
+			func_args.clear();
+			// create int_array_push_int Function
+			func_args.push_back(builder.getInt32Ty()->getPointerTo());
+			func_args.push_back(builder.getInt32Ty());
+			func = llvm::Function::Create(
+					llvm::FunctionType::get(/*ret*/builder.getInt32Ty()->getPointerTo(), func_args, false),
+					llvm::GlobalValue::ExternalLinkage,
+					"int_array_push_int", mod);
+			stdfunc["int_array_push_int"].func = func;
 			func_args.clear();
 			// create append_addr_for_gc Function
 			func_args.push_back(builder.getVoidTy()->getPointerTo());
@@ -1130,6 +1155,12 @@ llvm::Value * BinaryAST::codegen(Function &f, Program &f_list, ExprType *ty) {
 			func_args.push_back(rhs);
 			llvm::Value *ret = builder.CreateCall(stdfunc["concat_char_str"].func, func_args);
 			ty->change(T_STRING);
+			return ret;	
+		} else if(ty_l.eql_type(T_ARRAY) && ty_r.eql_type(T_INT)) {
+			std::vector<llvm::Value*> func_args;
+			func_args.push_back(lhs);
+			func_args.push_back(rhs);
+			llvm::Value *ret = builder.CreateCall(stdfunc["int_array_push_int"].func, func_args);
 			return ret;	
 		} else if(ty_l.eql_type(T_DOUBLE)) {
 			return builder.CreateFAdd(lhs, rhs, "addtmp");

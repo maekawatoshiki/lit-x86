@@ -237,15 +237,15 @@ def pop_back(ref a:string[])
 end
 
 # operators for array
-def operator+ a:int[] x:int :int[]
-	size = length(a) + 1
-	cpy = new int size
-	for i in 0...size-1
-		cpy[i] = a[i]
-	end
-	cpy[size-1] = x
-	cpy
-end
+# def operator+ a:int[] x:int :int[]
+# 	size = length(a) + 1
+# 	cpy = new int size
+# 	for i in 0...size-1
+# 		cpy[i] = a[i]
+# 	end
+# 	cpy[size-1] = x
+# 	cpy
+# end
 
 def operator+ a:double[] x:double :double[]
 	size = length(a) + 1
