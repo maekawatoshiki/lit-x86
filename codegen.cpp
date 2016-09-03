@@ -524,9 +524,9 @@ namespace Codegen {
 			pass_mgr.run(*module);
 		}
 		if(enable_emit_llvm) module->dump();
-		std::string EC;
-		llvm::raw_fd_ostream out("mod", EC, llvm::sys::fs::OpenFlags::F_None);
-		llvm::WriteBitcodeToFile(module, out);
+		// std::string EC;
+		// llvm::raw_fd_ostream out("mod", EC, llvm::sys::fs::OpenFlags::F_None);
+		// llvm::WriteBitcodeToFile(module, out);
 
 		void *prog_ptr = exec_engine->getPointerToFunction(module->getFunction("main"));
 		int (*program_entry)() = (int (*)())(int*)prog_ptr;
