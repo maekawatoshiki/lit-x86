@@ -14,15 +14,17 @@ char *File_read(char *s, int len, FILE *fp) { fread(s, 1, len, fp); return s; }
 namespace LitMemory {
 	class MemoryInfo {
 		void *addr;
-		size_t size;
+		size_t size, real_size;
 		bool const_mem;
 	public:
 		bool marked;
-		MemoryInfo(void *a, size_t sz, bool const_m = false) : 
-			addr(a), size(sz), marked(false), const_mem(const_m) { 
+		MemoryInfo(void *a, size_t sz, size_t realsz, bool const_m = false) : 
+			addr(a), size(sz), real_size(realsz), marked(false), const_mem(const_m) { 
 		}
 		void *get_addr() { return addr; }
 		uint32_t get_size() { return size; }
+		uint32_t get_real_size() { return real_size; }
+		void set_size(int sz) { size = sz; }
 		bool is_const() { return const_mem; }
 		void mark() { marked = true; }
 		void free_mem() { free(addr); }
@@ -49,17 +51,17 @@ namespace LitMemory {
 	}
 
 	void *alloc_const(uint32_t size) { // allocate constant memory(for string)
-		void *addr = alloc(size, 1);
-		mem_list[(void *)addr] = new MemoryInfo(addr, size, true);
+		void *addr = alloc(size, sizeof(char));
+		mem_list[addr] = new MemoryInfo(addr, size, size*2, true);
 		return addr;	
 	}
 	void *alloc(uint32_t size, uint32_t byte) {
 		if(current_mem >= max_mem) gc(); // if allocated memory is over max_mem, do GC
-		void *addr = calloc(size, byte);
+		void *addr = calloc(size*2, byte);
 		if(!addr) error("LitSystemError: No enough memory");
-		current_mem += size;
+		current_mem += size*2;
 		// std::cout << "*** allocated addr: " << addr << std::endl;
-		mem_list[(void *)addr] = new MemoryInfo(addr, size);
+		mem_list[addr] = new MemoryInfo(addr, size, size*2);
 		newest_ptr = addr;
 		return addr;	
 	}
@@ -73,9 +75,19 @@ namespace LitMemory {
 		if(m == NULL) return 0;
 		return m->get_size();
 	}
+	uint32_t get_real_size(void *addr) {
+		MemoryInfo *m = mem_list[(void *)addr];
+		if(m == NULL) return 0;
+		return m->get_real_size();
+	}
+	void set_size(void *addr, int sz) {
+		MemoryInfo *m = mem_list[(void *)addr];
+		if(m == NULL) return;
+		m->set_size(sz);
+	}
 
 	void append_ptr(void *ptr) {
-		root_ptr[(void *)ptr] = true;
+		root_ptr[ptr] = true;
 	}
 	void delete_ptr(void *ptr) {
 		root_ptr.erase(ptr);
@@ -111,7 +123,7 @@ namespace LitMemory {
 				if(it->second->is_const()) continue;
 				// std::cout << "*** freed success: " << it->second->get_addr() << ", size: " << byte_with_unit(it->second->get_size()) << "bytes ***" << std::endl;
 				it->second->free_mem();
-				current_mem -= it->second->get_size();
+				current_mem -= it->second->get_real_size();
 				mem_list.erase(it);
 			}
 		} 
@@ -132,6 +144,7 @@ namespace LitMemory {
 
 	void free_all_mem() {
 		for(std::map<void *, MemoryInfo *>::iterator it = mem_list.begin(); it != mem_list.end(); ++it) {
+			if(it->second == nullptr) continue;
 			it->second->free_mem();
 			// std::cout << "finalize: freed success: " << it->second->get_addr() << std::endl;
 		}

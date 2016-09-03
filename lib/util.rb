@@ -139,9 +139,8 @@ def substr(str:string, bgn):string
 end
 
 def substr(str:string, bgn, last):string
-	ret = "" + str
-	if last < 0; return ret; end
-	ret = ret.add_addr(bgn)
+	if last < 0; return str; end
+	ret = "" + str.add_addr(bgn)
 	ret[last] = 0
 	"" + ret
 end
@@ -159,12 +158,21 @@ end
 
 def split(str:string, ch:char):string[]
 	str_len = length(str)
-	ret = []:string
 	bgn = 0
+	# chcount = 0
+	# for i in 0...str_len
+	# 	if ch == str[i]
+	# 		chcount += 1
+	# 	end
+	# end
+	# ret = new string chcount
+	ret = []:string
+	# pos = 0
 	for i in 0...str_len
 		if ch == str[i]
 			ret += substr(str, bgn, i-bgn)
 			bgn = i + 1
+			# pos += 1
 		end
 	end
 	if bgn < str_len
@@ -237,15 +245,15 @@ def pop_back(ref a:string[])
 end
 
 # operators for array
-def operator+ a:int[] x:int :int[]
-	size = length(a) + 1
-	cpy = new int size
-	for i in 0...size-1
-		cpy[i] = a[i]
-	end
-	cpy[size-1] = x
-	cpy
-end
+# def operator+ a:int[] x:int :int[]
+# 	size = length(a) + 1
+# 	cpy = new int size
+# 	for i in 0...size-1
+# 		cpy[i] = a[i]
+# 	end
+# 	cpy[size-1] = x
+# 	cpy
+# end
 
 def operator+ a:double[] x:double :double[]
 	size = length(a) + 1
