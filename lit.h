@@ -41,19 +41,4 @@ public:
 	int start();
 };
 
-/* for native(JIT) code. */
-namespace LitMemory {
-	void *alloc(uint32_t, uint32_t);
-	void *alloc_const(uint32_t);
-	void gc();
-	void gc_mark();
-	void gc_sweep();
-	void append_ptr(void *);
-	void delete_ptr(void *);
-	uint32_t get_size(void *);
-	uint32_t get_real_size(void *);
-	void set_size(void *, int);
-	bool is_allocated_addr(void *);
-};
-
 #endif

@@ -3,9 +3,9 @@ CC = clang++-3.5 $(CFLAGS)
 LLVM = `llvm-config-3.5 --cppflags `
 LLVM_LIB = `llvm-config-3.5 --system-libs --cppflags --ldflags --libs all`
 
-lit: main.o lit.o lex.o var.o expr.o parse.o  token.o option.o util.o func.o ast.o codegen.o exprtype.o
+lit: main.o lit.o lex.o var.o expr.o parse.o  token.o option.o util.o func.o ast.o codegen.o exprtype.o stdfunc.o
 	$(CC) -o lit -rdynamic -ldl main.o lit.o lex.o var.o expr.o parse.o \
-		token.o option.o util.o func.o ast.o codegen.o exprtype.o $(LLVM_LIB) 
+		token.o option.o util.o func.o ast.o codegen.o exprtype.o stdfunc.o $(LLVM_LIB) 
 
 main.o: main.cpp common.h
 	$(CC) -c main.cpp $(LLVM) 
@@ -45,6 +45,9 @@ option.o: option.h option.cpp
 
 util.o: util.h util.cpp
 	$(CC) -c util.cpp $(LLVM) 
+
+stdfunc.o: stdfunc.h stdfunc.cpp
+	$(CC) -c stdfunc.cpp $(LLVM)
 
 lib: lit
 	make -j -f lib/Makefile

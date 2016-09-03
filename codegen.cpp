@@ -4,6 +4,7 @@
 #include "exprtype.h"
 #include "util.h"
 #include "parse.h"
+#include "stdfunc.h"
 
 llvm::LLVMContext &context(llvm::getGlobalContext());
 llvm::IRBuilder<> builder(context);
@@ -28,168 +29,6 @@ struct func_body_t { // To define the function that is used before defining
 std::vector<func_body_t> funcs_body;
 std::map<std::string, stdfunc_t> stdfunc;
 
-extern "C" {
-	void put_num(int n) {
-		printf("%d", n);
-	}
-	void put_num64(long long int n) {
-		printf("%lld", n);
-	}
-	void put_num_float(double n) {
-		printf("%.10g", n);
-	}
-	void put_char(char ch) {
-		putchar(ch);
-		fflush(stdout);
-	}
-	void put_string(char *s) {
-		printf("%s", s);
-	}
-	void put_array(int *ary) {
-		int size = LitMemory::get_size(ary);
-		if(size == -1) return;
-		printf("[ ");
-		for(int i = 0; i < size; i++) {
-			if(LitMemory::is_allocated_addr(reinterpret_cast<void *>(ary[i])))
-				put_array(reinterpret_cast<int *>(ary[i]));
-			else
-				printf("%d ", ary[i]);
-		}
-		printf("] ");
-	}
-	void put_array_float(double *ary) {
-		int size = LitMemory::get_size(ary);
-		if(size == -1) return;
-		printf("[ ");
-		for(int i = 0; i < size; i++) {
-			printf("%.10g ", ary[i]);
-		}
-		printf("]");
-	}
-	void put_array_str(char *ary[]) {
-		int size = LitMemory::get_size(ary);
-		if(size == -1) return;
-		printf("[ ");
-		for(int i = 0; i < size; i++) {
-			// if(LitMemory::is_allocated_addr((void *)ary[i]))
-			// 	put_array_str((char **)ary[i]);
-			// else
-				printf("%s ", ary[i]);
-		}
-		printf("]");
-	}
-	void put_ln() {
-		putchar('\n');
-	}
-	//***********************************************************************************/
-	void *create_array(uint32_t size, uint32_t byte) {
-		return LitMemory::alloc(size, byte);
-	}
-	char *str_concat(char *a, char *b) {
-		// char *t = (char *)LitMemory::alloc(strlen(a) + strlen(b) + 1, 1);
-		// strcpy(t, a);
-		// return strcat(t, b);
-		int size = LitMemory::get_size(a), realsize = LitMemory::get_real_size(a);
-		if(size + strlen(b) > realsize) {
-			size = size + strlen(b);
-			char *mem = (char *)LitMemory::alloc(size, sizeof(char));
-			memcpy(mem, a, sizeof(char) * (size-1));
-			// mem[size-2] = n;
-			memmove(&(mem[size-strlen(b)-1]), b, strlen(b));
-			LitMemory::set_size(mem, size);
-			return mem;
-		}
-		memmove(&(a[size-1]), b, strlen(b));
-		LitMemory::set_size(a, size + strlen(b));
-		return a;
-	}
-	char *str_register_to_memmgr(char *a) {
-		int alen = strlen(a);
-		char *newS = (char *)LitMemory::alloc_const(alen + 1);
-		strcpy(newS, a);
-		return newS;
-	}
-	char *str_concat_char(char *a, char n) {
-		int size = LitMemory::get_size(a), realsize = LitMemory::get_real_size(a);
-		if(size + 1 > realsize) {
-			size = size == 0 ? 2 : size + 1;
-			char *mem = (char *)LitMemory::alloc(size, sizeof(char));
-			memcpy(mem, a, sizeof(char) * (size-1));
-			mem[size-2] = n;
-			LitMemory::set_size(mem, size);
-			return mem;
-		}
-		a[size-1] = n;
-		LitMemory::set_size(a, size + 1);
-		return a;
-		// char *t = (char *)LitMemory::alloc(strlen(a) + 2, 1);
-		// t[strlen(strcpy(t, a))] = b;
-		// return t;
-	}
-	char *str_concat_char_str(char a, char *b) {
-		char *t = (char *)LitMemory::alloc(strlen(b) + 2, 1);
-		t[0] = a;
-		strcpy(&(t[1]), b);
-		return t;
-	}
-	int *int_array_push_int(int *a, int n) {
-		int size = LitMemory::get_size(a), realsize = LitMemory::get_real_size(a);
-		if(size + 1 > realsize) {
-			size = size + 1;
-			int *mem = (int *)LitMemory::alloc(size, sizeof(int));
-			memcpy(mem, a, sizeof(int) * (size-1));
-			mem[size-1] = n;
-			LitMemory::set_size(mem, size );
-			return mem;
-		}
-		a[size] = n;
-		LitMemory::set_size(a, size + 1);
-		return a;
-	}
-	char *str_copy(char *a) {
-		char *t = (char *)LitMemory::alloc(strlen(a) + 1, sizeof(char));
-		if(!t) return nullptr;
-		return strcpy(t, a);
-	}
-	char *get_string_stdin() {
-		std::string input_from_stdin;
-		std::getline(std::cin, input_from_stdin);
-		char *ret = (char *)LitMemory::alloc(input_from_stdin.size() + 1, sizeof(char));
-		return strcpy(ret, input_from_stdin.c_str());
-	}
-	int str_to_int(char *str) {
-		return atoi(str);
-	}
-	double str_to_float(char *str) {
-		return atof(str);
-	}
-	char *int_to_str(int n) {
-		char buf[16]; sprintf(buf, "%d", n);
-		return strcpy((char *)LitMemory::alloc(strlen(buf)+1, sizeof(char)), buf);
-	}
-	char *int64_to_str(long long int n) {
-		char buf[32]; sprintf(buf, "%lld", n);
-		return strcpy((char *)LitMemory::alloc(strlen(buf)+1, sizeof(char)), buf);
-	}
-	char *float_to_str(double f) {
-		char buf[16], *ret;
-		sprintf(buf, "%.10g", f);
-		ret = (char *)LitMemory::alloc(strlen(buf)+1, sizeof(char));
-		return strcpy(ret, buf);
-	}
-	int get_memory_length(void *ptr) {
-		return LitMemory::get_size(ptr);
-	}
-	void append_addr_for_gc(void *addr) {
-		LitMemory::append_ptr(addr);
-	}
-	void delete_addr_for_gc(void *addr) {
-		LitMemory::delete_ptr(addr);
-	}
-	void run_gc() {
-		LitMemory::gc();
-	}
-}
 
 llvm::AllocaInst *create_entry_alloca(llvm::Function *TheFunction, std::string &VarName, llvm::Type *type =  nullptr) {
 	llvm::IRBuilder<> TmpB(&TheFunction->getEntryBlock(),
@@ -685,6 +524,9 @@ namespace Codegen {
 			pass_mgr.run(*module);
 		}
 		if(enable_emit_llvm) module->dump();
+		std::string EC;
+		llvm::raw_fd_ostream out("mod", EC, llvm::sys::fs::OpenFlags::F_None);
+		llvm::WriteBitcodeToFile(module, out);
 
 		void *prog_ptr = exec_engine->getPointerToFunction(module->getFunction("main"));
 		int (*program_entry)() = (int (*)())(int*)prog_ptr;
