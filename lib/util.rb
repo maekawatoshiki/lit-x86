@@ -214,6 +214,9 @@ def replace_all(base:string from:string to:string):string
 	end
 	base
 end
+def replace_all!(ref base:string, from:string, to:string):string
+	base = replace_all(base, from, to)
+end
 
 def swap!(ref a, ref b)
 	t = a

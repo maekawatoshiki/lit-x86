@@ -317,112 +317,28 @@ namespace Codegen {
 		Function main;
 		std::vector<AST *> main_code, other_code, gvar_code;
 		for(ast_vector::iterator it = program.begin(); it != program.end(); ++it) {
-			if((*it)->get_type() == AST_FUNCTION) {
+			if(
+					(*it)->get_type() == AST_FUNCTION ||
+					(*it)->get_type() == AST_LIBRARY  ||
+					(*it)->get_type() == AST_MODULE   ||
+					(*it)->get_type() == AST_STRUCT
+				) {
 				other_code.push_back(*it);
-			} else if((*it)->get_type() == AST_LIBRARY) {
-				other_code.push_back(*it);
-			} else if((*it)->get_type() == AST_MODULE) {
-				other_code.push_back(*it);
-			} else if((*it)->get_type() == AST_STRUCT) {
-				other_code.push_back(*it);
-			} else if((*it)->get_type() == AST_VARIABLE_ASGMT) {
-				if(((VariableAsgmtAST *)(*it))->var->get_type() == AST_VARIABLE) {
-					VariableAST *var = (VariableAST *)((VariableAsgmtAST *)(*it))->var;
-					if(var->info.is_global == true) 
-						gvar_code.push_back(*it);
-					else
-						main_code.push_back(*it);
-				} else 
-					main_code.push_back(*it);
 			} else {
 				main_code.push_back(*it);
 			}
 		}
-		llvm::Function *func_init_gvar = llvm::Function::Create(
-				llvm::FunctionType::get(builder.getVoidTy(), std::vector<llvm::Type *>(), false),
-				llvm::Function::ExternalLinkage, "init_gvar", mod);
-		{
-			Function init_gvar;
-			// create entry point of main function
-			llvm::BasicBlock *entry = llvm::BasicBlock::Create(context, "entry", func_init_gvar);
-			builder.SetInsertPoint(entry);
 
-			for(auto g = gvar_code.begin(); g != gvar_code.end(); ++g) {
-				ExprType ty;
-				((VariableAsgmtAST *)*g)->codegen(init_gvar, list, &ty);
-			}
-			builder.CreateRetVoid();
-		}
 		for(auto code = other_code.begin(); code != other_code.end(); ++code) {
 			switch((*code)->get_type()) {
-				case AST_FUNCTION:
-					((FunctionAST *)*code)->codegen(list);
-					break;
-				case AST_LIBRARY: 
-					((LibraryAST *)*code)->codegen(list);
-					break;
-				case AST_MODULE:
-					((ModuleAST *)*code)->codegen(list);
-					break;
-				case AST_STRUCT:
-					((StructAST *)*code)->codegen(list);
-					break;
-				default:
-					error("what happened?");
+				case AST_FUNCTION: ((FunctionAST *)*code)->codegen(list); break;
+				case AST_LIBRARY:  ((LibraryAST *)*code)->codegen(list); break;
+				case AST_MODULE:   ((ModuleAST *)*code)->codegen(list); break;
+				case AST_STRUCT:   ((StructAST *)*code)->codegen(list); break;
+				default:				   error("what happened?");
 			}
 		}
 
-		// // create functions' body
-		// for(auto fn = funcs_body.begin(); fn != funcs_body.end(); ++fn) {
-		// 	list.cur_mod = fn->cur_mod;
-		// 	llvm::BasicBlock *entry = llvm::BasicBlock::Create(context, "entry", fn->func);
-		// 	builder.SetInsertPoint(entry);
-		//
-		// 	// set argment variable names and store
-		// 	auto arg_types_it = fn->arg_types.begin();
-		// 	auto arg_names_it = fn->arg_names.begin();
-		// 	for(auto arg_it = fn->func->arg_begin(); arg_it != fn->func->arg_end(); ++arg_it) {
-		// 		arg_it->setName(*arg_names_it);
-		// 		llvm::AllocaInst *ainst = create_entry_alloca(fn->func, *arg_names_it, (*arg_types_it));
-		// 		builder.CreateStore(arg_it, ainst);
-		// 		var_t *v = fn->info->var.get(*arg_names_it, "");
-		// 		if(v) v->val = ainst;
-		// 		arg_types_it++; arg_names_it++;
-		// 	}
-		//
-		// 	for(auto v = fn->info->var.local.begin(); v != fn->info->var.local.end(); v++) {
-		// 		if(v->type.is_array() || v->type.eql_type(T_STRING)) {
-		// 			std::vector<llvm::Value*> func_args;
-		// 			func_args.push_back(builder.CreateBitCast(v->val, v->val->getType()->getPointerTo())); // get address of var
-		// 			builder.CreateCall(stdfunc["append_addr_for_gc"].func, func_args);
-		// 		}
-		// 	}
-		//
-		// 	llvm::Value *ret_value = llvm::ConstantInt::get(builder.getInt32Ty(), 0); // default return code 0
-		// 	for(ast_vector::iterator it = fn->body.begin(); it != fn->body.end(); ++it) { // function body
-		// 		ret_value = Codegen::expression(*(fn->info), list, *it);
-		// 	}
-		//
-		// 	for(auto v = fn->info->var.local.begin(); v != fn->info->var.local.end(); v++) {
-		// 		if(v->type.is_array() || v->type.eql_type(T_STRING)) {
-		// 			std::vector<llvm::Value*> func_args;
-		// 			func_args.push_back(builder.CreateBitCast(v->val, v->val->getType()->getPointerTo())); // get address of var
-		// 			builder.CreateCall(stdfunc["delete_addr_for_gc"].func, func_args);
-		// 		}
-		// 	}
-		//
-		// 	if(ret_value) {
-		// 		if(ret_value->getType()->getTypeID() != fn->ret_type->getTypeID()) {
-		// 			ret_value = llvm::ConstantInt::get(builder.getInt32Ty(), 0);
-		// 			// fprintf(stderr, "warning: type of expression that evaluated last is not match\n");
-		// 		}
-		// 	} else if(fn->ret_type->getTypeID() == builder.getInt32Ty()->getTypeID()) {
-		//
-		// 		ret_value = llvm::ConstantInt::get(builder.getInt32Ty(), 0);
-		// 	} else error("error: return code of function is incorrect '%s'", fn->info->info.name.c_str());
-		//
-		// 	builder.CreateRet(ret_value);
-		// } 
 		list.append(main);
 		int count_temp_func = funcs_body.size();
 
@@ -434,13 +350,11 @@ namespace Codegen {
 		llvm::BasicBlock *entry = llvm::BasicBlock::Create(context, "entry", func_main);
 		builder.SetInsertPoint(entry);
 
-		builder.CreateCall(func_init_gvar);
-
-		for(std::vector<AST *>::iterator it = main_code.begin(); it != main_code.end(); ++it) {
-			expression(main, list, *it);
-		}
+		for(auto &stmt : main_code)
+			expression(main, list, stmt);
 
 		builder.CreateRet(llvm::ConstantInt::get(builder.getInt32Ty(), 0));
+		////////////////////////////// end of creation of main
 		// llvm::verifyModule(*mod);
 		
 		// create template function
