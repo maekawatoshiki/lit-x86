@@ -3,6 +3,7 @@
 #include "lit.h"
 #include "exprtype.h"
 #include "stdfunc.h"
+#include "util.h"
 
 bool Program::is(std::string name, std::string mod_name) {
 	auto is_declared_func = [&](std::string name) -> Function * {

@@ -2,7 +2,7 @@ require "std"
 
 def prime_factorization(x):string
 	output = ""
-	while x >= 4 & math_even x
+	while x >= 4 & Math::even(x)
 		output += "2,"
 		x /= 2
 	end
@@ -10,16 +10,16 @@ def prime_factorization(x):string
 	q = x / d
 	while q >= d 
 		if x % d == 0 
-			output += int_to_str(d) + ","
+			output += d.to_string() + ","
 			x = q
 		else 
 			d += 2
 		end
 		q = x / d
 	end
-	output += int_to_str x
+	output += x.to_string()
 	output
 end
 
-n = str_to_int gets
-puts "prime_factorization(" n ") = " prime_factorization n
+n = gets().to_int()
+puts("prime_factorization(", n, ") = ", prime_factorization(n))

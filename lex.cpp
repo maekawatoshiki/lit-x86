@@ -72,7 +72,12 @@ int Lexer::lex(char *code) {
 
 		} else if(code[i] == '\'') {
 
-			tmp_tok.val = code[++i];
+			if(code[++i] == '\\') {
+				char esc[3] = {'\\', code[++i]};
+				replace_escape(esc);
+				tmp_tok.val = esc;
+			} else 
+				tmp_tok.val = code[i];
 			tmp_tok.nline = line;
 			tmp_tok.type = TOK_CHAR;
 			tok.tok.push_back(tmp_tok);

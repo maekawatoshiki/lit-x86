@@ -73,6 +73,5 @@ public:
 	void append_local_var(std::string);
 };
 
-char *replace_escape(char *);
 
 #endif
