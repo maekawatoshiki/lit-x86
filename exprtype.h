@@ -49,6 +49,7 @@ public:
 	bool is_ref();
 	void set_ref(bool = true);
 	bool eql_type(int, bool = false);
+	bool eql_type(std::string);
 	bool eql_type(ExprType *);
 
 	std::string to_string();

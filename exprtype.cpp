@@ -46,9 +46,12 @@ bool ExprType::eql_type(int ty, bool is_ary) {
 		return type.type == ty;
 	}
 }
-
+bool ExprType::eql_type(std::string userty) {
+	if(type.user_type == userty) return true;
+	return false;
+}
 bool ExprType::eql_type(ExprType *ty) {
-	if(ty->eql_type(type.type)) {
+	if(ty->eql_type(type.type) && ty->eql_type(type.user_type)) {
 		if(next && ty->next) {
 			ExprType *_next = this;
 			ty = ty->next;
