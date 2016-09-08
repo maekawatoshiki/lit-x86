@@ -6,23 +6,23 @@
 #define SKIP_TOK tok.pos++;
 
 enum {
-	TOK_SYMBOL,
-	TOK_IDENT,
-	TOK_NUMBER,
-	TOK_STRING,
-	TOK_CHAR,
-	TOK_END
+  TOK_SYMBOL,
+  TOK_IDENT,
+  TOK_NUMBER,
+  TOK_STRING,
+  TOK_CHAR,
+  TOK_END
 };
 
 class Lexer {
 public:
-	Token &tok;
-	std::map<std::string, bool> required_files;
+  Token &tok;
+  std::map<std::string, bool> required_files;
 
-	Lexer(Token &token)
-		:tok(token) { }
+  Lexer(Token &token)
+    :tok(token) { }
 
-	int lex(char *);
+  int lex(char *);
 };
 
 #endif

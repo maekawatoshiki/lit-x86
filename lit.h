@@ -7,38 +7,38 @@
 #include "token.h"
 
 #if defined(WIN32) || defined(WINDOWS)
-	#include <windows.h>
+  #include <windows.h>
 #else
-	#include <unistd.h>
-	#include <sys/types.h>
-	#include <sys/mman.h>
-	#include <sys/wait.h>
+  #include <unistd.h>
+  #include <sys/types.h>
+  #include <sys/mman.h>
+  #include <sys/wait.h>
 #endif
 
 #define _LIT_VERSION_ "0.2.0"
 
 
 class Lit {
-	Token tok;
-	Lexer lex;
-	Parser parser;
-	int argc;
-	char **argv;
+  Token tok;
+  Lexer lex;
+  Parser parser;
+  int argc;
+  char **argv;
 
-	int execute(char *, bool = false); // execute(<source code>, flag<emit-llvm>)
-	
-	void interpret();
-	void run_from_file(char *, bool = false);
+  int execute(char *, bool = false); // execute(<source code>, flag<emit-llvm>)
+  
+  void interpret();
+  void run_from_file(char *, bool = false);
 
-	void show_option();
-	void show_version();
+  void show_option();
+  void show_version();
 
 public:
 
-	Lit(int, char**);
-	~Lit();
+  Lit(int, char**);
+  ~Lit();
 
-	int start();
+  int start();
 };
 
 #endif
