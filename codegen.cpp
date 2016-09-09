@@ -291,7 +291,7 @@ namespace Codegen {
       // create append_addr_for_gc Function
       func_args.push_back(builder.getVoidTy()->getPointerTo());
       func = llvm::Function::Create(
-          llvm::FunctionType::get(/*ret*/builder.getInt32Ty(), func_args, false),
+          llvm::FunctionType::get(/*ret*/builder.getVoidTy(), func_args, false),
           llvm::GlobalValue::ExternalLinkage,
           "append_addr_for_gc", mod);
       stdfunc["append_addr_for_gc"].func = func;
@@ -299,7 +299,7 @@ namespace Codegen {
       // create append_addr_for_gc Function
       func_args.push_back(builder.getVoidTy()->getPointerTo());
       func = llvm::Function::Create(
-          llvm::FunctionType::get(/*ret*/builder.getInt32Ty(), func_args, false),
+          llvm::FunctionType::get(/*ret*/builder.getVoidTy(), func_args, false),
           llvm::GlobalValue::ExternalLinkage,
           "delete_addr_for_gc", mod);
       stdfunc["delete_addr_for_gc"].func = func;
@@ -380,7 +380,7 @@ namespace Codegen {
       for(auto v = fn->info->var.local.begin(); v != fn->info->var.local.end(); v++) {
         if(v->type.is_array() || v->type.eql_type(T_STRING)) {
           std::vector<llvm::Value*> func_args;
-          func_args.push_back(builder.CreateBitCast(v->val, v->val->getType()->getPointerTo())); // get address of var
+          func_args.push_back(builder.CreateBitCast(v->val, builder.getVoidTy()->getPointerTo())); // get address of var
           builder.CreateCall(stdfunc["append_addr_for_gc"].func, func_args);
         }
       }
@@ -393,7 +393,7 @@ namespace Codegen {
       for(auto v = fn->info->var.local.begin(); v != fn->info->var.local.end(); v++) {
         if(v->type.is_array() || v->type.eql_type(T_STRING)) {
           std::vector<llvm::Value*> func_args;
-          func_args.push_back(builder.CreateBitCast(v->val, v->val->getType()->getPointerTo())); // get address of var
+          func_args.push_back(builder.CreateBitCast(v->val, builder.getVoidTy()->getPointerTo())); // get address of var
           builder.CreateCall(stdfunc["delete_addr_for_gc"].func, func_args);
         }
       }
@@ -439,7 +439,7 @@ namespace Codegen {
     }
     if(enable_emit_llvm) module->dump();
     // std::string EC;
-    // llvm::raw_fd_ostream out("mod", EC, llvm::sys::fs::OpenFlags::F_None);
+    // llvm::raw_fd_ostream out("mod", EC, llvm::sys::fs::OpenFlags::F_RW);
     // llvm::WriteBitcodeToFile(module, out);
 
     void *prog_ptr = exec_engine->getPointerToFunction(module->getFunction("main"));
@@ -1170,7 +1170,7 @@ llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, ExprType *
     }
     if(v->type.is_array() || v->type.eql_type(T_STRING)) {
       std::vector<llvm::Value*> func_args;
-      func_args.push_back(builder.CreateBitCast(v->val, v->val->getType()->getPointerTo())); // addr
+      func_args.push_back(builder.CreateBitCast(v->val, builder.getVoidTy()->getPointerTo())); // addr
       builder.CreateCall(stdfunc["append_addr_for_gc"].func, func_args);
     }
     if(v->type.is_ref()) {

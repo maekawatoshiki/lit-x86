@@ -8,6 +8,9 @@
 #include <cstdio>
 #include <cstdlib>
 #include <cstring>
+#include <cstdint>
+#include <stddef.h>
+#include <stdint.h>
 
 extern "C" {
 	void put_num(int n);
