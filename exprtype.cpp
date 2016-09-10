@@ -87,6 +87,8 @@ namespace Type {
       ExprType *ty = new ExprType(T_INT);
       ty = ary(str, ty);
       return ty;
+    } else if(str == "void") {
+      return new ExprType(T_VOID);
     } else if(str == "char") {
       return new ExprType(T_CHAR);
     } else if(str == "bool") {
@@ -139,7 +141,10 @@ namespace Type {
       ty = ty->next;
       ary_count++;
     }
-    if(ty->eql_type(T_STRING)) {
+    if(ty->eql_type(T_VOID)) {
+      out = llvm::Type::getVoidTy(llvm::getGlobalContext());
+      while(ary_count--) out = out->getPointerTo();  
+    } else if(ty->eql_type(T_STRING)) {
       out = llvm::Type::getInt8PtrTy(llvm::getGlobalContext());
       while(ary_count--) out = out->getPointerTo();  
     } else if(ty->eql_type(T_DOUBLE)) {

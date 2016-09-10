@@ -6,8 +6,8 @@
 #include "common.h"
 
 struct func_t {
-  uint32_t address, params;
   ExprType type;
+  size_t params;
   std::vector<ExprType *> args_type;
   std::vector<std::string> args_name;
   std::string name;

@@ -23,6 +23,7 @@ extern "C" {
 	void put_array_str(char *ary[]);
 	void put_ln();
 	void *create_array(uint32_t size, uint32_t byte);
+  char *str_substr(char *a, int bgn, int last);
 	char *str_concat(char *a, char *b);
 	char *str_register_to_memmgr(char *a);
 	char *str_concat_char(char *a, char n);

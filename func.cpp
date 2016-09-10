@@ -65,7 +65,6 @@ Function *Program::append(Function f) {
 Function *Program::append_undef(std::string name, std::string mod_name, int ntvc_pos) {
   Function f = {
     .info = {
-      .address = (uint32_t)ntvc_pos,
       // .mod_name = module,
       .name = name
     }

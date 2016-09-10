@@ -38,6 +38,10 @@ public:
     type = et->type; 
     next = et->next;
   }
+  ExprType(ExprType *et, bool ary) { 
+    type = T_ARRAY;
+    next = et;
+  }
   ~ExprType() {  }
   expr_type_t &get();
   ExprType *next = NULL;

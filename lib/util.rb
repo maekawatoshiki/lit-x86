@@ -138,12 +138,12 @@ def substr(str:string, bgn):string
 	str.substr(bgn, length(str)-bgn)
 end
 
-def substr(str:string, bgn, last):string
-	if last < 0; return str; end
-	ret = "" + str.add_addr(bgn)
-	ret[last] = 0
-	"" + ret
-end
+# def substr(str:string, bgn, last):string
+# 	if last < 0; return str; end
+# 	ret = "" + str.add_addr(bgn)
+# 	ret[last] = 0
+# 	"" + ret
+# end
 
 def template join(a, s):string
 	ret = ""
@@ -159,24 +159,36 @@ end
 def split(str:string, ch:char):string[]
 	str_len = length(str)
 	bgn = 0
-	# chcount = 0
-	# for i in 0...str_len
-	# 	if ch == str[i]
-	# 		chcount += 1
-	# 	end
-	# end
-	# ret = new string chcount
-	ret = []:string
-	# pos = 0
+	chcount = 0
+  i = 0
+	while i < str_len
+		if ch == str[i]
+			chcount += 1
+      i += 1
+      while ch == str[i]
+        i += 1
+      end
+      if i == str_len
+        chcount -= 1
+      end
+		else 
+      i += 1
+    end
+	end
+	ret = new string chcount + 1
+	# ret = []:string
+	pos = 0
 	for i in 0...str_len
 		if ch == str[i]
-			ret += substr(str, bgn, i-bgn)
-			bgn = i + 1
-			# pos += 1
+      if i - bgn > 0
+        ret[pos] = str.substr(bgn, i-bgn)
+        pos += 1
+      end
+      bgn = i + 1
 		end
 	end
 	if bgn < str_len
-		ret += substr(str, bgn)
+		ret[pos] = substr(str, bgn)
 	end
 	ret
 end

@@ -94,10 +94,11 @@ extern "C" {
 		a[size-1] = n;
 		LitMemory::set_size(a, size + 1);
 		return a;
-		// char *t = (char *)LitMemory::alloc(strlen(a) + 2, 1);
-		// t[strlen(strcpy(t, a))] = b;
-		// return t;
 	}
+  char *str_substr(char *a, int bgn, int last) {
+    char *c = (char *)LitMemory::alloc(last + 1, sizeof(char));
+    return (char *)memmove(c, a + bgn, last);
+  }
 	char *str_concat_char_str(char a, char *b) {
 		char *t = (char *)LitMemory::alloc(strlen(b) + 2, 1);
 		t[0] = a;

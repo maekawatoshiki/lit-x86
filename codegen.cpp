@@ -52,22 +52,36 @@ namespace Codegen {
   llvm::Module *codegen(ast_vector &program) {
     llvm::InitializeNativeTarget();
     mod = new llvm::Module("LIT", context);
+    std::string module = "";
+    Program list(module);
     { // initialize standard functions
+      auto make_stdfunc = [&](std::string name, std::string link_func_name, std::vector<ExprType *> args_ty , ExprType *ret_ty) {
+        Function f = {
+          .info = {
+            .name        = name,
+            .mod_name    = list.cur_mod,
+            .is_template = false,
+            .params      = args_ty.size(),
+            .args_type   = args_ty,
+            .func_addr   = nullptr,
+            .type        = ret_ty
+          }
+        };
+        Function *function = list.append(f);
+        std::vector<llvm::Type *> llvm_args_ty;
+        for(auto &at : args_ty)
+          llvm_args_ty.push_back(type_to_llvmty(list, at));
+
+        llvm::Type *llvm_ret_type = type_to_llvmty(list, ret_ty);
+        llvm::Function *llvm_func = llvm::Function::Create(
+            llvm::FunctionType::get(llvm_ret_type, llvm_args_ty, false),
+            llvm::Function::ExternalLinkage, link_func_name, mod);
+        function->info.func_addr = llvm_func;
+      };
       stdfunc["create_array"] = {"create_array", 1, T_ARRAY};
-      stdfunc["gets"] = {"gets", 0, T_STRING};
-      stdfunc["getc"] = {"getc", 0, T_CHAR};
-      stdfunc["strlen"] = {"strlen", 1, T_INT};
       stdfunc["printf"] = {"printf", -1, T_VOID};
       stdfunc["puts"] = {"puts", -1, T_VOID};
       stdfunc["print"] = {"print", -1, T_VOID};
-      stdfunc["put_num"] = {"put_num", 1, T_VOID};
-      stdfunc["put_num64"] = {"put_num64", 1, T_VOID};
-      stdfunc["put_num_float"] = {"put_num_float", 1, T_VOID};
-      stdfunc["put_char"] = {"put_char", 1, T_VOID};
-      stdfunc["put_array"] = {"put_array", 1, T_VOID};
-      stdfunc["put_array_float"] = {"put_array_float", 1, T_VOID};
-      stdfunc["put_array_str"] = {"put_array_str", 1, T_VOID};
-      stdfunc["put_string"] = {"put_string", 1, T_VOID};
       stdfunc["strcat"] = {"strcat", 2, T_STRING};
       stdfunc["concat_char_str"] = {"concat_char_str", 2, T_STRING};
       stdfunc["str_register_to_memmgr"] = {"str_register_to_memmgr", 1, T_STRING};
@@ -82,13 +96,7 @@ namespace Codegen {
 
       // create put_string function
       std::vector<llvm::Type *> func_args;
-      func_args.push_back(builder.getInt8Ty()->getPointerTo());
-      llvm::Function *func = llvm::Function::Create(
-          llvm::FunctionType::get(/*ret*/builder.getVoidTy(), func_args, false),
-          llvm::GlobalValue::ExternalLinkage,
-          "put_string", mod);
-      stdfunc["put_string"].func = func;
-      func_args.clear();
+      llvm::Function *func;
       // create printf function
       func_args.push_back(builder.getInt8Ty());
       func = llvm::Function::Create(
@@ -97,68 +105,21 @@ namespace Codegen {
           "printf", mod);
       stdfunc["printf"].func = func;
       func_args.clear();
-      // create put_string function
-      func_args.push_back(builder.getInt8Ty());
-      func = llvm::Function::Create(
-          llvm::FunctionType::get(/*ret*/builder.getVoidTy(), func_args, false),
-          llvm::GlobalValue::ExternalLinkage,
-          "put_char", mod);
-      stdfunc["put_char"].func = func;
-      func_args.clear();
-      // create put_num function
-      func_args.push_back(builder.getInt32Ty());
-      func = llvm::Function::Create(
-          llvm::FunctionType::get(/*ret*/builder.getVoidTy(), func_args, false),
-          llvm::GlobalValue::ExternalLinkage,
-          "put_num", mod);
-      stdfunc["put_num"].func = func;
-      func_args.clear();
-      // create put_num64 function
-      func_args.push_back(builder.getInt64Ty());
-      func = llvm::Function::Create(
-          llvm::FunctionType::get(/*ret*/builder.getVoidTy(), func_args, false),
-          llvm::GlobalValue::ExternalLinkage,
-          "put_num64", mod);
-      stdfunc["put_num64"].func = func;
-      func_args.clear();
-      // create put_array function
-      func_args.push_back(builder.getInt32Ty()->getPointerTo());
-      func = llvm::Function::Create(
-          llvm::FunctionType::get(/*ret*/builder.getVoidTy(), func_args, false),
-          llvm::GlobalValue::ExternalLinkage,
-          "put_array", mod);
-      stdfunc["put_array"].func = func;
-      func_args.clear();
-      // create put_array_float function
-      func_args.push_back(builder.getInt32Ty()->getPointerTo());
-      func = llvm::Function::Create(
-          llvm::FunctionType::get(/*ret*/builder.getVoidTy(), func_args, false),
-          llvm::GlobalValue::ExternalLinkage,
-          "put_array_float", mod);
-      stdfunc["put_array_float"].func = func;
-      func_args.clear();
-      // create put_array_str function
-      func_args.push_back(builder.getInt8PtrTy()->getPointerTo());
-      func = llvm::Function::Create(
-          llvm::FunctionType::get(/*ret*/builder.getVoidTy(), func_args, false),
-          llvm::GlobalValue::ExternalLinkage,
-          "put_array_str", mod);
-      stdfunc["put_array_str"].func = func;
-      func_args.clear();
-      // create put_num_float function
-      func_args.push_back(builder.getDoubleTy());
-      func = llvm::Function::Create(
-          llvm::FunctionType::get(builder.getVoidTy(), func_args, false),
-          llvm::GlobalValue::ExternalLinkage,
-          "put_num_float", mod);
-      stdfunc["put_num_float"].func = func;
-      func_args.clear();
-      // create put_ln function
-      func = llvm::Function::Create(
-          llvm::FunctionType::get(/*ret*/builder.getVoidTy(), func_args, false),
-          llvm::GlobalValue::ExternalLinkage,
-          "put_ln", mod);
-      stdfunc["put_ln"].func = func;
+
+      make_stdfunc("put_string", "put_string", std::vector<ExprType *>{new ExprType(T_STRING)}, new ExprType(T_VOID));
+      make_stdfunc("put_char", "put_char", std::vector<ExprType *>{new ExprType(T_CHAR)}, new ExprType(T_VOID));
+      make_stdfunc("put_num", "put_num", std::vector<ExprType *>{new ExprType(T_INT)}, new ExprType(T_VOID));
+      make_stdfunc("put_num64", "put_num64", std::vector<ExprType *>{new ExprType(T_INT64)}, new ExprType(T_VOID));
+      make_stdfunc("put_array", "put_array", std::vector<ExprType *>{new ExprType(new ExprType(T_INT), true)}, new ExprType(T_VOID));
+      make_stdfunc("put_array_float", "put_array_float", std::vector<ExprType *>{new ExprType(new ExprType(T_DOUBLE), true)}, new ExprType(T_VOID));
+      make_stdfunc("put_array_str", "put_array_str", std::vector<ExprType *>{new ExprType(new ExprType(T_STRING), true)}, new ExprType(T_VOID));
+      make_stdfunc("put_num_float", "put_num_float", std::vector<ExprType *>{new ExprType(new ExprType(T_DOUBLE))}, new ExprType(T_VOID));
+      make_stdfunc("put_ln", "put_ln", std::vector<ExprType *>(), new ExprType(T_VOID));
+      make_stdfunc("substr", "str_substr", std::vector<ExprType *>{
+          new ExprType(T_STRING), new ExprType(T_INT), new ExprType(T_INT)}, new ExprType(T_STRING));
+      make_stdfunc("gets", "get_string_stdin", std::vector<ExprType *>(), new ExprType(T_STRING));
+      make_stdfunc("getc", "getchar", std::vector<ExprType *>(), new ExprType(T_CHAR));
+      make_stdfunc("strlen", "strlen", std::vector<ExprType *>{new ExprType(T_STRING)}, new ExprType(T_INT));
       // create strcat function
       func_args.push_back(builder.getInt8PtrTy());
       func_args.push_back(builder.getInt8PtrTy());
@@ -218,17 +179,6 @@ namespace Codegen {
       stdfunc["create_array"].func = func;
       func_args.clear();
       // create gets function
-      func = llvm::Function::Create(
-          llvm::FunctionType::get(/*ret*/builder.getInt8PtrTy(), func_args, false),
-          llvm::GlobalValue::ExternalLinkage,
-          "get_string_stdin", mod);
-      stdfunc["gets"].func = func;
-      // create getc function
-      func = llvm::Function::Create(
-          llvm::FunctionType::get(/*ret*/builder.getInt8Ty(), func_args, false),
-          llvm::GlobalValue::ExternalLinkage,
-          "getchar", mod);
-      stdfunc["getc"].func = func;
       // create len Function
       func_args.push_back(builder.getInt32Ty()->getPointerTo());
       func = llvm::Function::Create(
@@ -244,14 +194,6 @@ namespace Codegen {
           llvm::GlobalValue::ExternalLinkage,
           "str_copy", mod);
       stdfunc["str_copy"].func = func;
-      func_args.clear();
-      // create strlen Function
-      func_args.push_back(builder.getInt8Ty()->getPointerTo());
-      func = llvm::Function::Create(
-          llvm::FunctionType::get(/*ret*/builder.getInt32Ty(), func_args, false),
-          llvm::GlobalValue::ExternalLinkage,
-          "strlen", mod);
-      stdfunc["strlen"].func = func;
       func_args.clear();
       // create str_register_to_memmgr Function
       func_args.push_back(builder.getInt8Ty()->getPointerTo());
@@ -311,8 +253,6 @@ namespace Codegen {
           "run_gc", mod);
       stdfunc["GC"].func = func;
     }
-    std::string module = "";
-    Program list(module);
 
     Function main;
     std::vector<AST *> main_code, other_code, gvar_code;
@@ -355,7 +295,7 @@ namespace Codegen {
 
     builder.CreateRet(llvm::ConstantInt::get(builder.getInt32Ty(), 0));
     ////////////////////////////// end of creation of main
-    // llvm::verifyModule(*mod);
+    llvm::verifyModule(*mod);
     
     // create template function
     count_temp_func = funcs_body.size() - count_temp_func;
@@ -603,7 +543,7 @@ Function FunctionAST::codegen(Program &f_list) { // create a prototype of functi
     func_ret_type = type_to_llvmty(f_list, &info.type);
   }
 
-  llvm::FunctionType *func_type = llvm::FunctionType::get(func_ret_type, arg_types, false);
+    llvm::FunctionType *func_type = llvm::FunctionType::get(func_ret_type, arg_types, false);
   llvm::Function *func = llvm::Function::Create(func_type, llvm::Function::ExternalLinkage, f.info.name, mod);
 
   funcs_body.push_back(func_body_t {
@@ -734,33 +674,50 @@ llvm::Value * ForAST::codegen(Function &f, Program &f_list) {
 llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, ExprType *ty) {
   if(stdfunc.count(info.name)) {
     llvm::Value *stdfunc_ret_value = llvm::ConstantInt::get(builder.getInt32Ty(), 0);
-    if(info.name == "Array") { // TODO: implementation ASAP
-    } else if(info.name == "puts" || info.name == "print") {
+    if(info.name == "puts" || info.name == "print") {
       for(int n = 0; n < args.size(); n++) {
         ExprType ty;
         llvm::Value *val = Codegen::expression(f, f_list, args[n], &ty);
         std::vector<llvm::Value*> func_args;
         func_args.push_back(val);
         if(ty.eql_type(T_STRING)) {
-          builder.CreateCall(stdfunc["put_string"].func, func_args)->setCallingConv(llvm::CallingConv::C);
+          builder.CreateCall(
+              f_list.get("put_string", std::vector<std::string>(), std::vector<ExprType*>{new ExprType(T_STRING)})->info.func_addr
+              , func_args)->setCallingConv(llvm::CallingConv::C);
         } else if(ty.eql_type(T_CHAR)) {
-          builder.CreateCall(stdfunc["put_char"].func, func_args)->setCallingConv(llvm::CallingConv::C);
+          builder.CreateCall(
+              f_list.get("put_char", std::vector<std::string>(), std::vector<ExprType*>{new ExprType(T_CHAR)})->info.func_addr
+              , func_args)->setCallingConv(llvm::CallingConv::C);
         } else if(ty.eql_type(T_DOUBLE)) {
-          builder.CreateCall(stdfunc["put_num_float"].func, func_args)->setCallingConv(llvm::CallingConv::C);
+          builder.CreateCall(
+              f_list.get("put_num_float", std::vector<std::string>(), std::vector<ExprType*>{new ExprType(T_DOUBLE)})->info.func_addr
+              , func_args)->setCallingConv(llvm::CallingConv::C);
         } else if(ty.is_array() && ty.next->eql_type(T_INT)) {
-          builder.CreateCall(stdfunc["put_array"].func, func_args)->setCallingConv(llvm::CallingConv::C);
+          builder.CreateCall(
+              f_list.get("put_array", std::vector<std::string>(), std::vector<ExprType*>{new ExprType(new ExprType(T_INT), true)})->info.func_addr
+              , func_args)->setCallingConv(llvm::CallingConv::C);
         } else if(ty.is_array() && ty.next->eql_type(T_DOUBLE)) {
-          builder.CreateCall(stdfunc["put_array_float"].func, func_args)->setCallingConv(llvm::CallingConv::C);
+          builder.CreateCall(
+              f_list.get("put_array_float", std::vector<std::string>(), std::vector<ExprType*>{new ExprType(new ExprType(T_DOUBLE), true)})->info.func_addr
+              , func_args)->setCallingConv(llvm::CallingConv::C);
         } else if(ty.is_array() && ty.next->eql_type(T_STRING)) {
-          builder.CreateCall(stdfunc["put_array_str"].func, func_args)->setCallingConv(llvm::CallingConv::C);
+          builder.CreateCall(
+              f_list.get("put_array_str", std::vector<std::string>(), std::vector<ExprType*>{new ExprType(new ExprType(T_STRING), true)})->info.func_addr
+              , func_args)->setCallingConv(llvm::CallingConv::C);
         } else if(ty.eql_type(T_INT64)) {
-          builder.CreateCall(stdfunc["put_num64"].func, func_args)->setCallingConv(llvm::CallingConv::C);
+          builder.CreateCall(
+              f_list.get("put_num64", std::vector<std::string>(), std::vector<ExprType*>{new ExprType(T_INT64)})->info.func_addr
+              , func_args)->setCallingConv(llvm::CallingConv::C);
         } else {
-          builder.CreateCall(stdfunc["put_num"].func, func_args)->setCallingConv(llvm::CallingConv::C);
+          builder.CreateCall(
+              f_list.get("put_num", std::vector<std::string>(), std::vector<ExprType*>{new ExprType(T_INT)})->info.func_addr
+              , func_args)->setCallingConv(llvm::CallingConv::C);
         }
       }
       if(info.name == "puts")
-        builder.CreateCall(stdfunc["put_ln"].func, std::vector<llvm::Value *>())->setCallingConv(llvm::CallingConv::C); // for new line
+        builder.CreateCall(
+            f_list.get("put_ln", std::vector<std::string>(), std::vector<ExprType*>())->info.func_addr
+            , std::vector<llvm::Value *>())->setCallingConv(llvm::CallingConv::C);
     } else {
       if(stdfunc[info.name].args == -1) { // vector
         llvm::Value *val = Codegen::expression(f, f_list, args[0]);
@@ -878,17 +835,8 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, ExprType *t
   }
   llvm::Function *callee = (function->info.func_addr) ? function->info.func_addr : mod->getFunction(info.name);
   if(!callee) error("no function: %s", info.name.c_str());
-  if(function == nullptr) { // undefined
-    uint32_t a = 3;
-    for(ast_vector::iterator it = args.begin(); it != args.end(); ++it) {
-      Codegen::expression(f, f_list, *it);
-    }
-    ty->change(T_INT);
-    return nullptr;
-  } else { // defined
-    ty->change(new ExprType(function->info.type));
-    return builder.CreateCall(callee, callee_args, "call_tmp");
-  }
+  ty->change(new ExprType(function->info.type));
+  return builder.CreateCall(callee, callee_args, "call_tmp");
 }
 
 llvm::Value * BinaryAST::codegen(Function &f, Program &f_list, ExprType *ty) {
