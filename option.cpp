@@ -52,6 +52,5 @@ void Lit::show_option() {
 }
 
 void Lit::show_version() {
-  puts("Lit " _LIT_VERSION_ " (C) 2015 maekawatoshiki");
-  puts("Build( " __TIME__ " " __DATE__ " )");
+  puts("Lit " _LIT_VERSION_ ", Build( " __TIME__ " " __DATE__ " )");
 }

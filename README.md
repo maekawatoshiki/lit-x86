@@ -25,4 +25,4 @@ $ ./lit -h # -h option shows helps
 ```
 
 ## License
-- BSD
+- Unlicense(Pubilc Domain!)
