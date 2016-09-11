@@ -17,26 +17,11 @@ bool Program::is(std::string name, std::string mod_name) {
   return is_declared_func(name) == NULL ? false : true;
 }
 
-Function *Program::get(std::string name, std::vector<ExprType *> args_type, std::string mod_name) {
-  auto is_eql_args_type = [&](Function f) -> bool {
-    if(f.info.args_type.size() == 0 && args_type.size() == 0) return true;
-    if(f.info.args_type.size() != args_type.size()) return false;
-    auto caller_it = args_type.begin();
-    for(auto it = f.info.args_type.begin(); it != f.info.args_type.end() && caller_it != args_type.end(); ++it) {
-      if(!(*it)->eql_type(*caller_it)) return false;
-      caller_it++;
-    }
-    return true;
-  };
-  for(std::vector<Function>::iterator it = func.begin(); it != func.end(); it++) {
-    if(it->info.name == name && is_eql_args_type(*it)/* && it->mod_name == mod_name*/) {
-      return &(*it);
-    }
-  }
-  return NULL;
+Function *Program::lookup(std::string name, std::vector<ExprType *> args_type) {
+	return lookup(name, std::vector<std::string>(), args_type);
 }
 
-Function *Program::get(std::string name, std::vector<std::string> mod_name, std::vector<ExprType *> args_type) {
+Function *Program::lookup(std::string name, std::vector<std::string> mod_name, std::vector<ExprType *> args_type) {
   auto is_eql_args_type = [&](Function f, bool temp=false) -> bool {
     if(f.info.args_type.size() == 0 && args_type.size() == 0) return true;
     if(f.info.args_type.size() != args_type.size()) return false;
@@ -57,30 +42,9 @@ Function *Program::get(std::string name, std::vector<std::string> mod_name, std:
   return NULL;
 }
 
-Function *Program::append(Function f) {
+Function *Program::add(Function f) {
   func.push_back(f);
   return &func.back();
-}
-
-Function *Program::append_undef(std::string name, std::string mod_name, int ntvc_pos) {
-  Function f = {
-    .info = {
-      // .mod_name = module,
-      .name = name
-    }
-  };
-  undef_func.push_back(f);
-  return 0;
-}
-
-bool Program::rep_undef(std::string name, int ntvc) {
-  bool replaced = false;
-  for(std::vector<Function>::iterator it = undef_func.begin(); it != undef_func.end(); it++) {
-    if(it->info.name == name/*  && it->info.mod_name == module */) {
-      replaced = true;
-    }
-  }
-  return replaced;
 }
 
 var_t *Program::append_global_var(std::string name, int type) {

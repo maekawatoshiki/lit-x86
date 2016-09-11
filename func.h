@@ -36,13 +36,10 @@ public:
   
   Program(std::string &mod): module(mod) { func.reserve(1280); }
   bool is(std::string, std::string);
-  Function *get(std::string, std::vector<ExprType *>, std::string = "");
-  Function *get(std::string, std::vector<std::string>, std::vector<ExprType*>);
-  Function *append(Function);
+  Function *lookup(std::string, std::vector<ExprType *>);
+  Function *lookup(std::string, std::vector<std::string>, std::vector<ExprType*>);
+  Function *add(Function);
   
-  Function *append_undef(std::string, std::string, int);
-  bool rep_undef(std::string, int);  
-
   var_t *append_global_var(std::string, int);
   void append_addr_of_global_var(std::string, int);
   void insert_global_var();
