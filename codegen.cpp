@@ -67,7 +67,7 @@ namespace Codegen {
             .type        = ret_ty
           }
         };
-        Function *function = list.append(f);
+        Function *function = list.add(f);
         std::vector<llvm::Type *> llvm_args_ty;
         for(auto &at : args_ty)
           llvm_args_ty.push_back(type_to_llvmty(list, at));
@@ -279,7 +279,7 @@ namespace Codegen {
       }
     }
 
-    list.append(main);
+    list.add(main);
     int count_temp_func = funcs_body.size();
 
     // create main function
@@ -479,7 +479,7 @@ void PrototypeAST::append(llvm::Module *lib_mod, Program &f_list) {
       proto_args_type.push_back(new ExprType(((VariableDeclAST *)ast)->info.type));
   }
   f.info.args_type = proto_args_type;
-  f_list.append(f);
+  f_list.add(f);
 }
 
 Function FunctionAST::codegen(Program &f_list) { // create a prototype of function, its body will create in Codegen
@@ -491,7 +491,7 @@ Function FunctionAST::codegen(Program &f_list) { // create a prototype of functi
   f.info.func_addr = nullptr;
   f.info.type.change(new ExprType(info.type));
 
-  // append arguments 
+  // add arguments 
   std::vector<llvm::Type *> arg_types;
   std::vector<std::string> arg_names;
   std::vector<ExprType *> args_type_for_overload;
@@ -529,7 +529,7 @@ Function FunctionAST::codegen(Program &f_list) { // create a prototype of functi
   f.info.args_name = arg_names;
   f.info.args_type = args_type_for_overload;
 
-  Function *function = f_list.append(f);
+  Function *function = f_list.add(f);
 
   // definition the Function
   
@@ -684,41 +684,41 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, ExprType *t
         func_args.push_back(val);
         if(ty.eql_type(T_STRING)) {
           builder.CreateCall(
-              f_list.get("put_string", std::vector<std::string>(), std::vector<ExprType*>{new ExprType(T_STRING)})->info.func_addr
+              f_list.lookup("put_string", std::vector<std::string>(), std::vector<ExprType*>{new ExprType(T_STRING)})->info.func_addr
               , func_args)->setCallingConv(llvm::CallingConv::C);
         } else if(ty.eql_type(T_CHAR)) {
           builder.CreateCall(
-              f_list.get("put_char", std::vector<std::string>(), std::vector<ExprType*>{new ExprType(T_CHAR)})->info.func_addr
+              f_list.lookup("put_char", std::vector<std::string>(), std::vector<ExprType*>{new ExprType(T_CHAR)})->info.func_addr
               , func_args)->setCallingConv(llvm::CallingConv::C);
         } else if(ty.eql_type(T_DOUBLE)) {
           builder.CreateCall(
-              f_list.get("put_num_float", std::vector<std::string>(), std::vector<ExprType*>{new ExprType(T_DOUBLE)})->info.func_addr
+              f_list.lookup("put_num_float", std::vector<std::string>(), std::vector<ExprType*>{new ExprType(T_DOUBLE)})->info.func_addr
               , func_args)->setCallingConv(llvm::CallingConv::C);
         } else if(ty.is_array() && ty.next->eql_type(T_INT)) {
           builder.CreateCall(
-              f_list.get("put_array", std::vector<std::string>(), std::vector<ExprType*>{new ExprType(new ExprType(T_INT), true)})->info.func_addr
+              f_list.lookup("put_array", std::vector<std::string>(), std::vector<ExprType*>{new ExprType(new ExprType(T_INT), true)})->info.func_addr
               , func_args)->setCallingConv(llvm::CallingConv::C);
         } else if(ty.is_array() && ty.next->eql_type(T_DOUBLE)) {
           builder.CreateCall(
-              f_list.get("put_array_float", std::vector<std::string>(), std::vector<ExprType*>{new ExprType(new ExprType(T_DOUBLE), true)})->info.func_addr
+              f_list.lookup("put_array_float", std::vector<std::string>(), std::vector<ExprType*>{new ExprType(new ExprType(T_DOUBLE), true)})->info.func_addr
               , func_args)->setCallingConv(llvm::CallingConv::C);
         } else if(ty.is_array() && ty.next->eql_type(T_STRING)) {
           builder.CreateCall(
-              f_list.get("put_array_str", std::vector<std::string>(), std::vector<ExprType*>{new ExprType(new ExprType(T_STRING), true)})->info.func_addr
+              f_list.lookup("put_array_str", std::vector<std::string>(), std::vector<ExprType*>{new ExprType(new ExprType(T_STRING), true)})->info.func_addr
               , func_args)->setCallingConv(llvm::CallingConv::C);
         } else if(ty.eql_type(T_INT64)) {
           builder.CreateCall(
-              f_list.get("put_num64", std::vector<std::string>(), std::vector<ExprType*>{new ExprType(T_INT64)})->info.func_addr
+              f_list.lookup("put_num64", std::vector<std::string>(), std::vector<ExprType*>{new ExprType(T_INT64)})->info.func_addr
               , func_args)->setCallingConv(llvm::CallingConv::C);
         } else {
           builder.CreateCall(
-              f_list.get("put_num", std::vector<std::string>(), std::vector<ExprType*>{new ExprType(T_INT)})->info.func_addr
+              f_list.lookup("put_num", std::vector<std::string>(), std::vector<ExprType*>{new ExprType(T_INT)})->info.func_addr
               , func_args)->setCallingConv(llvm::CallingConv::C);
         }
       }
       if(info.name == "puts")
         builder.CreateCall(
-            f_list.get("put_ln", std::vector<std::string>(), std::vector<ExprType*>())->info.func_addr
+            f_list.lookup("put_ln", std::vector<std::string>(), std::vector<ExprType*>())->info.func_addr
             , std::vector<llvm::Value *>())->setCallingConv(llvm::CallingConv::C);
     } else {
       if(stdfunc[info.name].args == -1) { // vector
@@ -748,8 +748,8 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, ExprType *t
     callee_args.push_back(Codegen::expression(f, f_list, *arg, &ty));
     args_type.push_back(new ExprType(ty));
   }
-  Function *function = f_list.get(info.name, info.mod_name, args_type);
-  if(!function) function = f_list.get(info.name, f_list.cur_mod, args_type);
+  Function *function = f_list.lookup(info.name, info.mod_name, args_type);
+  if(!function) function = f_list.lookup(info.name, f_list.cur_mod, args_type);
   if(!function) { // not found
     std::string args_type_str; 
     // args to string
@@ -782,7 +782,7 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, ExprType *t
       f.info.args_type = args_type_for_overload;
       f.info.args_name = arg_names;
 
-      Function *function1 = f_list.append(f);
+      Function *function1 = f_list.add(f);
 
       for(int i = 0; i < arg_names.size(); i++) {
         function1->var.append(arg_names[i], args_type_for_overload[i]);
@@ -850,7 +850,7 @@ llvm::Value * BinaryAST::codegen(Function &f, Program &f_list, ExprType *ty) {
   std::vector<ExprType *> args_type;
   args_type.push_back(&ty_l);
   args_type.push_back(&ty_r);
-  Function *user_op = f_list.get("operator"+op, args_type);
+  Function *user_op = f_list.lookup("operator"+op, args_type);
   if(user_op) {
     llvm::Function *callee = user_op->info.func_addr;
     ty->change(new ExprType(user_op->info.type));
