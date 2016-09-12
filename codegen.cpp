@@ -318,7 +318,7 @@ namespace Codegen {
       }
 
       for(auto v = fn->info->var.local.begin(); v != fn->info->var.local.end(); v++) {
-        if(v->type.is_array() || v->type.eql_type(T_STRING)) {
+        if(v->type.is_array() || v->type.eql_type(T_STRING) || v->type.eql_type(T_USER_TYPE)) {
           std::vector<llvm::Value*> func_args;
           func_args.push_back(builder.CreateBitCast(v->val, builder.getVoidTy()->getPointerTo())); // get address of var
           builder.CreateCall(stdfunc["append_addr_for_gc"].func, func_args);
@@ -331,7 +331,7 @@ namespace Codegen {
       }
 
       for(auto v = fn->info->var.local.begin(); v != fn->info->var.local.end(); v++) {
-        if(v->type.is_array() || v->type.eql_type(T_STRING)) {
+        if(v->type.is_array() || v->type.eql_type(T_STRING) || v->type.eql_type(T_USER_TYPE)) {
           std::vector<llvm::Value*> func_args;
           func_args.push_back(builder.CreateBitCast(v->val, builder.getVoidTy()->getPointerTo())); // get address of var
           builder.CreateCall(stdfunc["delete_addr_for_gc"].func, func_args);
@@ -377,10 +377,12 @@ namespace Codegen {
       pass_mgr.add(llvm::createReassociatePass());
       pass_mgr.run(*module);
     }
-    if(enable_emit_llvm) module->dump();
-    // std::string EC;
-    // llvm::raw_fd_ostream out("mod", EC, llvm::sys::fs::OpenFlags::F_RW);
-    // llvm::WriteBitcodeToFile(module, out);
+    if(enable_emit_llvm) {
+      std::string EC;
+      llvm::raw_fd_ostream out("mod.bc", EC, llvm::sys::fs::OpenFlags::F_RW);
+      llvm::WriteBitcodeToFile(module, out);
+      std::cout << "outputed bitcode to mod.bc" << std::endl;
+    }
 
     void *prog_ptr = exec_engine->getPointerToFunction(module->getFunction("main"));
     int (*program_entry)() = (int (*)())(int*)prog_ptr;

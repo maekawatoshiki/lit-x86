@@ -6,7 +6,7 @@
 #include "var.h"
 #include "util.h"
 
-void Lit::show_option() {
+void Lit::run_option() {
   bool opt_version = false, 
       opt_help = false,
       opt_interpret = false,
@@ -37,9 +37,9 @@ void Lit::show_option() {
           "Usage: lit [options] <file>\n"
           " -v\t\tshow version\n"
           " -h\t\tshow this help\n"
-          " -i\t\tinterpret mode\n"
+          " -i\t\tinterpret mode(default)\n"
           " -e 'cmd'\tone line of script\n"
-          " -emit\t\tshow LLVM-IR compiled"
+          " -emit\t\toutput Bitcode to a file 'mod.bc'"
           );
     } else if(opt_interpret) interpret();
     else if(opt_eval) {

@@ -10,11 +10,11 @@ function check() {
 	fi
 }
 
-check "./lit ./test/io.rb" "cat ./test/io" &
-pid1=$!
-check './lit ./examples/fibo.rb' 'echo 165580141' &
-pid2=$!
 check './lit ./examples/pi.rb' 'cat test/pi' &
+pid1=$!
+check "./lit ./test/io.rb" "cat ./test/io" &
+pid2=$!
+check './lit ./examples/fibo.rb' 'echo 165580141' &
 pid3=$!
 check './lit ./examples/primetable.rb' "cat ./test/primetable" &
 pid4=$!

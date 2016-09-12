@@ -30,7 +30,7 @@ class Lit {
   void interpret();
   void run_from_file(char *, bool = false);
 
-  void show_option();
+  void run_option();
   void show_version();
 
 public:

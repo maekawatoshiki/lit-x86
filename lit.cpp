@@ -8,13 +8,6 @@
 #include "option.h"
 #include "stdfunc.h"
 
-// ---- for native code --- //
-
-char *File_read(char *s, int len, FILE *fp) { fread(s, 1, len, fp); return s; }
-
-
-// Lit class is from here
-
 Lit::Lit(int ac, char **av)
   :lex(tok), parser(tok), argc(ac), argv(av) {
   tok.pos = 0; tok.size = 0xfff;
@@ -27,13 +20,7 @@ Lit::~Lit() {
 int Lit::execute(char *source, bool enable_emit_llvm) {
   lex.lex(source);
   llvm::Module *program = parser.parser();
-  Codegen::run(program, false/*optimize*/, enable_emit_llvm);
-  // if((fork()) == 0) run();
-  // int status = 0;
-  // wait(&status);
-  // if(!WIFEXITED(status)) {
-  //   puts("LitRuntimeError: *** the process was terminated abnormally ***");
-  // }
+  Codegen::run(program, true/*optimize*/, enable_emit_llvm);
   return 0;
 }
 
@@ -64,6 +51,6 @@ void Lit::run_from_file(char *source, bool enable_emit_llvm) {
 }
 
 int Lit::start() {
-  show_option();
+  run_option();
   return 0;
 }
