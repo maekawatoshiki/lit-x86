@@ -78,21 +78,21 @@ namespace Codegen {
             llvm::Function::ExternalLinkage, link_func_name, mod);
         function->info.func_addr = llvm_func;
       };
-      stdfunc["create_array"] = {"create_array", 1, T_ARRAY};
-      stdfunc["printf"] = {"printf", -1, T_VOID};
-      stdfunc["puts"] = {"puts", -1, T_VOID};
-      stdfunc["print"] = {"print", -1, T_VOID};
-      stdfunc["strcat"] = {"strcat", 2, T_STRING};
-      stdfunc["concat_char_str"] = {"concat_char_str", 2, T_STRING};
-      stdfunc["str_register_to_memmgr"] = {"str_register_to_memmgr", 1, T_STRING};
-      stdfunc["int_array_push_int"] = {"int_array_push_int", 2, T_ARRAY};
-      stdfunc["str_to_int"] = {"str_to_int", 1, T_INT};
-      stdfunc["str_to_float"] = {"str_to_float", 1, T_DOUBLE};
-      stdfunc["int_to_str"] = {"int_to_str", 1, T_STRING};
-      stdfunc["float_to_str"] = {"float_to_str", 1, T_STRING};
-      stdfunc["builtinlength"] = {"builtinlength", 1, T_INT};
-      stdfunc["str_copy"] = {"str_copy", 1, T_STRING};
-      stdfunc["GC"] = {"GC", 0, T_VOID};
+      stdfunc["create_array"]           = {"create_array"           , 1  , T_ARRAY};
+      stdfunc["printf"]                 = {"printf"                 , -1 , T_VOID};
+      stdfunc["puts"]                   = {"puts"                   , -1 , T_VOID};
+      stdfunc["print"]                  = {"print"                  , -1 , T_VOID};
+      stdfunc["strcat"]                 = {"strcat"                 , 2  , T_STRING};
+      stdfunc["concat_char_str"]        = {"concat_char_str"        , 2  , T_STRING};
+      stdfunc["str_register_to_memmgr"] = {"str_register_to_memmgr" , 1  , T_STRING};
+      stdfunc["int_array_push_int"]     = {"int_array_push_int"     , 2  , T_ARRAY};
+      stdfunc["str_to_int"]             = {"str_to_int"             , 1  , T_INT};
+      stdfunc["str_to_float"]           = {"str_to_float"           , 1  , T_DOUBLE};
+      stdfunc["int_to_str"]             = {"int_to_str"             , 1  , T_STRING};
+      stdfunc["float_to_str"]           = {"float_to_str"           , 1  , T_STRING};
+      stdfunc["builtinlength"]          = {"builtinlength"          , 1  , T_INT};
+      stdfunc["str_copy"]               = {"str_copy"               , 1  , T_STRING};
+      stdfunc["GC"]                     = {"GC"                     , 0  , T_VOID};
 
       // create put_string function
       std::vector<llvm::Type *> func_args;

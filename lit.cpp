@@ -10,7 +10,7 @@
 
 Lit::Lit(int ac, char **av)
   :lex(tok), parser(tok), argc(ac), argv(av) {
-  tok.pos = 0; tok.size = 0xfff;
+  tok.pos = 0;
 }
 
 Lit::~Lit() {
