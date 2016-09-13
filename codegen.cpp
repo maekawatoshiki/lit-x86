@@ -312,7 +312,7 @@ namespace Codegen {
         arg_it->setName(*arg_names_it);
         llvm::AllocaInst *ainst = create_entry_alloca(fn->func, *arg_names_it, (*arg_types_it));
         builder.CreateStore(arg_it, ainst);
-        var_t *v = fn->info->var.get(*arg_names_it, "");
+        var_t *v = fn->info->var.get(*arg_names_it);
         if(v) v->val = ainst;
         arg_types_it++; arg_names_it++;
       }
@@ -1135,8 +1135,8 @@ llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, ExprType *
 }
 
 var_t *VariableDeclAST::get(Function &f, Program &f_list) {
-  if(info.is_global) return f_list.var_global.get(info.name, info.mod_name);
-  return f.var.get(info.name, info.mod_name);
+  if(info.is_global) return f_list.var_global.get(info.name);
+  return f.var.get(info.name);
 }
 
 var_t *VariableDeclAST::append(Function &f, Program &f_list) {
@@ -1168,10 +1168,10 @@ llvm::Value *VariableIndexAST::get_elem(Function &f, Program &f_list, ExprType *
 llvm::Value * VariableAST::codegen(Function &f, Program &f_list, ExprType *ty) {
   var_t *v;
   if(info.is_global) {
-    v = f_list.var_global.get(info.name, info.mod_name);
+    v = f_list.var_global.get(info.name);
     if(v == nullptr) error("error: undefined global variable '%s'", info.name.c_str());
   } else 
-    v = f.var.get(info.name, info.mod_name);
+    v = f.var.get(info.name);
   if(v == nullptr) error("error: '%s' was not declared", info.name.c_str());
   if(info.is_global == false) { // local
     ty->change(&v->type);
@@ -1186,8 +1186,8 @@ llvm::Value * VariableAST::codegen(Function &f, Program &f_list, ExprType *ty) {
   }
 }
 var_t *VariableAST::get(Function &f, Program &f_list) {
-  if(info.is_global) return f_list.var_global.get(info.name, info.mod_name);
-  return f.var.get(info.name, info.mod_name);
+  if(info.is_global) return f_list.var_global.get(info.name);
+  return f.var.get(info.name);
 }
 var_t *VariableAST::append(Function &f, Program &f_list) {
   if(info.is_global) return f_list.append_global_var(info.name, info.type.get().type);

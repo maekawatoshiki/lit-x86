@@ -36,7 +36,7 @@ class Variable {
 public:
   std::vector<var_t> local;
 
-  var_t *get(std::string, std::string);
+  var_t *get(std::string);
   var_t *append(std::string, ExprType *,  bool = false, std::string = "");
 };
 

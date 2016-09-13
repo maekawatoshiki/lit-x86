@@ -54,7 +54,7 @@ var_t *Program::append_global_var(std::string name, int type) {
 }
 
 void Program::append_addr_of_global_var(std::string name, int ntv_pos) {
-  var_t *v = var_global.get(name, "");
+  var_t *v = var_global.get(name);
   if(v == NULL) puts("error: nullptr");
   v->used_location.push_back(ntv_pos);
 }

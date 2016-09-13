@@ -5,7 +5,7 @@
 #include "lit.h"
 #include "func.h"
 
-var_t *Variable::get(std::string name, std::string mod_name) {
+var_t *Variable::get(std::string name) {
   // local var
   for(std::vector<var_t>::iterator it = local.begin(); it != local.end(); ++it) {
     if(name == it->name) {
