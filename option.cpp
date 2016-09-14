@@ -17,21 +17,21 @@ void Lit::run_option() {
   if(argc < 2) {
     interpret();
   } else {
-    std::string argv_bgn = argv[1];
     std::vector<std::string> args(&argv[0], &argv[argc]);
     std::string file_name;
 
-    for(int i = 0; i < argc; i++) {
-      if(args[i] == "-v") opt_version = true;
-      else if(args[i] == "-h") opt_help = true;
-      else if(args[i] == "-i") opt_interpret = true;
-      else if(args[i] == "-e") opt_eval = true;
-      else if(args[i] == "-emit") opt_emit = true;
-      else file_name = args[i];
+    for(auto arg : args) {
+           if(arg == "-v")    opt_version   = true;
+      else if(arg == "-h")    opt_help      = true;
+      else if(arg == "-i")    opt_interpret = true;   
+      else if(arg == "-e")    opt_eval      = true;
+      else if(arg == "-emit") opt_emit      = true;
+      else                    file_name     = arg;
     }
 
-    if(opt_version) show_version();
-    else if(opt_help) {
+    if(opt_version) { 
+      show_version();
+    } else if(opt_help) {
       show_version();
       puts(
           "Usage: lit [options] <file>\n"
@@ -41,12 +41,11 @@ void Lit::run_option() {
           " -e 'cmd'\tone line of script\n"
           " -emit\t\toutput Bitcode to a file 'mod.bc'"
           );
-    } else if(opt_interpret) interpret();
-    else if(opt_eval) {
-      if(args.size() < 3)
-        error("LitSystemError: no input");
-      else
-        execute((char *)file_name.c_str(), opt_emit);
+    } else if(opt_interpret) {
+      interpret();
+    } else if(opt_eval) {
+      if(file_name == "") error("LitSystemError: no input file");
+      else execute((char *)file_name.c_str(), opt_emit);
     } else run_from_file((char *)file_name.c_str(), opt_emit);
   }
 }
