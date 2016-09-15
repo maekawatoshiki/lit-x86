@@ -741,61 +741,62 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, ExprType *t
 
   // user Function
   // process args and get args type
-  std::vector<ExprType *> args_type;
-  std::vector<llvm::Value *> callee_args;
+  std::vector<ExprType *> caller_args_type;
+  std::vector<llvm::Value *> caller_args;
   for(auto arg = args.begin(); arg != args.end(); ++arg) {
     ExprType ty;
-    callee_args.push_back(Codegen::expression(f, f_list, *arg, &ty));
-    args_type.push_back(new ExprType(ty));
+    caller_args.push_back(Codegen::expression(f, f_list, *arg, &ty));
+    caller_args_type.push_back(new ExprType(ty));
   }
-  Function *function = f_list.lookup(info.name, info.mod_name, args_type);
-  if(!function) function = f_list.lookup(info.name, f_list.cur_mod, args_type);
+  Function *function = f_list.lookup(info.name, info.mod_name, caller_args_type);
+  if(!function) function = f_list.lookup(info.name, f_list.cur_mod, caller_args_type);
   if(!function) { // not found
-    std::string args_type_str; 
+    std::string caller_args_type_str; 
     // args to string
-    for(auto arg : args_type) 
-      args_type_str += arg->to_string() + ", ";
-    args_type_str.erase(args_type_str.end() - 2, args_type_str.end()); // erase ", "
-    error("error: undefined function: '%s(%s)'", info.name.c_str(), args_type_str.c_str());
+    for(auto arg : caller_args_type) 
+      caller_args_type_str += arg->to_string() + ", ";
+    caller_args_type_str.erase(caller_args_type_str.end() - 2, caller_args_type_str.end()); // erase ", "
+    error("error: undefined function: '%s(%s)'", info.name.c_str(), caller_args_type_str.c_str());
   }
   if(function->info.is_template) {
     auto has_all_eql_type = [&]() -> bool {
-      for(int i = 0; i < args_type.size(); i++) {
-        if(!function->info.args_type[i]->eql_type((args_type[i]))) return false;
+      int i=0; for(auto caller_args_each_type : caller_args_type) {
+        if(!function->info.args_type[i++]->eql_type((caller_args_each_type))) return false;
       }
       return true;
     };
+    // if callee args type is not the same as the caller args type,
+    //  create a function based template with caller args type
     if(has_all_eql_type() == false) {
       Function f;
-      f.info.name = function->info.name;
-      f.info.mod_name = function->info.mod_name;
-      f.info.params = function->info.params;
+      f.info.name      = function->info.name;
+      f.info.mod_name  = function->info.mod_name;
+      f.info.params    = function->info.params;
       f.info.func_addr = nullptr;
       f.info.type.change(&function->info.type);
 
       // append arguments
       std::vector<llvm::Type *> arg_types;
-      for(auto &t : args_type)
+      for(auto &t : caller_args_type)
         arg_types.push_back(type_to_llvmty(f_list, t));
       std::vector<std::string> arg_names = function->info.args_name;
-      std::vector<ExprType *> args_type_for_overload = args_type;
-      f.info.args_type = args_type_for_overload;
+      f.info.args_type = caller_args_type;
       f.info.args_name = arg_names;
 
-      Function *function1 = f_list.add(f);
+      Function *func_based_tmpl = f_list.add(f);
 
       for(int i = 0; i < arg_names.size(); i++) {
-        function1->var.append(arg_names[i], args_type_for_overload[i]);
+        func_based_tmpl->var.append(arg_names[i], caller_args_type[i]);
       }
 
       // definition the Function
 
       // set function return type
-      function1->info.type.change(
-        (function1->info.type.get().user_type == "T") ? 
-          args_type[0] :
+      func_based_tmpl->info.type.change(
+        (func_based_tmpl->info.type.get().user_type == "T") ? 
+          caller_args_type[0] :
           &function->info.type);
-      llvm::Type *func_ret_type = type_to_llvmty(f_list, &function1->info.type);
+      llvm::Type *func_ret_type = type_to_llvmty(f_list, &func_based_tmpl->info.type);
 
       llvm::FunctionType *func_type = llvm::FunctionType::get(func_ret_type, arg_types, false);
       llvm::Function *func = llvm::Function::Create(func_type, llvm::Function::ExternalLinkage, f.info.name, mod);
@@ -808,7 +809,7 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, ExprType *t
         }
       }
       funcs_body.push_back(func_body_t {
-        .info = function1,
+        .info = func_based_tmpl,
         .is_template_base = false,
         .arg_names = arg_names,
         .arg_types = arg_types,
@@ -818,8 +819,8 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, ExprType *t
         .ret_type = func_ret_type,
       });
 
-      function1->info.func_addr = func;
-      function = function1;
+      func_based_tmpl->info.func_addr = func;
+      function = func_based_tmpl;
     }
   }
   auto func_args = function->info.args_type;
@@ -830,15 +831,15 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, ExprType *t
       var_t *v = vast->get(f, f_list);
       if(!v) getchar();
       if(v->type.is_ref())
-        callee_args[count] = builder.CreateLoad(v->val);
+        caller_args[count] = builder.CreateLoad(v->val);
       else
-        callee_args[count] = (v->val);
+        caller_args[count] = (v->val);
     }
   }
   llvm::Function *callee = (function->info.func_addr) ? function->info.func_addr : mod->getFunction(info.name);
   if(!callee) error("no function: %s", info.name.c_str());
   ty->change(new ExprType(function->info.type));
-  return builder.CreateCall(callee, callee_args, "call_tmp");
+  return builder.CreateCall(callee, caller_args, "call_tmp");
 }
 
 llvm::Value * BinaryAST::codegen(Function &f, Program &f_list, ExprType *ty) {
