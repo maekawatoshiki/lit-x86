@@ -18,7 +18,7 @@ struct stdfunc_t {
 
 struct func_body_t { // To define the function that is used before defining
   Function *info;
-  std::vector<std::string> arg_names, cur_mod;
+  std::vector<std::string> arg_names, cur_mod_name;
   std::vector<llvm::Type *> arg_types;
   ast_vector body;
   bool is_template_base;
@@ -52,14 +52,13 @@ namespace Codegen {
   llvm::Module *codegen(ast_vector &program) {
     llvm::InitializeNativeTarget();
     mod = new llvm::Module("LIT", context);
-    std::string module = "";
-    Program list(module);
+    Program list;
     { // initialize standard functions
       auto make_stdfunc = [&](std::string name, std::string link_func_name, std::vector<ExprType *> args_ty , ExprType *ret_ty) {
         Function f = {
           .info = {
             .name        = name,
-            .mod_name    = list.cur_mod,
+            .mod_name    = list.cur_mod_name,
             .is_template = false,
             .params      = args_ty.size(),
             .args_type   = args_ty,
@@ -301,7 +300,7 @@ namespace Codegen {
     count_temp_func = funcs_body.size() - count_temp_func;
     for(auto fn = funcs_body.begin(); fn != funcs_body.end(); ++fn) {
       if(fn->is_template_base) continue;
-      list.cur_mod = fn->cur_mod;
+      list.cur_mod_name = fn->cur_mod_name;
       llvm::BasicBlock *entry = llvm::BasicBlock::Create(context, "entry", fn->func);
       builder.SetInsertPoint(entry);
 
@@ -437,7 +436,7 @@ namespace Codegen {
 };
 
 void ModuleAST::codegen(Program &f_list) {
-  f_list.cur_mod.push_back(name);
+  f_list.cur_mod_name.push_back(name);
   for(auto &stmt : statement) {
     if(stmt->get_type() == AST_FUNCTION) {
       ((FunctionAST *)stmt)->codegen(f_list);
@@ -445,7 +444,7 @@ void ModuleAST::codegen(Program &f_list) {
       ((ModuleAST *)stmt)->codegen(f_list);
     }
   }
-  f_list.cur_mod.pop_back();
+  f_list.cur_mod_name.pop_back();
 }
 
 llvm::Value * LibraryAST::codegen(Program &f_list) {
@@ -485,7 +484,7 @@ void PrototypeAST::append(llvm::Module *lib_mod, Program &f_list) {
 Function FunctionAST::codegen(Program &f_list) { // create a prototype of function, its body will create in Codegen
   Function f;
   f.info.name = info.name;
-  f.info.mod_name = f_list.cur_mod;
+  f.info.mod_name = f_list.cur_mod_name;
   f.info.is_template = info.is_template;
   f.info.params = args.size();   
   f.info.func_addr = nullptr;
@@ -555,7 +554,7 @@ Function FunctionAST::codegen(Program &f_list) { // create a prototype of functi
     .arg_types = arg_types,
     .body = statement,
     .func = func,
-    .cur_mod = f_list.cur_mod,
+    .cur_mod_name = f_list.cur_mod_name,
     .ret_type = func_ret_type,
   });
 
@@ -749,7 +748,7 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, ExprType *t
     caller_args_type.push_back(new ExprType(ty));
   }
   Function *function = f_list.lookup(info.name, info.mod_name, caller_args_type);
-  if(!function) function = f_list.lookup(info.name, f_list.cur_mod, caller_args_type);
+  if(!function) function = f_list.lookup(info.name, f_list.cur_mod_name, caller_args_type);
   if(!function) { // not found
     std::string caller_args_type_str; 
     // args to string
@@ -815,7 +814,7 @@ llvm::Value * FunctionCallAST::codegen(Function &f, Program &f_list, ExprType *t
         .arg_types = arg_types,
         .body = fbody,
         .func = func,
-        .cur_mod = f_list.cur_mod,
+        .cur_mod_name = f_list.cur_mod_name,
         .ret_type = func_ret_type,
       });
 

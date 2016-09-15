@@ -5,18 +5,6 @@
 #include "stdfunc.h"
 #include "util.h"
 
-bool Program::is(std::string name, std::string mod_name) {
-  auto is_declared_func = [&](std::string name) -> Function * {
-    for(std::vector<Function>::iterator it = func.begin(); it != func.end(); it++) {
-      if(it->info.name == name) {
-        return &(*it);
-      }
-    }
-    return NULL;
-  };
-  return is_declared_func(name) == NULL ? false : true;
-}
-
 Function *Program::lookup(std::string name, std::vector<ExprType *> args_type) {
 	return lookup(name, std::vector<std::string>(), args_type);
 }
@@ -53,16 +41,3 @@ var_t *Program::append_global_var(std::string name, int type) {
   return v;
 }
 
-void Program::append_addr_of_global_var(std::string name, int ntv_pos) {
-  var_t *v = var_global.get(name);
-  if(v == NULL) puts("error: nullptr");
-  v->used_location.push_back(ntv_pos);
-}
-
-void Program::insert_global_var() {
-  for(std::vector<var_t>::iterator it = var_global.local.begin(); it != var_global.local.end(); ++it) {
-    uint64_t g_addr = (uint64_t)LitMemory::alloc(1, sizeof(int));
-    for(std::vector<int>::iterator pos = it->used_location.begin(); pos != it->used_location.end(); ++pos) {
-    }
-  }
-}

@@ -27,11 +27,6 @@ struct struct_t {
   };
 };
 
-enum {
-  V_LOCAL,
-  V_GLOBAL
-};
-
 class Variable {
 public:
   std::vector<var_t> local;
