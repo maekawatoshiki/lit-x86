@@ -33,7 +33,7 @@ int math_rand() { // xorshift128
   unsigned long t; 
   t=(x^(x<<11));x=y;y=z;z=w; 
   w=(w^(w>>19))^(t^(t>>8));
-  return labs((long)w);
+  return abs((int)(long)w);
 } 
 void math_rand_set(int s) { w = s; }
 double math_log(double x) { return log(x); }
