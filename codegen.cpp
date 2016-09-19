@@ -601,12 +601,16 @@ llvm::Value * IfAST::codegen(Function &f, Program &f_list) {
 
   func->getBasicBlockList().push_back(bb_merge);
   builder.SetInsertPoint(bb_merge);
-  if(val_then != nullptr && val_else != nullptr && val_then->getType()->getTypeID() == val_else->getType()->getTypeID()) {
+  if(val_then != nullptr && val_else != nullptr && 
+      val_then->getType()->getTypeID() == val_else->getType()->getTypeID()) {
     llvm::PHINode *pnode = builder.CreatePHI(val_then->getType(), 2, "if_tmp");
 
     pnode->addIncoming(val_then, bb_then);
     pnode->addIncoming(val_else, bb_else);
     return pnode;
+  } else if(val_then != nullptr && val_else == nullptr) {
+    // only then branch
+    return val_then;
   }
   return nullptr;
 }
