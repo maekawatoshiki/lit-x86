@@ -62,5 +62,4 @@ install: test
 	echo "please set path yourself:)"
 
 clean:
-	$(RM) a.out lit *.o lib/*.so lib/*.ll
-
+	$(RM) a.out lit *.o lib/*.so lib/*.bc
