@@ -308,6 +308,8 @@ AST *Parser::expr_primary() {
     return new StringAST(tok.next().val);
   } else if(tok.get().val == "true" || tok.get().val == "false" || tok.get().val == "nil") {
     return new NumberAST(tok.next().val == "true" ? "1" :"0");
+  } else if(tok.is("if")) {
+    return make_if();
   } else if(is_ident_tok()) { 
     name = tok.next().val;
     int is_ary; 

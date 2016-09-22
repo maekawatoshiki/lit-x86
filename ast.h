@@ -231,7 +231,7 @@ class IfAST : public AST {
     std::vector<AST *> then_block, else_block;
     IfAST(AST *, std::vector<AST*>, std::vector<AST *>);
     virtual int get_type() const { return AST_IF; }
-    llvm::Value * codegen(Function &, Program &);
+    llvm::Value * codegen(Function &, Program &, ExprType *);
 };
 
 class WhileAST : public AST {

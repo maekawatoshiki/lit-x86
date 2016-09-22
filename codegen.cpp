@@ -415,7 +415,7 @@ namespace Codegen {
       case AST_VARIABLE_INDEX:
         return ((VariableIndexAST *)ast)->codegen(f, f_list, ty);
       case AST_IF:
-        return ((IfAST *)ast)->codegen(f, f_list);
+        return ((IfAST *)ast)->codegen(f, f_list, ty);
       case AST_WHILE:
         return ((WhileAST *)ast)->codegen(f, f_list);
       case AST_FOR:
@@ -563,7 +563,7 @@ Function FunctionAST::codegen(Program &f_list) { // create a prototype of functi
   return f;
 }
 
-llvm::Value * IfAST::codegen(Function &f, Program &f_list) {
+llvm::Value * IfAST::codegen(Function &f, Program &f_list, ExprType *ret_ty) {
   llvm::Value *cond_val = Codegen::expression(f, f_list, cond);
   cond_val = builder.CreateICmpNE(cond_val, llvm::ConstantInt::get(builder.getInt32Ty(), 0), "if_cond");
 
@@ -580,7 +580,7 @@ llvm::Value * IfAST::codegen(Function &f, Program &f_list) {
   bool has_br = false;
   f.has_br.push(has_br);
   for(auto expr : then_block) 
-    val_then = Codegen::expression(f, f_list, expr);
+    val_then = Codegen::expression(f, f_list, expr, ret_ty);
 
   if(!f.has_br.top()) builder.CreateBr(bb_merge);
   else f.has_br.pop();
