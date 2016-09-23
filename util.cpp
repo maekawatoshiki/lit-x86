@@ -12,21 +12,21 @@ int error(const char *errs, ...) {
 }
 
 char *replace_escape(char *str) {
-  int i;
-  char *pos;
-  char escape[14][3] = {
-    "\\a", "\a",
-    "\\r", "\r",
-    "\\f", "\f",
-    "\\n", "\n",
-    "\\t", "\t",
-    "\\b", "\b",
-    "\\\"",  "\""
-  };
-  for(i = 0; i < 14; i += 2) {
-    while((pos = strstr(str, escape[i])) != NULL) {
-      *pos = escape[i + 1][0];
-      memmove(pos + 1, pos + 2, strlen(str) - 2 + 1);
+  int l = strlen(str);
+  for(int i = 0; i < l; i++) {
+    if(str[i] == '\\') {
+      i++; switch(str[i]) {
+        case 'a': str[i]='\a'; break;
+        case 'n': str[i]='\n'; break;
+        case 't': str[i]='\t'; break;
+        case 'f': str[i]='\f'; break;
+        case 'r': str[i]='\r'; break;
+        case 'b': str[i]='\b'; break;
+        case '\\':str[i]='\\'; break;
+        case '\'':str[i]='\''; break;
+        case '\"':str[i]='\"'; break;
+      }
+      memmove(&str[i-1], &str[i], l - 2 + 1);
     }
   }
   return str;
