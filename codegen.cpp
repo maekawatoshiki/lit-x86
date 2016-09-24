@@ -601,14 +601,13 @@ llvm::Value * IfAST::codegen(Function &f, Program &f_list, ExprType *ret_ty) {
 
   func->getBasicBlockList().push_back(bb_merge);
   builder.SetInsertPoint(bb_merge);
-  if(val_then != nullptr && val_else != nullptr && 
-      val_then->getType()->getTypeID() == val_else->getType()->getTypeID()) {
+  if(val_then && val_else && val_then->getType()->getTypeID() == val_else->getType()->getTypeID()) {
     llvm::PHINode *pnode = builder.CreatePHI(val_then->getType(), 2, "if_tmp");
 
     pnode->addIncoming(val_then, bb_then);
     pnode->addIncoming(val_else, bb_else);
     return pnode;
-  } else if(val_then != nullptr && val_else == nullptr) {
+  } else if(val_then && val_else == nullptr) {
     // only then branch
     return val_then;
   }
@@ -1064,14 +1063,16 @@ llvm::Value * VariableAsgmtAST::codegen(Function &f, Program &f_list, ExprType *
     }
     struct_t *strct = f_list.structs.get(ty.get().user_type);
     if(!strct) error("err_index");
-    int a = 0;
     if(dot->member->get_type() != AST_VARIABLE) puts("NG");
-    for(auto it = strct->members.begin(); it != strct->members.end(); ++it){ 
-      if(it->name == ((VariableAST *)dot->member)->info.name)
-        break;
-      a++;
+    int member_count = 0;
+    std::string expect_name = ((VariableAST *)dot->member)->info.name;
+    for(auto m : strct->members) {
+      if(m.name == expect_name) break;
+      member_count++;
     }
-    llvm::Value *memb = builder.CreateConstGEP2_32(parent, 0, a, "gep");
+    if(member_count == strct->members.size()) 
+      error("not found member '%s' in struct '%s'", expect_name.c_str(), ty.get().user_type.c_str());
+    llvm::Value *memb = builder.CreateConstGEP2_32(parent, 0, member_count, "gep");
     llvm::Value *val = Codegen::expression(f, f_list, src);
     return builder.CreateStore(val, memb);
   } else if(var->get_type() == AST_VARIABLE_INDEX) {
@@ -1251,17 +1252,18 @@ llvm::Value *DotOpAST::codegen(Function &f, Program &f_list, ExprType *ret_ty) {
   if(!parent) error("dotopast: error");
   struct_t *strct = f_list.structs.get(ty.get().user_type);
   if(!strct) error("error in DotOpAST");
-  int a = 0;
   ExprType member_ty;
   if(member->get_type() != AST_VARIABLE) puts("error in DotOpAST");
-  for(auto it = strct->members.begin(); it != strct->members.end(); ++it){ 
-    if(it->name == ((VariableAST *)member)->info.name) {
-      member_ty.change(new ExprType(it->type));
-      break;
-    }
-    a++;
-  }
-  llvm::Value *ret = builder.CreateStructGEP(parent, a);
+  int member_count = 0;
+  std::string expect_name = ((VariableAST *)member)->info.name;
+  for(auto m : strct->members) {
+    if(m.name == expect_name) 
+    { member_ty.change(new ExprType(m.type)); break; }
+    member_count++;
+  } 
+  if(member_count == strct->members.size()) 
+    error("not found member '%s' in struct '%s'", expect_name.c_str(), ty.get().user_type.c_str());
+  llvm::Value *ret = builder.CreateStructGEP(parent, member_count);
   ret = builder.CreateLoad(ret, "load_tmp");
   ret_ty->change(new ExprType(member_ty));
   return ret;
