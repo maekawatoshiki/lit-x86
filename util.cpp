@@ -16,17 +16,22 @@ char *replace_escape(char *str) {
   for(int i = 0; i < l; i++) {
     if(str[i] == '\\') {
       i++; switch(str[i]) {
-        case 'a': str[i]='\a'; break;
-        case 'n': str[i]='\n'; break;
-        case 't': str[i]='\t'; break;
-        case 'f': str[i]='\f'; break;
-        case 'r': str[i]='\r'; break;
-        case 'b': str[i]='\b'; break;
-        case '\\':str[i]='\\'; break;
-        case '\'':str[i]='\''; break;
-        case '\"':str[i]='\"'; break;
+        case 'a': str[i]='\a'; memmove(&str[i-1], &str[i], l); i--; break;
+        case 'n': str[i]='\n'; memmove(&str[i-1], &str[i], l); i--; break;
+        case 't': str[i]='\t'; memmove(&str[i-1], &str[i], l); i--; break;
+        case 'f': str[i]='\f'; memmove(&str[i-1], &str[i], l); i--; break;
+        case 'r': str[i]='\r'; memmove(&str[i-1], &str[i], l); i--; break;
+        case 'b': str[i]='\b'; memmove(&str[i-1], &str[i], l); i--; break;
+				case 'x': {
+										char hex[3]={str[i+1], str[i+2]}, *e=nullptr;
+										str[i+2]=strtol(hex, &e, 16);
+										memmove(&str[i-1], &str[i+2], l - 2 + 1);
+										i -= 2;
+									} break;
+        case '\\': str[i]='\\'; memmove(&str[i-1], &str[i], l); i--; break;
+        case '\'': str[i]='\''; memmove(&str[i-1], &str[i], l); i--; break;
+        case '\"': str[i]='\"'; memmove(&str[i-1], &str[i], l); i--; break;
       }
-      memmove(&str[i-1], &str[i], l - 2 + 1);
     }
   }
   return str;
