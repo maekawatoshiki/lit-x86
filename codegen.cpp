@@ -96,14 +96,6 @@ namespace Codegen {
       // create put_string function
       std::vector<llvm::Type *> func_args;
       llvm::Function *func;
-      // create printf function
-      func_args.push_back(builder.getInt8Ty());
-      func = llvm::Function::Create(
-          llvm::FunctionType::get(/*ret*/builder.getInt32Ty(), func_args, true),
-          llvm::GlobalValue::ExternalLinkage,
-          "printf", mod);
-      stdfunc["printf"].func = func;
-      func_args.clear();
 
       make_stdfunc("put_string", "put_string", std::vector<ExprType *>{new ExprType(T_STRING)}, new ExprType(T_VOID));
       make_stdfunc("put_char", "put_char", std::vector<ExprType *>{new ExprType(T_CHAR)}, new ExprType(T_VOID));
@@ -119,6 +111,14 @@ namespace Codegen {
       make_stdfunc("gets", "get_string_stdin", std::vector<ExprType *>(), new ExprType(T_STRING));
       make_stdfunc("getc", "getchar", std::vector<ExprType *>(), new ExprType(T_CHAR));
       make_stdfunc("strlen", "strlen", std::vector<ExprType *>{new ExprType(T_STRING)}, new ExprType(T_INT));
+      // create printf function
+      func_args.push_back(builder.getInt8Ty());
+      func = llvm::Function::Create(
+          llvm::FunctionType::get(/*ret*/builder.getInt32Ty(), func_args, true),
+          llvm::GlobalValue::ExternalLinkage,
+          "printf", mod);
+      stdfunc["printf"].func = func;
+      func_args.clear();
       // create strcat function
       func_args.push_back(builder.getInt8PtrTy());
       func_args.push_back(builder.getInt8PtrTy());
@@ -393,43 +393,43 @@ namespace Codegen {
     ExprType buf; if(ty == nullptr) ty = &buf;
     switch(ast->get_type()) {
       case AST_NUMBER:
-        return ((NumberAST *)ast)->codegen(f, ty);
+      return ((NumberAST *)ast)        -> codegen(f, ty);
       case AST_NUMBER_FLOAT:
-        return ((FloatNumberAST *)ast)->codegen(f, ty);
+      return ((FloatNumberAST *)ast)   -> codegen(f, ty);
       case AST_STRING:
-        return ((StringAST *)ast)->codegen(f, ty);
+      return ((StringAST *)ast)        -> codegen(f, ty);
       case AST_CHAR:
-        return ((CharAST *)ast)->codegen(f, ty);
+      return ((CharAST *)ast)          -> codegen(f, ty);
       case AST_NEW:
-        return ((NewAllocAST *)ast)->codegen(f, f_list, ty);
+      return ((NewAllocAST *)ast)      -> codegen(f, f_list, ty);
       case AST_VARIABLE:
-        return ((VariableAST *)ast)->codegen(f, f_list, ty);
+      return ((VariableAST *)ast)      -> codegen(f, f_list, ty);
       case AST_VARIABLE_ASGMT:
-        return ((VariableAsgmtAST *)ast)->codegen(f, f_list, ty);
+      return ((VariableAsgmtAST *)ast) -> codegen(f, f_list, ty);
       case AST_FUNCTION_CALL:
-        return ((FunctionCallAST *)ast)->codegen(f, f_list, ty);
-      case AST_BINARY: 
-        return ((BinaryAST *)ast)->codegen(f, f_list, ty);
+      return ((FunctionCallAST *)ast)  -> codegen(f, f_list, ty);
+      case AST_BINARY:
+      return ((BinaryAST *)ast)        -> codegen(f, f_list, ty);
       case AST_ARRAY:
-        return ((ArrayAST *)ast)->codegen(f, f_list, ty);
+      return ((ArrayAST *)ast)         -> codegen(f, f_list, ty);
       case AST_VARIABLE_INDEX:
-        return ((VariableIndexAST *)ast)->codegen(f, f_list, ty);
+      return ((VariableIndexAST *)ast) -> codegen(f, f_list, ty);
       case AST_IF:
-        return ((IfAST *)ast)->codegen(f, f_list, ty);
+      return ((IfAST *)ast)            -> codegen(f, f_list, ty);
       case AST_WHILE:
-        return ((WhileAST *)ast)->codegen(f, f_list);
+      return ((WhileAST *)ast)         -> codegen(f, f_list);
       case AST_FOR:
-        return ((ForAST *)ast)->codegen(f, f_list);
+      return ((ForAST *)ast)           -> codegen(f, f_list);
       case AST_BREAK:
-        return ((BreakAST *)ast)->codegen(f, f_list);
+      return ((BreakAST *)ast)         -> codegen(f, f_list);
       case AST_RETURN:
-        return ((ReturnAST *)ast)->codegen(f, f_list);
+      return ((ReturnAST *)ast)        -> codegen(f, f_list);
       case AST_DOT:
-        return ((DotOpAST *)ast)->codegen(f, f_list, ty);
+      return ((DotOpAST *)ast)         -> codegen(f, f_list, ty);
       case AST_CAST:
-        return ((CastAST *)ast)->codegen(f, f_list, ty);
+      return ((CastAST *)ast)          -> codegen(f, f_list, ty);
       case AST_MINUS:
-        return ((UnaryMinusAST *)ast)->codegen(f, f_list, ty);
+      return ((UnaryMinusAST *)ast)    -> codegen(f, f_list, ty);
     }
     return nullptr;
   }

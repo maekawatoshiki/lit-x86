@@ -84,21 +84,21 @@ llvm::Module *Parser::parser() {
   op_prec["%"] =  400;
 
   // append standard functions to a list of declared functions
-  append_func(std::vector<std::string>(1, "Array"));
-  append_func(std::vector<std::string>(1, "GC"));
-  append_func(std::vector<std::string>(1, "printf"));
-  append_func(std::vector<std::string>(1, "gets"));
-  append_func(std::vector<std::string>(1, "getc"));
-  append_func(std::vector<std::string>(1, "strlen"));
-  append_func(std::vector<std::string>(1, "builtinlength"));
-  append_func(std::vector<std::string>(1, "puts"));
-  append_func(std::vector<std::string>(1, "print")); // 'print' is almost the same as 'puts' but 'print' doesn't new line
-  append_func(std::vector<std::string>(1, "gets"));
-  append_func(std::vector<std::string>(1, "str_to_int"));
-  append_func(std::vector<std::string>(1, "str_to_float"));
-  append_func(std::vector<std::string>(1, "int_to_str"));
-  append_func(std::vector<std::string>(1, "int64_to_str"));
-  append_func(std::vector<std::string>(1, "float_to_str"));
+  append_func(std::vector<std::string>{"Array"         });
+  append_func(std::vector<std::string>{"GC"            });
+  append_func(std::vector<std::string>{"printf"        });
+  append_func(std::vector<std::string>{"gets"          });
+  append_func(std::vector<std::string>{"getc"          });
+  append_func(std::vector<std::string>{"strlen"        });
+  append_func(std::vector<std::string>{"builtinlength" });
+  append_func(std::vector<std::string>{"puts"          });
+  append_func(std::vector<std::string>{"print"         }); // 'print' is almost the same as 'puts' but 'print' doesn't new line
+  append_func(std::vector<std::string>{"gets"          });
+  append_func(std::vector<std::string>{"str_to_int"    });
+  append_func(std::vector<std::string>{"str_to_float"  });
+  append_func(std::vector<std::string>{"int_to_str"    });
+  append_func(std::vector<std::string>{"int64_to_str"  });
+  append_func(std::vector<std::string>{"float_to_str"  });
 
   ast_vector a = eval();
   // std::cout << "\n---------- abstract syntax tree ----------" << std::endl;
