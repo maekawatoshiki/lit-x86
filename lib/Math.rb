@@ -13,6 +13,7 @@ lib Math
 	proto math_log x:double :double
 	proto math_exp x:double :double
 	proto math_pow x:double y:double :double
+  proto math_sqrt x:double :double
 end
 
 lib Prime
@@ -123,14 +124,7 @@ module Math
 	end
 
 	def sqrt f:double :double
-		x = 1.0
-		delta = 1.0
-		eps = 0.000001
-		while Math::abs(delta) > eps
-			x = x - (x*x-f)/(2.0*x)
-			delta = x * x - f
-		end
-		x
+    math_sqrt(f)
 	end
 end
 

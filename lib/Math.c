@@ -36,6 +36,7 @@ int math_rand() { // xorshift128
   return abs((int)(long)w);
 } 
 void math_rand_set(int s) { w = s; }
+double math_sqrt(double x) { return sqrt(x); }
 double math_log(double x) { return log(x); }
 double math_exp(double x) { return exp(x); }
 double math_pow(double x, double y) { return pow(x, y); }

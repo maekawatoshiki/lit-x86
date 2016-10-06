@@ -8,7 +8,7 @@ extern "C" {
 		printf("%lld", n);
 	}
 	void put_num_float(double n) {
-		printf("%.10g", n);
+		printf("%.20g", n);
 	}
 	void put_char(char ch) {
 		putchar(ch);
