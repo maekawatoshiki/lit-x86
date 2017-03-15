@@ -1,7 +1,4 @@
-# Lit
-[![Build Status](https://travis-ci.org/maekawatoshiki/lit-x86.svg?branch=llvm)](https://travis-ci.org/maekawatoshiki/lit-x86)
-
-- Lit is a programming language designed fast & light weight with LLVM :bulb:
+** Lit has stoped development **
 
 ## Language Wiki
 - Please look at Wiki.
